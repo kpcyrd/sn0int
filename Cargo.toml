@@ -1,0 +1,24 @@
+[package]
+name = "sn0int"
+version = "0.1.0"
+description = "TODO"
+authors = ["kpcyrd <git@rxv.cc>"]
+license = "GPL-3.0"
+repository = "https://github.com/kpcyrd/sn0int"
+categories = ["command-line-utilities"]
+readme = "README.md"
+
+[dependencies]
+rustyline = "2"
+log = "0.4"
+env_logger = "0.5"
+hlua-badtouch = "0.4"
+structopt = "0.2"
+failure = "0.1"
+rand = "0.5"
+colored = "1.6"
+lazy_static = "1.0"
+shellwords = "0.1"
+publicsuffix = { version="1.5", default-features=false }
+
+# https://crates.io/crates/tor_control
