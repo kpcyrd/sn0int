@@ -70,9 +70,9 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    pub fn new() -> Prompt {
+    pub fn new(workspace: String) -> Prompt {
         Prompt {
-            workspace: "default".into(),
+            workspace,
             module: None,
         }
     }

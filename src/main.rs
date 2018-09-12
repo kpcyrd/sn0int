@@ -2,12 +2,14 @@ extern crate rustyline;
 extern crate env_logger;
 extern crate rand;
 extern crate colored;
-extern crate failure;
+#[macro_use] extern crate failure;
 extern crate shellwords;
+extern crate dirs;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
+pub mod db;
 pub mod errors;
 pub mod engine;
 pub mod migrations;

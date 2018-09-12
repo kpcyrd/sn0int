@@ -1,8 +1,7 @@
 use errors::*;
 
 use colored::Colorize;
-use diesel::prelude::*;
-use migrations;
+use db::Database;
 // use rand::prelude::*;
 use rustyline;
 use rustyline::completion::Completer;
@@ -27,6 +26,7 @@ pub enum Command {
     Run,
     Set,
     Show,
+    SwitchDb(Vec<String>),
     Update,
     Use(Vec<String>),
 
@@ -41,6 +41,7 @@ impl Command {
             Command::Run => "run",
             Command::Set => "set",
             Command::Show => "show",
+            Command::SwitchDb(_) => "switch_db",
             Command::Update => "update",
             Command::Use(_) => "use",
             Command::Interrupt => unreachable!(),
@@ -55,6 +56,7 @@ impl Command {
                 Command::Run.as_str(),
                 Command::Set.as_str(),
                 Command::Show.as_str(),
+                Command::SwitchDb(Vec::new()).as_str(),
                 Command::Update.as_str(),
                 Command::Use(Vec::new()).as_str(),
             ];
@@ -123,10 +125,11 @@ impl rustyline::Helper for CmdCompleter {}
 pub struct Readline {
     rl: Editor<CmdCompleter>,
     prompt: Prompt,
+    db: Database,
 }
 
 impl Readline {
-    pub fn new() -> Readline {
+    pub fn new(db: Database) -> Readline {
         let config = Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -136,11 +139,12 @@ impl Readline {
         let h = CmdCompleter;
         rl.set_helper(Some(h));
 
-        let prompt = Prompt::new();
+        let prompt = Prompt::new(db.name().to_string());
 
         Readline {
             rl,
             prompt,
+            db,
         }
     }
 
@@ -156,7 +160,12 @@ impl Readline {
         self.prompt.module.as_ref()
     }
 
-    pub fn next(&mut self) -> Option<Command> {
+    pub fn set_db(&mut self, db: Database) {
+        self.prompt.workspace = db.name().to_string();
+        self.db = db;
+    }
+
+    pub fn readline(&mut self) -> Option<Command> {
         let readline = self.rl.readline(&self.prompt.to_string());
         match readline {
             Ok(ref line) if line.is_empty() => None,
@@ -181,11 +190,12 @@ impl Readline {
                     "run"  => Some(Command::Run),
                     "set"  => Some(Command::Set),
                     "show" => Some(Command::Show),
+                    "switch_db" => Some(Command::SwitchDb(cmd[1..].to_vec())),
                     "update" => Some(Command::Update),
                     "use"  => Some(Command::Use(cmd[1..].to_vec())),
                     x => {
                         eprintln!("Error: unknown command: {:?}", x);
-                        return None;
+                        None
                     },
                 }
             }
@@ -228,18 +238,11 @@ pub fn run() -> Result<()> {
     // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
     // wait("updating registry");
 
-    let _db = worker::spawn_fn("Connecting to database", || {
-        let db = SqliteConnection::establish("foo.db")
-            .context("Failed to connect to database")?;
-        migrations::run(&db)
-            .context("Failed to run migrations")?;
-        Ok(db)
-    }, false)?;
-
-    let mut rl = Readline::new();
+    let db = Database::establish("default")?;
+    let mut rl = Readline::new(db);
 
     loop {
-        match rl.next() {
+        match rl.readline() {
             Some(Command::Add) => println!("add"),
             Some(Command::Back) => if rl.take_module().is_none() {
                 break;
@@ -256,6 +259,14 @@ pub fn run() -> Result<()> {
             // TODO: set jobs 25
             Some(Command::Set) => println!("set"),
             Some(Command::Show) => println!("show"),
+            Some(Command::SwitchDb(mut args)) => {
+                if !args.is_empty() {
+                    let db = Database::establish(args.remove(0))?;
+                    rl.set_db(db);
+                } else {
+                    eprintln!("Error: argument required");
+                }
+            },
             Some(Command::Update) => {
                 // TODO
                 worker::spawn("Updating public suffix list");
