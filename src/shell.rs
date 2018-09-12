@@ -1,4 +1,8 @@
+use errors::*;
+
 use colored::Colorize;
+use diesel::prelude::*;
+use migrations;
 // use rand::prelude::*;
 use rustyline;
 use rustyline::completion::Completer;
@@ -23,6 +27,7 @@ pub enum Command {
     Run,
     Set,
     Show,
+    Update,
     Use(Vec<String>),
 
     Interrupt,
@@ -36,6 +41,7 @@ impl Command {
             Command::Run => "run",
             Command::Set => "set",
             Command::Show => "show",
+            Command::Update => "update",
             Command::Use(_) => "use",
             Command::Interrupt => unreachable!(),
         }
@@ -49,6 +55,7 @@ impl Command {
                 Command::Run.as_str(),
                 Command::Set.as_str(),
                 Command::Show.as_str(),
+                Command::Update.as_str(),
                 Command::Use(Vec::new()).as_str(),
             ];
         }
@@ -174,6 +181,7 @@ impl Readline {
                     "run"  => Some(Command::Run),
                     "set"  => Some(Command::Set),
                     "show" => Some(Command::Show),
+                    "update" => Some(Command::Update),
                     "use"  => Some(Command::Use(cmd[1..].to_vec())),
                     x => {
                         eprintln!("Error: unknown command: {:?}", x);
@@ -212,8 +220,7 @@ pub fn print_banner() {
 "#, "osint".green(), "recon".green(), "security".green());
 }
 
-
-pub fn run() -> () {
+pub fn run() -> Result<()> {
     print_banner();
 
     // wait("checking tor status");
@@ -221,13 +228,21 @@ pub fn run() -> () {
     // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
     // wait("updating registry");
 
+    let _db = worker::spawn_fn("Connecting to database", || {
+        let db = SqliteConnection::establish("foo.db")
+            .context("Failed to connect to database")?;
+        migrations::run(&db)
+            .context("Failed to run migrations")?;
+        Ok(db)
+    }, false)?;
+
     let mut rl = Readline::new();
 
     loop {
         match rl.next() {
             Some(Command::Add) => println!("add"),
             Some(Command::Back) => if rl.take_module().is_none() {
-                break
+                break;
             },
             Some(Command::Run) => {
                 if let Some(module) = rl.module() {
@@ -241,6 +256,11 @@ pub fn run() -> () {
             // TODO: set jobs 25
             Some(Command::Set) => println!("set"),
             Some(Command::Show) => println!("show"),
+            Some(Command::Update) => {
+                // TODO
+                worker::spawn("Updating public suffix list");
+                worker::spawn("Updating modules");
+            },
             Some(Command::Use(mut args)) => {
                 if !args.is_empty() {
                     rl.set_module(args.remove(0));
@@ -252,4 +272,6 @@ pub fn run() -> () {
             None => (),
         }
     }
+
+    Ok(())
 }
