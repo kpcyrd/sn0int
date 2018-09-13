@@ -22,6 +22,13 @@ pub struct Subdomain {
     pub value: String,
 }
 
+#[derive(Insertable)]
+#[table_name="subdomains"]
+pub struct NewSubdomain<'a> {
+    pub domain_id: i32,
+    pub value: &'a str,
+}
+
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
 #[table_name="ipaddrs"]
 pub struct IpAddr {

@@ -1,24 +1,18 @@
 use errors::*;
 
+use diesel;
 use diesel::prelude::*;
+use models::*;
+use schema::*;
 use dirs;
 use migrations;
 use std::fs;
-use std::ops::Deref;
 use worker;
 
 
 pub struct Database {
     name: String,
     db: SqliteConnection,
-}
-
-impl Deref for Database {
-    type Target = SqliteConnection;
-
-    fn deref(&self) -> &Self::Target {
-        &self.db
-    }
 }
 
 impl Database {
@@ -56,5 +50,75 @@ impl Database {
 
     pub fn db(&self) -> &SqliteConnection {
         &self.db
+    }
+
+    pub fn insert_domain(&self, domain: &str) -> Result<()> {
+        let new_domain = NewDomain {
+            value: domain,
+        };
+
+        diesel::insert_into(domains::table)
+            .values(&new_domain)
+            .execute(&self.db)?;
+
+        Ok(())
+    }
+
+    pub fn list_domains(&self) -> Result<Vec<Domain>> {
+        use schema::domains::dsl::*;
+
+        let results = domains.load::<Domain>(&self.db)?;
+
+        Ok(results)
+    }
+
+    pub fn domain(&self, domain: &str) -> Result<i32> {
+        use schema::domains::dsl::*;
+
+        let domain_id = domains.filter(value.eq(&domain))
+            .select(id)
+            .first::<i32>(&self.db)?;
+
+        Ok(domain_id)
+    }
+
+    pub fn domain_optional(&self, domain: &str) -> Result<Option<i32>> {
+        use schema::domains::dsl::*;
+
+        let domain_id = domains.filter(value.eq(&domain))
+            .select(id)
+            .first::<i32>(&self.db)
+            .optional()?;
+
+        Ok(domain_id)
+    }
+
+    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<()> {
+        let domain_id = match self.domain_optional(domain)? {
+            Some(domain_id) => domain_id,
+            None => {
+                self.insert_domain(domain)?;
+                self.domain(domain)?
+            },
+        };
+
+        let new_subdomain = NewSubdomain {
+            domain_id,
+            value: &subdomain,
+        };
+
+        diesel::insert_into(subdomains::table)
+            .values(&new_subdomain)
+            .execute(&self.db)?;
+
+        Ok(())
+    }
+
+    pub fn list_subdomains(&self) -> Result<Vec<Subdomain>> {
+        use schema::subdomains::dsl::*;
+
+        let results = subdomains.load::<Subdomain>(&self.db)?;
+
+        Ok(results)
     }
 }

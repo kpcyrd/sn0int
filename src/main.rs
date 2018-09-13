@@ -5,6 +5,7 @@ extern crate colored;
 #[macro_use] extern crate failure;
 extern crate shellwords;
 extern crate dirs;
+extern crate publicsuffix;
 #[macro_use] extern crate structopt;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;

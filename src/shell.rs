@@ -2,7 +2,6 @@ use errors::*;
 
 use cmd::*;
 use colored::Colorize;
-use diesel::prelude::*;
 use db::Database;
 // use rand::prelude::*;
 use rustyline;
@@ -162,8 +161,8 @@ impl Readline {
         self.prompt.module.as_ref()
     }
 
-    pub fn db(&self) -> &SqliteConnection {
-        self.db.db()
+    pub fn db(&self) -> &Database {
+        &self.db
     }
 
     pub fn set_db(&mut self, db: Database) {
