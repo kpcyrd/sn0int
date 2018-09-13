@@ -13,6 +13,7 @@ use rustyline::hint::Hinter;
 use rustyline::{CompletionType, Config, EditMode, Editor};
 use shellwords;
 use std::borrow::Cow::{self, Borrowed, Owned};
+use psl::Psl;
 // use std::io;
 // use std::io::prelude::*;
 
@@ -127,10 +128,11 @@ pub struct Readline {
     rl: Editor<CmdCompleter>,
     prompt: Prompt,
     db: Database,
+    psl: Psl,
 }
 
 impl Readline {
-    pub fn new(db: Database) -> Readline {
+    pub fn new(db: Database, psl: Psl) -> Readline {
         let config = Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -146,6 +148,7 @@ impl Readline {
             rl,
             prompt,
             db,
+            psl,
         }
     }
 
@@ -168,6 +171,10 @@ impl Readline {
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
+    }
+
+    pub fn psl(&self) -> &Psl {
+        &self.psl
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -272,7 +279,8 @@ pub fn run() -> Result<()> {
     // wait("updating registry");
 
     let db = Database::establish("default")?;
-    let mut rl = Readline::new(db);
+    let psl = Psl::open_or_download()?;
+    let mut rl = Readline::new(db, psl);
 
     loop {
         match run_once(&mut rl) {

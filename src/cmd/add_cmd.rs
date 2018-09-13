@@ -2,7 +2,6 @@ use errors::*;
 
 use shell::Readline;
 use structopt::StructOpt;
-use publicsuffix;
 use utils;
 
 
@@ -38,12 +37,8 @@ fn add_domain(rl: &mut Readline, args: AddDomain) -> Result<()> {
         _ => utils::question("Domain")?,
     };
 
-    // TODO: download this list automatically
-    let list = publicsuffix::List::from_path("public_suffix_list.dat")
-        .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
-
     // ensure input is a valid domain
-    let parsed_domain = list.parse_domain(&domain)
+    let parsed_domain = rl.psl().parse_domain(&domain)
         .map_err(|e| format_err!("Failed to parse domain: {}", e))?;
 
     if Some(domain.as_str()) != parsed_domain.root() {
@@ -61,11 +56,7 @@ fn add_subdomain(rl: &mut Readline, args: AddSubdomain) -> Result<()> {
         _ => utils::question("Subdomain")?,
     };
 
-    // TODO: download this list automatically
-    let list = publicsuffix::List::from_path("public_suffix_list.dat")
-        .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
-
-    let dns_name = list.parse_dns_name(&subdomain)
+    let dns_name = rl.psl().parse_dns_name(&subdomain)
         .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
     let domain = dns_name.domain()
