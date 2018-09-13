@@ -1,13 +1,13 @@
 table! {
     domains (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         value -> Text,
     }
 }
 
 table! {
     ipaddrs (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         family -> Text,
         value -> Text,
     }
@@ -15,7 +15,7 @@ table! {
 
 table! {
     subdomain_ipaddrs (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         subdomain_id -> Integer,
         ip_addr_id -> Integer,
     }
@@ -23,7 +23,7 @@ table! {
 
 table! {
     subdomains (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         domain_id -> Integer,
         value -> Text,
     }
@@ -31,7 +31,7 @@ table! {
 
 table! {
     urls (id) {
-        id -> Nullable<Integer>,
+        id -> Integer,
         subdomain_id -> Integer,
         value -> Text,
         status -> Nullable<Integer>,

@@ -1,11 +1,11 @@
 CREATE TABLE domains (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     value VARCHAR NOT NULL,
     CONSTRAINT domain_unique UNIQUE (value)
 );
 
 CREATE TABLE subdomains (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     domain_id INTEGER NOT NULL,
     value VARCHAR NOT NULL,
     FOREIGN KEY(domain_id) REFERENCES domains(id),
@@ -14,14 +14,14 @@ CREATE TABLE subdomains (
 
 /* family maybe not needed */
 CREATE TABLE ipaddrs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     family VARCHAR NOT NULL,
     value VARCHAR NOT NULL,
     CONSTRAINT ipaddr_unique UNIQUE (value)
 );
 
 CREATE TABLE subdomain_ipaddrs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     subdomain_id INTEGER NOT NULL,
     ip_addr_id INTEGER NOT NULL,
     FOREIGN KEY(subdomain_id) REFERENCES domains(id),
@@ -30,7 +30,7 @@ CREATE TABLE subdomain_ipaddrs (
 );
 
 CREATE TABLE urls (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     subdomain_id INTEGER NOT NULL,
     value VARCHAR NOT NULL,
     status INTEGER,

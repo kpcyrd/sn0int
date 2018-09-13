@@ -1,6 +1,8 @@
 use errors::*;
 
+use cmd::*;
 use colored::Colorize;
+use diesel::prelude::*;
 use db::Database;
 // use rand::prelude::*;
 use rustyline;
@@ -26,9 +28,9 @@ pub enum Command {
     Run,
     Set,
     Show,
-    SwitchDb(Vec<String>),
+    SwitchDb,
     Update,
-    Use(Vec<String>),
+    Use,
 
     Interrupt,
 }
@@ -41,9 +43,9 @@ impl Command {
             Command::Run => "run",
             Command::Set => "set",
             Command::Show => "show",
-            Command::SwitchDb(_) => "switch_db",
+            Command::SwitchDb => "switch_db",
             Command::Update => "update",
-            Command::Use(_) => "use",
+            Command::Use => "use",
             Command::Interrupt => unreachable!(),
         }
     }
@@ -56,9 +58,9 @@ impl Command {
                 Command::Run.as_str(),
                 Command::Set.as_str(),
                 Command::Show.as_str(),
-                Command::SwitchDb(Vec::new()).as_str(),
+                Command::SwitchDb.as_str(),
                 Command::Update.as_str(),
-                Command::Use(Vec::new()).as_str(),
+                Command::Use.as_str(),
             ];
         }
 
@@ -160,12 +162,16 @@ impl Readline {
         self.prompt.module.as_ref()
     }
 
+    pub fn db(&self) -> &SqliteConnection {
+        self.db.db()
+    }
+
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
     }
 
-    pub fn readline(&mut self) -> Option<Command> {
+    pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
         let readline = self.rl.readline(&self.prompt.to_string());
         match readline {
             Ok(ref line) if line.is_empty() => None,
@@ -184,32 +190,34 @@ impl Readline {
                     return None;
                 }
 
-                match cmd[0].as_str() {
+                let action = match cmd[0].as_str() {
                     "add" => Some(Command::Add),
                     "back" => Some(Command::Back),
                     "run"  => Some(Command::Run),
                     "set"  => Some(Command::Set),
                     "show" => Some(Command::Show),
-                    "switch_db" => Some(Command::SwitchDb(cmd[1..].to_vec())),
+                    "switch_db" => Some(Command::SwitchDb),
                     "update" => Some(Command::Update),
-                    "use"  => Some(Command::Use(cmd[1..].to_vec())),
+                    "use"  => Some(Command::Use),
                     x => {
                         eprintln!("Error: unknown command: {:?}", x);
                         None
                     },
-                }
+                };
+
+                action.map(|x| (x, cmd))
             }
             Err(ReadlineError::Interrupted) => {
                 // ^C
-                Some(Command::Interrupt)
+                Some((Command::Interrupt, vec![]))
             }
             Err(ReadlineError::Eof) => {
                 // ^D
-                Some(Command::Back)
+                Some((Command::Back, vec![]))
             }
             Err(err) => {
                 println!("Error: {:?}", err);
-                Some(Command::Interrupt)
+                Some((Command::Interrupt, vec![]))
             }
         }
     }
@@ -230,6 +238,32 @@ pub fn print_banner() {
 "#, "osint".green(), "recon".green(), "security".green());
 }
 
+pub fn run_once(rl: &mut Readline) -> Result<bool> {
+    match rl.readline() {
+        Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
+        Some((Command::Back, _)) => if rl.take_module().is_none() {
+            return Ok(true);
+        },
+        Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
+        // TODO: show global settings
+        // TODO: if module is some, show module settings
+        // TODO: set jobs 25
+        Some((Command::Set, _args)) => println!("set"),
+        Some((Command::Show, args)) => show_cmd::run(rl, &args)?,
+        Some((Command::SwitchDb, args)) => switch_db_cmd::run(rl, &args)?,
+        Some((Command::Update, _args)) => {
+            // TODO
+            worker::spawn("Updating public suffix list");
+            worker::spawn("Updating modules");
+        },
+        Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
+        Some((Command::Interrupt, _)) => return Ok(true),
+        None => (),
+    }
+
+    Ok(false)
+}
+
 pub fn run() -> Result<()> {
     print_banner();
 
@@ -242,45 +276,15 @@ pub fn run() -> Result<()> {
     let mut rl = Readline::new(db);
 
     loop {
-        match rl.readline() {
-            Some(Command::Add) => println!("add"),
-            Some(Command::Back) => if rl.take_module().is_none() {
-                break;
-            },
-            Some(Command::Run) => {
-                if let Some(module) = rl.module() {
-                    worker::spawn(module);
-                } else {
-                    eprintln!("Error: no module selected");
+        match run_once(&mut rl) {
+            Ok(true) => break,
+            Ok(_) => (),
+            Err(err) => {
+                eprintln!("{}", err);
+                for cause in err.iter_chain().skip(1) {
+                    eprintln!("Because: {}", cause);
                 }
             },
-            // TODO: show global settings
-            // TODO: if module is some, show module settings
-            // TODO: set jobs 25
-            Some(Command::Set) => println!("set"),
-            Some(Command::Show) => println!("show"),
-            Some(Command::SwitchDb(mut args)) => {
-                if !args.is_empty() {
-                    let db = Database::establish(args.remove(0))?;
-                    rl.set_db(db);
-                } else {
-                    eprintln!("Error: argument required");
-                }
-            },
-            Some(Command::Update) => {
-                // TODO
-                worker::spawn("Updating public suffix list");
-                worker::spawn("Updating modules");
-            },
-            Some(Command::Use(mut args)) => {
-                if !args.is_empty() {
-                    rl.set_module(args.remove(0));
-                } else {
-                    eprintln!("Error: argument required");
-                }
-            },
-            Some(Command::Interrupt) => break,
-            None => (),
         }
     }
 

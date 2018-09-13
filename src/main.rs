@@ -5,10 +5,12 @@ extern crate colored;
 #[macro_use] extern crate failure;
 extern crate shellwords;
 extern crate dirs;
+#[macro_use] extern crate structopt;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
+pub mod cmd;
 pub mod db;
 pub mod errors;
 pub mod engine;
@@ -18,6 +20,7 @@ pub mod schema;
 pub mod shell;
 pub mod term;
 pub mod worker;
+pub mod utils;
 
 
 fn main() {

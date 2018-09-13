@@ -22,10 +22,6 @@ impl Deref for Database {
 }
 
 impl Database {
-    pub fn name(&self) -> &str {
-        &self.name
-    }
-
     pub fn establish<I: Into<String>>(name: I) -> Result<Database> {
         // TODO: enforce safe name for database
         let name = name.into();
@@ -52,5 +48,13 @@ impl Database {
             name,
             db,
         })
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    pub fn db(&self) -> &SqliteConnection {
+        &self.db
     }
 }
