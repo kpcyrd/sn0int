@@ -10,6 +10,7 @@ extern crate publicsuffix;
 extern crate reqwest;
 extern crate url;
 extern crate hlua_badtouch as hlua;
+#[macro_use] extern crate nom;
 #[macro_use] extern crate structopt;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;

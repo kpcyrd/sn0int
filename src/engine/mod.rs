@@ -4,11 +4,14 @@ use std::fs;
 use std::path::PathBuf;
 // use std::collections::{HashSet, HashMap};
 use std::collections::HashMap;
+use engine::ctx::Script;
+use engine::metadata::Metadata;
 use paths;
 use term;
 use worker;
 
 pub mod ctx;
+pub mod metadata;
 pub mod structs;
 
 
@@ -63,7 +66,8 @@ impl Engine {
                 }
 
                 let path = module.path();
-                let module = Module::load(&path, &author_name, &module_name)?;
+                let module = Module::load(&path, &author_name, &module_name)
+                    .context(format!("Failed to parse {}/{}", author_name, module_name))?;
 
                 for key in &[module_name.clone(), format!("{}/{}", author_name, module_name)] {
                     if !self.modules.contains_key(key) {
@@ -107,46 +111,33 @@ impl Engine {
 
         modules
     }
-
-    /*
-    pub fn list_modules(&self) -> Result<Vec<Module>> {
-        let mut modules = Vec::new();
-
-        for author in fs::read_dir(&self.path)? {
-            for module in fs::read_dir(&author?.path())? {
-                let path = module?.path();
-                modules.push(Module::load(&path)?);
-            }
-        }
-
-        Ok(modules)
-    }
-
-    pub fn load_module(&self, author: &str, name: &str) -> Result<Module> {
-        let path = paths::module_dir()?;
-        let _path = path.join(author).join(name);
-        unimplemented!()
-    }
-
-    pub fn install_module(&self) -> Result<()> {
-        unimplemented!()
-    }
-    */
 }
 
 #[derive(Debug, Clone)]
 pub struct Module {
-    author: String,
     name: String,
+    author: String,
+    description: String,
+    version: String,
+    script: Script,
 }
 
 impl Module {
-    pub fn load(_path: &PathBuf, author: &str, name: &str) -> Result<Module> {
-        // unimplemented!()
-        // TODO
+    pub fn load(path: &PathBuf, author: &str, name: &str) -> Result<Module> {
+        let code = fs::read_to_string(path)
+            .context("Failed to read module")?;
+
+        let metadata = Metadata::parse(&code)
+            .context("Failed to parse module metadata")?;
+
+        let script = Script::load_unchecked(code)?;
+
         Ok(Module {
-            author: author.to_string(),
             name: name.to_string(),
+            author: author.to_string(),
+            description: metadata.description,
+            version: metadata.version,
+            script,
         })
     }
 
@@ -156,5 +147,13 @@ impl Module {
 
     pub fn canonical(&self) -> String {
         format!("{}/{}", self.author, self.name)
+    }
+
+    pub fn description(&self) -> &str {
+        &self.description
+    }
+
+    pub fn version(&self) -> &str {
+        &self.version
     }
 }

@@ -29,12 +29,12 @@ impl State {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Script {
-    descr: String,
     code: String,
 }
 
+#[allow(dead_code)]
 fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -57,7 +57,8 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
 }
 
 impl Script {
-    pub fn load(code: String) -> Result<Script> {
+    pub fn load_unchecked(code: String) -> Result<Script> {
+        /*
         let (mut lua, _) = ctx();
 
         // TODO: we do not want to execute the script outside of the sandbox
@@ -68,14 +69,10 @@ impl Script {
                 .ok_or_else(|| format_err!("descr undefined"))?;
             (*descr).to_owned()
         };
+        */
 
         Ok(Script {
-            descr,
             code,
         })
-    }
-
-    pub fn descr(&self) -> &str {
-        &self.descr
     }
 }
