@@ -1,9 +1,9 @@
 use errors::*;
 
-use dirs;
 use reqwest;
-use std::fs::{self, File};
+use std::fs::File;
 use std::path::PathBuf;
+use paths;
 use publicsuffix::{self, Domain, DnsName};
 use worker;
 
@@ -14,11 +14,7 @@ pub struct Psl {
 
 impl Psl {
     pub fn open_or_download() -> Result<Psl> {
-        let path = dirs::cache_dir()
-            .ok_or_else(|| format_err!("Failed to find cache directory"))?;
-        let path = path.join("sn0int");
-        fs::create_dir_all(&path)?;
-        let path = path.join("public_suffix_list.dat");
+        let path = paths::cache_dir()?.join("public_suffix_list.dat");
 
         let reader = match File::open(&path) {
             Ok(f) => f,

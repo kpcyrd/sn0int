@@ -12,11 +12,10 @@ pub struct Args {
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let _args = Args::from_iter_safe(args)?;
 
-    if let Some(module) = rl.module() {
-        worker::spawn(module);
-    } else {
-        eprintln!("Error: no module selected");
-    }
+    let module = rl.module()
+        .ok_or_else(|| format_err!("No module selected"))?;
+
+    worker::spawn(module);
 
     Ok(())
 }

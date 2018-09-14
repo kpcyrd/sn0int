@@ -1,9 +1,11 @@
 use errors::*;
 
+use engine::Module;
 use std::time::Duration;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use term::Spinner;
+
 
 #[derive(Debug)]
 pub enum Event {
@@ -11,10 +13,10 @@ pub enum Event {
     Done,
 }
 
-pub fn spawn(task: &str) {
+pub fn spawn(module: &Module) {
     let (tx, rx) = mpsc::channel();
 
-    let mut spinner = Spinner::random(task.to_string());
+    let mut spinner = Spinner::random(format!("Running {}", module.canonical()));
 
     let t = thread::spawn(move || {
         thread::sleep(Duration::from_secs(3));

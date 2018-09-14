@@ -3,6 +3,7 @@ use errors::*;
 use cmd::*;
 use colored::Colorize;
 use db::Database;
+use engine::{Engine, Module};
 // use rand::prelude::*;
 use rustyline;
 use rustyline::completion::Completer;
@@ -13,18 +14,21 @@ use rustyline::hint::Hinter;
 use rustyline::{CompletionType, Config, EditMode, Editor};
 use shellwords;
 use std::borrow::Cow::{self, Borrowed, Owned};
+use term;
 use psl::Psl;
 // use std::io;
 // use std::io::prelude::*;
 
 use term::Prompt;
-use worker;
+// use worker;
 
 
 #[derive(Debug)]
 pub enum Command {
     Add,
     Back,
+    List,
+    ReloadModules,
     Run,
     Set,
     Show,
@@ -40,6 +44,8 @@ impl Command {
         match *self {
             Command::Add => "add",
             Command::Back => "back",
+            Command::List => "list",
+            Command::ReloadModules => "reload_modules",
             Command::Run => "run",
             Command::Set => "set",
             Command::Show => "show",
@@ -55,6 +61,8 @@ impl Command {
             static ref COMMANDS: Vec<&'static str> = vec![
                 Command::Add.as_str(),
                 Command::Back.as_str(),
+                Command::List.as_str(),
+                Command::ReloadModules.as_str(),
                 Command::Run.as_str(),
                 Command::Set.as_str(),
                 Command::Show.as_str(),
@@ -129,10 +137,11 @@ pub struct Readline {
     prompt: Prompt,
     db: Database,
     psl: Psl,
+    engine: Engine,
 }
 
 impl Readline {
-    pub fn new(db: Database, psl: Psl) -> Readline {
+    pub fn new(db: Database, psl: Psl, engine: Engine) -> Readline {
         let config = Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -149,18 +158,19 @@ impl Readline {
             prompt,
             db,
             psl,
+            engine,
         }
     }
 
-    pub fn take_module(&mut self) -> Option<String> {
+    pub fn take_module(&mut self) -> Option<Module> {
         self.prompt.module.take()
     }
 
-    pub fn set_module(&mut self, module: String) {
+    pub fn set_module(&mut self, module: Module) {
         self.prompt.module = Some(module);
     }
 
-    pub fn module(&self) -> Option<&String> {
+    pub fn module(&self) -> Option<&Module> {
         self.prompt.module.as_ref()
     }
 
@@ -175,6 +185,14 @@ impl Readline {
 
     pub fn psl(&self) -> &Psl {
         &self.psl
+    }
+
+    pub fn engine(&self) -> &Engine {
+        &self.engine
+    }
+
+    pub fn engine_mut(&mut self) -> &mut Engine {
+        &mut self.engine
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -199,6 +217,8 @@ impl Readline {
                 let action = match cmd[0].as_str() {
                     "add" => Some(Command::Add),
                     "back" => Some(Command::Back),
+                    "list" => Some(Command::List),
+                    "reload_modules"  => Some(Command::ReloadModules),
                     "run"  => Some(Command::Run),
                     "set"  => Some(Command::Set),
                     "show" => Some(Command::Show),
@@ -240,7 +260,6 @@ pub fn print_banner() {
    \___.' /    | /`---' / /    |  \__/
 
         {} | {} | {}
-                ?? modules
 "#, "osint".green(), "recon".green(), "security".green());
 }
 
@@ -250,6 +269,8 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
+        Some((Command::List, args)) => list_cmd::run(rl, &args)?,
+        Some((Command::ReloadModules, args)) => reload_modules_cmd::run(rl, &args)?,
         Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
         // TODO: show global settings
         // TODO: if module is some, show module settings
@@ -259,8 +280,8 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::SwitchDb, args)) => switch_db_cmd::run(rl, &args)?,
         Some((Command::Update, _args)) => {
             // TODO
-            worker::spawn("Updating public suffix list");
-            worker::spawn("Updating modules");
+            // worker::spawn("Updating public suffix list");
+            // worker::spawn("Updating modules");
         },
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Interrupt, _)) => return Ok(true),
@@ -280,14 +301,15 @@ pub fn run() -> Result<()> {
 
     let db = Database::establish("default")?;
     let psl = Psl::open_or_download()?;
-    let mut rl = Readline::new(db, psl);
+    let engine = Engine::new()?;
+    let mut rl = Readline::new(db, psl, engine);
 
     loop {
         match run_once(&mut rl) {
             Ok(true) => break,
             Ok(_) => (),
             Err(err) => {
-                eprintln!("{}", err);
+                term::error(&err.to_string());
                 for cause in err.iter_chain().skip(1) {
                     eprintln!("Because: {}", cause);
                 }

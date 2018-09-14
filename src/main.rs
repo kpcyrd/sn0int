@@ -1,3 +1,4 @@
+#![allow(proc_macro_derive_resolution_fallback)]
 extern crate rustyline;
 extern crate env_logger;
 extern crate rand;
@@ -7,6 +8,8 @@ extern crate shellwords;
 extern crate dirs;
 extern crate publicsuffix;
 extern crate reqwest;
+extern crate url;
+extern crate hlua_badtouch as hlua;
 #[macro_use] extern crate structopt;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;
@@ -18,8 +21,10 @@ pub mod errors;
 pub mod engine;
 pub mod migrations;
 pub mod models;
+pub mod paths;
 pub mod schema;
 pub mod shell;
+pub mod runtime;
 pub mod term;
 pub mod worker;
 pub mod psl;

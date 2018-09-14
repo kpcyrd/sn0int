@@ -6,14 +6,12 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
-    module: String,
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let _args = Args::from_iter_safe(args)?;
 
-    let module = rl.engine().get(&args.module)?.clone();
-    rl.set_module(module);
+    rl.engine_mut().reload_modules()?;
 
     Ok(())
 }

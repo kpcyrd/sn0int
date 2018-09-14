@@ -1,3 +1,4 @@
+use engine::Module;
 use rand::prelude::*;
 use std::fmt;
 use std::io;
@@ -64,9 +65,17 @@ impl Spinner {
     }
 }
 
+pub fn info(line: &str) {
+    println!("\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+}
+
+pub fn error(line: &str) {
+    eprintln!("\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
+}
+
 pub struct Prompt {
     pub workspace: String,
-    pub module: Option<String>,
+    pub module: Option<Module>,
 }
 
 impl Prompt {
@@ -82,7 +91,7 @@ impl fmt::Display for Prompt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "[sn0int][{}]", self.workspace)?;
         if let Some(module) = &self.module {
-            write!(f, "[{}]", module)?;
+            write!(f, "[{}]", module.canonical())?;
         }
         write!(f, " > ")
     }

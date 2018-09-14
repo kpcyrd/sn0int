@@ -4,9 +4,8 @@ use diesel;
 use diesel::prelude::*;
 use models::*;
 use schema::*;
-use dirs;
+use paths;
 use migrations;
-use std::fs;
 use worker;
 
 
@@ -20,13 +19,7 @@ impl Database {
         // TODO: enforce safe name for database
         let name = name.into();
 
-        // create parent folder
-        let path = dirs::data_dir().ok_or_else(|| format_err!("Failed to find data directory"))?;
-        let path = path.join("sn0int");
-        fs::create_dir_all(&path)
-            .context("Failed to create data directory")?;
-
-        let path = path.join(name.clone() + ".db");
+        let path = paths::data_dir()?.join(name.clone() + ".db");
         let path = path.into_os_string().into_string()
             .map_err(|_| format_err!("Failed to convert db path to utf-8"))?;
 
