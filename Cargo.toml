@@ -27,5 +27,6 @@ reqwest = "0.8.8"
 url = "1.7"
 syscallz = "0.7"
 nom = "4.0"
+chrootable-https = "0.1"
 
 # https://crates.io/crates/tor_control

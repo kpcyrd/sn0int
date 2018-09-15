@@ -56,6 +56,10 @@ impl Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
     }
 
+    pub fn error(&self, line: &str) {
+        println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
+    }
+
     pub fn done(&self) {
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", '+', self.task);
     }

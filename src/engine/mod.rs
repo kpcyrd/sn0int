@@ -4,11 +4,12 @@ use std::fs;
 use std::path::PathBuf;
 // use std::collections::{HashSet, HashMap};
 use std::collections::HashMap;
+use std::sync::mpsc;
 use engine::ctx::Script;
 use engine::metadata::Metadata;
 use paths;
 use term;
-use worker;
+use worker::{self, Event};
 
 pub mod ctx;
 pub mod metadata;
@@ -155,5 +156,9 @@ impl Module {
 
     pub fn version(&self) -> &str {
         &self.version
+    }
+
+    pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
+        self.script.run(tx)
     }
 }

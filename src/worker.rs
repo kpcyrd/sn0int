@@ -10,24 +10,30 @@ use term::Spinner;
 #[derive(Debug)]
 pub enum Event {
     Info(String),
+    Error(Error),
     Done,
 }
 
-pub fn spawn(module: &Module) {
+pub fn spawn(module: Module) {
     let (tx, rx) = mpsc::channel();
 
     let mut spinner = Spinner::random(format!("Running {}", module.canonical()));
 
     let t = thread::spawn(move || {
-        thread::sleep(Duration::from_secs(3));
-        tx.send(Event::Info("ohai".to_string())).unwrap();
-        thread::sleep(Duration::from_secs(1));
+        if let Err(err) = module.run(tx.clone()) {
+            tx.send(Event::Error(err)).unwrap();
+        }
+
+        // thread::sleep(Duration::from_secs(3));
+        // tx.send(Event::Info("ohai".to_string())).unwrap();
+        // thread::sleep(Duration::from_secs(1));
         tx.send(Event::Done).unwrap();
     });
 
     loop {
         match rx.recv_timeout(Duration::from_millis(100)) {
             Ok(Event::Info(info)) => spinner.log(&info),
+            Ok(Event::Error(error)) => spinner.error(&error.to_string()),
             Ok(Event::Done) => break,
             Err(mpsc::RecvTimeoutError::Timeout) => (),
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -53,6 +59,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         loop {
             match rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(Event::Info(info)) => spinner.log(&info),
+                Ok(Event::Error(error)) => spinner.error(&error.to_string()),
                 Ok(Event::Done) => break,
                 Err(mpsc::RecvTimeoutError::Timeout) => (),
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,

@@ -2,17 +2,21 @@ use errors::*;
 
 use hlua;
 use runtime;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
+use worker::Event;
+
 
 #[derive(Debug, Clone)]
 pub struct State {
     error: Arc<Mutex<Option<Error>>>,
+    logger: Arc<Mutex<Option<mpsc::Sender<Event>>>>,
 }
 
 impl State {
     pub fn new() -> State {
         State {
             error: Arc::new(Mutex::new(None)),
+            logger: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -26,6 +30,18 @@ impl State {
         let cp = format_err!("{:?}", err);
         *mtx = Some(err);
         cp.into()
+    }
+
+    pub fn set_logger(&self, tx: mpsc::Sender<Event>) {
+        let mut mtx = self.logger.lock().unwrap();
+        *mtx = Some(tx);
+    }
+
+    pub fn info(&self, msg: String) {
+        let mtx = self.logger.lock().unwrap();
+        if let Some(tx) = &*mtx {
+            tx.send(Event::Info(msg)).unwrap();
+        }
     }
 }
 
@@ -46,10 +62,12 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     // runtime::http_mksession(&mut lua, state.clone());
     // runtime::http_request(&mut lua, state.clone());
     // runtime::http_send(&mut lua, state.clone());
+    runtime::info(&mut lua, state.clone());
     // runtime::json_decode(&mut lua, state.clone());
     // runtime::json_encode(&mut lua, state.clone());
     // runtime::last_err(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
+    runtime::sleep(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
 
@@ -74,5 +92,37 @@ impl Script {
         Ok(Script {
             code,
         })
+    }
+
+    // pub fn run(&self, user: AnyLuaValue, password: AnyLuaValue) -> Result<bool> {
+    pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
+        // debug!("executing {:?} with {:?}:{:?}", self.descr(), user, password);
+
+        let (mut lua, state) = ctx();
+        lua.execute::<()>(&self.code)?;
+
+        state.set_logger(tx);
+
+        let run: Result<_> = lua.get("run")
+            .ok_or_else(|| format_err!( "run undefined"));
+        let mut run: hlua::LuaFunction<_> = run?;
+
+        let _result: hlua::AnyLuaValue = run.call()
+            .map_err(|err| format_err!("execution failed: {:?}", err))?;
+
+        if let Some(err) = state.error.lock().unwrap().take() {
+            return Err(err);
+        }
+
+        /*
+        use hlua::AnyLuaValue::*;
+        match result {
+            LuaBoolean(x) => Ok(x),
+            LuaString(x) => Err(format!("error: {:?}", x).into()),
+            x => Err(format!("lua returned wrong type: {:?}", x).into()),
+        }
+        */
+
+        Ok(())
     }
 }

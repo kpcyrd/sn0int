@@ -15,7 +15,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let module = rl.module()
         .ok_or_else(|| format_err!("No module selected"))?;
 
-    worker::spawn(module);
+    worker::spawn(module.to_owned());
 
     Ok(())
 }
