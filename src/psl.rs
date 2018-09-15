@@ -1,7 +1,7 @@
 use errors::*;
 
-use reqwest;
-use std::fs::File;
+use chrootable_https::Client;
+use std::fs::{self, File};
 use std::path::PathBuf;
 use paths;
 use publicsuffix::{self, Domain, DnsName};
@@ -35,9 +35,9 @@ impl Psl {
     }
 
     pub fn download(path: &PathBuf, url: &str) -> Result<()> {
-        let mut f = File::create(path)?;
-        reqwest::get(url)?
-            .copy_to(&mut f)?;
+        let client = Client::with_system_resolver()?;
+        let resp = client.get(url)?;
+        fs::write(path, &resp.body)?;
         Ok(())
     }
 

@@ -7,7 +7,7 @@ extern crate colored;
 extern crate shellwords;
 extern crate dirs;
 extern crate publicsuffix;
-extern crate reqwest;
+extern crate chrootable_https;
 extern crate url;
 extern crate hlua_badtouch as hlua;
 #[macro_use] extern crate nom;
