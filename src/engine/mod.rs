@@ -125,6 +125,7 @@ pub struct Module {
 
 impl Module {
     pub fn load(path: &PathBuf, author: &str, name: &str) -> Result<Module> {
+        debug!("Loading lua module {}/{} from {:?}", author, name, path);
         let code = fs::read_to_string(path)
             .context("Failed to read module")?;
 
@@ -159,6 +160,7 @@ impl Module {
     }
 
     pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
+        debug!("Executing lua script {}", self.canonical());
         self.script.run(tx)
     }
 }

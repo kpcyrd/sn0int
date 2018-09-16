@@ -50,8 +50,8 @@ pub struct Script {
     code: String,
 }
 
-#[allow(dead_code)]
 fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
+    debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
     let state = Arc::new(State::new());
@@ -70,6 +70,8 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     runtime::sleep(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
+
+    debug!("Created lua context");
 
     (lua, state)
 }
@@ -96,9 +98,9 @@ impl Script {
 
     // pub fn run(&self, user: AnyLuaValue, password: AnyLuaValue) -> Result<bool> {
     pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
-        // debug!("executing {:?} with {:?}:{:?}", self.descr(), user, password);
-
         let (mut lua, state) = ctx();
+
+        debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
 
         state.set_logger(tx);
@@ -107,8 +109,11 @@ impl Script {
             .ok_or_else(|| format_err!( "run undefined"));
         let mut run: hlua::LuaFunction<_> = run?;
 
+        debug!("Starting lua script");
         let _result: hlua::AnyLuaValue = run.call()
             .map_err(|err| format_err!("execution failed: {:?}", err))?;
+
+        debug!("Lua script terminated");
 
         if let Some(err) = state.error.lock().unwrap().take() {
             return Err(err);

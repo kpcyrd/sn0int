@@ -264,7 +264,9 @@ pub fn print_banner() {
 }
 
 pub fn run_once(rl: &mut Readline) -> Result<bool> {
-    match rl.readline() {
+    let line = rl.readline();
+    debug!("Received line: {:?}", line);
+    match line {
         Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
