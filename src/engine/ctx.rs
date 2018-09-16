@@ -1,15 +1,16 @@
 use errors::*;
 
+use engine::isolation::Worker;
 use hlua;
 use runtime;
-use std::sync::{mpsc, Arc, Mutex};
+use std::sync::{Arc, Mutex};
 use worker::Event;
 
 
 #[derive(Debug, Clone)]
 pub struct State {
     error: Arc<Mutex<Option<Error>>>,
-    logger: Arc<Mutex<Option<mpsc::Sender<Event>>>>,
+    logger: Arc<Mutex<Option<Arc<Mutex<Worker>>>>>,
 }
 
 impl State {
@@ -32,20 +33,21 @@ impl State {
         cp.into()
     }
 
-    pub fn set_logger(&self, tx: mpsc::Sender<Event>) {
+    pub fn set_logger(&self, tx: Arc<Mutex<Worker>>) {
         let mut mtx = self.logger.lock().unwrap();
         *mtx = Some(tx);
     }
 
     pub fn info(&self, msg: String) {
         let mtx = self.logger.lock().unwrap();
-        if let Some(tx) = &*mtx {
-            tx.send(Event::Info(msg)).unwrap();
+        if let Some(mtx) = &*mtx {
+            let mut tx = mtx.lock().unwrap();
+            tx.send(&Event::Info(msg)).expect("Failed to write event");
         }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Script {
     code: String,
 }
@@ -96,8 +98,7 @@ impl Script {
         })
     }
 
-    // pub fn run(&self, user: AnyLuaValue, password: AnyLuaValue) -> Result<bool> {
-    pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
+    pub fn run(&self, tx: Arc<Mutex<Worker>>) -> Result<()> {
         let (mut lua, state) = ctx();
 
         debug!("Initializing lua module");

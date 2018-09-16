@@ -1,16 +1,16 @@
 use errors::*;
 
-use engine::Module;
+use engine::{self, Module};
 use std::time::Duration;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 use term::Spinner;
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Info(String),
-    Error(Error),
+    Error(String),
     Done,
 }
 
@@ -20,9 +20,15 @@ pub fn spawn(module: Module) {
     let mut spinner = Spinner::random(format!("Running {}", module.canonical()));
 
     let t = thread::spawn(move || {
+        if let Err(err) = engine::isolation::spawn_module(module, tx.clone()) {
+            tx.send(Event::Error(err.to_string())).unwrap();
+        }
+
+        /*
         if let Err(err) = module.run(tx.clone()) {
             tx.send(Event::Error(err)).unwrap();
         }
+        */
 
         // thread::sleep(Duration::from_secs(3));
         // tx.send(Event::Info("ohai".to_string())).unwrap();

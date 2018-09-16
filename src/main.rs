@@ -10,6 +10,9 @@ extern crate publicsuffix;
 extern crate chrootable_https;
 extern crate url;
 extern crate hlua_badtouch as hlua;
+extern crate serde;
+extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
 #[macro_use] extern crate nom;
 #[macro_use] extern crate structopt;
@@ -41,7 +44,7 @@ use structopt::StructOpt;
 fn run() -> Result<()> {
     let args = Args::from_args();
     match args.subcommand {
-        Some(SubCommand::Sandbox) => unimplemented!(),
+        Some(SubCommand::Sandbox(_)) => engine::isolation::run_worker(),
         None => shell::run(&args),
     }
 }

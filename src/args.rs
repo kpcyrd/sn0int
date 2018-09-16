@@ -16,5 +16,11 @@ pub struct Args {
 pub enum SubCommand {
     #[structopt(author="", name="sandbox")]
     /// For internal use
-    Sandbox,
+    Sandbox(Sandbox),
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Sandbox {
+    /// This value is only used for process listings
+    label: String,
 }

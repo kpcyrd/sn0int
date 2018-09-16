@@ -4,14 +4,16 @@ use std::fs;
 use std::path::PathBuf;
 // use std::collections::{HashSet, HashMap};
 use std::collections::HashMap;
-use std::sync::mpsc;
+use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
+use engine::isolation::Worker;
 use engine::metadata::Metadata;
 use paths;
 use term;
 use worker::{self, Event};
 
 pub mod ctx;
+pub mod isolation;
 pub mod metadata;
 pub mod structs;
 
@@ -114,7 +116,7 @@ impl Engine {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Module {
     name: String,
     author: String,
@@ -159,8 +161,8 @@ impl Module {
         &self.version
     }
 
-    pub fn run(&self, tx: mpsc::Sender<Event>) -> Result<()> {
+    pub fn run(&self, worker: Arc<Mutex<Worker>>) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(tx)
+        self.script.run(worker)
     }
 }
