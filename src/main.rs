@@ -17,6 +17,7 @@ extern crate hlua_badtouch as hlua;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
+pub mod args;
 pub mod cmd;
 pub mod db;
 pub mod errors;
@@ -32,11 +33,23 @@ pub mod worker;
 pub mod psl;
 pub mod utils;
 
+use args::{Args, SubCommand};
+use errors::*;
+use structopt::StructOpt;
+
+
+fn run() -> Result<()> {
+    let args = Args::from_args();
+    match args.subcommand {
+        Some(SubCommand::Sandbox) => unimplemented!(),
+        None => shell::run(&args),
+    }
+}
 
 fn main() {
     env_logger::init();
 
-    if let Err(err) = shell::run() {
+    if let Err(err) = run() {
         eprintln!("Error: {}", err);
         for cause in err.iter_chain().skip(1) {
             eprintln!("Because: {}", cause);

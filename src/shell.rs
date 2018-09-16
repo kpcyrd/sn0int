@@ -1,5 +1,6 @@
 use errors::*;
 
+use args::Args;
 use cmd::*;
 use colored::Colorize;
 use db::Database;
@@ -293,7 +294,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn run() -> Result<()> {
+pub fn run(args: &Args) -> Result<()> {
     print_banner();
 
     // wait("checking tor status");
@@ -301,7 +302,13 @@ pub fn run() -> Result<()> {
     // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
     // wait("updating registry");
 
-    let db = Database::establish("default")?;
+    // TODO: enforce valid characters for workspace name
+    let workspace = match args.workspace {
+        Some(ref workspace) => workspace.as_str(),
+        None => "default",
+    };
+
+    let db = Database::establish(workspace)?;
     let psl = Psl::open_or_download()?;
     let engine = Engine::new()?;
     let mut rl = Readline::new(db, psl, engine);
