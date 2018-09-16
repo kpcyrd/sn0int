@@ -9,6 +9,11 @@ use term::Spinner;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
+    // The dummy event type was introduced due to this:
+    // https://github.com/rust-lang/rust/issues/54267
+    // https://github.com/rust-lang/rust/issues/39364
+    // After this is resolved the code that is sending dummy messages can be deleted
+    Dummy,
     Info(String),
     Error(String),
     Done,
@@ -20,6 +25,8 @@ pub fn spawn(module: Module) {
     let mut spinner = Spinner::random(format!("Running {}", module.canonical()));
 
     let t = thread::spawn(move || {
+        tx.send(Event::Dummy).unwrap();
+
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone()) {
             tx.send(Event::Error(err.to_string())).unwrap();
         }
@@ -38,6 +45,7 @@ pub fn spawn(module: Module) {
 
     loop {
         match rx.recv_timeout(Duration::from_millis(100)) {
+            Ok(Event::Dummy) => (),
             Ok(Event::Info(info)) => spinner.log(&info),
             Ok(Event::Error(error)) => spinner.error(&error.to_string()),
             Ok(Event::Done) => break,
@@ -64,6 +72,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
 
         loop {
             match rx.recv_timeout(Duration::from_millis(100)) {
+                Ok(Event::Dummy) => (),
                 Ok(Event::Info(info)) => spinner.log(&info),
                 Ok(Event::Error(error)) => spinner.error(&error.to_string()),
                 Ok(Event::Done) => break,
