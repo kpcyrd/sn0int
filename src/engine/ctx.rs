@@ -7,20 +7,13 @@ use std::sync::{Arc, Mutex};
 use worker::Event;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct State {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Worker>>>>>,
 }
 
 impl State {
-    pub fn new() -> State {
-        State {
-            error: Arc::new(Mutex::new(None)),
-            logger: Arc::new(Mutex::new(None)),
-        }
-    }
-
     pub fn last_error(&self) -> Option<String> {
         let lock = self.error.lock().unwrap();
         lock.as_ref().map(|err| err.to_string())
@@ -30,7 +23,7 @@ impl State {
         let mut mtx = self.error.lock().unwrap();
         let cp = format_err!("{:?}", err);
         *mtx = Some(err);
-        cp.into()
+        cp
     }
 
     pub fn set_logger(&self, tx: Arc<Mutex<Worker>>) {
@@ -56,7 +49,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
-    let state = Arc::new(State::new());
+    let state = Arc::new(State::default());
 
     // runtime::html_form(&mut lua, state.clone());
     // runtime::html_select(&mut lua, state.clone());

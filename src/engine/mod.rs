@@ -101,7 +101,7 @@ impl Engine {
     // TODO: this should return an iter
     pub fn list(&self) -> Vec<&Module> {
         self.modules.iter()
-            .filter(|(key, _)| key.contains("/"))
+            .filter(|(key, _)| key.contains('/'))
             .flat_map(|(_, v)| v.iter())
             .collect()
     }

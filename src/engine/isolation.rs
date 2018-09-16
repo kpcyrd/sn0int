@@ -56,7 +56,7 @@ impl Supervisor {
         let start = StartCommand::new(module);
         let mut start = serde_json::to_string(&start)?;
         start.push('\n');
-        self.stdin.write(start.as_bytes())?;
+        self.stdin.write_all(start.as_bytes())?;
         Ok(())
     }
 
@@ -108,7 +108,7 @@ impl Worker {
     pub fn send(&mut self, event: &Event) -> Result<()> {
         let mut event = serde_json::to_string(&event)?;
         event.push('\n');
-        self.stdout.write(event.as_bytes())?;
+        self.stdout.write_all(event.as_bytes())?;
         Ok(())
     }
 }

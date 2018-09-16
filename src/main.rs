@@ -22,6 +22,7 @@ extern crate serde_json;
 
 pub mod args;
 pub mod cmd;
+pub mod complete;
 pub mod db;
 pub mod errors;
 pub mod engine;
