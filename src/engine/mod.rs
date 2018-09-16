@@ -100,19 +100,17 @@ impl Engine {
 
     // TODO: this should return an iter
     pub fn list(&self) -> Vec<&Module> {
-        let mut modules = Vec::new();
+        self.modules.iter()
+            .filter(|(key, _)| key.contains("/"))
+            .flat_map(|(_, v)| v.iter())
+            .collect()
+    }
 
-        for (key, values) in &self.modules {
-            if !key.contains("/") {
-                continue;
-            }
-
-            for v in values {
-                modules.push(v);
-            }
-        }
-
-        modules
+    pub fn variants(&self) -> Vec<String> {
+        self.modules.iter()
+            .filter(|(_, values)| values.len() == 1)
+            .map(|(key, _)| key.to_owned())
+            .collect()
     }
 }
 

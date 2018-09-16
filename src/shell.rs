@@ -15,6 +15,7 @@ use rustyline::hint::Hinter;
 use rustyline::{CompletionType, Config, EditMode, Editor};
 use shellwords;
 use std::borrow::Cow::{self, Borrowed, Owned};
+use std::str::FromStr;
 use term;
 use psl::Psl;
 // use std::io;
@@ -77,27 +78,88 @@ impl Command {
     }
 }
 
+impl FromStr for Command {
+    type Err = Error;
 
-pub struct CmdCompleter;
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "add" => Ok(Command::Add),
+            "back" => Ok(Command::Back),
+            "list" => Ok(Command::List),
+            "reload_modules"  => Ok(Command::ReloadModules),
+            "run"  => Ok(Command::Run),
+            "set"  => Ok(Command::Set),
+            "show" => Ok(Command::Show),
+            "switch_db" => Ok(Command::SwitchDb),
+            "update" => Ok(Command::Update),
+            "use"  => Ok(Command::Use),
+            x => bail!("unknown command: {:?}", x),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct CmdCompleter {
+    pub modules: Vec<String>,
+}
 
 impl CmdCompleter {
-
 }
 
 impl Completer for CmdCompleter {
     type Candidate = String;
 
     fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
-        if line.contains(' ') || line.len() != pos {
+        if line.len() != pos {
             return Ok((0, vec![]));
         }
 
-        let results: Vec<String> = Command::list_all().iter()
-            .filter(|x| x.starts_with(line))
-            .map(|x| x.to_string() + " ")
-            .collect();
+        let mut cmd = match shellwords::split(&line) {
+            Ok(cmd) => cmd,
+            Err(_) => return Ok((0, vec![])),
+        };
 
-        Ok((0, results))
+        // if the line ends with space, try to complete a new arg
+        if let Some(last_char) = line.chars().last() {
+            if last_char == ' ' {
+                cmd.push(String::new());
+            }
+        }
+        let args = cmd.len();
+
+        // we are trying to complete the action
+        if args <= 1 {
+            let results: Vec<String> = Command::list_all().iter()
+                .filter(|x| x.starts_with(line))
+                .map(|x| x.to_string() + " ")
+                .collect();
+
+            Ok((0, results))
+        } else {
+            // we can complete arguments for some actions
+            let action = match Command::from_str(&cmd[0]) {
+                Ok(action) => action,
+                Err(_) => return Ok((0, vec![])),
+            };
+
+            match action {
+                Command::Use => {
+                    // we can only complete the 2nd argument
+                    if args != 2 {
+                        Ok((0, vec![]))
+                    } else {
+                        let arg = &cmd[1];
+
+                        let results: Vec<String> = self.modules.iter()
+                            .filter(|x| x.starts_with(arg))
+                            .map(|x| format!("use {} ", x))
+                            .collect();
+                        Ok((0, results))
+                    }
+                },
+                _ => Ok((0, vec![])),
+            }
+        }
     }
 }
 
@@ -149,18 +211,22 @@ impl Readline {
             .build();
         let mut rl: Editor<CmdCompleter> = Editor::with_config(config);
 
-        let h = CmdCompleter;
+        let h = CmdCompleter::default();
         rl.set_helper(Some(h));
 
         let prompt = Prompt::new(db.name().to_string());
 
-        Readline {
+        let mut rl = Readline {
             rl,
             prompt,
             db,
             psl,
             engine,
-        }
+        };
+
+        rl.reload_module_cache();
+
+        rl
     }
 
     pub fn take_module(&mut self) -> Option<Module> {
@@ -215,24 +281,8 @@ impl Readline {
                     return None;
                 }
 
-                let action = match cmd[0].as_str() {
-                    "add" => Some(Command::Add),
-                    "back" => Some(Command::Back),
-                    "list" => Some(Command::List),
-                    "reload_modules"  => Some(Command::ReloadModules),
-                    "run"  => Some(Command::Run),
-                    "set"  => Some(Command::Set),
-                    "show" => Some(Command::Show),
-                    "switch_db" => Some(Command::SwitchDb),
-                    "update" => Some(Command::Update),
-                    "use"  => Some(Command::Use),
-                    x => {
-                        eprintln!("Error: unknown command: {:?}", x);
-                        None
-                    },
-                };
-
-                action.map(|x| (x, cmd))
+                Command::from_str(&cmd[0]).ok()
+                    .map(|x| (x, cmd))
             }
             Err(ReadlineError::Interrupted) => {
                 // ^C
@@ -245,6 +295,15 @@ impl Readline {
             Err(err) => {
                 println!("Error: {:?}", err);
                 Some((Command::Interrupt, vec![]))
+            }
+        }
+    }
+
+    pub fn reload_module_cache(&mut self) {
+        if let Some(helper) = self.rl.helper_mut() {
+            helper.modules.clear();
+            for module in self.engine.variants() {
+                helper.modules.push(module);
             }
         }
     }
