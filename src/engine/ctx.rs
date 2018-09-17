@@ -2,6 +2,7 @@ use errors::*;
 
 use engine::isolation::Worker;
 use hlua;
+use models::Object;
 use runtime;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -50,6 +51,10 @@ impl State {
         self.log(&Event::Status(msg))
     }
 
+    pub fn db_insert(&self, object: Object) {
+        self.log(&Event::Object(object))
+    }
+
     pub fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -83,6 +88,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     lua.open_string();
     let state = Arc::new(State::default());
 
+    runtime::db_add(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());

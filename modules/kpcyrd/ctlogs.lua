@@ -34,7 +34,11 @@ function run()
         end
 
         if seen[name] == nil then
-            info(name)
+            -- info(name)
+            db_add('subdomain', {
+                domain_id=1,
+                value=name,
+            })
             seen[name] = 1
         end
 

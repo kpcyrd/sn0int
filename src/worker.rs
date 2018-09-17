@@ -1,6 +1,8 @@
 use errors::*;
 
 use engine::{self, Module};
+use models::Object;
+use shell::Readline;
 use std::time::Duration;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
@@ -17,10 +19,11 @@ pub enum Event {
     Info(String),
     Error(String),
     Status(String),
+    Object(Object),
     Done,
 }
 
-pub fn spawn(module: Module) {
+pub fn spawn(rl: &mut Readline, module: Module) {
     let (tx, rx) = mpsc::channel();
 
     let name = module.canonical();
@@ -44,6 +47,10 @@ pub fn spawn(module: Module) {
                 break;
             },
             Ok(Event::Status(status)) => spinner.status(status),
+            Ok(Event::Object(object)) => match rl.db().insert_generic(&object) {
+                Ok(_) => spinner.log(&format!("{:?}", object)),
+                Err(err) => spinner.error(&err.to_string()),
+            },
             Ok(Event::Done) => break,
             Err(mpsc::RecvTimeoutError::Timeout) => (),
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -76,6 +83,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                 Ok(Event::Info(info)) => spinner.log(&info),
                 Ok(Event::Error(error)) => spinner.error(&error),
                 Ok(Event::Status(status)) => spinner.status(status),
+                Ok(Event::Object(_)) => (),
                 Ok(Event::Done) => break,
                 Err(mpsc::RecvTimeoutError::Timeout) => (),
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,

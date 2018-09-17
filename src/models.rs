@@ -1,4 +1,14 @@
+use errors::*;
+use json::LuaJsonValue;
+use serde_json;
 use schema::*;
+// use std::convert::AsRef;
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Object {
+    Subdomain(NewSubdomainOwned),
+}
 
 #[derive(Identifiable, Queryable, PartialEq, Debug)]
 #[table_name="domains"]
@@ -13,7 +23,7 @@ pub struct NewDomain<'a> {
     pub value: &'a str,
 }
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
 #[belongs_to(Domain)]
 #[table_name="subdomains"]
 pub struct Subdomain {
@@ -28,6 +38,31 @@ pub struct NewSubdomain<'a> {
     pub domain_id: i32,
     pub value: &'a str,
 }
+
+#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[table_name="subdomains"]
+pub struct NewSubdomainOwned {
+    pub domain_id: i32,
+    pub value: String,
+}
+
+impl NewSubdomainOwned {
+    pub fn from_lua(x: LuaJsonValue) -> Result<NewSubdomainOwned> {
+        let x = serde_json::from_value(x.into())?;
+        Ok(x)
+    }
+}
+
+/*
+impl<'a> AsRef<NewSubdomain<'a>> for NewSubdomainOwned {
+    fn as_ref(&self) -> &NewSubdomain<'a> {
+        NewSubdomain {
+            domain_id: self.domain_id,
+            value: &self.value
+        }
+    }
+}
+*/
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
 #[table_name="ipaddrs"]

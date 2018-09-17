@@ -45,6 +45,15 @@ impl Database {
         &self.db
     }
 
+    pub fn insert_generic(&self, object: &Object) -> Result<()> {
+        match object {
+            Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
+                domain_id: object.domain_id,
+                value: &object.value,
+            }),
+        }
+    }
+
     pub fn insert_domain(&self, domain: &str) -> Result<()> {
         let new_domain = NewDomain {
             value: domain,
@@ -100,8 +109,12 @@ impl Database {
             value: &subdomain,
         };
 
+        self.insert_subdomain_struct(&new_subdomain)
+    }
+
+    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<()> {
         diesel::insert_into(subdomains::table)
-            .values(&new_subdomain)
+            .values(subdomain)
             .execute(&self.db)?;
 
         Ok(())

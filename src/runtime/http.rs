@@ -1,12 +1,10 @@
 use errors::*;
 
 use engine::ctx::State;
-use hlua::{self, AnyLuaValue};
+use hlua::{self, AnyLuaValue, AnyHashableLuaValue};
 use std::sync::Arc;
-use hlua::AnyHashableLuaValue;
 use std::collections::HashMap;
 use web::{RequestOptions, HttpRequest};
-use errors::{Result, Error};
 
 
 pub fn http_mksession(lua: &mut hlua::Lua, state: Arc<State>) {
