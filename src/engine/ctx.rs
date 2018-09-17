@@ -34,12 +34,20 @@ impl State {
         *mtx = Some(tx);
     }
 
-    pub fn info(&self, msg: String) {
+    fn log(&self, msg: &Event) {
         let mtx = self.logger.lock().unwrap();
         if let Some(mtx) = &*mtx {
             let mut tx = mtx.lock().unwrap();
-            tx.send(&Event::Info(msg)).expect("Failed to write event");
+            tx.send(msg).expect("Failed to write event");
         }
+    }
+
+    pub fn info(&self, msg: String) {
+        self.log(&Event::Info(msg))
+    }
+
+    pub fn status(&self, msg: String) {
+        self.log(&Event::Status(msg))
     }
 
     pub fn http_mksession(&self) -> String {
@@ -75,9 +83,8 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     lua.open_string();
     let state = Arc::new(State::default());
 
-    // runtime::html_form(&mut lua, state.clone());
-    // runtime::html_select(&mut lua, state.clone());
-    // runtime::html_select_list(&mut lua, state.clone());
+    runtime::html_select(&mut lua, state.clone());
+    runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
     runtime::http_request(&mut lua, state.clone());
     runtime::http_send(&mut lua, state.clone());
@@ -88,6 +95,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     runtime::last_err(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
+    runtime::status(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
 
@@ -129,7 +137,7 @@ impl Script {
         let mut run: hlua::LuaFunction<_> = run?;
 
         debug!("Starting lua script");
-        let _result: hlua::AnyLuaValue = run.call()
+        let result: hlua::AnyLuaValue = run.call()
             .map_err(|err| format_err!("execution failed: {:?}", err))?;
 
         debug!("Lua script terminated");
@@ -138,15 +146,10 @@ impl Script {
             return Err(err);
         }
 
-        /*
         use hlua::AnyLuaValue::*;
         match result {
-            LuaBoolean(x) => Ok(x),
-            LuaString(x) => Err(format!("error: {:?}", x).into()),
-            x => Err(format!("lua returned wrong type: {:?}", x).into()),
+            LuaString(x) => bail!("Script returned error: {:?}", x),
+            _ => Ok(())
         }
-        */
-
-        Ok(())
     }
 }

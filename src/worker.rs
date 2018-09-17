@@ -16,13 +16,15 @@ pub enum Event {
     Dummy,
     Info(String),
     Error(String),
+    Status(String),
     Done,
 }
 
 pub fn spawn(module: Module) {
     let (tx, rx) = mpsc::channel();
 
-    let mut spinner = Spinner::random(format!("Running {}", module.canonical()));
+    let name = module.canonical();
+    let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {
         tx.send(Event::Dummy).unwrap();
@@ -30,24 +32,18 @@ pub fn spawn(module: Module) {
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone()) {
             tx.send(Event::Error(err.to_string())).unwrap();
         }
-
-        /*
-        if let Err(err) = module.run(tx.clone()) {
-            tx.send(Event::Error(err)).unwrap();
-        }
-        */
-
-        // thread::sleep(Duration::from_secs(3));
-        // tx.send(Event::Info("ohai".to_string())).unwrap();
-        // thread::sleep(Duration::from_secs(1));
-        tx.send(Event::Done).unwrap();
     });
 
+    let mut failed = None;
     loop {
         match rx.recv_timeout(Duration::from_millis(100)) {
             Ok(Event::Dummy) => (),
             Ok(Event::Info(info)) => spinner.log(&info),
-            Ok(Event::Error(error)) => spinner.error(&error.to_string()),
+            Ok(Event::Error(error)) => {
+                failed = Some(error);
+                break;
+            },
+            Ok(Event::Status(status)) => spinner.status(status),
             Ok(Event::Done) => break,
             Err(mpsc::RecvTimeoutError::Timeout) => (),
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
@@ -57,8 +53,12 @@ pub fn spawn(module: Module) {
 
     t.join().expect("thread failed");
 
-    // spinner.clear();
-    spinner.done();
+    if let Some(fail) = failed {
+        spinner.error(&fail);
+        spinner.clear();
+    } else {
+        spinner.finish(format!("Finished {}", name));
+    }
 }
 
 pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
@@ -74,7 +74,8 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
             match rx.recv_timeout(Duration::from_millis(100)) {
                 Ok(Event::Dummy) => (),
                 Ok(Event::Info(info)) => spinner.log(&info),
-                Ok(Event::Error(error)) => spinner.error(&error.to_string()),
+                Ok(Event::Error(error)) => spinner.error(&error),
+                Ok(Event::Status(status)) => spinner.status(status),
                 Ok(Event::Done) => break,
                 Err(mpsc::RecvTimeoutError::Timeout) => (),
                 Err(mpsc::RecvTimeoutError::Disconnected) => break,

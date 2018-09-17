@@ -36,6 +36,10 @@ impl Spinner {
         }
     }
 
+    pub fn status(&mut self, task: String) {
+        self.task = task;
+    }
+
     pub fn random(task: String) -> Spinner {
         let indicator = thread_rng().choose(SPINNERS).unwrap();
         Spinner::new(indicator, task)
@@ -53,7 +57,7 @@ impl Spinner {
     }
 
     pub fn log(&self, line: &str) {
-        println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
     }
 
     pub fn error(&self, line: &str) {
@@ -64,13 +68,26 @@ impl Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", '+', self.task);
     }
 
+    pub fn finish(&mut self, task: String) {
+        self.status(task);
+        self.done();
+    }
+
     pub fn clear(&self) {
         print!("\r\x1b[2K");
     }
 }
 
+pub fn success(line: &str) {
+    println!("\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
+}
+
 pub fn info(line: &str) {
     println!("\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+}
+
+pub fn warn(line: &str) {
+    eprintln!("\x1b[1m[\x1b[33m{}\x1b[0;1m]\x1b[0m {}", '!', line);
 }
 
 pub fn error(line: &str) {

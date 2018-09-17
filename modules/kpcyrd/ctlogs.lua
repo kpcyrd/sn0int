@@ -14,6 +14,7 @@ function run()
 
     resp = http_send(req)
     if last_err() then return end
+    if resp['status'] ~= 200 then return 'http error' end
 
     certs = json_decode_stream(resp['text'])
     if last_err() then return end
@@ -26,6 +27,12 @@ function run()
         -- print(c)
 
         name = c['name_value']
+
+        if name:find("*.") == 1 then
+            -- ignore wildcard domains
+            seen[name] = 1
+        end
+
         if seen[name] == nil then
             info(name)
             seen[name] = 1

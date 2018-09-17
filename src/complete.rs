@@ -67,6 +67,23 @@ impl Completer for CmdCompleter {
                         Ok((0, results))
                     }
                 },
+                Command::Show => {
+                    // we can only complete the 2nd argument
+                    if args != 2 {
+                        Ok((0, vec![]))
+                    } else {
+                        let arg = &cmd[1];
+
+                        let options = &["domains",
+                                        "subdomains"];
+
+                        let results: Vec<String> = options.iter()
+                            .filter(|x| x.starts_with(arg))
+                            .map(|x| format!("show {} ", x))
+                            .collect();
+                        Ok((0, results))
+                    }
+                },
                 _ => Ok((0, vec![])),
             }
         }

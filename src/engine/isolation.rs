@@ -120,6 +120,10 @@ pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>) -> Result<()> {
     loop {
         match supervisor.recv()? {
             Event::Done => break,
+            Event::Error(err) => {
+                tx.send(Event::Error(err)).unwrap();
+                break;
+            },
             event => tx.send(event).unwrap(),
         }
     }
@@ -140,9 +144,9 @@ pub fn run_worker() -> Result<()> {
 
     if let Err(err) = result {
         worker.send(&Event::Error(err.to_string()))?;
+    } else {
+        worker.send(&Event::Done)?;
     }
-
-    worker.send(&Event::Done)?;
 
     Ok(())
 }

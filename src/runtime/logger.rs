@@ -8,3 +8,9 @@ pub fn info(lua: &mut hlua::Lua, state: Arc<State>) {
         state.info(msg);
     }))
 }
+
+pub fn status(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("status", hlua::function1(move |msg: String| {
+        state.status(msg);
+    }))
+}
