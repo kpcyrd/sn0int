@@ -161,7 +161,7 @@ impl Readline {
         match readline {
             Ok(ref line) if line.is_empty() => None,
             Ok(line) => {
-                self.rl.add_history_entry(line.as_ref());
+                self.rl.add_history_entry(line.as_str());
 
                 let cmd = match shellwords::split(&line) {
                     Ok(cmd) => cmd,
