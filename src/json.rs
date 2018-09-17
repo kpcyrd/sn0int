@@ -3,7 +3,7 @@ use errors::*;
 use std::iter::FromIterator;
 use std::collections::HashMap;
 use hlua::AnyLuaValue;
-use serde_json::{self, Value, Number, Map};
+use serde_json::{self, Deserializer, Value, Number, Map};
 
 
 pub fn decode(x: &str) -> Result<AnyLuaValue> {
@@ -19,6 +19,17 @@ pub fn encode(v: AnyLuaValue) -> Result<String> {
     let s = serde_json::to_string(&v)
         .context("serialize failed")?;
     Ok(s)
+}
+
+pub fn decode_stream(x: &str) -> Result<Vec<AnyLuaValue>> {
+    let stream = Deserializer::from_str(&x).into_iter::<Value>();
+
+    let list = stream
+        .filter_map(|x| x.ok())
+        .map(|x| LuaJsonValue::from(x).into())
+        .collect();
+
+    Ok(list)
 }
 
 pub fn lua_array_is_list(array: &[(AnyLuaValue, AnyLuaValue)]) -> bool {

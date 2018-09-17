@@ -84,6 +84,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     runtime::info(&mut lua, state.clone());
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());
+    runtime::json_decode_stream(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
