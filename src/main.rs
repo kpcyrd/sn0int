@@ -26,6 +26,7 @@ pub mod complete;
 pub mod db;
 pub mod errors;
 pub mod engine;
+pub mod json;
 pub mod migrations;
 pub mod models;
 pub mod paths;

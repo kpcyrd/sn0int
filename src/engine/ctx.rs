@@ -58,9 +58,9 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     // runtime::http_request(&mut lua, state.clone());
     // runtime::http_send(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
-    // runtime::json_decode(&mut lua, state.clone());
-    // runtime::json_encode(&mut lua, state.clone());
-    // runtime::last_err(&mut lua, state.clone());
+    runtime::json_decode(&mut lua, state.clone());
+    runtime::json_encode(&mut lua, state.clone());
+    runtime::last_err(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
