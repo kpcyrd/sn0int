@@ -39,6 +39,6 @@ pub fn print(lua: &mut hlua::Lua, _: Arc<State>) {
         // println!("{:?}", val);
         let mut out = String::new();
         format_lua(&mut out, &val);
-        println!("{}", out);
+        eprintln!("{}", out);
     }))
 }
