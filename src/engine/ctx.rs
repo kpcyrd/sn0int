@@ -3,7 +3,9 @@ use errors::*;
 use engine::isolation::Worker;
 use hlua;
 use runtime;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::Event;
 
 
@@ -11,6 +13,7 @@ use worker::Event;
 pub struct State {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Worker>>>>>,
+    http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
 }
 
 impl State {
@@ -38,6 +41,27 @@ impl State {
             tx.send(&Event::Info(msg)).expect("Failed to write event");
         }
     }
+
+    pub fn http_mksession(&self) -> String {
+        let mut mtx = self.http_sessions.lock().unwrap();
+        let (id, session) = HttpSession::new();
+        mtx.insert(id.clone(), session);
+        id
+    }
+
+    pub fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
+        let mtx = self.http_sessions.lock().unwrap();
+        let session = mtx.get(session_id).expect("invalid session reference"); // TODO
+
+        HttpRequest::new(&session, method, url, options)
+    }
+
+    pub fn register_in_jar(&self, session: &str, key: String, value: String) {
+        let mut mtx = self.http_sessions.lock().unwrap();
+        if let Some(session) = mtx.get_mut(session) {
+            session.cookies.register_in_jar(key, value);
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,9 +78,9 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     // runtime::html_form(&mut lua, state.clone());
     // runtime::html_select(&mut lua, state.clone());
     // runtime::html_select_list(&mut lua, state.clone());
-    // runtime::http_mksession(&mut lua, state.clone());
-    // runtime::http_request(&mut lua, state.clone());
-    // runtime::http_send(&mut lua, state.clone());
+    runtime::http_mksession(&mut lua, state.clone());
+    runtime::http_request(&mut lua, state.clone());
+    runtime::http_send(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());

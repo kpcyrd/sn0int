@@ -6,6 +6,7 @@ macro_rules! import_fns {
 }
 
 import_fns!(error);
+import_fns!(http);
 import_fns!(json);
 import_fns!(logger);
 import_fns!(print);
