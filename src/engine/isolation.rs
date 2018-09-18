@@ -12,12 +12,14 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
     module: Module,
+    arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(module: Module) -> StartCommand {
+    pub fn new(module: Module, arg: serde_json::Value) -> StartCommand {
         StartCommand {
             module,
+            arg
         }
     }
 }
@@ -52,8 +54,8 @@ impl Supervisor {
         })
     }
 
-    pub fn send_start(&mut self, module: Module) -> Result<()> {
-        let start = StartCommand::new(module);
+    pub fn send_start(&mut self, module: Module, arg: serde_json::Value) -> Result<()> {
+        let start = StartCommand::new(module, arg);
         let mut start = serde_json::to_string(&start)?;
         start.push('\n');
         self.stdin.write_all(start.as_bytes())?;
@@ -113,9 +115,9 @@ impl Worker {
     }
 }
 
-pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>) -> Result<()> {
+pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>, arg: serde_json::Value) -> Result<()> {
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(module)?;
+    supervisor.send_start(module, arg)?;
 
     loop {
         match supervisor.recv()? {
@@ -138,7 +140,7 @@ pub fn run_worker() -> Result<()> {
     let start = worker.recv_start()?;
 
     let mtx = Arc::new(Mutex::new(worker));
-    let result = start.module.run(mtx.clone());
+    let result = start.module.run(mtx.clone(), start.arg.into());
     let mut worker = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 

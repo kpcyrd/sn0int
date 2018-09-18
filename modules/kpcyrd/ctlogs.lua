@@ -1,13 +1,14 @@
 -- Description: Query certificate transparency logs to discover subdomains
 -- Version: 0.1.0
+-- Argument: domains
 
-function run()
+function run(arg)
     session = http_mksession()
 
     -- TODO: example.com needs to be dynamic
     req = http_request(session, 'GET', 'https://crt.sh/', {
         query={
-            q='%.' .. 'example.com',
+            q='%.' .. arg['value'],
             output='json'
         }
     })
@@ -36,7 +37,7 @@ function run()
         if seen[name] == nil then
             -- info(name)
             db_add('subdomain', {
-                domain_id=1,
+                domain_id=arg['id'],
                 value=name,
             })
             seen[name] = 1

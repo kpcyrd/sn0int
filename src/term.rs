@@ -68,13 +68,18 @@ impl Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", '+', self.task);
     }
 
-    pub fn finish(&mut self, task: String) {
-        self.status(task);
+    pub fn finish(&mut self, msg: String) {
+        self.status(msg);
         self.done();
     }
 
     pub fn clear(&self) {
         print!("\r\x1b[2K");
+    }
+
+    pub fn fail(&self, err: &str) {
+        self.error(err);
+        self.clear();
     }
 }
 

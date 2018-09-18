@@ -1,5 +1,6 @@
 -- Description: Reproduce a rust stdlib panic
 -- Version: 0.1.0
+-- Argument: domains
 
 function run()
     --[[

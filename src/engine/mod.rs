@@ -1,5 +1,6 @@
 use errors::*;
 
+use json::LuaJsonValue;
 use std::fs;
 use std::path::PathBuf;
 // use std::collections::{HashSet, HashMap};
@@ -7,7 +8,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
 use engine::isolation::Worker;
-use engine::metadata::Metadata;
+use engine::metadata::{Metadata, Argument};
 use paths;
 use term;
 use worker::{self, Event};
@@ -120,6 +121,7 @@ pub struct Module {
     author: String,
     description: String,
     version: String,
+    argument: Argument,
     script: Script,
 }
 
@@ -139,6 +141,7 @@ impl Module {
             author: author.to_string(),
             description: metadata.description,
             version: metadata.version,
+            argument: metadata.argument,
             script,
         })
     }
@@ -159,8 +162,12 @@ impl Module {
         &self.version
     }
 
-    pub fn run(&self, worker: Arc<Mutex<Worker>>) -> Result<()> {
+    pub fn argument(&self) -> &Argument {
+        &self.argument
+    }
+
+    pub fn run(&self, worker: Arc<Mutex<Worker>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(worker)
+        self.script.run(worker, arg.into())
     }
 }

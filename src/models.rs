@@ -10,7 +10,7 @@ pub enum Object {
     Subdomain(NewSubdomainOwned),
 }
 
-#[derive(Identifiable, Queryable, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Serialize, PartialEq, Debug)]
 #[table_name="domains"]
 pub struct Domain {
     pub id: i32,
@@ -52,17 +52,6 @@ impl NewSubdomainOwned {
         Ok(x)
     }
 }
-
-/*
-impl<'a> AsRef<NewSubdomain<'a>> for NewSubdomainOwned {
-    fn as_ref(&self) -> &NewSubdomain<'a> {
-        NewSubdomain {
-            domain_id: self.domain_id,
-            value: &self.value
-        }
-    }
-}
-*/
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
 #[table_name="ipaddrs"]

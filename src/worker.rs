@@ -2,6 +2,7 @@ use errors::*;
 
 use engine::{self, Module};
 use models::Object;
+use serde_json;
 use shell::Readline;
 use std::time::Duration;
 use std::sync::{mpsc, Arc, Mutex};
@@ -23,16 +24,17 @@ pub enum Event {
     Done,
 }
 
-pub fn spawn(rl: &mut Readline, module: Module) {
+pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value) {
     let (tx, rx) = mpsc::channel();
 
-    let name = module.canonical();
+    // TODO: pretty print the argument
+    let name = format!("{} ({:?})", module.canonical(), arg);
     let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {
         tx.send(Event::Dummy).unwrap();
 
-        if let Err(err) = engine::isolation::spawn_module(module, tx.clone()) {
+        if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
             tx.send(Event::Error(err.to_string())).unwrap();
         }
     });
@@ -62,8 +64,7 @@ pub fn spawn(rl: &mut Readline, module: Module) {
     t.join().expect("thread failed");
 
     if let Some(fail) = failed {
-        spinner.error(&fail);
-        spinner.clear();
+        spinner.fail(&format!("Failed {}: {}", name, fail));
     } else {
         spinner.finish(format!("Finished {}", name));
     }

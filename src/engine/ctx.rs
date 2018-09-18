@@ -1,7 +1,7 @@
 use errors::*;
 
 use engine::isolation::Worker;
-use hlua;
+use hlua::{self, AnyLuaValue};
 use models::Object;
 use runtime;
 use std::collections::HashMap;
@@ -130,7 +130,7 @@ impl Script {
         })
     }
 
-    pub fn run(&self, tx: Arc<Mutex<Worker>>) -> Result<()> {
+    pub fn run(&self, tx: Arc<Mutex<Worker>>, arg: AnyLuaValue) -> Result<()> {
         let (mut lua, state) = ctx();
 
         debug!("Initializing lua module");
@@ -143,7 +143,7 @@ impl Script {
         let mut run: hlua::LuaFunction<_> = run?;
 
         debug!("Starting lua script");
-        let result: hlua::AnyLuaValue = run.call()
+        let result: hlua::AnyLuaValue = run.call_with_args(arg)
             .map_err(|err| format_err!("execution failed: {:?}", err))?;
 
         debug!("Lua script terminated");
