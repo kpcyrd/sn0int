@@ -2,7 +2,7 @@
 -- Version: 0.1.0
 -- Argument: subdomains
 
-function run()
+function run(arg)
     info("yey from dns")
-    sleep(10)
+    sleep(1)
 end

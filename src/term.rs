@@ -23,26 +23,26 @@ static SPINNERS: &[&[&str]] = &[
 
 pub struct Spinner {
     indicator: &'static [&'static str],
-    task: String,
+    status: String,
     i: usize,
 }
 
 impl Spinner {
-    pub fn new(indicator: &'static [&'static str], task: String) -> Spinner {
+    pub fn new(indicator: &'static [&'static str], status: String) -> Spinner {
         Spinner {
             indicator,
-            task,
+            status,
             i: 0,
         }
     }
 
-    pub fn status(&mut self, task: String) {
-        self.task = task;
+    pub fn status(&mut self, status: String) {
+        self.status = status;
     }
 
-    pub fn random(task: String) -> Spinner {
+    pub fn random(status: String) -> Spinner {
         let indicator = thread_rng().choose(SPINNERS).unwrap();
-        Spinner::new(indicator, task)
+        Spinner::new(indicator, status)
     }
 
     pub fn tick(&mut self) {
@@ -50,7 +50,7 @@ impl Spinner {
             self.i = 0;
         }
 
-        print!("\r\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.task);
+        print!("\r\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.status);
         io::stdout().flush().unwrap();
 
         self.i += 1;
@@ -65,7 +65,7 @@ impl Spinner {
     }
 
     pub fn done(&self) {
-        println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", '+', self.task);
+        println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', self.status);
     }
 
     pub fn finish(&mut self, msg: String) {

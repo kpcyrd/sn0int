@@ -24,11 +24,10 @@ pub enum Event {
     Done,
 }
 
-pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value) {
+pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &str) {
     let (tx, rx) = mpsc::channel();
 
-    // TODO: pretty print the argument
-    let name = format!("{} ({:?})", module.canonical(), arg);
+    let name = format!("{} ({:?})", module.canonical(), pretty_arg);
     let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {
@@ -50,7 +49,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value) {
             },
             Ok(Event::Status(status)) => spinner.status(status),
             Ok(Event::Object(object)) => match rl.db().insert_generic(&object) {
-                Ok(true) => spinner.log(&format!("{:?}", object)),
+                Ok(true) => spinner.log(&format!("{}", object)),
                 Ok(false) => (),
                 Err(err) => spinner.error(&err.to_string()),
             },

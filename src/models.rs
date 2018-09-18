@@ -1,5 +1,6 @@
 use errors::*;
 use json::LuaJsonValue;
+use std::fmt;
 use serde_json;
 use schema::*;
 // use std::convert::AsRef;
@@ -10,11 +11,25 @@ pub enum Object {
     Subdomain(NewSubdomainOwned),
 }
 
+impl fmt::Display for Object {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Object::Subdomain(x) => write!(f, "Subdomain: {:?}", x.value),
+        }
+    }
+}
+
 #[derive(Identifiable, Queryable, Serialize, PartialEq, Debug)]
 #[table_name="domains"]
 pub struct Domain {
     pub id: i32,
     pub value: String,
+}
+
+impl fmt::Display for Domain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 #[derive(Insertable)]
@@ -30,6 +45,12 @@ pub struct Subdomain {
     pub id: i32,
     pub domain_id: i32,
     pub value: String,
+}
+
+impl fmt::Display for Subdomain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 #[derive(Insertable)]
