@@ -48,7 +48,8 @@ pub fn spawn(rl: &mut Readline, module: Module) {
             },
             Ok(Event::Status(status)) => spinner.status(status),
             Ok(Event::Object(object)) => match rl.db().insert_generic(&object) {
-                Ok(_) => spinner.log(&format!("{:?}", object)),
+                Ok(true) => spinner.log(&format!("{:?}", object)),
+                Ok(false) => (),
                 Err(err) => spinner.error(&err.to_string()),
             },
             Ok(Event::Done) => break,

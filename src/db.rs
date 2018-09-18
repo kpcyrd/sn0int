@@ -45,7 +45,8 @@ impl Database {
         &self.db
     }
 
-    pub fn insert_generic(&self, object: &Object) -> Result<()> {
+    /// Returns true if we didn't have this value yet
+    pub fn insert_generic(&self, object: &Object) -> Result<bool> {
         match object {
             Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
                 domain_id: object.domain_id,
@@ -95,7 +96,8 @@ impl Database {
         Ok(domain_id)
     }
 
-    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<()> {
+    /// Returns true if we didn't have this value yet
+    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<bool> {
         let domain_id = match self.domain_optional(domain)? {
             Some(domain_id) => domain_id,
             None => {
@@ -112,12 +114,19 @@ impl Database {
         self.insert_subdomain_struct(&new_subdomain)
     }
 
-    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<()> {
-        diesel::insert_into(subdomains::table)
-            .values(subdomain)
-            .execute(&self.db)?;
+    /// Returns true if we didn't have this value yet
+    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<bool> {
+        // upsert is not supported by diesel
 
-        Ok(())
+        if let Some(_subdomain_id) = self.select_subdomain_optional(subdomain.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok(false)
+        } else {
+            diesel::insert_into(subdomains::table)
+                .values(subdomain)
+                .execute(&self.db)?;
+            Ok(true)
+        }
     }
 
     pub fn list_subdomains(&self) -> Result<Vec<Subdomain>> {
@@ -126,5 +135,16 @@ impl Database {
         let results = subdomains.load::<Subdomain>(&self.db)?;
 
         Ok(results)
+    }
+
+    pub fn select_subdomain_optional(&self, subdomain: &str) -> Result<Option<i32>> {
+        use schema::subdomains::dsl::*;
+
+        let subdomain_id = subdomains.filter(value.eq(&subdomain))
+            .select(id)
+            .first::<i32>(&self.db)
+            .optional()?;
+
+        Ok(subdomain_id)
     }
 }
