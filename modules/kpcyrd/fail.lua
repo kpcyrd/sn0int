@@ -3,5 +3,5 @@
 -- Argument: domains
 
 function run()
-    return "This is an error"
+    return "This is an error: " .. 123
 end

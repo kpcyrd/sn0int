@@ -15,7 +15,7 @@ function run(arg)
 
     resp = http_send(req)
     if last_err() then return end
-    if resp['status'] ~= 200 then return 'http error' end
+    if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
 
     certs = json_decode_stream(resp['text'])
     if last_err() then return end
