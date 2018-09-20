@@ -20,6 +20,9 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
             "ipaddr" => {
                 Object::IpAddr(NewIpAddrOwned::from_lua(object)?)
             },
+            "subdomain-ipaddr" => {
+                Object::SubdomainIpAddr(NewSubdomainIpAddr::from_lua(object)?)
+            },
             _ => return Err(state.set_error(format_err!("Unknown object family"))),
         };
 

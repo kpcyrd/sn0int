@@ -25,7 +25,12 @@ function run(arg)
                 family='4',
                 value=r['A'],
             })
-            -- TOOD: link
+            --[[
+            TODO: need ipaddr_id
+            db_add('subdomain-ipaddr', {
+
+            })
+            ]]--
         end
         i = i+1
     end

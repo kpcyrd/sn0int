@@ -58,6 +58,10 @@ impl Database {
                 family: &object.family,
                 value: &object.value,
             }),
+            Object::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
+                subdomain_id: object.subdomain_id,
+                ip_addr_id: object.ip_addr_id,
+            }),
         }
     }
 
@@ -222,6 +226,36 @@ impl Database {
             .optional()?;
 
         Ok(ipaddr_id)
+    }
+
+    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<bool> {
+        self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
+            subdomain_id,
+            ip_addr_id,
+        })
+    }
+
+    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<bool> {
+        if let Some(_subdomain_ipaddr_id) = self.select_subdomain_ipaddr_optional(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id)? {
+            Ok(false)
+        } else {
+            diesel::insert_into(subdomain_ipaddrs::table)
+                .values(subdomain_ipaddr)
+                .execute(&self.db)?;
+            Ok(true)
+        }
+    }
+
+    pub fn select_subdomain_ipaddr_optional(&self, my_subdomain_id: i32, my_ip_addr_id: i32) -> Result<Option<i32>> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        let subdomain_ipaddr_id = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
+                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
+                                                   .select(id)
+                                                   .first::<i32>(&self.db)
+                                                   .optional()?;
+
+        Ok(subdomain_ipaddr_id)
     }
 }
 
