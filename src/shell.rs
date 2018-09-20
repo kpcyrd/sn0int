@@ -24,7 +24,7 @@ pub enum Command {
     ReloadModules,
     Run,
     Set,
-    Show,
+    Select,
     SwitchDb,
     Update,
     Use,
@@ -41,7 +41,7 @@ impl Command {
             Command::ReloadModules => "reload_modules",
             Command::Run => "run",
             Command::Set => "set",
-            Command::Show => "show",
+            Command::Select => "select",
             Command::SwitchDb => "switch_db",
             Command::Update => "update",
             Command::Use => "use",
@@ -58,7 +58,7 @@ impl Command {
                 Command::ReloadModules.as_str(),
                 Command::Run.as_str(),
                 Command::Set.as_str(),
-                Command::Show.as_str(),
+                Command::Select.as_str(),
                 Command::SwitchDb.as_str(),
                 Command::Update.as_str(),
                 Command::Use.as_str(),
@@ -80,7 +80,7 @@ impl FromStr for Command {
             "reload_modules"  => Ok(Command::ReloadModules),
             "run"  => Ok(Command::Run),
             "set"  => Ok(Command::Set),
-            "show" => Ok(Command::Show),
+            "select" => Ok(Command::Select),
             "switch_db" => Ok(Command::SwitchDb),
             "update" => Ok(Command::Update),
             "use"  => Ok(Command::Use),
@@ -232,7 +232,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         // TODO: if module is some, show module settings
         // TODO: set jobs 25
         Some((Command::Set, _args)) => println!("set"),
-        Some((Command::Show, args)) => show_cmd::run(rl, &args)?,
+        Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
         Some((Command::SwitchDb, args)) => switch_db_cmd::run(rl, &args)?,
         Some((Command::Update, _args)) => {
             // TODO

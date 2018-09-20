@@ -1,6 +1,8 @@
 use errors::*;
 
 use diesel;
+use diesel::expression::sql_literal::sql;
+use diesel::sql_types::Bool;
 use diesel::prelude::*;
 use models::*;
 use schema::*;
@@ -75,6 +77,15 @@ impl Database {
         Ok(results)
     }
 
+    pub fn filter_domains(&self, filter: &Filter) -> Result<Vec<Domain>> {
+        use schema::domains::dsl::*;
+
+        let query = domains.filter(sql::<Bool>(filter.query()));
+        let results = query.load::<Domain>(&self.db)?;
+
+        Ok(results)
+    }
+
     pub fn domain(&self, domain: &str) -> Result<i32> {
         use schema::domains::dsl::*;
 
@@ -137,6 +148,15 @@ impl Database {
         Ok(results)
     }
 
+    pub fn filter_subdomains(&self, filter: &Filter) -> Result<Vec<Subdomain>> {
+        use schema::subdomains::dsl::*;
+
+        let query = subdomains.filter(sql::<Bool>(filter.query()));
+        let results = query.load::<Subdomain>(&self.db)?;
+
+        Ok(results)
+    }
+
     pub fn select_subdomain_optional(&self, subdomain: &str) -> Result<Option<i32>> {
         use schema::subdomains::dsl::*;
 
@@ -146,5 +166,120 @@ impl Database {
             .optional()?;
 
         Ok(subdomain_id)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct Filter {
+    query: String,
+}
+
+impl Filter {
+    pub fn new<I: Into<String>>(query: I) -> Filter {
+        Filter {
+            query: query.into(),
+        }
+    }
+
+    pub fn parse(mut args: &[String]) -> Result<Filter> {
+        debug!("Parsing query: {:?}", args);
+
+        if args.is_empty() {
+            return Ok(Filter::new("1"));
+        }
+
+        if args[0].to_lowercase() == "where" {
+            args = &args[1..];
+        } else {
+            bail!("Filter must begin with WHERE");
+        }
+
+        let mut query = String::new();
+
+        let mut expect_value = false;
+
+        for arg in args {
+            if let Some(idx) = arg.find("=") {
+                if idx != 0 {
+                    let (key, value) = arg.split_at(idx);
+                    query += &format!(" {} = {:?}", key, &value[1..]);
+                    continue;
+                }
+            }
+
+            if expect_value {
+                query += &format!(" {:?}", arg);
+                expect_value = false;
+            } else {
+                if ["=", "!=", "like"].contains(&arg.to_lowercase().as_str()) {
+                    expect_value = true;
+                }
+
+                query += &format!(" {}", arg);
+            }
+        }
+        debug!("Parsed query: {:?}", query);
+
+        Ok(Filter::new(query))
+    }
+
+    pub fn query(&self) -> &str {
+        &self.query
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_simple() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value=1".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = \"1\""));
+    }
+
+    #[test]
+    fn test_filter_str1() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value=abc".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = \"abc\""));
+    }
+
+    #[test]
+    fn test_filter_str2() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "=".to_string(),
+                                     "asdf".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = \"asdf\""));
+    }
+
+    #[test]
+    fn test_filter_and() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "=".to_string(),
+                                     "foobar".to_string(),
+                                     "and".to_string(),
+                                     "id".to_string(),
+                                     "=".to_string(),
+                                     "1".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = \"foobar\" and id = \"1\""));
+    }
+
+    #[test]
+    fn test_filter_like() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "like".to_string(),
+                                     "%foobar".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value like \"%foobar\""));
     }
 }

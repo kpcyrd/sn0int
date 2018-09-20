@@ -3,6 +3,24 @@
 -- Argument: subdomains
 
 function run(arg)
-    x = dns(arg['value'], 'A')
-    info(json_encode(x))
+    records = dns(arg['value'], 'A')
+    if last_err() then return end
+
+    if records['success'] == nil then
+        -- TODO: consider marking the subdomain is inaccessible
+        return
+    end
+
+    records = records['success']
+
+    -- there is a bug in struct -> lua that causes tables to be zero indexed
+    -- this checks if there's something at index 0 but uses index 1 if this is fixed
+    i = 0
+    if records[i] == nil then i = 1 end
+
+    while records[i] ~= nil do
+        r = records[i]
+        info(json_encode(r))
+        i = i+1
+    end
 end
