@@ -9,12 +9,14 @@ use schema::*;
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Object {
     Subdomain(NewSubdomainOwned),
+    IpAddr(NewIpAddrOwned),
 }
 
 impl fmt::Display for Object {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Object::Subdomain(x) => write!(f, "Subdomain: {:?}", x.value),
+            Object::IpAddr(x) => write!(f, "IpAddr: {:?}", x.value),
         }
     }
 }
@@ -78,6 +80,29 @@ impl NewSubdomainOwned {
 #[table_name="ipaddrs"]
 pub struct IpAddr {
     pub id: i32,
+    pub family: String,
+    pub value: String,
+}
+
+#[derive(Insertable)]
+#[table_name="ipaddrs"]
+pub struct NewIpAddr<'a> {
+    pub family: &'a str,
+    pub value: &'a str,
+}
+
+#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[table_name="ipaddrs"]
+pub struct NewIpAddrOwned {
+    pub family: String,
+    pub value: String,
+}
+
+impl NewIpAddrOwned {
+    pub fn from_lua(x: LuaJsonValue) -> Result<NewIpAddrOwned> {
+        let x = serde_json::from_value(x.into())?;
+        Ok(x)
+    }
 }
 
 #[derive(Identifiable, Queryable, Associations)]

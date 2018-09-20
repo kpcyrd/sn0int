@@ -20,7 +20,13 @@ function run(arg)
 
     while records[i] ~= nil do
         r = records[i]
-        info(json_encode(r))
+        if r['A'] ~= nil then
+            db_add('ipaddr', {
+                family='4',
+                value=r['A'],
+            })
+            -- TOOD: link
+        end
         i = i+1
     end
 end

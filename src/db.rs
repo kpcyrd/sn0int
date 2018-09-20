@@ -54,6 +54,10 @@ impl Database {
                 domain_id: object.domain_id,
                 value: &object.value,
             }),
+            Object::IpAddr(object) => self.insert_ipaddr_struct(&NewIpAddr {
+                family: &object.family,
+                value: &object.value,
+            }),
         }
     }
 
@@ -166,6 +170,58 @@ impl Database {
             .optional()?;
 
         Ok(subdomain_id)
+    }
+
+    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<bool> {
+        // TODO: maybe check if valid
+        let new_ipaddr = NewIpAddr {
+            family: &family,
+            value: &ipaddr,
+        };
+
+        self.insert_ipaddr_struct(&new_ipaddr)
+    }
+
+    pub fn insert_ipaddr_struct(&self, ipaddr: &NewIpAddr) -> Result<bool> {
+        // upsert is not supported by diesel
+
+        if let Some(_ipaddr_id) = self.select_ipaddr_optional(ipaddr.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok(false)
+        } else {
+            diesel::insert_into(ipaddrs::table)
+                .values(ipaddr)
+                .execute(&self.db)?;
+            Ok(true)
+        }
+    }
+
+    pub fn list_ipaddrs(&self) -> Result<Vec<IpAddr>> {
+        use schema::ipaddrs::dsl::*;
+
+        let results = ipaddrs.load::<IpAddr>(&self.db)?;
+
+        Ok(results)
+    }
+
+    pub fn filter_ipaddrs(&self, filter: &Filter) -> Result<Vec<IpAddr>> {
+        use schema::ipaddrs::dsl::*;
+
+        let query = ipaddrs.filter(sql::<Bool>(filter.query()));
+        let results = query.load::<IpAddr>(&self.db)?;
+
+        Ok(results)
+    }
+
+    pub fn select_ipaddr_optional(&self, ipaddr: &str) -> Result<Option<i32>> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr_id = ipaddrs.filter(value.eq(&ipaddr))
+            .select(id)
+            .first::<i32>(&self.db)
+            .optional()?;
+
+        Ok(ipaddr_id)
     }
 }
 
