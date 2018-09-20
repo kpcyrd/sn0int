@@ -3,6 +3,6 @@
 -- Argument: subdomains
 
 function run(arg)
-    info("yey from dns")
-    sleep(1)
+    x = dns(arg['value'], 'A')
+    info(json_encode(x))
 end

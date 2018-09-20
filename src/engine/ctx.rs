@@ -89,6 +89,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
     let state = Arc::new(State::default());
 
     runtime::db_add(&mut lua, state.clone());
+    runtime::dns(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());

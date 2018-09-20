@@ -1,10 +1,6 @@
 use errors::*;
 use engine::ctx::State;
 use engine::structs::LuaMap;
-/*
-use dns::DnsResolver;
-use web::HttpClient;
-*/
 use hlua::{self, AnyLuaValue};
 use url::Url;
 use std::sync::Arc;
