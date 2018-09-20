@@ -32,7 +32,7 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
             Err(err) => return Err(state.set_error(Error::from(err))),
         };
 
-        req.send(&state)
+        req.send(state.as_ref())
             .map_err(|err| state.set_error(err))
             .map(|resp| resp.into())
     }))

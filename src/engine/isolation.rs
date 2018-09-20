@@ -1,5 +1,5 @@
 use errors::*;
-use engine::{Module, Event};
+use engine::{Module, Event, Reporter};
 use serde_json;
 
 use std::env;
@@ -83,17 +83,17 @@ impl Supervisor {
 }
 
 #[derive(Debug)]
-pub struct Worker {
+pub struct StdioReporter {
     stdin: Stdin,
     stdout: Stdout,
 }
 
-impl Worker {
-    pub fn setup() -> Worker {
+impl StdioReporter {
+    pub fn setup() -> StdioReporter {
         let stdin = io::stdin();
         let stdout = io::stdout();
 
-        Worker {
+        StdioReporter {
             stdin,
             stdout,
         }
@@ -106,8 +106,10 @@ impl Worker {
         let event = serde_json::from_str(&line[..len])?;
         Ok(event)
     }
+}
 
-    pub fn send(&mut self, event: &Event) -> Result<()> {
+impl Reporter for StdioReporter {
+    fn send(&mut self, event: &Event) -> Result<()> {
         let mut event = serde_json::to_string(&event)?;
         event.push('\n');
         self.stdout.write_all(event.as_bytes())?;
@@ -136,18 +138,18 @@ pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>, arg: serde_json::Va
 }
 
 pub fn run_worker() -> Result<()> {
-    let mut worker = Worker::setup();
-    let start = worker.recv_start()?;
+    let mut reporter = StdioReporter::setup();
+    let start = reporter.recv_start()?;
 
-    let mtx = Arc::new(Mutex::new(worker));
+    let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
     let result = start.module.run(mtx.clone(), start.arg.into());
-    let mut worker = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
+    let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 
     if let Err(err) = result {
-        worker.send(&Event::Error(err.to_string()))?;
+        reporter.send(&Event::Error(err.to_string()))?;
     } else {
-        worker.send(&Event::Done)?;
+        reporter.send(&Event::Done)?;
     }
 
     Ok(())

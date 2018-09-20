@@ -1,6 +1,6 @@
 use errors::*;
 
-use engine::isolation::Worker;
+use engine::Reporter;
 use hlua::{self, AnyLuaValue};
 use models::Object;
 use runtime;
@@ -10,31 +10,34 @@ use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::Event;
 
 
+pub trait State {
+    fn last_error(&self) -> Option<String>;
+
+    fn set_error(&self, err: Error) -> Error;
+
+    fn set_logger(&self, tx: Arc<Mutex<Box<Reporter>>>);
+
+    fn info(&self, msg: String);
+
+    fn status(&self, msg: String);
+
+    fn db_insert(&self, object: Object);
+
+    fn http_mksession(&self) -> String;
+
+    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
+
+    fn register_in_jar(&self, session: &str, key: String, value: String);
+}
+
 #[derive(Debug, Clone, Default)]
-pub struct State {
+pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
-    logger: Arc<Mutex<Option<Arc<Mutex<Worker>>>>>,
+    logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
 }
 
-impl State {
-    pub fn last_error(&self) -> Option<String> {
-        let lock = self.error.lock().unwrap();
-        lock.as_ref().map(|err| err.to_string())
-    }
-
-    pub fn set_error(&self, err: Error) -> Error {
-        let mut mtx = self.error.lock().unwrap();
-        let cp = format_err!("{:?}", err);
-        *mtx = Some(err);
-        cp
-    }
-
-    pub fn set_logger(&self, tx: Arc<Mutex<Worker>>) {
-        let mut mtx = self.logger.lock().unwrap();
-        *mtx = Some(tx);
-    }
-
+impl LuaState {
     fn log(&self, msg: &Event) {
         let mtx = self.logger.lock().unwrap();
         if let Some(mtx) = &*mtx {
@@ -42,34 +45,53 @@ impl State {
             tx.send(msg).expect("Failed to write event");
         }
     }
+}
 
-    pub fn info(&self, msg: String) {
+impl State for LuaState {
+    fn last_error(&self) -> Option<String> {
+        let lock = self.error.lock().unwrap();
+        lock.as_ref().map(|err| err.to_string())
+    }
+
+    fn set_error(&self, err: Error) -> Error {
+        let mut mtx = self.error.lock().unwrap();
+        let cp = format_err!("{:?}", err);
+        *mtx = Some(err);
+        cp
+    }
+
+    fn set_logger(&self, tx: Arc<Mutex<Box<Reporter>>>) {
+        let mut mtx = self.logger.lock().unwrap();
+        *mtx = Some(tx);
+    }
+
+    fn info(&self, msg: String) {
         self.log(&Event::Info(msg))
     }
 
-    pub fn status(&self, msg: String) {
+    fn status(&self, msg: String) {
         self.log(&Event::Status(msg))
     }
 
-    pub fn db_insert(&self, object: Object) {
+    fn db_insert(&self, object: Object) {
         self.log(&Event::Object(object))
     }
 
-    pub fn http_mksession(&self) -> String {
+    fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
         mtx.insert(id.clone(), session);
         id
     }
 
-    pub fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
+    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("invalid session reference"); // TODO
 
         HttpRequest::new(&session, method, url, options)
     }
 
-    pub fn register_in_jar(&self, session: &str, key: String, value: String) {
+    fn register_in_jar(&self, session: &str, key: String, value: String) {
         let mut mtx = self.http_sessions.lock().unwrap();
         if let Some(session) = mtx.get_mut(session) {
             session.cookies.register_in_jar(key, value);
@@ -82,11 +104,11 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
+fn ctx<'a>() -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
-    let state = Arc::new(State::default());
+    let state = Arc::new(LuaState::default());
 
     runtime::db_add(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
@@ -112,7 +134,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<State>) {
 }
 
 impl Script {
-    pub fn load_unchecked(code: String) -> Result<Script> {
+    pub fn load_unchecked<I: Into<String>>(code: I) -> Result<Script> {
         /*
         let (mut lua, _) = ctx();
 
@@ -127,11 +149,11 @@ impl Script {
         */
 
         Ok(Script {
-            code,
+            code: code.into(),
         })
     }
 
-    pub fn run(&self, tx: Arc<Mutex<Worker>>, arg: AnyLuaValue) -> Result<()> {
+    pub fn run(&self, tx: Arc<Mutex<Box<Reporter>>>, arg: AnyLuaValue) -> Result<()> {
         let (mut lua, state) = ctx();
 
         debug!("Initializing lua module");
@@ -158,5 +180,11 @@ impl Script {
             LuaString(x) => bail!("Script returned error: {:?}", x),
             _ => Ok(())
         }
+    }
+
+    #[cfg(test)]
+    pub fn test(&self) -> Result<()> {
+        use engine::tests::DummyReporter;
+        self.run(DummyReporter::new(), AnyLuaValue::LuaNil)
     }
 }

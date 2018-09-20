@@ -2,12 +2,11 @@ use errors::*;
 
 use json::LuaJsonValue;
 use std::fs;
+use std::fmt::Debug;
 use std::path::PathBuf;
-// use std::collections::{HashSet, HashMap};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
-use engine::isolation::Worker;
 use engine::metadata::{Metadata, Argument};
 use paths;
 use term;
@@ -166,8 +165,33 @@ impl Module {
         &self.argument
     }
 
-    pub fn run(&self, worker: Arc<Mutex<Worker>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(worker, arg.into())
+        self.script.run(reporter, arg.into())
+    }
+}
+
+pub trait Reporter: Debug {
+    fn send(&mut self, event: &Event) -> Result<()>;
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use worker::Event;
+
+    #[derive(Debug)]
+    pub struct DummyReporter;
+
+    impl DummyReporter {
+        pub fn new() -> Arc<Mutex<Box<Reporter>>> {
+            Arc::new(Mutex::new(Box::new(DummyReporter)))
+        }
+    }
+
+    impl Reporter for DummyReporter {
+        fn send(&mut self, _event: &Event) -> Result<()> {
+            Ok(())
+        }
     }
 }
