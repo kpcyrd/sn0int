@@ -4,7 +4,9 @@ use engine::Reporter;
 use hlua::{self, AnyLuaValue};
 use models::Object;
 use runtime;
+use serde_json;
 use std::collections::HashMap;
+use std::result;
 use std::sync::{Arc, Mutex};
 use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::Event;
@@ -17,11 +19,25 @@ pub trait State {
 
     fn set_logger(&self, tx: Arc<Mutex<Box<Reporter>>>);
 
-    fn info(&self, msg: String);
+    fn send(&self, msg: &Event);
 
-    fn status(&self, msg: String);
+    fn recv(&self) -> Result<serde_json::Value>;
 
-    fn db_insert(&self, object: Object);
+    fn info(&self, msg: String) {
+        self.send(&Event::Info(msg))
+    }
+
+    fn status(&self, msg: String) {
+        self.send(&Event::Status(msg))
+    }
+
+    fn db_insert(&self, object: Object) -> Result<i32> {
+        self.send(&Event::Object(object));
+        let reply = self.recv()?;
+        let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
+
+        reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+    }
 
     fn http_mksession(&self) -> String;
 
@@ -35,16 +51,6 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
-}
-
-impl LuaState {
-    fn log(&self, msg: &Event) {
-        let mtx = self.logger.lock().unwrap();
-        if let Some(mtx) = &*mtx {
-            let mut tx = mtx.lock().unwrap();
-            tx.send(msg).expect("Failed to write event");
-        }
-    }
 }
 
 impl State for LuaState {
@@ -65,16 +71,22 @@ impl State for LuaState {
         *mtx = Some(tx);
     }
 
-    fn info(&self, msg: String) {
-        self.log(&Event::Info(msg))
+    fn send(&self, msg: &Event) {
+        let mtx = self.logger.lock().unwrap();
+        if let Some(mtx) = &*mtx {
+            let mut tx = mtx.lock().unwrap();
+            tx.send(msg).expect("Failed to write event");
+        }
     }
 
-    fn status(&self, msg: String) {
-        self.log(&Event::Status(msg))
-    }
-
-    fn db_insert(&self, object: Object) {
-        self.log(&Event::Object(object))
+    fn recv(&self) -> Result<serde_json::Value> {
+        let mtx = self.logger.lock().unwrap();
+        if let Some(mtx) = &*mtx {
+            let mut tx = mtx.lock().unwrap();
+            tx.recv()
+        } else {
+            bail!("Failed to read from reporter, non available");
+        }
     }
 
     fn http_mksession(&self) -> String {

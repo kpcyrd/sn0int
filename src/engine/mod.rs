@@ -1,6 +1,7 @@
 use errors::*;
 
 use json::LuaJsonValue;
+use serde_json;
 use std::fs;
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -173,6 +174,8 @@ impl Module {
 
 pub trait Reporter: Debug {
     fn send(&mut self, event: &Event) -> Result<()>;
+
+    fn recv(&mut self) -> Result<serde_json::Value>;
 }
 
 #[cfg(test)]

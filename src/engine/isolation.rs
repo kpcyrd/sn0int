@@ -5,6 +5,7 @@ use serde_json;
 use std::env;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufRead, Stdin, Stdout};
+use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
@@ -55,10 +56,15 @@ impl Supervisor {
     }
 
     pub fn send_start(&mut self, module: Module, arg: serde_json::Value) -> Result<()> {
-        let start = StartCommand::new(module, arg);
-        let mut start = serde_json::to_string(&start)?;
-        start.push('\n');
-        self.stdin.write_all(start.as_bytes())?;
+        let start = serde_json::to_value(StartCommand::new(module, arg))?;
+        self.send(start)?;
+        Ok(())
+    }
+
+    pub fn send(&mut self, value: serde_json::Value) -> Result<()> {
+        let mut value = serde_json::to_string(&value)?;
+        value.push('\n');
+        self.stdin.write_all(value.as_bytes())?;
         Ok(())
     }
 
@@ -100,10 +106,8 @@ impl StdioReporter {
     }
 
     pub fn recv_start(&mut self) -> Result<StartCommand> {
-        let mut line = String::new();
-        let len = self.stdin.read_line(&mut line)?;
-
-        let event = serde_json::from_str(&line[..len])?;
+        let value = self.recv()?;
+        let event = serde_json::from_value(value)?;
         Ok(event)
     }
 }
@@ -115,9 +119,17 @@ impl Reporter for StdioReporter {
         self.stdout.write_all(event.as_bytes())?;
         Ok(())
     }
+
+    fn recv(&mut self) -> Result<serde_json::Value> {
+        let mut line = String::new();
+        let len = self.stdin.read_line(&mut line)?;
+
+        let event = serde_json::from_str(&line[..len])?;
+        Ok(event)
+    }
 }
 
-pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: mpsc::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
     let mut supervisor = Supervisor::setup(&module)?;
     supervisor.send_start(module, arg)?;
 
@@ -125,10 +137,18 @@ pub fn spawn_module(module: Module, tx: mpsc::Sender<Event>, arg: serde_json::Va
         match supervisor.recv()? {
             Event::Done => break,
             Event::Error(err) => {
-                tx.send(Event::Error(err)).unwrap();
+                tx.send((Event::Error(err), None)).unwrap();
                 break;
             },
-            event => tx.send(event).unwrap(),
+            Event::Object(object) => {
+                let (tx2, rx2) = mpsc::channel();
+                tx.send((Event::Object(object), Some(tx2))).unwrap();
+                let reply = rx2.recv().unwrap();
+
+                let value = serde_json::to_value(reply).expect("Failed to serialize reply");
+                supervisor.send(value).expect("Failed to send to child");
+            },
+            event => tx.send((event, None)).unwrap(),
         }
     }
 

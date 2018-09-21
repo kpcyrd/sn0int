@@ -10,23 +10,26 @@ use json::LuaJsonValue;
 
 
 pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
-    lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<()> {
+    lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<i32> {
         let object = LuaJsonValue::from(object);
 
         let object = match family.as_str() {
             "subdomain" => {
-                Object::Subdomain(NewSubdomainOwned::from_lua(object)?)
+                Object::Subdomain(NewSubdomainOwned::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
             },
             "ipaddr" => {
-                Object::IpAddr(NewIpAddrOwned::from_lua(object)?)
+                Object::IpAddr(NewIpAddrOwned::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
             },
             "subdomain-ipaddr" => {
-                Object::SubdomainIpAddr(NewSubdomainIpAddr::from_lua(object)?)
+                Object::SubdomainIpAddr(NewSubdomainIpAddr::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
             },
             _ => return Err(state.set_error(format_err!("Unknown object family"))),
         };
 
-        state.db_insert(object);
-        Ok(())
+        state.db_insert(object)
+            .map_err(|e| state.set_error(e))
     }))
 }

@@ -31,29 +31,43 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {
-        tx.send(Event::Dummy).unwrap();
+        tx.send((Event::Dummy, None)).unwrap();
 
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
-            tx.send(Event::Error(err.to_string())).unwrap();
+            tx.send((Event::Error(err.to_string()), None)).unwrap();
         }
     });
 
     let mut failed = None;
     loop {
         match rx.recv_timeout(Duration::from_millis(100)) {
-            Ok(Event::Dummy) => (),
-            Ok(Event::Info(info)) => spinner.log(&info),
-            Ok(Event::Error(error)) => {
+            Ok((Event::Dummy, _)) => (),
+            Ok((Event::Info(info), _)) => spinner.log(&info),
+            Ok((Event::Error(error), _)) => {
                 failed = Some(error);
                 break;
             },
-            Ok(Event::Status(status)) => spinner.status(status),
-            Ok(Event::Object(object)) => match rl.db().insert_generic(&object) {
-                Ok(true) => spinner.log(&format!("{}", object)),
-                Ok(false) => (),
-                Err(err) => spinner.error(&err.to_string()),
+            Ok((Event::Status(status), _)) => spinner.status(status),
+            Ok((Event::Object(object), tx)) => {
+                let result = rl.db().insert_generic(&object);
+                debug!("{:?} => {:?}", object, result);
+                let result = match result {
+                    Ok((true, id)) => {
+                        spinner.log(&format!("{}", object));
+                        Ok(id)
+                    },
+                    Ok((_, id)) => Ok(id),
+                    Err(err) => {
+                        let err = err.to_string();
+                        spinner.error(&err);
+                        Err(err)
+                    },
+                };
+
+                tx.expect("Failed to get db result channel")
+                    .send(result).expect("Failed to send db result to channel");
             },
-            Ok(Event::Done) => break,
+            Ok((Event::Done, _)) => break,
             Err(mpsc::RecvTimeoutError::Timeout) => (),
             Err(mpsc::RecvTimeoutError::Disconnected) => break,
         }

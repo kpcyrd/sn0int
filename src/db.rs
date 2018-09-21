@@ -48,7 +48,7 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_generic(&self, object: &Object) -> Result<bool> {
+    pub fn insert_generic(&self, object: &Object) -> Result<(bool, i32)> {
         match object {
             Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
                 domain_id: object.domain_id,
@@ -116,7 +116,7 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<bool> {
+    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<(bool, i32)> {
         let domain_id = match self.domain_optional(domain)? {
             Some(domain_id) => domain_id,
             None => {
@@ -134,17 +134,18 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<bool> {
+    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<(bool, i32)> {
         // upsert is not supported by diesel
 
-        if let Some(_subdomain_id) = self.select_subdomain_optional(subdomain.value)? {
+        if let Some(subdomain_id) = self.subdomain_optional(subdomain.value)? {
             // TODO: right now we don't have any fields to update
-            Ok(false)
+            Ok((false, subdomain_id))
         } else {
             diesel::insert_into(subdomains::table)
                 .values(subdomain)
                 .execute(&self.db)?;
-            Ok(true)
+            let id = self.subdomain(subdomain.value)?;
+            Ok((true, id))
         }
     }
 
@@ -165,7 +166,17 @@ impl Database {
         Ok(results)
     }
 
-    pub fn select_subdomain_optional(&self, subdomain: &str) -> Result<Option<i32>> {
+    pub fn subdomain(&self, subdomain: &str) -> Result<i32> {
+        use schema::subdomains::dsl::*;
+
+        let subdomain_id = subdomains.filter(value.eq(&subdomain))
+            .select(id)
+            .first::<i32>(&self.db)?;
+
+        Ok(subdomain_id)
+    }
+
+    pub fn subdomain_optional(&self, subdomain: &str) -> Result<Option<i32>> {
         use schema::subdomains::dsl::*;
 
         let subdomain_id = subdomains.filter(value.eq(&subdomain))
@@ -176,7 +187,7 @@ impl Database {
         Ok(subdomain_id)
     }
 
-    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<bool> {
+    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<(bool, i32)> {
         // TODO: maybe check if valid
         let new_ipaddr = NewIpAddr {
             family: &family,
@@ -186,17 +197,18 @@ impl Database {
         self.insert_ipaddr_struct(&new_ipaddr)
     }
 
-    pub fn insert_ipaddr_struct(&self, ipaddr: &NewIpAddr) -> Result<bool> {
+    pub fn insert_ipaddr_struct(&self, ipaddr: &NewIpAddr) -> Result<(bool, i32)> {
         // upsert is not supported by diesel
 
-        if let Some(_ipaddr_id) = self.select_ipaddr_optional(ipaddr.value)? {
+        if let Some(ipaddr_id) = self.ipaddr_optional(ipaddr.value)? {
             // TODO: right now we don't have any fields to update
-            Ok(false)
+            Ok((false, ipaddr_id))
         } else {
             diesel::insert_into(ipaddrs::table)
                 .values(ipaddr)
                 .execute(&self.db)?;
-            Ok(true)
+            let id = self.ipaddr(ipaddr.value)?;
+            Ok((true, id))
         }
     }
 
@@ -217,7 +229,17 @@ impl Database {
         Ok(results)
     }
 
-    pub fn select_ipaddr_optional(&self, ipaddr: &str) -> Result<Option<i32>> {
+    pub fn ipaddr(&self, ipaddr: &str) -> Result<i32> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr_id = ipaddrs.filter(value.eq(&ipaddr))
+            .select(id)
+            .first::<i32>(&self.db)?;
+
+        Ok(ipaddr_id)
+    }
+
+    pub fn ipaddr_optional(&self, ipaddr: &str) -> Result<Option<i32>> {
         use schema::ipaddrs::dsl::*;
 
         let ipaddr_id = ipaddrs.filter(value.eq(&ipaddr))
@@ -228,25 +250,37 @@ impl Database {
         Ok(ipaddr_id)
     }
 
-    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<bool> {
+    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<(bool, i32)> {
         self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
             subdomain_id,
             ip_addr_id,
         })
     }
 
-    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<bool> {
-        if let Some(_subdomain_ipaddr_id) = self.select_subdomain_ipaddr_optional(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id)? {
-            Ok(false)
+    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<(bool, i32)> {
+        if let Some(subdomain_ipaddr_id) = self.subdomain_ipaddr_optional(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id)? {
+            Ok((false, subdomain_ipaddr_id))
         } else {
             diesel::insert_into(subdomain_ipaddrs::table)
                 .values(subdomain_ipaddr)
                 .execute(&self.db)?;
-            Ok(true)
+            let id = self.subdomain_ipaddr(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id)?;
+            Ok((true, id))
         }
     }
 
-    pub fn select_subdomain_ipaddr_optional(&self, my_subdomain_id: i32, my_ip_addr_id: i32) -> Result<Option<i32>> {
+    pub fn subdomain_ipaddr(&self, my_subdomain_id: i32, my_ip_addr_id: i32) -> Result<i32> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        let subdomain_ipaddr_id = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
+                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
+                                                   .select(id)
+                                                   .first::<i32>(&self.db)?;
+
+        Ok(subdomain_ipaddr_id)
+    }
+
+    pub fn subdomain_ipaddr_optional(&self, my_subdomain_id: i32, my_ip_addr_id: i32) -> Result<Option<i32>> {
         use schema::subdomain_ipaddrs::dsl::*;
 
         let subdomain_ipaddr_id = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
