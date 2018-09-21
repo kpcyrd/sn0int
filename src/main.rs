@@ -37,6 +37,7 @@ pub mod json;
 pub mod migrations;
 pub mod models;
 pub mod paths;
+pub mod ser;
 pub mod schema;
 pub mod shell;
 pub mod runtime;

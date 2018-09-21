@@ -13,6 +13,8 @@ use worker::Event;
 
 
 pub trait State {
+    fn clear_error(&self);
+
     fn last_error(&self) -> Option<String>;
 
     fn set_error(&self, err: Error) -> Error;
@@ -54,6 +56,11 @@ pub struct LuaState {
 }
 
 impl State for LuaState {
+    fn clear_error(&self) {
+        let mut mtx = self.error.lock().unwrap();
+        mtx.take();
+    }
+
     fn last_error(&self) -> Option<String> {
         let lock = self.error.lock().unwrap();
         lock.as_ref().map(|err| err.to_string())
@@ -122,6 +129,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<LuaState>) {
     lua.open_string();
     let state = Arc::new(LuaState::default());
 
+    runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());

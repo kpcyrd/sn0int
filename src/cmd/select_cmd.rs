@@ -13,6 +13,8 @@ pub enum Args {
     Subdomains(Filter),
     #[structopt(name="ipaddrs")]
     IpAddrs(Filter),
+    #[structopt(name="urls")]
+    Urls(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -32,6 +34,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::Domains(filter) => show_domains(rl, &filter),
         Args::Subdomains(filter) => show_subdomains(rl, &filter),
         Args::IpAddrs(filter) => show_ipaddrs(rl, &filter),
+        Args::Urls(filter) => show_urls(rl, &filter),
     }
 }
 
@@ -54,6 +57,14 @@ fn show_subdomains(rl: &mut Readline, filter: &Filter) -> Result<()> {
 fn show_ipaddrs(rl: &mut Readline, filter: &Filter) -> Result<()> {
     for ipaddr in rl.db().filter_ipaddrs(&filter.parse()?)? {
         println!("{:#?}", ipaddr);
+    }
+
+    Ok(())
+}
+
+fn show_urls(rl: &mut Readline, filter: &Filter) -> Result<()> {
+    for url in rl.db().filter_urls(&filter.parse()?)? {
+        println!("{:?}", url);
     }
 
     Ok(())

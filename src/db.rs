@@ -62,6 +62,12 @@ impl Database {
                 subdomain_id: object.subdomain_id,
                 ip_addr_id: object.ip_addr_id,
             }),
+            Object::Url(object) => self.insert_url_struct(&NewUrl {
+                subdomain_id: object.subdomain_id,
+                value: &object.value,
+                status: object.status,
+                body: object.body.as_ref().map(|x| x.as_ref()),
+            }),
         }
     }
 
@@ -290,6 +296,48 @@ impl Database {
                                                    .optional()?;
 
         Ok(subdomain_ipaddr_id)
+    }
+
+    pub fn insert_url_struct(&self, url: &NewUrl) -> Result<(bool, i32)> {
+        if let Some(url_id) = self.url_optional(url.value)? {
+            Ok((false, url_id))
+        } else {
+            diesel::insert_into(urls::table)
+                .values(url)
+                .execute(&self.db)?;
+            let id = self.url(url.value)?;
+            Ok((true, id))
+        }
+    }
+
+    pub fn filter_urls(&self, filter: &Filter) -> Result<Vec<Url>> {
+        use schema::urls::dsl::*;
+
+        let query = urls.filter(sql::<Bool>(filter.query()));
+        let results = query.load::<Url>(&self.db)?;
+
+        Ok(results)
+    }
+
+    pub fn url(&self, url: &str) -> Result<i32> {
+        use schema::urls::dsl::*;
+
+        let url_id = urls.filter(value.eq(&url))
+            .select(id)
+            .first::<i32>(&self.db)?;
+
+        Ok(url_id)
+    }
+
+    pub fn url_optional(&self, url: &str) -> Result<Option<i32>> {
+        use schema::urls::dsl::*;
+
+        let url_id = urls.filter(value.eq(&url))
+            .select(id)
+            .first::<i32>(&self.db)
+            .optional()?;
+
+        Ok(url_id)
     }
 }
 

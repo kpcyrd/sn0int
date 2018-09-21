@@ -65,6 +65,7 @@ impl Supervisor {
         let mut value = serde_json::to_string(&value)?;
         value.push('\n');
         self.stdin.write_all(value.as_bytes())?;
+        debug!("Supervisor sent: {:?}", value);
         Ok(())
     }
 
@@ -73,6 +74,7 @@ impl Supervisor {
         let len = self.stdout.read_line(&mut line)?;
 
         let event = serde_json::from_str(&line[..len])?;
+        debug!("Supervisor received: {:?}", event);
         Ok(event)
     }
 
@@ -117,6 +119,7 @@ impl Reporter for StdioReporter {
         let mut event = serde_json::to_string(&event)?;
         event.push('\n');
         self.stdout.write_all(event.as_bytes())?;
+        debug!("Reporter sent: {:?}", event);
         Ok(())
     }
 
@@ -125,6 +128,7 @@ impl Reporter for StdioReporter {
         let len = self.stdin.read_line(&mut line)?;
 
         let event = serde_json::from_str(&line[..len])?;
+        debug!("Reporter received: {:?}", event);
         Ok(event)
     }
 }
