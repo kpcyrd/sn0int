@@ -181,7 +181,6 @@ pub trait Reporter: Debug {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use worker::Event;
 
     #[derive(Debug)]
     pub struct DummyReporter;
@@ -195,6 +194,10 @@ pub mod tests {
     impl Reporter for DummyReporter {
         fn send(&mut self, _event: &Event) -> Result<()> {
             Ok(())
+        }
+
+        fn recv(&mut self) -> Result<serde_json::Value> {
+            unimplemented!("DummyReporter::recv doesn't exist")
         }
     }
 }
