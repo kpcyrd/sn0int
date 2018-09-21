@@ -31,6 +31,9 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {
+        // Send two messages and hopefully fix occasional panics
+        // https://github.com/rust-lang/rust/issues/39364#issuecomment-421853099
+        tx.send((Event::Dummy, None)).unwrap();
         tx.send((Event::Dummy, None)).unwrap();
 
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
