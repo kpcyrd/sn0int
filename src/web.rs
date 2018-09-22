@@ -73,7 +73,7 @@ impl HttpRequest {
     pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let cookies = session.cookies.clone();
 
-        let user_agent = options.user_agent.or_else(|| Some("snail agent".to_string())); // TODO
+        let user_agent = options.user_agent.or_else(|| Some("sn0int".to_string())); // TODO
         let timeout = options.timeout.map(|x| Duration::from_millis(x));
 
         let mut request = HttpRequest {
