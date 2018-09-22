@@ -4,6 +4,7 @@ use json::LuaJsonValue;
 use models::*;
 use serde_json;
 use std::net;
+use std::result;
 
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
@@ -65,6 +66,22 @@ impl Model for IpAddr {
     }
 }
 
+impl IpAddr {
+    fn subdomains(&self, db: &Database) -> Result<Vec<Subdomain>> {
+        let subdomain_ids = SubdomainIpAddr::belonging_to(self)
+            .select(subdomain_ipaddrs::subdomain_id)
+            .load::<i32>(db.db())?;
+
+        subdomain_ids.into_iter()
+            .map(|subdomain_id| subdomains::table
+                .filter(subdomains::id.eq(subdomain_id))
+                .first::<Subdomain>(db.db())
+            )
+            .collect::<result::Result<_, _>>()
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableIpAddr {
     value: net::IpAddr,
 }
@@ -83,11 +100,37 @@ impl Printable<PrintableIpAddr> for IpAddr {
     }
 }
 
+pub struct DetailedIpAddr {
+    id: i32,
+    value: net::IpAddr,
+    subdomains: Vec<PrintableSubdomain>,
+}
+
+impl fmt::Display for DetailedIpAddr {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{}\x1b[0m", self.id, self.value)?;
+
+        for subdomain in &self.subdomains {
+            write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
+        }
+
+        Ok(())
+    }
+}
+
 impl Detailed for IpAddr {
-    type T = PrintableIpAddr;
+    type T = DetailedIpAddr;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        self.printable(db)
+        let subdomains = self.subdomains(db)?.into_iter()
+            .map(|x| x.printable(db))
+            .collect::<Result<_>>()?;
+
+        Ok(DetailedIpAddr {
+            id: self.id,
+            value: self.value.parse()?,
+            subdomains,
+        })
     }
 }
 

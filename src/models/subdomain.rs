@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
 use serde_json;
-use std::net;
+use std::result;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
@@ -72,6 +72,22 @@ impl Model for Subdomain {
     }
 }
 
+impl Subdomain {
+    fn ip_addrs(&self, db: &Database) -> Result<Vec<IpAddr>> {
+        let ipaddr_ids = SubdomainIpAddr::belonging_to(self)
+            .select(subdomain_ipaddrs::ip_addr_id)
+            .load::<i32>(db.db())?;
+
+        ipaddr_ids.into_iter()
+            .map(|ipaddr_id| ipaddrs::table
+                .filter(ipaddrs::id.eq(ipaddr_id))
+                .first::<IpAddr>(db.db())
+            )
+            .collect::<result::Result<_, _>>()
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableSubdomain {
     value: String,
 }
@@ -91,16 +107,20 @@ impl Printable<PrintableSubdomain> for Subdomain {
 }
 
 pub struct DetailedSubdomain {
+    id: i32,
     value: String,
-    ips: Vec<net::IpAddr>,
+    ipaddrs: Vec<PrintableIpAddr>,
 }
 
+// TODO: maybe print urls as well
 impl fmt::Display for DetailedSubdomain {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "{:?}", self.value)?;
-        if !self.ips.is_empty() {
-            write!(w, " (TODO)")?;
+        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+
+        for ipaddr in &self.ipaddrs {
+            write!(w, "\n\t\x1b[33m{}\x1b[0m", ipaddr)?;
         }
+
         Ok(())
     }
 }
@@ -108,10 +128,15 @@ impl fmt::Display for DetailedSubdomain {
 impl Detailed for Subdomain {
     type T = DetailedSubdomain;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let ipaddrs = self.ip_addrs(db)?.into_iter()
+            .map(|ip| ip.printable(db))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedSubdomain {
+            id: self.id,
             value: self.value.to_string(),
-            ips: vec![],
+            ipaddrs,
         })
     }
 }

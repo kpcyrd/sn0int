@@ -76,9 +76,11 @@ pub struct PrintableUrl {
 impl fmt::Display for PrintableUrl {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         write!(w, "{:?}", self.value)?;
+
         if let Some(status) = self.status {
             write!(w, " ({})", status)?;
         }
+
         Ok(())
     }
 }
@@ -92,11 +94,33 @@ impl Printable<PrintableUrl> for Url {
     }
 }
 
-impl Detailed for Url {
-    type T = PrintableUrl;
+pub struct DetailedUrl {
+    id: i32,
+    value: String,
+    status: Option<u16>,
+}
 
-    fn detailed(&self, db: &Database) -> Result<Self::T> {
-        self.printable(db)
+impl fmt::Display for DetailedUrl {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+
+        if let Some(status) = self.status {
+            write!(w, " (\x1b[33m{}\x1b[0m)", status)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl Detailed for Url {
+    type T = DetailedUrl;
+
+    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+        Ok(DetailedUrl {
+            id: self.id,
+            value: self.value.to_string(),
+            status: self.status.map(|x| x as u16),
+        })
     }
 }
 

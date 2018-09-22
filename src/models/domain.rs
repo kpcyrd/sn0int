@@ -85,11 +85,25 @@ impl Printable<PrintableDomain> for Domain {
     }
 }
 
-impl Detailed for Domain {
-    type T = PrintableDomain;
+pub struct DetailedDomain {
+    id: i32,
+    value: String,
+}
 
-    fn detailed(&self, db: &Database) -> Result<Self::T> {
-        self.printable(db)
+impl fmt::Display for DetailedDomain {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)
+    }
+}
+
+impl Detailed for Domain {
+    type T = DetailedDomain;
+
+    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+        Ok(DetailedDomain {
+            id: self.id,
+            value: self.value.to_string(),
+        })
     }
 }
 
