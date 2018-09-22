@@ -3,7 +3,9 @@
 -- Argument: subdomains
 
 function request(subdomain_id, url)
-    req = http_request(session, 'GET', url, {})
+    req = http_request(session, 'GET', url, {
+        timeout=5000
+    })
     reply = http_send(req)
 
     if last_err() then

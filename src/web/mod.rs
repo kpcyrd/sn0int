@@ -1,8 +1,9 @@
 pub use chrootable_https::{Client, HttpClient};
 
 use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 use std::ops::Deref;
-use errors::Result;
+use errors::*;
 use hlua::AnyLuaValue;
 use engine::ctx::State;
 use serde_json;
@@ -42,6 +43,7 @@ pub struct RequestOptions {
     json: Option<serde_json::Value>,
     form: Option<serde_json::Value>,
     body: Option<String>,
+    timeout: Option<u64>,
 }
 
 impl RequestOptions {
@@ -64,6 +66,7 @@ pub struct HttpRequest {
     basic_auth: Option<(String, String)>,
     user_agent: Option<String>,
     body: Option<ReqBody>,
+    timeout: Option<Duration>,
 }
 
 impl HttpRequest {
@@ -71,6 +74,7 @@ impl HttpRequest {
         let cookies = session.cookies.clone();
 
         let user_agent = options.user_agent.or_else(|| Some("snail agent".to_string())); // TODO
+        let timeout = options.timeout.map(|x| Duration::from_millis(x));
 
         let mut request = HttpRequest {
             session: session.id.clone(),
@@ -82,6 +86,7 @@ impl HttpRequest {
             basic_auth: options.basic_auth,
             user_agent,
             body: None,
+            timeout: timeout,
         };
 
         if let Some(json) = options.json {
@@ -191,7 +196,10 @@ impl HttpRequest {
         let req = req.body(body)?;
 
         // send request
-        let http = Client::with_system_resolver()?; // TODO: we need to load this info in advance
+        let mut http = Client::with_system_resolver()?; // TODO: we need to load this info in advance
+        if let Some(timeout) = self.timeout {
+            http.timeout(timeout);
+        }
         let res = http.request(req)?;
 
         // map result to LuaMap

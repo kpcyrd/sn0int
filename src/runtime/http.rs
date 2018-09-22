@@ -37,3 +37,113 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
             .map(|resp| resp.into())
     }))
 }
+
+
+#[cfg(test)]
+mod tests {
+    use engine::ctx::Script;
+    use std::time::{Instant, Duration};
+
+    #[test]
+    #[ignore]
+    fn verify_request() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/anything", {})
+            x = http_send(req)
+            if last_err() then return end
+            print(x)
+
+            if x['status'] ~= 200 then
+                return 'wrong status code'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_timeout() {
+        let start = Instant::now();
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "http://1.2.3.4", {
+                timeout=250
+            })
+            x = http_send(req)
+            if last_err() then return end
+        end
+        "#).expect("failed to load script");
+        script.test().err().expect("Script should have failed");
+        let end = Instant::now();
+
+        assert!(end.duration_since(start) < Duration::from_secs(1));
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_post() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+
+            headers = {}
+            headers['Content-Type'] = "application/json"
+            req = http_request(session, "POST", "https://httpbin.org/anything", {
+                headers=headers,
+                query={
+                    foo="bar"
+                },
+                json={
+                    hello="world"
+                }
+            })
+            x = http_send(req)
+            if last_err() then return end
+            print(x)
+
+            o = json_decode(x['text'])
+            if last_err() then return end
+
+            if o['args']['foo'] ~= 'bar' or o['json']['hello'] ~= 'world' then
+                return "reply didn't contain all params"
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_cookies() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+
+            req = http_request(session, "GET", "https://httpbin.org/cookies/set", {
+                query={
+                    foo="bar",
+                    fizz="buzz"
+                }
+            })
+            x = http_send(req)
+
+            req = http_request(session, "GET", "https://httpbin.org/cookies", {})
+            x = http_send(req)
+            if last_err() then return end
+            print(x)
+
+            o = json_decode(x['text'])
+            if last_err() then return end
+
+            if o['cookies']['fizz'] ~= 'buzz' or o['cookies']['foo'] ~= 'bar' then
+                return "reply didn't contain all cookies"
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+}
