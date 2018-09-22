@@ -1,4 +1,5 @@
 use errors::*;
+use channel;
 use engine::{Module, Event, Reporter};
 use serde_json;
 
@@ -133,7 +134,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: mpsc::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
     let mut supervisor = Supervisor::setup(&module)?;
     supervisor.send_start(module, arg)?;
 
@@ -141,18 +142,18 @@ pub fn spawn_module(module: Module, tx: mpsc::Sender<(Event, Option<mpsc::Sender
         match supervisor.recv()? {
             Event::Done => break,
             Event::Error(err) => {
-                tx.send((Event::Error(err), None)).unwrap();
+                tx.send((Event::Error(err), None));
                 break;
             },
             Event::Object(object) => {
                 let (tx2, rx2) = mpsc::channel();
-                tx.send((Event::Object(object), Some(tx2))).unwrap();
+                tx.send((Event::Object(object), Some(tx2)));
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");
                 supervisor.send(value).expect("Failed to send to child");
             },
-            event => tx.send((event, None)).unwrap(),
+            event => tx.send((event, None)),
         }
     }
 
