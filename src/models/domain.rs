@@ -36,6 +36,15 @@ impl Model for Domain {
         Ok(results)
     }
 
+    fn by_id(db: &Database, my_id: i32) -> Result<Self> {
+        use schema::domains::dsl::*;
+
+        let domain = domains.filter(id.eq(my_id))
+            .first::<Self>(db.db())?;
+
+        Ok(domain)
+    }
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32> {
         use schema::domains::dsl::*;
 
@@ -55,6 +64,32 @@ impl Model for Domain {
             .optional()?;
 
         Ok(domain_id)
+    }
+}
+
+pub struct PrintableDomain {
+    value: String,
+}
+
+impl fmt::Display for PrintableDomain {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{:?}", self.value)
+    }
+}
+
+impl Printable<PrintableDomain> for Domain {
+    fn printable(&self, _db: &Database) -> Result<PrintableDomain> {
+        Ok(PrintableDomain {
+            value: self.value.to_string(),
+        })
+    }
+}
+
+impl Detailed for Domain {
+    type T = PrintableDomain;
+
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        self.printable(db)
     }
 }
 

@@ -37,6 +37,15 @@ impl Model for Url {
         Ok(results)
     }
 
+    fn by_id(db: &Database, my_id: i32) -> Result<Self> {
+        use schema::urls::dsl::*;
+
+        let url = urls.filter(id.eq(my_id))
+            .first::<Self>(db.db())?;
+
+        Ok(url)
+    }
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32> {
         use schema::urls::dsl::*;
 
@@ -56,6 +65,38 @@ impl Model for Url {
             .optional()?;
 
         Ok(url_id)
+    }
+}
+
+pub struct PrintableUrl {
+    value: String,
+    status: Option<u16>,
+}
+
+impl fmt::Display for PrintableUrl {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{:?}", self.value)?;
+        if let Some(status) = self.status {
+            write!(w, " ({})", status)?;
+        }
+        Ok(())
+    }
+}
+
+impl Printable<PrintableUrl> for Url {
+    fn printable(&self, _db: &Database) -> Result<PrintableUrl> {
+        Ok(PrintableUrl {
+            value: self.value.to_string(),
+            status: self.status.map(|x| x as u16),
+        })
+    }
+}
+
+impl Detailed for Url {
+    type T = PrintableUrl;
+
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        self.printable(db)
     }
 }
 
@@ -82,5 +123,14 @@ impl NewUrlOwned {
     pub fn from_lua(x: LuaJsonValue) -> Result<NewUrlOwned> {
         let x = serde_json::from_value(x.into())?;
         Ok(x)
+    }
+}
+
+impl Printable<PrintableUrl> for NewUrlOwned {
+    fn printable(&self, _db: &Database) -> Result<PrintableUrl> {
+        Ok(PrintableUrl {
+            value: self.value.to_string(),
+            status: self.status.map(|x| x as u16),
+        })
     }
 }

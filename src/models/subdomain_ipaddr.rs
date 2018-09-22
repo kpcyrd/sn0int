@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
 use serde_json;
+use std::net;
 
 
 #[derive(Identifiable, Queryable, Associations)]
@@ -35,6 +36,15 @@ impl Model for SubdomainIpAddr {
         Ok(results)
     }
 
+    fn by_id(db: &Database, my_id: i32) -> Result<Self> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        let subdomain_ipaddr = subdomain_ipaddrs.filter(id.eq(my_id))
+            .first::<Self>(db.db())?;
+
+        Ok(subdomain_ipaddr)
+    }
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32> {
         use schema::subdomain_ipaddrs::dsl::*;
 
@@ -61,6 +71,28 @@ impl Model for SubdomainIpAddr {
     }
 }
 
+pub struct PrintableSubdomainIpAddr {
+    subdomain: String,
+    ipaddr: net::IpAddr,
+}
+
+impl fmt::Display for PrintableSubdomainIpAddr {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{:?} -> {}", self.subdomain, self.ipaddr)
+    }
+}
+
+impl Printable<PrintableSubdomainIpAddr> for SubdomainIpAddr {
+    fn printable(&self, db: &Database) -> Result<PrintableSubdomainIpAddr> {
+        let subdomain = Subdomain::by_id(db, self.subdomain_id)?;
+        let ipaddr = IpAddr::by_id(db, self.ip_addr_id)?;
+        Ok(PrintableSubdomainIpAddr {
+            subdomain: subdomain.value.to_string(),
+            ipaddr: ipaddr.value.parse()?,
+        })
+    }
+}
+
 #[derive(Debug, Insertable, Serialize, Deserialize)]
 #[table_name="subdomain_ipaddrs"]
 pub struct NewSubdomainIpAddr {
@@ -72,5 +104,16 @@ impl NewSubdomainIpAddr {
     pub fn from_lua(x: LuaJsonValue) -> Result<NewSubdomainIpAddr> {
         let x = serde_json::from_value(x.into())?;
         Ok(x)
+    }
+}
+
+impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {
+    fn printable(&self, db: &Database) -> Result<PrintableSubdomainIpAddr> {
+        let subdomain = Subdomain::by_id(db, self.subdomain_id)?;
+        let ipaddr = IpAddr::by_id(db, self.ip_addr_id)?;
+        Ok(PrintableSubdomainIpAddr {
+            subdomain: subdomain.value.to_string(),
+            ipaddr: ipaddr.value.parse()?,
+        })
     }
 }

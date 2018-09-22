@@ -48,7 +48,11 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     debug!("{:?} => {:?}", object, result);
                     let result = match result {
                         Ok((true, id)) => {
-                            spinner.log(&format!("{}", object));
+                            if let Ok(obj) = object.printable(rl.db()) {
+                                spinner.log(&format!("{}", obj));
+                            } else {
+                                spinner.error(&format!("Failed to query necessary fields for {:?}", object));
+                            }
                             Ok(id)
                         },
                         Ok((_, id)) => Ok(id),

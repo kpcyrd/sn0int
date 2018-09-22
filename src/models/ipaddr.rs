@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
 use serde_json;
+use std::net;
 
 
 #[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
@@ -33,6 +34,15 @@ impl Model for IpAddr {
         Ok(results)
     }
 
+    fn by_id(db: &Database, my_id: i32) -> Result<Self> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr = ipaddrs.filter(id.eq(my_id))
+            .first::<Self>(db.db())?;
+
+        Ok(ipaddr)
+    }
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32> {
         use schema::ipaddrs::dsl::*;
 
@@ -55,6 +65,32 @@ impl Model for IpAddr {
     }
 }
 
+pub struct PrintableIpAddr {
+    value: net::IpAddr,
+}
+
+impl fmt::Display for PrintableIpAddr {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{}", self.value)
+    }
+}
+
+impl Printable<PrintableIpAddr> for IpAddr {
+    fn printable(&self, _db: &Database) -> Result<PrintableIpAddr> {
+        Ok(PrintableIpAddr {
+            value: self.value.parse()?,
+        })
+    }
+}
+
+impl Detailed for IpAddr {
+    type T = PrintableIpAddr;
+
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        self.printable(db)
+    }
+}
+
 #[derive(Insertable)]
 #[table_name="ipaddrs"]
 pub struct NewIpAddr<'a> {
@@ -73,5 +109,13 @@ impl NewIpAddrOwned {
     pub fn from_lua(x: LuaJsonValue) -> Result<NewIpAddrOwned> {
         let x = serde_json::from_value(x.into())?;
         Ok(x)
+    }
+}
+
+impl Printable<PrintableIpAddr> for NewIpAddrOwned {
+    fn printable(&self, _db: &Database) -> Result<PrintableIpAddr> {
+        Ok(PrintableIpAddr {
+            value: self.value.parse()?,
+        })
     }
 }

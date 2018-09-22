@@ -12,20 +12,14 @@ pub enum Object {
     Url(NewUrlOwned),
 }
 
-impl fmt::Display for Object {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Object::Subdomain(x) => write!(f, "Subdomain: {:?}", x.value),
-            Object::IpAddr(x) => write!(f, "IpAddr: {:?}", x.value),
-            Object::SubdomainIpAddr(x) => write!(f, "Subdomain->IpAddr: {}->{}", x.subdomain_id, x.ip_addr_id),
-            Object::Url(x) => {
-                write!(f, "Url: {:?}", x.value)?;
-                if let Some(status) = x.status {
-                    write!(f, " ({})", status)?;
-                }
-                Ok(())
-            },
-        }
+impl Object {
+    pub fn printable(&self, db: &Database) -> Result<String> {
+        Ok(match self {
+            Object::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
+            Object::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
+            Object::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
+            Object::Url(x) => format!("Url: {}", x.printable(db)?),
+        })
     }
 }
 
@@ -36,9 +30,21 @@ pub trait Model: Sized {
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>>;
 
+    fn by_id(db: &Database, id: i32) -> Result<Self>;
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32>;
 
     fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>>;
+}
+
+pub trait Printable<T: Sized> {
+    fn printable(&self, db: &Database) -> Result<T>;
+}
+
+pub trait Detailed {
+    type T: fmt::Display;
+
+    fn detailed(&self, db: &Database) -> Result<Self::T>;
 }
 
 mod domain;

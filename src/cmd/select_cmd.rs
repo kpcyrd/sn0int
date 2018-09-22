@@ -32,40 +32,16 @@ impl Filter {
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
-        Args::Domains(filter) => show_domains(rl, &filter),
-        Args::Subdomains(filter) => show_subdomains(rl, &filter),
-        Args::IpAddrs(filter) => show_ipaddrs(rl, &filter),
-        Args::Urls(filter) => show_urls(rl, &filter),
+        Args::Domains(filter) => select::<Domain>(rl, &filter),
+        Args::Subdomains(filter) => select::<Subdomain>(rl, &filter),
+        Args::IpAddrs(filter) => select::<IpAddr>(rl, &filter),
+        Args::Urls(filter) => select::<Url>(rl, &filter),
     }
 }
 
-fn show_domains(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for domain in rl.db().filter::<Domain>(&filter.parse()?)? {
-        println!("{:#?}", domain);
-    }
-
-    Ok(())
-}
-
-fn show_subdomains(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for subdomain in rl.db().filter::<Subdomain>(&filter.parse()?)? {
-        println!("{:#?}", subdomain);
-    }
-
-    Ok(())
-}
-
-fn show_ipaddrs(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for ipaddr in rl.db().filter::<IpAddr>(&filter.parse()?)? {
-        println!("{:#?}", ipaddr);
-    }
-
-    Ok(())
-}
-
-fn show_urls(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for url in rl.db().filter::<Url>(&filter.parse()?)? {
-        println!("{:?}", url);
+fn select<T: Model + Detailed>(rl: &mut Readline, filter: &Filter) -> Result<()> {
+    for obj in rl.db().filter::<T>(&filter.parse()?)? {
+        println!("{}", obj.detailed(rl.db())?);
     }
 
     Ok(())

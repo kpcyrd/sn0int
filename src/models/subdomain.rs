@@ -3,6 +3,7 @@ use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
 use serde_json;
+use std::net;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
@@ -40,6 +41,15 @@ impl Model for Subdomain {
         Ok(results)
     }
 
+    fn by_id(db: &Database, my_id: i32) -> Result<Self> {
+        use schema::subdomains::dsl::*;
+
+        let subdomain = subdomains.filter(id.eq(my_id))
+            .first::<Self>(db.db())?;
+
+        Ok(subdomain)
+    }
+
     fn id(db: &Database, query: &Self::ID) -> Result<i32> {
         use schema::subdomains::dsl::*;
 
@@ -62,6 +72,50 @@ impl Model for Subdomain {
     }
 }
 
+pub struct PrintableSubdomain {
+    value: String,
+}
+
+impl fmt::Display for PrintableSubdomain {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{:?}", self.value)
+    }
+}
+
+impl Printable<PrintableSubdomain> for Subdomain {
+    fn printable(&self, _db: &Database) -> Result<PrintableSubdomain> {
+        Ok(PrintableSubdomain {
+            value: self.value.to_string(),
+        })
+    }
+}
+
+pub struct DetailedSubdomain {
+    value: String,
+    ips: Vec<net::IpAddr>,
+}
+
+impl fmt::Display for DetailedSubdomain {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{:?}", self.value)?;
+        if !self.ips.is_empty() {
+            write!(w, " (TODO)")?;
+        }
+        Ok(())
+    }
+}
+
+impl Detailed for Subdomain {
+    type T = DetailedSubdomain;
+
+    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+        Ok(DetailedSubdomain {
+            value: self.value.to_string(),
+            ips: vec![],
+        })
+    }
+}
+
 #[derive(Insertable)]
 #[table_name="subdomains"]
 pub struct NewSubdomain<'a> {
@@ -80,5 +134,13 @@ impl NewSubdomainOwned {
     pub fn from_lua(x: LuaJsonValue) -> Result<NewSubdomainOwned> {
         let x = serde_json::from_value(x.into())?;
         Ok(x)
+    }
+}
+
+impl Printable<PrintableSubdomain> for NewSubdomainOwned {
+    fn printable(&self, _db: &Database) -> Result<PrintableSubdomain> {
+        Ok(PrintableSubdomain {
+            value: self.value.to_string(),
+        })
     }
 }
