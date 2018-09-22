@@ -3,6 +3,7 @@ use errors::*;
 use db;
 use shell::Readline;
 use structopt::StructOpt;
+use models::*;
 
 
 #[derive(Debug, StructOpt)]
@@ -39,7 +40,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
 }
 
 fn show_domains(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for domain in rl.db().filter_domains(&filter.parse()?)? {
+    for domain in rl.db().filter::<Domain>(&filter.parse()?)? {
         println!("{:#?}", domain);
     }
 
@@ -47,7 +48,7 @@ fn show_domains(rl: &mut Readline, filter: &Filter) -> Result<()> {
 }
 
 fn show_subdomains(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for subdomain in rl.db().filter_subdomains(&filter.parse()?)? {
+    for subdomain in rl.db().filter::<Subdomain>(&filter.parse()?)? {
         println!("{:#?}", subdomain);
     }
 
@@ -55,7 +56,7 @@ fn show_subdomains(rl: &mut Readline, filter: &Filter) -> Result<()> {
 }
 
 fn show_ipaddrs(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for ipaddr in rl.db().filter_ipaddrs(&filter.parse()?)? {
+    for ipaddr in rl.db().filter::<IpAddr>(&filter.parse()?)? {
         println!("{:#?}", ipaddr);
     }
 
@@ -63,7 +64,7 @@ fn show_ipaddrs(rl: &mut Readline, filter: &Filter) -> Result<()> {
 }
 
 fn show_urls(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for url in rl.db().filter_urls(&filter.parse()?)? {
+    for url in rl.db().filter::<Url>(&filter.parse()?)? {
         println!("{:?}", url);
     }
 

@@ -1,4 +1,5 @@
 use errors::*;
+use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
 use serde_json;
@@ -10,6 +11,48 @@ pub struct IpAddr {
     pub id: i32,
     pub family: String,
     pub value: String,
+}
+
+impl Model for IpAddr {
+    type ID = str;
+
+    fn list(db: &Database) -> Result<Vec<Self>> {
+        use schema::ipaddrs::dsl::*;
+
+        let results = ipaddrs.load::<Self>(db.db())?;
+
+        Ok(results)
+    }
+
+    fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
+        use schema::ipaddrs::dsl::*;
+
+        let query = ipaddrs.filter(filter.sql());
+        let results = query.load::<Self>(db.db())?;
+
+        Ok(results)
+    }
+
+    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr_id = ipaddrs.filter(value.eq(query))
+            .select(id)
+            .first::<i32>(db.db())?;
+
+        Ok(ipaddr_id)
+    }
+
+    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr_id = ipaddrs.filter(value.eq(query))
+            .select(id)
+            .first::<i32>(db.db())
+            .optional()?;
+
+        Ok(ipaddr_id)
+    }
 }
 
 #[derive(Insertable)]

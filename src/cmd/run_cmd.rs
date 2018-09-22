@@ -1,12 +1,13 @@
 use errors::*;
 
+use db::Database;
 use engine::metadata::Argument;
-use serde;
+use serde::Serialize;
 use serde_json;
 use shell::Readline;
 use std::fmt;
-use std::result;
 use structopt::StructOpt;
+use models::*;
 use term;
 use worker;
 
@@ -15,10 +16,17 @@ use worker;
 pub struct Args {
 }
 
-fn prepare_arg<T: serde::Serialize + fmt::Display>(x: T) -> Result<(serde_json::Value, String)> {
+fn prepare_arg<T: Serialize + fmt::Display>(x: T) -> Result<(serde_json::Value, String)> {
     let pretty = x.to_string();
     let arg = serde_json::to_value(x)?;
     Ok((arg, pretty))
+}
+
+fn prepare_args<T: Model + Serialize + fmt::Display>(db: &Database) -> Result<Vec<(serde_json::Value, String)>> {
+    db.list::<T>()?
+        .into_iter()
+        .map(prepare_arg)
+        .collect()
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
@@ -28,15 +36,9 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
 
-    let args: result::Result<Vec<_>, _> = match module.argument() {
-        Argument::Domains => rl.db().list_domains()?
-                                .into_iter()
-                                .map(prepare_arg)
-                                .collect(),
-        Argument::Subdomains => rl.db().list_subdomains()?
-                                .into_iter()
-                                .map(prepare_arg)
-                                .collect(),
+    let args = match module.argument() {
+        Argument::Domains => prepare_args::<Domain>(rl.db()),
+        Argument::Subdomains => prepare_args::<Subdomain>(rl.db()),
     };
 
     for (arg, pretty_arg) in args? {

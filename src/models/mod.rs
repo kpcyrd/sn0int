@@ -1,3 +1,5 @@
+use errors::*;
+use db::{Database, Filter};
 use std::fmt;
 use schema::*;
 
@@ -25,6 +27,18 @@ impl fmt::Display for Object {
             },
         }
     }
+}
+
+pub trait Model: Sized {
+    type ID: ?Sized;
+
+    fn list(db: &Database) -> Result<Vec<Self>>;
+
+    fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>>;
+
+    fn id(db: &Database, query: &Self::ID) -> Result<i32>;
+
+    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>>;
 }
 
 mod domain;

@@ -1,3 +1,5 @@
+use errors::*;
+use diesel::prelude::*;
 use models::*;
 
 
@@ -11,6 +13,48 @@ pub struct Domain {
 impl fmt::Display for Domain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.value)
+    }
+}
+
+impl Model for Domain {
+    type ID = str;
+
+    fn list(db: &Database) -> Result<Vec<Self>> {
+        use schema::domains::dsl::*;
+
+        let results = domains.load::<Self>(db.db())?;
+
+        Ok(results)
+    }
+
+    fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
+        use schema::domains::dsl::*;
+
+        let query = domains.filter(filter.sql());
+        let results = query.load::<Self>(db.db())?;
+
+        Ok(results)
+    }
+
+    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
+        use schema::domains::dsl::*;
+
+        let domain_id = domains.filter(value.eq(query))
+            .select(id)
+            .first::<i32>(db.db())?;
+
+        Ok(domain_id)
+    }
+
+    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
+        use schema::domains::dsl::*;
+
+        let domain_id = domains.filter(value.eq(query))
+            .select(id)
+            .first::<i32>(db.db())
+            .optional()?;
+
+        Ok(domain_id)
     }
 }
 
