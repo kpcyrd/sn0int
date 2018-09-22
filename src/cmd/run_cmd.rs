@@ -7,6 +7,7 @@ use shell::Readline;
 use std::fmt;
 use std::result;
 use structopt::StructOpt;
+use term;
 use worker;
 
 
@@ -41,6 +42,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     for (arg, pretty_arg) in args? {
         worker::spawn(rl, module.clone(), arg, &pretty_arg);
     }
+    term::info(&format!("Finished {}", module.canonical()));
 
     Ok(())
 }

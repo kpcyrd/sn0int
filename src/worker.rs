@@ -75,7 +75,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     if let Some(fail) = failed {
         spinner.fail(&format!("Failed {}: {}", name, fail));
     } else {
-        spinner.finish(format!("Finished {}", name));
+        spinner.clear();
     }
 }
 
