@@ -29,9 +29,7 @@ fn prepare_args<T: Model + Serialize + fmt::Display>(db: &Database) -> Result<Ve
         .collect()
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
-    let _args = Args::from_iter_safe(args)?;
-
+pub fn execute(rl: &mut Readline) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -47,4 +45,9 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     term::info(&format!("Finished {}", module.canonical()));
 
     Ok(())
+}
+
+pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+    let _args = Args::from_iter_safe(args)?;
+    execute(rl)
 }

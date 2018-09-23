@@ -60,7 +60,7 @@ impl Engine {
                 let module = module?;
                 let mut module_name = module.file_name()
                                         .into_string()
-                                        .map_err(|_| format_err!("Failed to decode filename"))?; // TODO: remove extension
+                                        .map_err(|_| format_err!("Failed to decode filename"))?;
 
                 if module_name.ends_with(".lua") {
                     module_name = module_name[..(module_name.len() - 4)].to_string();

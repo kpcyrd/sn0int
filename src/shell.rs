@@ -247,14 +247,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn run(args: &Args) -> Result<()> {
-    print_banner();
-
-    // wait("checking tor status");
-
-    // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
-    // wait("updating registry");
-
+pub fn init(args: &Args) -> Result<Readline> {
     // TODO: enforce valid characters for workspace name
     let workspace = match args.workspace {
         Some(ref workspace) => workspace.as_str(),
@@ -264,7 +257,20 @@ pub fn run(args: &Args) -> Result<()> {
     let db = Database::establish(workspace)?;
     let psl = Psl::open_or_download()?;
     let engine = Engine::new()?;
-    let mut rl = Readline::new(db, psl, engine);
+    let rl = Readline::new(db, psl, engine);
+
+    Ok(rl)
+}
+
+pub fn run(args: &Args) -> Result<()> {
+    print_banner();
+
+    // wait("checking tor status");
+
+    // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
+    // wait("updating registry");
+
+    let mut rl = init(args)?;
 
     loop {
         match run_once(&mut rl) {

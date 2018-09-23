@@ -50,12 +50,39 @@ pub mod utils;
 
 use args::{Args, SubCommand};
 use errors::*;
+use engine::Module;
 use structopt::StructOpt;
+use std::path::Path;
 
+
+fn run_run(gargs: &args::Args, args: &args::Run) -> Result<()> {
+    let mut rl = shell::init(gargs)?;
+
+    if let Some(module) = &args.module {
+        let module = rl.engine().get(&module)?.clone();
+        rl.set_module(module);
+    } else if let Some(file) = &args.file {
+        let path = Path::new(file);
+
+        let filename = path.file_stem()
+            .ok_or(format_err!("Failed to decode filename"))?
+            .to_str()
+            .ok_or(format_err!("Failed to decode filename"))?;
+
+        let module = Module::load(&path.to_path_buf(), "anonymous", &filename)
+            .context(format!("Failed to parse {:?}", file))?;
+        rl.set_module(module);
+    } else {
+        bail!("At least one module or file need to be provided");
+    }
+
+    cmd::run_cmd::execute(&mut rl)
+}
 
 fn run() -> Result<()> {
     let args = Args::from_args();
     match args.subcommand {
+        Some(SubCommand::Run(ref run)) => run_run(&args, run),
         Some(SubCommand::Sandbox(_)) => engine::isolation::run_worker(),
         None => shell::run(&args),
     }

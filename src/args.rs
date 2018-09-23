@@ -14,9 +14,19 @@ pub struct Args {
 
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
+    #[structopt(author="", name="run")]
+    /// Run a module directly
+    Run(Run),
     #[structopt(author="", name="sandbox")]
     /// For internal use
     Sandbox(Sandbox),
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Run {
+    pub module: Option<String>,
+    #[structopt(short="f", long="file", conflicts_with="module")]
+    pub file: Option<String>,
 }
 
 #[derive(Debug, StructOpt)]
