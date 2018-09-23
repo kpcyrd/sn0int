@@ -8,6 +8,9 @@ repository = "https://github.com/kpcyrd/sn0int"
 categories = ["command-line-utilities"]
 readme = "README.md"
 
+[workspace]
+members = ["sn0int-registry"]
+
 [dependencies]
 rustyline = "2"
 log = "0.4"

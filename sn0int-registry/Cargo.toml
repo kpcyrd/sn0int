@@ -1,0 +1,13 @@
+[package]
+name = "sn0int-registry"
+version = "0.1.0"
+authors = ["kpcyrd <git@rxv.cc>"]
+
+[dependencies]
+# TODO: ring conflict
+#sn0int = { path=".." }
+rocket = "0.3.16"
+rocket_codegen = "0.3.16"
+
+diesel = "1.3.3"
+diesel_full_text_search = "1.0.1"
