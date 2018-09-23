@@ -9,6 +9,12 @@ pub fn info(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
+pub fn error(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("info", hlua::function1(move |msg: String| {
+        state.info(msg);
+    }))
+}
+
 pub fn status(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("status", hlua::function1(move |msg: String| {
         state.status(msg);

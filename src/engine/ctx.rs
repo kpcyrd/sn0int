@@ -132,6 +132,7 @@ fn ctx<'a>() -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
+    runtime::error(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
