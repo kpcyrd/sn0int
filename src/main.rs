@@ -8,6 +8,7 @@ use sn0int::args::{self, Args, SubCommand};
 use sn0int::cmd;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
+use sn0int::sandbox;
 use sn0int::shell;
 use structopt::StructOpt;
 use std::path::Path;
@@ -37,11 +38,22 @@ fn run_run(gargs: &Args, args: &args::Run) -> Result<()> {
     cmd::run_cmd::execute(&mut rl)
 }
 
+fn run_sandbox() -> Result<()> {
+    sandbox::init()
+        .context("Failed to init sandbox")?;
+    engine::isolation::run_worker()
+}
+
 fn run() -> Result<()> {
     let args = Args::from_args();
+
+    if !args.is_sandbox() {
+        sandbox::fasten_seatbelt()?;
+    }
+
     match args.subcommand {
         Some(SubCommand::Run(ref run)) => run_run(&args, run),
-        Some(SubCommand::Sandbox(_)) => engine::isolation::run_worker(),
+        Some(SubCommand::Sandbox(_)) => run_sandbox(),
         None => shell::run(&args),
     }
 }

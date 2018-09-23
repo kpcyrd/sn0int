@@ -12,6 +12,15 @@ pub struct Args {
     pub subcommand: Option<SubCommand>,
 }
 
+impl Args {
+    pub fn is_sandbox(&self) -> bool {
+        match self.subcommand {
+            Some(SubCommand::Sandbox(_)) => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
     #[structopt(author="", name="run")]
