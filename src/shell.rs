@@ -11,6 +11,7 @@ use rustyline::{CompletionType, Config, EditMode, Editor};
 use shellwords;
 use std::str::FromStr;
 use term;
+use paths;
 use psl::Psl;
 
 use term::Prompt;
@@ -204,6 +205,16 @@ impl Readline {
             }
         }
     }
+
+    pub fn load_history(&mut self) -> Result<()> {
+        self.rl.load_history(&paths::history_path()?)
+            .map_err(Error::from)
+    }
+
+    pub fn save_history(&self) -> Result<()> {
+        self.rl.save_history(&paths::history_path()?)
+            .map_err(Error::from)
+    }
 }
 
 
@@ -274,6 +285,7 @@ pub fn run(args: &Args) -> Result<()> {
     // wait("updating registry");
 
     let mut rl = init(args)?;
+    rl.load_history().ok();
 
     loop {
         match run_once(&mut rl) {
@@ -287,6 +299,8 @@ pub fn run(args: &Args) -> Result<()> {
             },
         }
     }
+
+    rl.save_history()?;
 
     Ok(())
 }

@@ -14,6 +14,12 @@ pub fn data_dir() -> Result<PathBuf> {
     Ok(path)
 }
 
+pub fn history_path() -> Result<PathBuf> {
+    let path = data_dir()?;
+    let path = path.join("history");
+    Ok(path)
+}
+
 pub fn module_dir() -> Result<PathBuf> {
     let path = data_dir()?;
     let path = path.join("modules");
