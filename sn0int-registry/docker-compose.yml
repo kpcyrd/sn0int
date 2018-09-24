@@ -1,0 +1,12 @@
+---
+version: '3'
+services:
+  db:
+    image: postgres
+    ports:
+    - 127.0.0.1:5432:5432
+  http:
+    build: .
+    ports:
+    - 127.0.0.1:8080:8000
+...

@@ -9,5 +9,7 @@ authors = ["kpcyrd <git@rxv.cc>"]
 rocket = "0.3.16"
 rocket_codegen = "0.3.16"
 
-diesel = "1.3.3"
+diesel = { version = "1.3", features = ["postgres", "r2d2"] }
 diesel_full_text_search = "1.0.1"
+
+dotenv = "0.13"
