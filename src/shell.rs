@@ -161,6 +161,8 @@ impl Readline {
         match readline {
             Ok(ref line) if line.is_empty() => None,
             Ok(line) => {
+                debug!("Readline returned {:?}", line);
+
                 self.rl.add_history_entry(line.as_str());
 
                 let cmd = match shellwords::split(&line) {
@@ -170,6 +172,7 @@ impl Readline {
                         return None;
                     },
                 };
+                debug!("shellwords returned {:?}", cmd);
 
                 if cmd.is_empty() {
                     return None;
