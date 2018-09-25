@@ -39,8 +39,7 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 crossbeam-channel = "0.2"
-
-# https://crates.io/crates/tor_control
+ctrlc = "3.1"
 
 [dev-dependencies]
 boxxy = "0.7"

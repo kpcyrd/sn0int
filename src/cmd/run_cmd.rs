@@ -40,9 +40,14 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
         None => Ok(vec![(serde_json::Value::Null, None)]),
     };
 
+    rl.catch_ctrl();
     for (arg, pretty_arg) in args? {
         worker::spawn(rl, module.clone(), arg, &pretty_arg);
+        if rl.ctrlc_received() {
+            break;
+        }
     }
+    rl.reset_ctrlc();
     term::info(&format!("Finished {}", module.canonical()));
 
     Ok(())

@@ -4,12 +4,15 @@ use args::Args;
 use cmd::*;
 use complete::CmdCompleter;
 use colored::Colorize;
+use ctrlc;
 use db::Database;
 use engine::{Engine, Module};
 use rustyline::error::ReadlineError;
 use rustyline::{CompletionType, Config, EditMode, Editor};
 use shellwords;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use term;
 use paths;
 use psl::Psl;
@@ -96,6 +99,7 @@ pub struct Readline {
     db: Database,
     psl: Psl,
     engine: Engine,
+    signal_register: Arc<AtomicUsize>,
 }
 
 impl Readline {
@@ -117,6 +121,7 @@ impl Readline {
             db,
             psl,
             engine,
+            signal_register: Arc::new(AtomicUsize::new(1)),
         };
 
         rl.reload_module_cache();
@@ -215,6 +220,36 @@ impl Readline {
         self.rl.save_history(&paths::history_path()?)
             .map_err(Error::from)
     }
+
+    pub fn set_signal_handler(&self) -> Result<()> {
+        let ctr = self.signal_register.clone();
+        ctrlc::set_handler(move || {
+            // it seems this handler is only executed if rustyline is not active
+            // this sends a SIGINT to all child processes (if any), terminating the worker for us
+            //
+            // by default ctr has a value of 1, if we expect a situation where we want to catch ctrlc
+            // we set it to 0. if we receive ctrl+c we increase it by one and terminate if the ctr has a
+            // value of 2 afterwards. If we don't want to catch ctrlcs anymore we set the ctr back to 1.
+            // This is important so we can still terminate the process while we are reading input from stdin,
+            // eg while waiting for input during `add domain`.
+            let prev = ctr.fetch_add(1, Ordering::SeqCst);
+            if prev == 1 {
+                ::std::process::exit(0);
+            }
+        }).map_err(Error::from)
+    }
+
+    pub fn catch_ctrl(&self) {
+        self.signal_register.store(0, Ordering::SeqCst);
+    }
+
+    pub fn ctrlc_received(&self) -> bool {
+        self.signal_register.load(Ordering::SeqCst) == 1
+    }
+
+    pub fn reset_ctrlc(&self) {
+        self.signal_register.store(1, Ordering::SeqCst);
+    }
 }
 
 
@@ -279,13 +314,11 @@ pub fn init(args: &Args) -> Result<Readline> {
 pub fn run(args: &Args) -> Result<()> {
     print_banner();
 
-    // wait("checking tor status");
-
-    // println!("\x1b[1m[\x1b[32m*\x1b[0;1m]\x1b[0m updating registry...");
-    // wait("updating registry");
-
     let mut rl = init(args)?;
     rl.load_history().ok();
+
+    rl.set_signal_handler()
+        .context("Failed to set signal handler")?;
 
     loop {
         match run_once(&mut rl) {
