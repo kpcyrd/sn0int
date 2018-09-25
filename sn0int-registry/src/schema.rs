@@ -1,4 +1,7 @@
 table! {
+    use diesel::sql_types::*;
+    use diesel_full_text_search::{TsVector as Tsvector};
+
     auth_tokens (token) {
         token -> Varchar,
         author -> Varchar,
@@ -9,6 +12,9 @@ table! {
 }
 
 table! {
+    use diesel::sql_types::*;
+    use diesel_full_text_search::{TsVector as Tsvector};
+
     modules (id) {
         id -> Int4,
         author -> Varchar,
@@ -20,6 +26,9 @@ table! {
 }
 
 table! {
+    use diesel::sql_types::*;
+    use diesel_full_text_search::{TsVector as Tsvector};
+
     releases (id) {
         id -> Int4,
         module_id -> Int4,
