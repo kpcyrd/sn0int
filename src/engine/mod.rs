@@ -8,7 +8,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
-use engine::metadata::{Metadata, Argument};
+use engine::metadata::{Metadata, Source};
 use paths;
 use term;
 use worker::{self, Event};
@@ -121,7 +121,7 @@ pub struct Module {
     author: String,
     description: String,
     version: String,
-    argument: Argument,
+    source: Option<Source>,
     script: Script,
 }
 
@@ -141,7 +141,7 @@ impl Module {
             author: author.to_string(),
             description: metadata.description,
             version: metadata.version,
-            argument: metadata.argument,
+            source: metadata.source,
             script,
         })
     }
@@ -162,8 +162,8 @@ impl Module {
         &self.version
     }
 
-    pub fn argument(&self) -> &Argument {
-        &self.argument
+    pub fn source(&self) -> &Option<Source> {
+        &self.source
     }
 
     pub fn run(&self, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {

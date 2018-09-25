@@ -1,6 +1,6 @@
 -- Description: Discover subdomains from wayback machine
 -- Version: 0.1.0
--- Argument: domains
+-- Source: domains
 
 function run(arg)
 

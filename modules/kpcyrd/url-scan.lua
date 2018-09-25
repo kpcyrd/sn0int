@@ -1,6 +1,6 @@
 -- Description: Check subdomains for websites
 -- Version: 0.1.0
--- Argument: subdomains
+-- Source: subdomains
 
 function request(subdomain_id, url)
     req = http_request(session, 'GET', url, {

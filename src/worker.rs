@@ -20,10 +20,13 @@ pub enum Event {
     Done,
 }
 
-pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &str) {
+pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &Option<String>) {
     let (tx, rx) = channel::bounded(1);
 
-    let name = format!("{} ({:?})", module.canonical(), pretty_arg);
+    let name = match pretty_arg {
+        Some(pretty_arg) => format!("{} ({:?})", module.canonical(), pretty_arg),
+        None => module.canonical(),
+    };
     let mut spinner = Spinner::random(format!("Running {}", name));
 
     let t = thread::spawn(move || {

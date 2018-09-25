@@ -7,7 +7,7 @@ use std::str::FromStr;
 pub enum EntryType {
     Description,
     Version,
-    Argument,
+    Source,
 }
 
 impl FromStr for EntryType {
@@ -17,26 +17,26 @@ impl FromStr for EntryType {
         match s {
             "Description" => Ok(EntryType::Description),
             "Version" => Ok(EntryType::Version),
-            "Argument" => Ok(EntryType::Argument),
+            "Source" => Ok(EntryType::Source),
             x => bail!("Unknown EntryType: {:?}", x),
         }
     }
 }
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Argument {
+pub enum Source {
     Domains,
     Subdomains,
 }
 
-impl FromStr for Argument {
+impl FromStr for Source {
     type Err = Error;
 
-    fn from_str(s: &str) -> Result<Argument> {
+    fn from_str(s: &str) -> Result<Source> {
         match s {
-            "domains" => Ok(Argument::Domains),
-            "subdomains" => Ok(Argument::Subdomains),
-            x => bail!("Unknown Argument: {:?}", x),
+            "domains" => Ok(Source::Domains),
+            "subdomains" => Ok(Source::Subdomains),
+            x => bail!("Unknown Source: {:?}", x),
         }
     }
 }
@@ -45,7 +45,7 @@ impl FromStr for Argument {
 pub struct Metadata {
     pub description: String,
     pub version: String,
-    pub argument: Argument,
+    pub source: Option<Source>,
 }
 
 impl Metadata {
@@ -59,7 +59,7 @@ impl Metadata {
             match k {
                 EntryType::Description => data.description = Some(v),
                 EntryType::Version => data.version = Some(v),
-                EntryType::Argument => data.argument = Some(v),
+                EntryType::Source => data.source = Some(v),
             }
         }
 
@@ -71,21 +71,22 @@ impl Metadata {
 pub struct NewMetadata<'a> {
     pub description: Option<&'a str>,
     pub version: Option<&'a str>,
-    pub argument: Option<&'a str>,
+    pub source: Option<&'a str>,
 }
 
 impl<'a> NewMetadata<'a> {
     fn try_from(self) -> Result<Metadata> {
         let description = self.description.ok_or_else(|| format_err!("Description is required"))?;
         let version = self.version.ok_or_else(|| format_err!("Version is required"))?;
-        let argument = self.argument.ok_or_else(|| format_err!("Argument is required"))?;
-
-        let argument = argument.parse()?;
+        let source = match self.source {
+            Some(x) => Some(x.parse()?),
+            _ => None,
+        };
 
         Ok(Metadata {
             description: description.to_string(),
             version: version.to_string(),
-            argument,
+            source,
         })
     }
 }
@@ -118,13 +119,13 @@ mod tests {
     fn verify_simple() {
         let metadata = Metadata::parse(r#"-- Description: Hello world, this is my description
 -- Version: 1.0.0
--- Argument: domains
+-- Source: domains
 
 "#).expect("parse");
         assert_eq!(metadata, Metadata {
             description: "Hello world, this is my description".to_string(),
             version: "1.0.0".to_string(),
-            argument: Argument::Domains,
+            source: Some(Source::Domains),
         });
     }
 }
