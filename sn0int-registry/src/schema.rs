@@ -2,12 +2,10 @@ table! {
     use diesel::sql_types::*;
     use diesel_full_text_search::{TsVector as Tsvector};
 
-    auth_tokens (token) {
-        token -> Varchar,
+    auth_tokens (id) {
+        id -> Varchar,
         author -> Varchar,
-        created_at -> Timestamp,
-        used_at -> Timestamp,
-        oauth -> Varchar,
+        access_token -> Varchar,
     }
 }
 

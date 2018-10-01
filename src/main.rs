@@ -5,6 +5,7 @@ extern crate env_logger;
 extern crate structopt;
 
 use sn0int::args::{self, Args, SubCommand};
+use sn0int::auth;
 use sn0int::cmd;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
@@ -42,6 +43,7 @@ fn run() -> Result<()> {
     match args.subcommand {
         Some(SubCommand::Run(ref run)) => run_run(&args, run),
         Some(SubCommand::Sandbox(_)) => engine::isolation::run_worker(),
+        Some(SubCommand::Login(_)) => auth::run_login(),
         None => shell::run(&args),
     }
 }

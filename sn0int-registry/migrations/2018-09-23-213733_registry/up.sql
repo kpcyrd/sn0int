@@ -20,9 +20,7 @@ ALTER TABLE modules
     REFERENCES releases (id) MATCH FULL;
 
 CREATE TABLE auth_tokens (
-    token VARCHAR PRIMARY KEY,
+    id VARCHAR PRIMARY KEY,
     author VARCHAR NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    used_at TIMESTAMP NOT NULL,
-    oauth VARCHAR NOT NULL
+    access_token VARCHAR NOT NULL
 );

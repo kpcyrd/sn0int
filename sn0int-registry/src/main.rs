@@ -4,13 +4,19 @@
 #![feature(custom_derive)]
 #![plugin(rocket_codegen)]
 
+extern crate sn0int_common;
 extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 extern crate dotenv;
 // extern crate serde;
 #[macro_use] extern crate serde_derive;
+#[macro_use] extern crate log;
 #[macro_use] extern crate diesel;
+#[macro_use] extern crate failure;
 extern crate diesel_full_text_search;
+extern crate oauth2;
+extern crate url;
+extern crate reqwest;
 
 use rocket::response::content;
 use rocket_contrib::{Json, Value};
@@ -18,7 +24,10 @@ use dotenv::dotenv;
 
 use std::env;
 
+pub mod auth;
 pub mod db;
+pub mod errors;
+pub mod github;
 pub mod models;
 pub mod routes;
 #[allow(unused_imports)]
@@ -69,6 +78,8 @@ fn main() {
             routes::api::download,
             routes::api::publish,
             routes::api::login,
+            routes::api::authorize,
+            routes::api::whoami,
         ])
         .mount("/", routes![
             index,

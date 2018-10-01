@@ -9,9 +9,11 @@ categories = ["command-line-utilities"]
 readme = "README.md"
 
 [workspace]
-members = ["sn0int-registry"]
+members = ["sn0int-common",
+           "sn0int-registry"]
 
 [dependencies]
+sn0int-common = { path="sn0int-common" }
 rustyline = "2"
 log = "0.4"
 env_logger = "0.5"
@@ -40,5 +42,6 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 crossbeam-channel = "0.2"
+opener = "0.3.0"
 
 # https://crates.io/crates/tor_control
