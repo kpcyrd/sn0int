@@ -1,8 +1,6 @@
 use errors::*;
 use std::fmt;
-use chrootable_https::{self, HttpClient};
-use http::{Request, Uri};
-use hyper::Body;
+use chrootable_https::{self, HttpClient, Body, Request, Uri};
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use serde::de::DeserializeOwned;

@@ -11,9 +11,8 @@ use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use engine::structs::LuaMap;
 use json::LuaJsonValue;
-use http::Uri;
-use http::uri::Parts;
-use hyper::{Request, Body};
+use chrootable_https::http::uri::Parts;
+use chrootable_https::{Request, Body, Uri};
 use serde_urlencoded;
 use base64;
 
@@ -134,7 +133,7 @@ impl HttpRequest {
 
         // set cookies
         {
-            use hyper::header::COOKIE;
+            use chrootable_https::header::COOKIE;
             let mut cookies = String::new();
 
             for (key, value) in self.cookies.iter() {
@@ -152,13 +151,13 @@ impl HttpRequest {
 
         // add headers
         if let Some(ref agent) = self.user_agent {
-            use hyper::header::USER_AGENT;
+            use chrootable_https::header::USER_AGENT;
             req.header(USER_AGENT, agent.as_str());
             observed_headers.insert(USER_AGENT.as_str().to_lowercase());
         }
 
         if let Some(ref auth) = self.basic_auth {
-            use hyper::header::AUTHORIZATION;
+            use chrootable_https::header::AUTHORIZATION;
             let &(ref user, ref password) = auth;
 
             let auth = base64::encode(&format!("{}:{}", user, password));
