@@ -1,5 +1,6 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![warn(unused_extern_crates)]
+extern crate sn0int_common;
 extern crate rustyline;
 extern crate rand;
 extern crate colored;
@@ -19,6 +20,7 @@ extern crate base64;
 extern crate http;
 extern crate kuchiki;
 extern crate ctrlc;
+extern crate opener;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_urlencoded;
@@ -31,7 +33,9 @@ extern crate serde_urlencoded;
 #[macro_use] extern crate diesel_migrations;
 #[macro_use] extern crate crossbeam_channel as channel;
 
+pub mod api;
 pub mod args;
+pub mod auth;
 pub mod cmd;
 pub mod complete;
 pub mod db;

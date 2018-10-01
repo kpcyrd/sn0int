@@ -29,6 +29,9 @@ pub enum SubCommand {
     #[structopt(author="", name="sandbox")]
     /// For internal use
     Sandbox(Sandbox),
+    #[structopt(author="", name="login")]
+    /// Login to the registry for publishing
+    Login(Login),
 }
 
 #[derive(Debug, StructOpt)]
@@ -42,4 +45,8 @@ pub struct Run {
 pub struct Sandbox {
     /// This value is only used for process listings
     label: String,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Login {
 }
