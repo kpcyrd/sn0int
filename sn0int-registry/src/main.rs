@@ -25,6 +25,7 @@ use dotenv::dotenv;
 use std::env;
 
 pub mod auth;
+pub mod auth2;
 pub mod db;
 pub mod errors;
 pub mod github;

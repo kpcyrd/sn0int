@@ -25,7 +25,7 @@ impl<T> ApiResponse<T> {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WhoamiResponse {
     #[serde(rename="user")]
-    pub user: Option<String>,
+    pub user: String,
 }
 
 

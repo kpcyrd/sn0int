@@ -1,7 +1,7 @@
 use errors::*;
 use auth::Authenticator;
+use auth2::AuthHeader;
 use db;
-use models::*;
 use sn0int_common::{ApiResponse, WhoamiResponse};
 use rocket::response::Redirect;
 use rocket_contrib::{Json, Value};
@@ -42,18 +42,12 @@ fn login(session: String) -> ApiResult<Redirect> {
     Ok(Redirect::to(&url.to_string()))
 }
 
-// TODO: verify token is still valid
-#[get("/whoami/<session>")]
-fn whoami(session: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<WhoamiResponse>>> {
-    let reply = match AuthToken::read_opt(&session, &connection)? {
-        Some(auth_token) => WhoamiResponse {
-            user: Some(auth_token.author)
-        },
-        None => WhoamiResponse {
-            user: None,
-        },
-    };
-    Ok(Json(ApiResponse::Success(reply)))
+#[get("/whoami")]
+fn whoami(session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<WhoamiResponse>>> {
+    let user = session.verify(&connection)?;
+    Ok(Json(ApiResponse::Success(WhoamiResponse {
+        user,
+    })))
 }
 
 #[derive(Debug, FromForm)]
