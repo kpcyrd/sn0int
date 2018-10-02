@@ -18,8 +18,7 @@ table! {
         author -> Varchar,
         name -> Varchar,
         description -> Text,
-        search_tokens -> Nullable<Tsvector>,
-        latest -> Int4,
+        latest -> Nullable<Varchar>,
     }
 }
 
@@ -32,8 +31,11 @@ table! {
         module_id -> Int4,
         version -> Varchar,
         downloads -> Int4,
+        code -> Text,
     }
 }
+
+joinable!(releases -> modules (module_id));
 
 allow_tables_to_appear_in_same_query!(
     auth_tokens,

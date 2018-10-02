@@ -8,14 +8,13 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
-use engine::metadata::{Metadata, Source};
+use sn0int_common::metadata::{Metadata, Source};
 use paths;
 use term;
 use worker::{self, Event};
 
 pub mod ctx;
 pub mod isolation;
-pub mod metadata;
 pub mod structs;
 
 
@@ -131,7 +130,7 @@ impl Module {
         let code = fs::read_to_string(path)
             .context("Failed to read module")?;
 
-        let metadata = Metadata::parse(&code)
+        let metadata = code.parse::<Metadata>()
             .context("Failed to parse module metadata")?;
 
         let script = Script::load_unchecked(code)?;

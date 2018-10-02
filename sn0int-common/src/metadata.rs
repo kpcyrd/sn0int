@@ -48,8 +48,10 @@ pub struct Metadata {
     pub source: Option<Source>,
 }
 
-impl Metadata {
-    pub fn parse(code: &str) -> Result<Metadata> {
+impl FromStr for Metadata {
+    type Err = Error;
+
+    fn from_str(code: &str) -> Result<Metadata> {
         let (_, lines) = metalines(code)
             .map_err(|_| format_err!("Failed to parse header"))?;
 
@@ -117,7 +119,7 @@ mod tests {
 
     #[test]
     fn verify_simple() {
-        let metadata = Metadata::parse(r#"-- Description: Hello world, this is my description
+        let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
 -- Version: 1.0.0
 -- Source: domains
 

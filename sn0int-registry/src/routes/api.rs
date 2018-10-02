@@ -2,9 +2,11 @@ use errors::*;
 use auth::Authenticator;
 use auth2::AuthHeader;
 use db;
-use sn0int_common::{ApiResponse, WhoamiResponse};
+use sn0int_common::api::*;
+use sn0int_common::metadata::Metadata;
 use rocket::response::Redirect;
 use rocket_contrib::{Json, Value};
+use models::*;
 
 
 #[get("/dashboard")]
@@ -29,10 +31,21 @@ fn download(author: String, name: String) -> Json<Value> {
     Json(json!({ "dashboard": {}}))
 }
 
-#[post("/publish/<author>/<name>", format="application/json", data="<upload>")]
-fn publish(author: String, name: String, upload: String) -> Json<Value> {
-    println!("{:?}/{:?}: {:?}", author, name, upload);
-    Json(json!({ "dashboard": {}}))
+#[post("/publish/<name>", format="application/json", data="<upload>")]
+fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<PublishResponse>>> {
+    let user = session.verify(&connection)?;
+
+    let metadata = upload.code.parse::<Metadata>()?;
+    let version = metadata.version;
+
+    let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;
+    module.add_version(&version, &upload.code, &connection)?;
+
+    Ok(Json(ApiResponse::Success(PublishResponse {
+        author: user,
+        name,
+        version,
+    })))
 }
 
 #[get("/login/<session>")]

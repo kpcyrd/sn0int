@@ -50,6 +50,14 @@ fn style() -> content::Css<&'static str> {
     content::Css(include_str!("../assets/style.css"))
 }
 
+#[catch(400)]
+fn bad_request() -> Json<Value> {
+    Json(json!({
+        "status": "error",
+        "reason": "Bad request"
+    }))
+}
+
 #[catch(404)]
 fn not_found() -> Json<Value> {
     Json(json!({
@@ -88,6 +96,7 @@ fn main() {
             style
         ])
     .catch(catchers![
+        bad_request,
         not_found,
         internal_error,
     ])

@@ -9,6 +9,7 @@ use sn0int::auth;
 use sn0int::cmd;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
+use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
 use structopt::StructOpt;
@@ -56,6 +57,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Run(ref run)) => run_run(&args, run),
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
         Some(SubCommand::Login(_)) => auth::run_login(),
+        Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish),
         None => shell::run(&args),
     }
 }

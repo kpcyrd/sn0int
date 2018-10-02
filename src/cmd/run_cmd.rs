@@ -1,7 +1,7 @@
 use errors::*;
 
 use db::Database;
-use engine::metadata::Source;
+use sn0int_common::metadata::Source;
 use serde::Serialize;
 use serde_json;
 use shell::Readline;

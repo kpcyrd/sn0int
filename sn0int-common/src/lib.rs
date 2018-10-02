@@ -1,33 +1,11 @@
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate failure;
+#[macro_use] extern crate nom;
 
+pub mod api;
 pub mod errors;
 pub use errors::*;
-
-
-#[derive(Debug, Serialize, Deserialize)]
-pub enum ApiResponse<T> {
-    #[serde(rename="success")]
-    Success(T),
-    #[serde(rename="error")]
-    Error(String),
-}
-
-impl<T> ApiResponse<T> {
-    pub fn success(self) -> Result<T> {
-        match self {
-            ApiResponse::Success(x) => Ok(x),
-            ApiResponse::Error(err) => bail!("Api returned error: {:?}", err),
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct WhoamiResponse {
-    #[serde(rename="user")]
-    pub user: String,
-}
-
+pub mod metadata;
 
 #[cfg(test)]
 mod tests {

@@ -4,8 +4,8 @@ use diesel::pg::PgConnection;
 use schema::*;
 
 
-#[table_name="auth_tokens"]
 #[derive(AsChangeset, Serialize, Deserialize, Queryable, Insertable)]
+#[table_name="auth_tokens"]
 pub struct AuthToken {
     pub id: String,
     pub author: String,
@@ -38,4 +38,151 @@ impl AuthToken {
             .execute(connection)?;
         Ok(())
     }
+}
+
+#[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
+#[table_name="modules"]
+pub struct Module {
+    id: i32,
+    author: String,
+    name: String,
+    description: String,
+    latest: Option<String>,
+}
+
+impl Module {
+    pub fn create(module: &NewModule, connection: &PgConnection) -> Result<Module> {
+        diesel::insert_into(modules::table)
+            .values(module)
+            .get_result(connection)
+            .map_err(Error::from)
+    }
+
+    pub fn find(author: &str, name: &str, connection: &PgConnection) -> Result<i32> {
+        modules::table.filter(modules::columns::author.eq(author))
+                        .filter(modules::columns::name.eq(name))
+                        .select(modules::columns::id)
+                        .first::<i32>(connection)
+                        .map_err(Error::from)
+    }
+
+    pub fn find_opt(author: &str, name: &str, connection: &PgConnection) -> Result<Option<i32>> {
+        modules::table.filter(modules::columns::author.eq(author))
+                        .filter(modules::columns::name.eq(name))
+                        .select(modules::columns::id)
+                        .first::<i32>(connection)
+                        .optional()
+                        .map_err(Error::from)
+    }
+
+    pub fn update_or_create(author: &str, name: &str, description: &str, connection: &PgConnection) -> Result<Module> {
+        match Self::find_opt(author, name, connection)? {
+            Some(id) => diesel::update(modules::table.filter(modules::columns::id.eq(id)))
+                            .set(modules::columns::description.eq(description))
+                            .get_result(connection)
+                            .map_err(Error::from),
+            None => Self::create(&NewModule {
+                author,
+                name,
+                description,
+                latest: None,
+            }, connection),
+        }
+    }
+
+    pub fn id(id: i32, connection: &PgConnection) -> Result<Module> {
+        modules::table.find(id)
+            .first::<Module>(connection)
+            .map_err(Error::from)
+    }
+
+    pub fn id_opt(id: i32, connection: &PgConnection) -> Result<Option<Module>> {
+        modules::table.find(id)
+            .first::<Module>(connection)
+            .optional()
+            .map_err(Error::from)
+    }
+
+    pub fn delete(id: i32, connection: &PgConnection) -> Result<()> {
+        diesel::delete(modules::table.find(id))
+            .execute(connection)?;
+        Ok(())
+    }
+
+    pub fn add_version(&self, version: &str, code: &str, connection: &PgConnection) -> Result<()> {
+        let _release = Release::create(&NewRelease {
+            module_id: self.id,
+            version,
+            code,
+        }, connection)?;
+
+        diesel::update(modules::table.filter(modules::columns::id.eq(self.id)))
+            .set(modules::columns::latest.eq(version))
+            .execute(connection)?;
+
+        Ok(())
+    }
+}
+
+#[derive(Insertable)]
+#[table_name="modules"]
+pub struct NewModule<'a> {
+    author: &'a str,
+    name: &'a str,
+    description: &'a str,
+    latest: Option<&'a str>,
+}
+
+#[derive(AsChangeset, Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
+#[belongs_to(Module)]
+#[table_name="releases"]
+pub struct Release {
+    id: i32,
+    module_id: i32,
+    version: String,
+    downloads: i32,
+    code: String,
+}
+
+impl Release {
+    pub fn create(release: &NewRelease, connection: &PgConnection) -> Result<Release> {
+        diesel::insert_into(releases::table)
+            .values(release)
+            .get_result(connection)
+            .map_err(Error::from)
+        /*
+        releases::table.filter(releases::columns::module_id.eq(release.module_id))
+                        .filter(releases::columns::version.eq(&release.version))
+                        .select(releases::columns::id)
+                        .first::<i32>(connection)
+                        .map_err(Error::from)
+        */
+    }
+
+    pub fn id(id: i32, connection: &PgConnection) -> Result<Release> {
+        releases::table.find(id)
+            .first::<Release>(connection)
+            .map_err(Error::from)
+    }
+
+    pub fn id_opt(id: i32, connection: &PgConnection) -> Result<Option<Release>> {
+        releases::table.find(id)
+            .first::<Release>(connection)
+            .optional()
+            .map_err(Error::from)
+    }
+
+    pub fn delete(id: i32, connection: &PgConnection) -> Result<()> {
+        diesel::delete(releases::table.find(id))
+            .execute(connection)?;
+        Ok(())
+    }
+}
+
+#[derive(Insertable)]
+#[table_name="releases"]
+pub struct NewRelease<'a> {
+    module_id: i32,
+    version: &'a str,
+    code: &'a str,
 }

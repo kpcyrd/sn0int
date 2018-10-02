@@ -3,11 +3,9 @@ use opener;
 use std::fs;
 use std::thread;
 use std::time::Duration;
-use api::Client;
+use api::{API_URL, Client};
 use paths;
 use term;
-
-const API_URL: &str = "http://[::1]:8000";
 
 
 pub fn load_token() -> Result<String> {

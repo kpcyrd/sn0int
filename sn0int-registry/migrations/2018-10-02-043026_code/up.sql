@@ -1,0 +1,1 @@
+ALTER TABLE releases ADD COLUMN code TEXT NOT NULL;

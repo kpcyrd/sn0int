@@ -7,3 +7,4 @@ authors = ["kpcyrd <git@rxv.cc>"]
 serde = "1.0"
 serde_derive = "1.0"
 failure = "0.1"
+nom = "4.0"
