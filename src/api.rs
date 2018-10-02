@@ -9,6 +9,7 @@ use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use serde_json;
 use sn0int_common::api::*;
+use sn0int_common::ModuleID;
 
 pub const API_URL: &str = "http://[::1]:8000";
 
@@ -91,14 +92,14 @@ impl Client {
         Ok(reply)
     }
 
-    pub fn download_module(&self, module: &str, version: &str) -> Result<DownloadResponse> {
-        let url = format!("{}/api/v0/dl/{}/{}", self.server, module, version);
+    pub fn download_module(&self, module: &ModuleID, version: &str) -> Result<DownloadResponse> {
+        let url = format!("{}/api/v0/dl/{}/{}/{}", self.server, module.author, module.name, version);
         let reply = self.get::<DownloadResponse>(&url)?;
         Ok(reply)
     }
 
-    pub fn query_module(&self, module: &str) -> Result<ModuleInfoResponse> {
-        let url = format!("{}/api/v0/info/{}", self.server, module);
+    pub fn query_module(&self, module: &ModuleID) -> Result<ModuleInfoResponse> {
+        let url = format!("{}/api/v0/info/{}/{}", self.server, module.author, module.name);
         let reply = self.get::<ModuleInfoResponse>(&url)?;
         Ok(reply)
     }

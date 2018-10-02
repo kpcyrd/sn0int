@@ -182,6 +182,13 @@ impl Release {
             .execute(connection)?;
         Ok(())
     }
+
+    pub fn bump_downloads(&self, connection: &PgConnection) -> Result<()> {
+        diesel::update(releases::table.filter(releases::id.eq(self.id)))
+            .set(releases::downloads.eq(releases::downloads + 1))
+            .execute(connection)?;
+        Ok(())
+    }
 }
 
 #[derive(Insertable)]

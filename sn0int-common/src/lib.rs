@@ -6,6 +6,8 @@ pub mod api;
 pub mod errors;
 pub use errors::*;
 pub mod metadata;
+pub mod id;
+pub use id::*;
 
 #[cfg(test)]
 mod tests {

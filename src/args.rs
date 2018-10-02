@@ -1,4 +1,6 @@
 use structopt::clap::AppSettings;
+use sn0int_common::ModuleID;
+
 
 #[derive(Debug, StructOpt)]
 #[structopt(author = "",
@@ -66,7 +68,7 @@ pub struct Publish {
 #[derive(Debug, StructOpt)]
 pub struct Install {
     /// The script to install
-    pub module: String,
+    pub module: ModuleID,
     /// Specify the version, defaults to the latest version
     pub version: Option<String>,
 }

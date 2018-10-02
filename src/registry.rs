@@ -61,7 +61,8 @@ pub fn run_install(_args: &Args, install: &Install) -> Result<()> {
             .context("Failed to download module")?;
 
         let path = paths::module_dir()?
-            .join(format!("{}.lua", install.module));
+            .join(format!("{}/{}.lua", install.module.author,
+                                       install.module.name));
 
         fs::create_dir_all(path.parent().unwrap())
             .context("Failed to create folder")?;

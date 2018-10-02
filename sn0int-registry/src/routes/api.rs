@@ -44,7 +44,7 @@ fn download(author: String, name: String, version: String, connection: db::Conne
     let module = Module::find(&author, &name, &connection)?;
     let release = Release::find(module.id, &version, &connection)?;
 
-    // TODO: download counter
+    release.bump_downloads(&connection)?;
 
     Ok(Json(ApiResponse::Success(DownloadResponse {
         author,
