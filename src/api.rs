@@ -90,4 +90,16 @@ impl Client {
         })?;
         Ok(reply)
     }
+
+    pub fn download_module(&self, module: &str, version: &str) -> Result<DownloadResponse> {
+        let url = format!("{}/api/v0/dl/{}/{}", self.server, module, version);
+        let reply = self.get::<DownloadResponse>(&url)?;
+        Ok(reply)
+    }
+
+    pub fn query_module(&self, module: &str) -> Result<ModuleInfoResponse> {
+        let url = format!("{}/api/v0/info/{}", self.server, module);
+        let reply = self.get::<ModuleInfoResponse>(&url)?;
+        Ok(reply)
+    }
 }

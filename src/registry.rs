@@ -1,10 +1,11 @@
 use errors::*;
-use args::{Args, Publish};
+use args::{Args, Publish, Install};
 use api::{API_URL, Client};
 use auth;
 use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::Path;
+use paths;
 use term;
 use worker;
 
@@ -41,4 +42,33 @@ pub fn run_publish(_args: &Args, publish: &Publish) -> Result<()> {
                                                  result.version));
 
     Ok(())
+}
+
+pub fn run_install(_args: &Args, install: &Install) -> Result<()> {
+    let client = Client::new(API_URL)?;
+
+    let label = format!("Installing {}", install.module);
+    worker::spawn_fn(&label, || {
+        let version = match install.version {
+            Some(ref version) => version.to_string(),
+            None => client.query_module(&install.module)
+                        .context("Failed to query module infos")?
+                        .latest
+                        .ok_or(format_err!("Module doesn't have a latest version"))?,
+        };
+
+        let module = client.download_module(&install.module, &version)
+            .context("Failed to download module")?;
+
+        let path = paths::module_dir()?
+            .join(format!("{}.lua", install.module));
+
+        fs::create_dir_all(path.parent().unwrap())
+            .context("Failed to create folder")?;
+
+        fs::write(&path, module.code)
+            .context(format_err!("Failed to write to {:?}", path))?;
+
+        Ok(())
+    }, false)
 }

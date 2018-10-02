@@ -43,11 +43,11 @@ impl AuthToken {
 #[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
 #[table_name="modules"]
 pub struct Module {
-    id: i32,
-    author: String,
-    name: String,
-    description: String,
-    latest: Option<String>,
+    pub id: i32,
+    pub author: String,
+    pub name: String,
+    pub description: String,
+    pub latest: Option<String>,
 }
 
 impl Module {
@@ -58,26 +58,24 @@ impl Module {
             .map_err(Error::from)
     }
 
-    pub fn find(author: &str, name: &str, connection: &PgConnection) -> Result<i32> {
+    pub fn find(author: &str, name: &str, connection: &PgConnection) -> Result<Module> {
         modules::table.filter(modules::columns::author.eq(author))
                         .filter(modules::columns::name.eq(name))
-                        .select(modules::columns::id)
-                        .first::<i32>(connection)
+                        .first::<Self>(connection)
                         .map_err(Error::from)
     }
 
-    pub fn find_opt(author: &str, name: &str, connection: &PgConnection) -> Result<Option<i32>> {
+    pub fn find_opt(author: &str, name: &str, connection: &PgConnection) -> Result<Option<Module>> {
         modules::table.filter(modules::columns::author.eq(author))
                         .filter(modules::columns::name.eq(name))
-                        .select(modules::columns::id)
-                        .first::<i32>(connection)
+                        .first::<Self>(connection)
                         .optional()
                         .map_err(Error::from)
     }
 
     pub fn update_or_create(author: &str, name: &str, description: &str, connection: &PgConnection) -> Result<Module> {
         match Self::find_opt(author, name, connection)? {
-            Some(id) => diesel::update(modules::table.filter(modules::columns::id.eq(id)))
+            Some(module) => diesel::update(modules::table.filter(modules::columns::id.eq(module.id)))
                             .set(modules::columns::description.eq(description))
                             .get_result(connection)
                             .map_err(Error::from),
@@ -137,11 +135,11 @@ pub struct NewModule<'a> {
 #[belongs_to(Module)]
 #[table_name="releases"]
 pub struct Release {
-    id: i32,
-    module_id: i32,
-    version: String,
-    downloads: i32,
-    code: String,
+    pub id: i32,
+    pub module_id: i32,
+    pub version: String,
+    pub downloads: i32,
+    pub code: String,
 }
 
 impl Release {
@@ -157,6 +155,13 @@ impl Release {
                         .first::<i32>(connection)
                         .map_err(Error::from)
         */
+    }
+
+    pub fn find(id: i32, version: &str, connection: &PgConnection) -> Result<Release> {
+        releases::table.filter(releases::columns::id.eq(id))
+                        .filter(releases::columns::version.eq(version))
+                        .first::<Release>(connection)
+                        .map_err(Error::from)
     }
 
     pub fn id(id: i32, connection: &PgConnection) -> Result<Release> {

@@ -20,15 +20,38 @@ pub struct Search {
 }
 
 #[get("/search?<q>")]
-fn search(q: Search) -> Json<Value> {
+fn search(q: Search, _connection: db::Connection) -> Json<Value> {
     println!("{:?}", q);
     Json(json!({ "dashboard": {}}))
 }
 
-#[get("/dl/<author>/<name>", format="application/json")]
-fn download(author: String, name: String) -> Json<Value> {
-    println!("{:?}/{:?}", author, name);
-    Json(json!({ "dashboard": {}}))
+#[get("/info/<author>/<name>", format="application/json")]
+fn info(author: String, name: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<ModuleInfoResponse>>> {
+    info!("Querying {:?}/{:?}", author, name);
+    let module = Module::find(&author, &name, &connection)?;
+
+    Ok(Json(ApiResponse::Success(ModuleInfoResponse {
+        author: module.author,
+        name: module.name,
+        description: module.description,
+        latest: module.latest,
+    })))
+}
+
+#[get("/dl/<author>/<name>/<version>", format="application/json")]
+fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<DownloadResponse>>> {
+    info!("Downloading {:?}/{:?} ({:?})", author, name, version);
+    let module = Module::find(&author, &name, &connection)?;
+    let release = Release::find(module.id, &version, &connection)?;
+
+    // TODO: download counter
+
+    Ok(Json(ApiResponse::Success(DownloadResponse {
+        author,
+        name,
+        version,
+        code: release.code,
+    })))
 }
 
 #[post("/publish/<name>", format="application/json", data="<upload>")]
@@ -36,6 +59,7 @@ fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, conn
     let user = session.verify(&connection)?;
 
     let metadata = upload.code.parse::<Metadata>()?;
+    // TODO: enforce semver
     let version = metadata.version;
 
     let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;

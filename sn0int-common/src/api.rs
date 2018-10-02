@@ -34,3 +34,19 @@ pub struct PublishResponse {
     pub name: String,
     pub version: String,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct DownloadResponse {
+    pub author: String,
+    pub name: String,
+    pub version: String,
+    pub code: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ModuleInfoResponse {
+    pub author: String,
+    pub name: String,
+    pub description: String,
+    pub latest: Option<String>,
+}

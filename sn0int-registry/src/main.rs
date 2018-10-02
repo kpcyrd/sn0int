@@ -84,6 +84,7 @@ fn main() {
         .mount("/api/v0", routes![
             routes::api::dashboard,
             routes::api::search,
+            routes::api::info,
             routes::api::download,
             routes::api::publish,
             routes::api::login,

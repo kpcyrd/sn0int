@@ -35,6 +35,9 @@ pub enum SubCommand {
     #[structopt(author="", name="publish")]
     /// Publish a script to the registry
     Publish(Publish),
+    #[structopt(author="", name="install")]
+    /// Install a module from the registry
+    Install(Install),
 }
 
 #[derive(Debug, StructOpt)]
@@ -58,4 +61,12 @@ pub struct Login {
 pub struct Publish {
     /// The script to publish
     pub path: String,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Install {
+    /// The script to install
+    pub module: String,
+    /// Specify the version, defaults to the latest version
+    pub version: Option<String>,
 }
