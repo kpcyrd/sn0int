@@ -50,3 +50,18 @@ pub struct ModuleInfoResponse {
     pub description: String,
     pub latest: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchResponse {
+    pub author: String,
+    pub name: String,
+    pub description: String,
+    pub latest: String,
+    pub downloads: i64,
+}
+
+impl SearchResponse {
+    pub fn canonical(&self) -> String {
+        format!("{}/{}", self.author, self.name)
+    }
+}

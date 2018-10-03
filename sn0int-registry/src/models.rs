@@ -1,6 +1,7 @@
 use errors::*;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
+use diesel::sql_types::BigInt;
 use schema::*;
 
 
@@ -120,6 +121,38 @@ impl Module {
 
         Ok(())
     }
+
+    pub fn search(query: &str, connection: &PgConnection) -> Result<Vec<(Module, i64)>> {
+        // TODO: optimize the search
+        let query = format!("%{}%", query);
+
+        let x: Vec<(i32, String, String, String, Option<String>, i64)> = modules::table.select((
+                modules::id,
+                modules::author,
+                modules::name,
+                modules::description,
+                modules::latest,
+                diesel::dsl::sql::<BigInt>("sum(releases.downloads) AS sum"),
+            ))
+            .left_join(releases::table)
+            .group_by(modules::id)
+            .filter(modules::author.like(&query).or(
+                modules::name.like(&query).or(
+                    modules::description.like(&query))))
+            .order(diesel::dsl::sql::<BigInt>("sum").desc())
+            .load(connection)?;
+
+        Ok(x.into_iter().map(|(id, author, name, description, latest, downloads)| (
+            Module {
+                id,
+                author,
+                name,
+                description,
+                latest,
+            },
+            downloads,
+        )).collect())
+    }
 }
 
 #[derive(Insertable)]
@@ -158,7 +191,7 @@ impl Release {
     }
 
     pub fn find(id: i32, version: &str, connection: &PgConnection) -> Result<Release> {
-        releases::table.filter(releases::columns::id.eq(id))
+        releases::table.filter(releases::columns::module_id.eq(id))
                         .filter(releases::columns::version.eq(version))
                         .first::<Release>(connection)
                         .map_err(Error::from)

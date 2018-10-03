@@ -40,6 +40,9 @@ pub enum SubCommand {
     #[structopt(author="", name="install")]
     /// Install a module from the registry
     Install(Install),
+    #[structopt(author="", name="search")]
+    /// Search in the registry
+    Search(Search),
 }
 
 #[derive(Debug, StructOpt)]
@@ -71,4 +74,10 @@ pub struct Install {
     pub module: ModuleID,
     /// Specify the version, defaults to the latest version
     pub version: Option<String>,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Search {
+    /// The search query
+    pub query: String,
 }

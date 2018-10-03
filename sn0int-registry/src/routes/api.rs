@@ -2,6 +2,7 @@ use errors::*;
 use auth::Authenticator;
 use auth2::AuthHeader;
 use db;
+use diesel::Connection;
 use sn0int_common::api::*;
 use sn0int_common::metadata::Metadata;
 use rocket::response::Redirect;
@@ -20,9 +21,23 @@ pub struct Search {
 }
 
 #[get("/search?<q>")]
-fn search(q: Search, _connection: db::Connection) -> Json<Value> {
-    println!("{:?}", q);
-    Json(json!({ "dashboard": {}}))
+fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<SearchResponse>>>> {
+    info!("Searching: {:?}", q.q);
+
+    let modules = Module::search(&q.q, &connection)?;
+    let modules = modules.into_iter()
+        .flat_map(|(module, downloads)| {
+            Ok::<_, ()>(SearchResponse {
+                author: module.author,
+                name: module.name,
+                description: module.description,
+                latest: module.latest.ok_or(())?,
+                downloads,
+            })
+        })
+        .collect();
+
+    Ok(Json(ApiResponse::Success(modules)))
 }
 
 #[get("/info/<author>/<name>", format="application/json")]
@@ -42,7 +57,9 @@ fn info(author: String, name: String, connection: db::Connection) -> ApiResult<J
 fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<DownloadResponse>>> {
     info!("Downloading {:?}/{:?} ({:?})", author, name, version);
     let module = Module::find(&author, &name, &connection)?;
+    debug!("Module: {:?}", module);
     let release = Release::find(module.id, &version, &connection)?;
+    debug!("Release: {:?}", release);
 
     release.bump_downloads(&connection)?;
 
@@ -60,10 +77,13 @@ fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, conn
 
     let metadata = upload.code.parse::<Metadata>()?;
     // TODO: enforce semver
-    let version = metadata.version;
+    let version = metadata.version.clone();
 
-    let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;
-    module.add_version(&version, &upload.code, &connection)?;
+    connection.transaction::<_, Error, _>(|| {
+        let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;
+        module.add_version(&version, &upload.code, &connection)?;
+        Ok(())
+    })?;
 
     Ok(Json(ApiResponse::Success(PublishResponse {
         author: user,

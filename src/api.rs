@@ -103,4 +103,11 @@ impl Client {
         let reply = self.get::<ModuleInfoResponse>(&url)?;
         Ok(reply)
     }
+
+    pub fn search(&self, query: &str) -> Result<Vec<SearchResponse>> {
+        // TODO url encoding
+        let url = format!("{}/api/v0/search?q={}", self.server, query);
+        let reply = self.get::<Vec<SearchResponse>>(&url)?;
+        Ok(reply)
+    }
 }

@@ -19,6 +19,7 @@ extern crate base64;
 extern crate kuchiki;
 extern crate ctrlc;
 extern crate opener;
+extern crate separator;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_urlencoded;

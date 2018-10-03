@@ -1,7 +1,9 @@
 use errors::*;
-use args::{Args, Publish, Install};
+use args::{Args, Publish, Install, Search};
 use api::{API_URL, Client};
 use auth;
+use colored::Colorize;
+use separator::Separatable;
 use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::Path;
@@ -44,7 +46,7 @@ pub fn run_publish(_args: &Args, publish: &Publish) -> Result<()> {
     Ok(())
 }
 
-pub fn run_install(_args: &Args, install: &Install) -> Result<()> {
+pub fn run_install(install: &Install) -> Result<()> {
     let client = Client::new(API_URL)?;
 
     let label = format!("Installing {}", install.module);
@@ -72,4 +74,22 @@ pub fn run_install(_args: &Args, install: &Install) -> Result<()> {
 
         Ok(())
     }, false)
+}
+
+pub fn run_search(search: &Search) -> Result<()> {
+    let client = Client::new(API_URL)?;
+
+    let label = format!("Searching {:?}", search.query);
+    let modules = worker::spawn_fn(&label, || {
+        client.search(&search.query)
+    }, true)?;
+
+    for module in &modules {
+        println!("{} ({}) - {} downloads", module.canonical().green(),
+                            module.latest.yellow(),
+                            module.downloads.separated_string());
+        println!("\t{}", module.description);
+    }
+
+    Ok(())
 }

@@ -58,7 +58,8 @@ fn run() -> Result<()> {
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
         Some(SubCommand::Login(_)) => auth::run_login(),
         Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish),
-        Some(SubCommand::Install(ref install)) => registry::run_install(&args, install),
+        Some(SubCommand::Install(ref install)) => registry::run_install(install),
+        Some(SubCommand::Search(ref search)) => registry::run_search(search),
         None => shell::run(&args),
     }
 }

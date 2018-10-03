@@ -24,8 +24,7 @@ use term::Prompt;
 pub enum Command {
     Add,
     Back,
-    List,
-    ReloadModules,
+    Mod,
     Run,
     Set,
     Select,
@@ -41,8 +40,7 @@ impl Command {
         match *self {
             Command::Add => "add",
             Command::Back => "back",
-            Command::List => "list",
-            Command::ReloadModules => "reload_modules",
+            Command::Mod => "mod",
             Command::Run => "run",
             Command::Set => "set",
             Command::Select => "select",
@@ -58,8 +56,7 @@ impl Command {
             static ref COMMANDS: Vec<&'static str> = vec![
                 Command::Add.as_str(),
                 Command::Back.as_str(),
-                Command::List.as_str(),
-                Command::ReloadModules.as_str(),
+                Command::Mod.as_str(),
                 Command::Run.as_str(),
                 Command::Set.as_str(),
                 Command::Select.as_str(),
@@ -80,8 +77,7 @@ impl FromStr for Command {
         match s {
             "add" => Ok(Command::Add),
             "back" => Ok(Command::Back),
-            "list" => Ok(Command::List),
-            "reload_modules"  => Ok(Command::ReloadModules),
+            "mod" => Ok(Command::Mod),
             "run"  => Ok(Command::Run),
             "set"  => Ok(Command::Set),
             "select" => Ok(Command::Select),
@@ -274,8 +270,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
-        Some((Command::List, args)) => list_cmd::run(rl, &args)?,
-        Some((Command::ReloadModules, args)) => reload_modules_cmd::run(rl, &args)?,
+        Some((Command::Mod, args)) => mod_cmd::run(rl, &args)?,
         Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
         // TODO: show global settings
         // TODO: if module is some, show module settings
