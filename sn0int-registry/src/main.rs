@@ -82,7 +82,7 @@ fn run() -> Result<()> {
     let database_url = env::var("DATABASE_URL")
         .context("DATABASE_URL must be set")?;
 
-    db::setup_db(&database_url)
+    db::setup_db(&database_url, 60)
         .context("Failed to setup db")?;
 
     rocket::ignite()

@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["kpcyrd <git@rxv.cc>"]
 
 [dependencies]
-sn0int-common = { path="../sn0int-common" }
+sn0int-common = { path="sn0int-common" }
 rocket = "0.3.16"
 rocket_codegen = "0.3.16"
 rocket_contrib = "0.3.16"

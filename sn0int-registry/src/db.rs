@@ -1,5 +1,7 @@
 use errors::*;
 use std::io;
+use std::thread;
+use std::time::Duration;
 use std::ops::Deref;
 use diesel::Connection as ConnectionTrait;
 use diesel::pg::PgConnection;
@@ -46,8 +48,20 @@ impl Deref for Connection {
 
 embed_migrations!("../sn0int-registry/migrations");
 
-pub fn setup_db(url: &str) -> Result<()> {
-    let connection = PgConnection::establish(url)?;
+pub fn wait_for_db(url: &str, attempts: u8) -> Result<PgConnection> {
+    for _ in 0..attempts {
+        match PgConnection::establish(url) {
+            Ok(connection) => return Ok(connection),
+            Err(err) => eprintln!("Waiting for db: {}", err),
+        }
+        thread::sleep(Duration::from_secs(3));
+    }
+
+    bail!("Database didn't come online in time")
+}
+
+pub fn setup_db(url: &str, attempts: u8) -> Result<()> {
+    let connection = wait_for_db(url, attempts)?;
     embedded_migrations::run_with_output(&connection, &mut io::stdout())?;
     Ok(())
 }

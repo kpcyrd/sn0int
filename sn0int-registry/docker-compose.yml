@@ -11,4 +11,6 @@ services:
     build: .
     ports:
     - 127.0.0.1:8080:8000
+    environment:
+    - DATABASE_URL=postgres://postgres:postgres@db/registry
 ...

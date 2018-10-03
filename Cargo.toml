@@ -9,11 +9,11 @@ categories = ["command-line-utilities"]
 readme = "README.md"
 
 [workspace]
-members = ["sn0int-common",
+members = ["sn0int-registry/sn0int-common",
            "sn0int-registry"]
 
 [dependencies]
-sn0int-common = { path="sn0int-common" }
+sn0int-common = { path="sn0int-registry/sn0int-common" }
 rustyline = "2"
 log = "0.4"
 env_logger = "0.5"
