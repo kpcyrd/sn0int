@@ -11,8 +11,9 @@ extern crate dotenv;
 // extern crate serde;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
-#[macro_use] extern crate diesel;
 #[macro_use] extern crate failure;
+#[macro_use] extern crate diesel;
+#[macro_use] extern crate diesel_migrations;
 extern crate diesel_full_text_search;
 extern crate oauth2;
 extern crate url;
@@ -23,6 +24,7 @@ use rocket_contrib::{Json, Value};
 use dotenv::dotenv;
 
 use std::env;
+use errors::*;
 
 pub mod auth;
 pub mod auth2;
@@ -74,10 +76,14 @@ fn internal_error() -> Json<Value> {
     }))
 }
 
-fn main() {
+fn run() -> Result<()> {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL")
+        .context("DATABASE_URL must be set")?;
+
+    db::setup_db(&database_url)
+        .context("Failed to setup db")?;
 
     rocket::ignite()
         .manage(db::init(&database_url))
@@ -102,4 +108,16 @@ fn main() {
         internal_error,
     ])
     .launch();
+
+    Ok(())
+}
+
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("Error: {}", err);
+        for cause in err.iter_chain().skip(1) {
+            eprintln!("Because: {}", cause);
+        }
+        std::process::exit(1);
+    }
 }

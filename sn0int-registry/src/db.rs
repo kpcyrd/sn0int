@@ -1,4 +1,7 @@
+use errors::*;
+use std::io;
 use std::ops::Deref;
+use diesel::Connection as ConnectionTrait;
 use diesel::pg::PgConnection;
 use diesel::r2d2;
 use rocket::http::Status;
@@ -39,4 +42,12 @@ impl Deref for Connection {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
+}
+
+embed_migrations!("../sn0int-registry/migrations");
+
+pub fn setup_db(url: &str) -> Result<()> {
+    let connection = PgConnection::establish(url)?;
+    embedded_migrations::run_with_output(&connection, &mut io::stdout())?;
+    Ok(())
 }
