@@ -18,6 +18,7 @@ extern crate diesel_full_text_search;
 extern crate oauth2;
 extern crate url;
 extern crate reqwest;
+extern crate semver;
 
 use rocket::response::content;
 use rocket_contrib::{Json, Value};

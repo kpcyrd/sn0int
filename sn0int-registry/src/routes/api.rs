@@ -3,7 +3,9 @@ use auth::Authenticator;
 use auth2::AuthHeader;
 use db;
 use diesel::Connection;
+use semver::Version;
 use sn0int_common::api::*;
+use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
 use rocket::response::Redirect;
 use rocket_contrib::{Json, Value};
@@ -75,9 +77,19 @@ fn download(author: String, name: String, version: String, connection: db::Conne
 fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<PublishResponse>>> {
     let user = session.verify(&connection)?;
 
+    id::valid_name(&user)
+        .context("Username is invalid")
+        .map_err(Error::from)?;
+    id::valid_name(&name)
+        .context("Module name is invalid")
+        .map_err(Error::from)?;
+
     let metadata = upload.code.parse::<Metadata>()?;
-    // TODO: enforce semver
+
     let version = metadata.version.clone();
+    Version::parse(&version)
+        .context("Version is invalid")
+        .map_err(Error::from)?;
 
     connection.transaction::<_, Error, _>(|| {
         let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;

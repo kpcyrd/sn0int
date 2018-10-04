@@ -19,6 +19,7 @@ table! {
         name -> Varchar,
         description -> Text,
         latest -> Nullable<Varchar>,
+        search_vector -> Tsvector,
     }
 }
 

@@ -5,6 +5,18 @@ use std::fmt;
 use std::str::FromStr;
 
 
+fn valid_char(c: char) -> bool {
+    nom::is_alphanumeric(c as u8) || c == '-'
+}
+
+pub fn valid_name(name: &str) -> Result<()> {
+    if token(CompleteStr(name)).is_ok() {
+        Ok(())
+    } else {
+        bail!("String contains invalid character")
+    }
+}
+
 named!(module<CompleteStr, ModuleID>, do_parse!(
     author: token   >>
     tag!("/")       >>
@@ -18,7 +30,7 @@ named!(module<CompleteStr, ModuleID>, do_parse!(
     )
 ));
 
-named!(token<CompleteStr, CompleteStr>, take_while1!(|x| nom::is_alphanumeric(x as u8)));
+named!(token<CompleteStr, CompleteStr>, take_while1!(valid_char));
 
 #[derive(Debug, PartialEq)]
 pub struct ModuleID {

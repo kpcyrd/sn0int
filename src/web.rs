@@ -9,6 +9,8 @@ use engine::ctx::State;
 use serde_json;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
+use std::fmt;
+use serde::Serialize;
 use engine::structs::LuaMap;
 use json::LuaJsonValue;
 use chrootable_https::http::uri::Parts;
@@ -16,6 +18,22 @@ use chrootable_https::{Request, Body, Uri};
 use serde_urlencoded;
 use base64;
 
+
+pub fn url_set_qs<S: Serialize + fmt::Debug>(url: Uri, query: &S) -> Result<Uri> {
+    let mut parts = Parts::from(url);
+
+    let query = serde_urlencoded::to_string(query)?;
+
+    parts.path_and_query = Some(match parts.path_and_query {
+        Some(pq) => {
+            format!("{}?{}", pq.path(), query)
+        },
+        None => format!("/?{}", query),
+    }.parse()?);
+
+    Uri::from_parts(parts)
+        .map_err(Error::from)
+}
 
 #[derive(Debug)]
 pub struct HttpSession {
@@ -108,20 +126,7 @@ impl HttpRequest {
 
         // set query string
         if let Some(query) = &self.query {
-            url = {
-                let mut parts = Parts::from(url);
-
-                let query = serde_urlencoded::to_string(query)?;
-
-                parts.path_and_query = Some(match parts.path_and_query {
-                    Some(pq) => {
-                        format!("{}?{}", pq.path(), query)
-                    },
-                    None => format!("/?{}", query),
-                }.parse()?);
-
-                Uri::from_parts(parts)?
-            };
+            url = url_set_qs(url, query)?;
         }
 
         // start setting up request

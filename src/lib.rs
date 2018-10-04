@@ -5,6 +5,7 @@ extern crate rustyline;
 extern crate rand;
 extern crate colored;
 #[macro_use] extern crate failure;
+#[macro_use] extern crate maplit;
 extern crate shellwords;
 extern crate dirs;
 extern crate publicsuffix;

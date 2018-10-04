@@ -10,6 +10,7 @@ use serde::ser::Serialize;
 use serde_json;
 use sn0int_common::api::*;
 use sn0int_common::ModuleID;
+use web;
 
 pub const API_URL: &str = "http://[::1]:8000";
 
@@ -65,6 +66,16 @@ impl Client {
         self.request(request, Body::empty())
     }
 
+    pub fn get_with<T, S>(&self, url: &str, query: &S) -> Result<T>
+        where T: DeserializeOwned + fmt::Debug,
+              S: Serialize + fmt::Debug,
+    {
+        let url = web::url_set_qs(url.parse()?, query)?;
+        info!("requesting: {:?}", url);
+        let request = Request::get(url);
+        self.request(request, Body::empty())
+    }
+
     pub fn post<T, S>(&self, url: &str, body: &S) -> Result<T>
         where T: DeserializeOwned + fmt::Debug,
               S: Serialize + fmt::Debug,
@@ -105,9 +116,10 @@ impl Client {
     }
 
     pub fn search(&self, query: &str) -> Result<Vec<SearchResponse>> {
-        // TODO url encoding
-        let url = format!("{}/api/v0/search?q={}", self.server, query);
-        let reply = self.get::<Vec<SearchResponse>>(&url)?;
+        let url = format!("{}/api/v0/search", self.server);
+        let reply = self.get_with::<Vec<SearchResponse>, _>(&url, &hashmap!{
+            "q" => query,
+        })?;
         Ok(reply)
     }
 }
