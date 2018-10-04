@@ -35,7 +35,7 @@ pub fn run_login() -> Result<()> {
 
     let session = Client::random_session();
     client.authenticate(session.clone());
-    let url = format!("{}/api/v0/login/{}", API_URL, session);
+    let url = format!("{}/auth/{}", API_URL, session);
 
     term::success(&format!("Opening url: {}", url));
     opener::open(url)?;

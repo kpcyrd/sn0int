@@ -21,7 +21,7 @@ extern crate reqwest;
 extern crate semver;
 
 use rocket::response::content;
-use rocket_contrib::{Json, Value};
+use rocket_contrib::{Json, Value, Template};
 use dotenv::dotenv;
 
 use std::env;
@@ -39,8 +39,8 @@ pub mod schema;
 
 
 #[get("/")]
-fn index() -> content::Html<&'static str> {
-    content::Html(include_str!("../templates/index.html"))
+fn index() -> Template {
+    Template::render("index", ())
 }
 
 #[get("/favicon.ico")]
@@ -56,24 +56,21 @@ fn style() -> content::Css<&'static str> {
 #[catch(400)]
 fn bad_request() -> Json<Value> {
     Json(json!({
-        "status": "error",
-        "reason": "Bad request"
+        "error": "Bad request"
     }))
 }
 
 #[catch(404)]
 fn not_found() -> Json<Value> {
     Json(json!({
-        "status": "error",
-        "reason": "Resource was not found"
+        "error": "Resource was not found"
     }))
 }
 
 #[catch(500)]
 fn internal_error() -> Json<Value> {
     Json(json!({
-        "status": "error",
-        "reason": "Internal server error"
+        "error": "Internal server error"
     }))
 }
 
@@ -88,15 +85,19 @@ fn run() -> Result<()> {
 
     rocket::ignite()
         .manage(db::init(&database_url))
+        .attach(Template::fairing())
         .mount("/api/v0", routes![
             routes::api::dashboard,
             routes::api::search,
             routes::api::info,
             routes::api::download,
             routes::api::publish,
-            routes::api::login,
-            routes::api::authorize,
             routes::api::whoami,
+        ])
+        .mount("/auth", routes![
+            routes::auth::get,
+            routes::auth::post,
+            routes::auth::login,
         ])
         .mount("/", routes![
             index,

@@ -5,3 +5,17 @@ body {
     max-width: 700px;
     margin: 0 auto;
 }
+
+input {
+    border: 1px solid #00aa00;
+    padding: 10px 15px;
+    background: black;
+    color: #00aa00;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+h1 a {
+    text-decoration: none;
+    color: #00aa00;
+}

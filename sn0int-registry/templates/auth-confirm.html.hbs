@@ -1,0 +1,15 @@
+{{#*inline "page"}}
+    {{#if error }}
+        <h3>OAuth error: {{error}}</h3>
+        <p>{{error_description}}</p>
+    {{else}}
+        <h3>Authorizing client</h3>
+        <p>You are about to grant publish rights to a commandline client.</p>
+        <form action="/auth" method="post">
+            <input type="hidden" name="code" value="{{ code }}">
+            <input type="hidden" name="state" value="{{ state }}">
+            <input type="submit" value="Approve">
+        </form>
+    {{/if}}
+{{/inline}}
+{{~> base }}
