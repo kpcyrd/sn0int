@@ -11,7 +11,7 @@ use trust_dns_proto;
 
 pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("dns", hlua::function2(move |name: String, record: String| -> Result<AnyLuaValue> {
-        let resolver = Resolver::from_system()
+        let resolver = Resolver::from_config(state.dns_config().as_ref().clone())
             .map_err(|e| state.set_error(e))?;
 
         let record = record.parse()

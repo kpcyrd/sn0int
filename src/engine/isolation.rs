@@ -1,5 +1,6 @@
 use errors::*;
 use channel;
+use chrootable_https::dns::DnsConfig;
 use engine::{Module, Event, Reporter};
 use serde_json;
 
@@ -13,13 +14,15 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
+    dns_config: DnsConfig,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> StartCommand {
         StartCommand {
+            dns_config,
             module,
             arg
         }
@@ -56,8 +59,8 @@ impl Supervisor {
         })
     }
 
-    pub fn send_start(&mut self, module: Module, arg: serde_json::Value) -> Result<()> {
-        let start = serde_json::to_value(StartCommand::new(module, arg))?;
+    pub fn send_start(&mut self, dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> Result<()> {
+        let start = serde_json::to_value(StartCommand::new(dns_config, module, arg))?;
         self.send(start)?;
         Ok(())
     }
@@ -135,8 +138,10 @@ impl Reporter for StdioReporter {
 }
 
 pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
+    let dns_config = DnsConfig::from_system()?;
+
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(module, arg)?;
+    supervisor.send_start(dns_config, module, arg)?;
 
     loop {
         match supervisor.recv()? {
@@ -151,7 +156,9 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");
-                supervisor.send(value).expect("Failed to send to child");
+                if let Err(_) = supervisor.send(value) {
+                    tx.send((Event::Error("Failed to send to child".into()), None));
+                }
             },
             event => tx.send((event, None)),
         }
@@ -167,7 +174,7 @@ pub fn run_worker() -> Result<()> {
     let start = reporter.recv_start()?;
 
     let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
-    let result = start.module.run(mtx.clone(), start.arg.into());
+    let result = start.module.run(start.dns_config, mtx.clone(), start.arg.into());
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 

@@ -8,6 +8,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{Arc, Mutex};
+use chrootable_https::dns::DnsConfig;
 use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::Event;
 
@@ -41,6 +42,8 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
     }
 
+    fn dns_config(&self) -> Arc<DnsConfig>;
+
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
@@ -53,6 +56,7 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
+    dns_config: Arc<DnsConfig>,
 }
 
 impl State for LuaState {
@@ -96,6 +100,10 @@ impl State for LuaState {
         }
     }
 
+    fn dns_config(&self) -> Arc<DnsConfig> {
+        self.dns_config.clone()
+    }
+
     fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -123,11 +131,14 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>() -> (hlua::Lua<'a>, Arc<LuaState>) {
+fn ctx<'a>(dns_config: DnsConfig) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
-    let state = Arc::new(LuaState::default());
+    let state = Arc::new(LuaState {
+        dns_config: Arc::new(dns_config),
+        ..Default::default()
+    });
 
     runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
@@ -174,8 +185,8 @@ impl Script {
         })
     }
 
-    pub fn run(&self, tx: Arc<Mutex<Box<Reporter>>>, arg: AnyLuaValue) -> Result<()> {
-        let (mut lua, state) = ctx();
+    pub fn run(&self, dns_config: DnsConfig, tx: Arc<Mutex<Box<Reporter>>>, arg: AnyLuaValue) -> Result<()> {
+        let (mut lua, state) = ctx(dns_config);
 
         debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
@@ -206,6 +217,7 @@ impl Script {
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
-        self.run(DummyReporter::new(), AnyLuaValue::LuaNil)
+        let dns_config = DnsConfig::from_system()?;
+        self.run(dns_config, DummyReporter::new(), AnyLuaValue::LuaNil)
     }
 }

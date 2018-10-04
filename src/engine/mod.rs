@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
 use sn0int_common::metadata::{Metadata, Source};
+use chrootable_https::dns::DnsConfig;
 use paths;
 use term;
 use worker::{self, Event};
@@ -165,9 +166,9 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, dns_config: DnsConfig, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(reporter, arg.into())
+        self.script.run(dns_config, reporter, arg.into())
     }
 }
 
