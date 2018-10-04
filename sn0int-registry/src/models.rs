@@ -49,6 +49,7 @@ type AllModuleColumns = (
     modules::name,
     modules::description,
     modules::latest,
+    modules::featured,
 );
 
 pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
@@ -57,6 +58,7 @@ pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
     modules::name,
     modules::description,
     modules::latest,
+    modules::featured,
 );
 
 #[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
@@ -67,6 +69,7 @@ pub struct Module {
     pub name: String,
     pub description: String,
     pub latest: Option<String>,
+    pub featured: bool,
 }
 
 impl Module {
@@ -149,27 +152,32 @@ impl Module {
     pub fn search(query: &str, connection: &PgConnection) -> Result<Vec<(Module, i64)>> {
         let q = plainto_tsquery(query);
 
-        let x: Vec<(i32, String, String, String, Option<String>, i64)> = modules::table.select((
+        let x: Vec<(i32, String, String, String, Option<String>, bool, i64)> = modules::table.select((
                 modules::id,
                 modules::author,
                 modules::name,
                 modules::description,
                 modules::latest,
+                modules::featured,
                 diesel::dsl::sql::<BigInt>("sum(releases.downloads) AS sum"),
             ))
             .left_join(releases::table)
             .group_by(modules::id)
             .filter(q.matches(modules::search_vector))
-            .order(diesel::dsl::sql::<BigInt>("sum").desc())
+            .order((
+                modules::featured.desc(),
+                diesel::dsl::sql::<BigInt>("sum").desc(),
+            ))
             .load(connection)?;
 
-        Ok(x.into_iter().map(|(id, author, name, description, latest, downloads)| (
+        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, downloads)| (
             Module {
                 id,
                 author,
                 name,
                 description,
                 latest,
+                featured,
             },
             downloads,
         )).collect())

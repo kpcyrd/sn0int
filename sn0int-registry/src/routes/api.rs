@@ -34,6 +34,7 @@ fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<V
                 name: module.name,
                 description: module.description,
                 latest: module.latest.ok_or(())?,
+                featured: module.featured,
                 downloads,
             })
         })

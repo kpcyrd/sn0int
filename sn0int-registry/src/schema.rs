@@ -20,6 +20,7 @@ table! {
         description -> Text,
         latest -> Nullable<Varchar>,
         search_vector -> Tsvector,
+        featured -> Bool,
     }
 }
 

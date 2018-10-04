@@ -58,6 +58,7 @@ pub struct SearchResponse {
     pub description: String,
     pub latest: String,
     pub downloads: i64,
+    pub featured: bool,
 }
 
 impl SearchResponse {

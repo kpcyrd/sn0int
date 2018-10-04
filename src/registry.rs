@@ -85,9 +85,10 @@ pub fn run_search(search: &Search) -> Result<()> {
     }, true)?;
 
     for module in &modules {
-        println!("{} ({}) - {} downloads", module.canonical().green(),
+        println!("{} ({}) - {} downloads {}", module.canonical().green(),
                             module.latest.yellow(),
-                            module.downloads.separated_string());
+                            module.downloads.separated_string(),
+                            (if module.featured { "[featured]" } else { "" }).cyan());
         println!("\t{}", module.description);
     }
 
