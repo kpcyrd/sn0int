@@ -9,6 +9,7 @@ FROM debian
 RUN apt-get update -q && apt-get install -yq libcurl3 libpq5 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=0 /usr/src/sn0int-registry/target/release/sn0int-registry /usr/local/bin/sn0int-registry
+COPY templates /templates
 ENV ROCKET_ENV=prod \
     ROCKET_ADDRESS=0.0.0.0 \
     ROCKET_PORT=8000
