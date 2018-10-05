@@ -46,7 +46,7 @@ impl Deref for Connection {
     }
 }
 
-embed_migrations!("../sn0int-registry/migrations");
+embed_migrations!("migrations");
 
 pub fn wait_for_db(url: &str, attempts: u8) -> Result<PgConnection> {
     for _ in 0..attempts {
