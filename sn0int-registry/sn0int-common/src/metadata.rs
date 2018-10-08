@@ -8,6 +8,7 @@ pub enum EntryType {
     Description,
     Version,
     Source,
+    License,
 }
 
 impl FromStr for EntryType {
@@ -18,6 +19,7 @@ impl FromStr for EntryType {
             "Description" => Ok(EntryType::Description),
             "Version" => Ok(EntryType::Version),
             "Source" => Ok(EntryType::Source),
+            "License" => Ok(EntryType::License),
             x => bail!("Unknown EntryType: {:?}", x),
         }
     }
@@ -42,10 +44,37 @@ impl FromStr for Source {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum License {
+    MIT,
+    GPL3,
+    LGPL3,
+    BSD2,
+    BSD3,
+    WTFPL,
+}
+
+impl FromStr for License {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<License> {
+        match s {
+            "MIT" => Ok(License::MIT),
+            "GPL-3.0" => Ok(License::GPL3),
+            "LGPL-3.0" => Ok(License::LGPL3),
+            "BSD-2-Clause" => Ok(License::BSD2),
+            "BSD-3-Clause" => Ok(License::BSD3),
+            "WTFPL" => Ok(License::WTFPL),
+            x => bail!("Unsupported license: {:?}", x),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub struct Metadata {
     pub description: String,
     pub version: String,
     pub source: Option<Source>,
+    pub license: License,
 }
 
 impl FromStr for Metadata {
@@ -62,6 +91,7 @@ impl FromStr for Metadata {
                 EntryType::Description => data.description = Some(v),
                 EntryType::Version => data.version = Some(v),
                 EntryType::Source => data.source = Some(v),
+                EntryType::License => data.license = Some(v),
             }
         }
 
@@ -74,6 +104,7 @@ pub struct NewMetadata<'a> {
     pub description: Option<&'a str>,
     pub version: Option<&'a str>,
     pub source: Option<&'a str>,
+    pub license: Option<&'a str>,
 }
 
 impl<'a> NewMetadata<'a> {
@@ -84,11 +115,14 @@ impl<'a> NewMetadata<'a> {
             Some(x) => Some(x.parse()?),
             _ => None,
         };
+        let license = self.license.ok_or_else(|| format_err!("License is required"))?;
+        let license = license.parse()?;
 
         Ok(Metadata {
             description: description.to_string(),
             version: version.to_string(),
             source,
+            license,
         })
     }
 }
@@ -122,12 +156,35 @@ mod tests {
         let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
 -- Version: 1.0.0
 -- Source: domains
+-- License: WTFPL
 
 "#).expect("parse");
         assert_eq!(metadata, Metadata {
             description: "Hello world, this is my description".to_string(),
             version: "1.0.0".to_string(),
+            license: License::WTFPL,
             source: Some(Source::Domains),
         });
+    }
+
+    #[test]
+    fn verify_require_license() {
+        let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
+-- Version: 1.0.0
+-- Source: domains
+
+"#);
+        assert!(metadata.is_err());
+    }
+
+    #[test]
+    fn verify_require_opensource_license() {
+        let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
+-- Version: 1.0.0
+-- Source: domains
+-- License: Proprietary
+
+"#);
+        assert!(metadata.is_err());
     }
 }
