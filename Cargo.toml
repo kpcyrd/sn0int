@@ -47,4 +47,4 @@ separator = "0.3.1"
 maplit = "1.0.1"
 
 [dev-dependencies]
-boxxy = "0.7"
+boxxy = "0.8"
