@@ -12,6 +12,7 @@ import_fns!(http);
 import_fns!(html);
 import_fns!(json);
 import_fns!(logger);
+import_fns!(pgp);
 import_fns!(print);
 import_fns!(sleep);
 import_fns!(url);

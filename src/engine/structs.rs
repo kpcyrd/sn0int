@@ -1,3 +1,4 @@
+use errors::*;
 use hlua::{AnyHashableLuaValue, AnyLuaValue};
 use std::collections::{self, HashMap};
 
@@ -89,5 +90,24 @@ impl Into<AnyLuaValue> for LuaMap {
                 })
                 .collect()
         )
+    }
+}
+
+pub fn byte_array(bytes: AnyLuaValue) -> Result<Vec<u8>> {
+    match bytes {
+        AnyLuaValue::LuaAnyString(bytes) => Ok(bytes.0),
+        AnyLuaValue::LuaString(bytes) => Ok(bytes.into_bytes()),
+        AnyLuaValue::LuaArray(bytes) => {
+            Ok(bytes.into_iter()
+                .map(|num| match num.1 {
+                    AnyLuaValue::LuaNumber(num) if num <= 255.0 && num >= 0.0 && (num % 1.0 == 0.0) =>
+                            Ok(num as u8),
+                    AnyLuaValue::LuaNumber(num) =>
+                            Err(format_err!("number is out of range: {:?}", num)),
+                    _ => Err(format_err!("unexpected type: {:?}", num)),
+                })
+                .collect::<Result<_>>()?)
+        },
+        _ => Err(format_err!("invalid type: {:?}", bytes)),
     }
 }

@@ -154,6 +154,8 @@ fn ctx<'a>(dns_config: DnsConfig) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::json_encode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
+    runtime::pgp_pubkey(&mut lua, state.clone());
+    runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
