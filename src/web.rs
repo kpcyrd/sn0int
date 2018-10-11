@@ -1,4 +1,4 @@
-pub use chrootable_https::{Client, HttpClient};
+pub use chrootable_https::{Client, HttpClient, Resolver};
 
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
@@ -200,7 +200,12 @@ impl HttpRequest {
         let req = req.body(body)?;
 
         // send request
-        let mut http = Client::with_system_resolver()?; // TODO: we need to load this info in advance
+        debug!("Sending http request: {:?}", req);
+
+        let config = state.dns_config().as_ref().clone();
+        let resolver = Resolver::from_config(config)?;
+        let mut http = Client::new(resolver);
+
         if let Some(timeout) = self.timeout {
             http.timeout(timeout);
         }
