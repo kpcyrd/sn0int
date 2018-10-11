@@ -56,154 +56,126 @@ pub fn url_parse(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-/*
 #[cfg(test)]
 mod tests {
-    use scripts::loader::Loader;
+    use engine::ctx::Script;
 
     #[test]
     fn verify_relative_path() {
-        let script = Loader::init_default(r#"
-        descr = "verify_relative_path"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/abc", "bar")
             print(url)
             if url ~= "https://example.com/foo/bar" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_relative_query() {
-        let script = Loader::init_default(r#"
-        descr = "verify_relative_query"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/", "?x=1&a=2")
             print(url)
             if url ~= "https://example.com/foo/?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_relative_path_query() {
-        let script = Loader::init_default(r#"
-        descr = "verify_relative_path_query"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/bar", "abc?x=1&a=2")
             print(url)
             if url ~= "https://example.com/foo/abc?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_absolute_path() {
-        let script = Loader::init_default(r#"
-        descr = "verify_absolute_path"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/abc", "/bar")
             print(url)
             if url ~= "https://example.com/bar" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_absolute_query() {
-        let script = Loader::init_default(r#"
-        descr = "verify_absolute_query"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/", "/?x=1&a=2")
             print(url)
             if url ~= "https://example.com/?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_absolute_path_query() {
-        let script = Loader::init_default(r#"
-        descr = "verify_absolute_path_query"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/abc", "/abc?x=1&a=2")
             print(url)
             if url ~= "https://example.com/abc?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_replace() {
-        let script = Loader::init_default(r#"
-        descr = "verify_replace"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("http://example.com/foo/?fizz=buzz", "https://asdf.com/abc?x=1&a=2")
             print(url)
             if url ~= "https://asdf.com/abc?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_protocol_relative() {
-        let script = Loader::init_default(r#"
-        descr = "verify_protocol_relative"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_join("https://example.com/foo/?fizz=buzz", "//asdf.com/abc?x=1&a=2")
             print(url)
             if url ~= "https://asdf.com/abc?x=1&a=2" then
                 return 'unexpected url'
             end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_url_parse() {
-        let script = Loader::init_default(r#"
-        descr = "verify_url_parse"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_parse("https://example.com")
             print(url)
             if url['scheme'] ~= "https" then return 'scheme' end
@@ -214,17 +186,14 @@ mod tests {
             if url['fragment'] ~= nil then return 'fragment' end
             if url['params'] ~= nil then return 'params' end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 
     #[test]
     fn verify_url_parse_advanced() {
-        let script = Loader::init_default(r#"
-        descr = "verify_url_parse_advanced"
-
-        function detect() end
-        function decap()
+        let script = Script::load_unchecked(r#"
+        function run()
             url = url_parse("https://example.com:1337/foo/abc?a=b&x=1&x=2&y[]=asdf#foo")
             print(url)
             if url['scheme'] ~= "https" then return 'scheme' end
@@ -237,8 +206,7 @@ mod tests {
             if url['params']['x'] ~= "2" then return 'params' end
             if url['params']['y[]'] ~= "asdf" then return 'params' end
         end
-        "#).expect("failed to load script");
-        script.decap().expect("decap failed");
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
     }
 }
-*/

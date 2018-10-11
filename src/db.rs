@@ -51,6 +51,9 @@ impl Database {
     /// Returns true if we didn't have this value yet
     pub fn insert_generic(&self, object: &Object) -> Result<(bool, i32)> {
         match object {
+            Object::Domain(object) => self.insert_domain_struct(&NewDomain {
+                value: &object.value,
+            }),
             Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
                 domain_id: object.domain_id,
                 value: &object.value,
@@ -82,6 +85,21 @@ impl Database {
             .execute(&self.db)?;
 
         Ok(())
+    }
+
+    pub fn insert_domain_struct(&self, domain: &NewDomain) -> Result<(bool, i32)> {
+        // upsert is not supported by diesel
+
+        if let Some(domain_id) = Domain::id_opt(self, domain.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok((false, domain_id))
+        } else {
+            diesel::insert_into(domains::table)
+                .values(domain)
+                .execute(&self.db)?;
+            let id = Domain::id(self, domain.value)?;
+            Ok((true, id))
+        }
     }
 
     /// Returns true if we didn't have this value yet

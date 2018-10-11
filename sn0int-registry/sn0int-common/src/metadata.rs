@@ -29,6 +29,7 @@ impl FromStr for EntryType {
 pub enum Source {
     Domains,
     Subdomains,
+    IpAddrs,
 }
 
 impl FromStr for Source {
@@ -38,6 +39,7 @@ impl FromStr for Source {
         match s {
             "domains" => Ok(Source::Domains),
             "subdomains" => Ok(Source::Subdomains),
+            "ipaddrs" => Ok(Source::IpAddrs),
             x => bail!("Unknown Source: {:?}", x),
         }
     }

@@ -6,6 +6,7 @@ use schema::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Object {
+    Domain(NewDomainOwned),
     Subdomain(NewSubdomainOwned),
     IpAddr(NewIpAddrOwned),
     SubdomainIpAddr(NewSubdomainIpAddr),
@@ -15,6 +16,7 @@ pub enum Object {
 impl Object {
     pub fn printable(&self, db: &Database) -> Result<String> {
         Ok(match self {
+            Object::Domain(x) => format!("Domain: {}", x.printable(db)?),
             Object::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
             Object::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
             Object::SubdomainIpAddr(x) => x.printable(db)?.to_string(),

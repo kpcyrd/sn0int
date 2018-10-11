@@ -1,11 +1,11 @@
 -- Description: Query certificate transparency logs to discover subdomains
 -- Version: 0.1.0
 -- Source: domains
+-- License: GPL-3.0
 
 function run(arg)
     session = http_mksession()
 
-    -- TODO: example.com needs to be dynamic
     req = http_request(session, 'GET', 'https://crt.sh/', {
         query={
             q='%.' .. arg['value'],

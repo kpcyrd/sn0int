@@ -37,6 +37,7 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
     let args = match module.source() {
         Some(Source::Domains) => prepare_args::<Domain>(rl.db()),
         Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db()),
+        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db()),
         None => Ok(vec![(serde_json::Value::Null, None)]),
     };
 

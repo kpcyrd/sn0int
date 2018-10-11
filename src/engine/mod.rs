@@ -10,6 +10,7 @@ use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::DnsConfig;
+use psl::Psl;
 use paths;
 use term;
 use worker::{self, Event};
@@ -166,9 +167,11 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, dns_config: DnsConfig, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, dns_config: DnsConfig, psl: String, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+        debug!("Loading public suffix list");
+        let psl = Psl::from_str(&psl)?;
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(dns_config, reporter, arg.into())
+        self.script.run(dns_config, psl, reporter, arg.into())
     }
 }
 

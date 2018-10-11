@@ -1,6 +1,8 @@
 use errors::*;
 use diesel::prelude::*;
+use json::LuaJsonValue;
 use models::*;
+use serde_json;
 
 
 #[derive(Identifiable, Queryable, Serialize, PartialEq, Debug)]
@@ -111,4 +113,25 @@ impl Detailed for Domain {
 #[table_name="domains"]
 pub struct NewDomain<'a> {
     pub value: &'a str,
+}
+
+#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[table_name="domains"]
+pub struct NewDomainOwned {
+    pub value: String,
+}
+
+impl NewDomainOwned {
+    pub fn from_lua(x: LuaJsonValue) -> Result<NewDomainOwned> {
+        let x = serde_json::from_value(x.into())?;
+        Ok(x)
+    }
+}
+
+impl Printable<PrintableDomain> for NewDomainOwned {
+    fn printable(&self, _db: &Database) -> Result<PrintableDomain> {
+        Ok(PrintableDomain {
+            value: self.value.to_string(),
+        })
+    }
 }

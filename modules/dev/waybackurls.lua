@@ -1,6 +1,7 @@
 -- Description: Discover subdomains from wayback machine
 -- Version: 0.1.0
 -- Source: domains
+-- License: GPL-3.0
 
 function run(arg)
 

@@ -1,0 +1,48 @@
+-- Description: Query ThreatMiner passive dns to discover domains for ip
+-- Version: 0.1.0
+-- Source: ipaddrs
+-- License: GPL-3.0
+
+function run(arg)
+    session = http_mksession()
+
+    req = http_request(session, 'GET', 'https://api.threatminer.org/v2/host.php', {
+        query={
+            rt='2',
+            q=arg['value']
+        }
+    })
+
+    resp = http_send(req)
+    if last_err() then return end
+    if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
+
+    o = json_decode(resp['text'])
+    if last_err() then return end
+    o = o['results']
+
+    i = 0
+    while o[i] do
+        x = o[i]
+
+        domain = psl_domain_from_dns_name(x['domain'])
+        -- TODO: if this fails, skip this entry instead
+        if last_err() then return end
+
+        domain_id = db_add('domain', {
+            value=domain,
+        })
+
+        subdomain_id = db_add('subdomain', {
+            domain_id=domain_id,
+            value=x['domain'],
+        })
+
+        db_add('subdomain-ipaddr', {
+            subdomain_id=subdomain_id,
+            ip_addr_id=arg['id'],
+        })
+
+        i = i+1
+    end
+end
