@@ -93,6 +93,35 @@ impl Into<AnyLuaValue> for LuaMap {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct LuaList(Vec<(AnyLuaValue, AnyLuaValue)>);
+
+impl LuaList {
+    #[inline]
+    pub fn new() -> LuaList {
+        LuaList::default()
+    }
+
+    pub fn push<V: Into<AnyLuaValue>>(&mut self, v: V) {
+        let idx = self.0.len() + 1;
+        self.0.push((AnyLuaValue::LuaNumber(idx as f64), v.into()));
+    }
+
+    pub fn push_str<I: Into<String>>(&mut self, v: I) {
+        self.push(AnyLuaValue::LuaString(v.into()))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+}
+
+impl Into<AnyLuaValue> for LuaList {
+    fn into(self: LuaList) -> AnyLuaValue {
+        AnyLuaValue::LuaArray(self.0)
+    }
+}
+
 pub fn byte_array(bytes: AnyLuaValue) -> Result<Vec<u8>> {
     match bytes {
         AnyLuaValue::LuaAnyString(bytes) => Ok(bytes.0),

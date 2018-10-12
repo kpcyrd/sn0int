@@ -1,4 +1,4 @@
--- Description: Query ThreatMiner passive dns to discover subdomains
+-- Description: Query ThreatMiner passive dns for subdomains of a domain
 -- Version: 0.1.0
 -- Source: domains
 -- License: GPL-3.0

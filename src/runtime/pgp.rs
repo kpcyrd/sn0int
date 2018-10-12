@@ -2,25 +2,29 @@ use errors::*;
 
 use sloppy_rfc4880::{self, Tag};
 use engine::ctx::State;
-use engine::structs::{LuaMap, byte_array};
+use engine::structs::{LuaMap, LuaList, byte_array};
 use hlua::{self, AnyLuaValue};
 use std::sync::Arc;
 use std::io::BufReader;
 
 
 fn pgp_pubkey_lua(pubkey: Vec<u8>) -> Result<AnyLuaValue> {
-    let mut map = LuaMap::new();
+    let mut uids = LuaList::new();
 
     for (tag, body) in sloppy_rfc4880::Parser::new(pubkey.as_slice()) {
         match tag {
             Tag::UserID => {
                 let body = String::from_utf8(body)?;
-                map.insert_str("uid", body);
+                uids.push_str(body);
             },
             _ => (),
         }
     }
 
+    let mut map = LuaMap::new();
+    if !uids.is_empty() {
+        map.insert("uids", uids);
+    }
     Ok(map.into())
 }
 

@@ -1,4 +1,4 @@
--- Description: Check subdomains for websites
+-- Description: Scan subdomains for websites
 -- Version: 0.1.0
 -- Source: subdomains
 -- License: GPL-3.0

@@ -1,10 +1,12 @@
--- Description: Query ThreatMiner passive dns to discover domains for ip
+-- Description: Query ThreatMiner passive dns for subdomains of an ip address
 -- Version: 0.1.0
 -- Source: ipaddrs
 -- License: GPL-3.0
 
 function run(arg)
     session = http_mksession()
+
+    -- TODO: add option to filter old entries based on last_seen
 
     req = http_request(session, 'GET', 'https://api.threatminer.org/v2/host.php', {
         query={

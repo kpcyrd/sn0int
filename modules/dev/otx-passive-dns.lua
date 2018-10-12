@@ -1,4 +1,4 @@
--- Description: Query alienvault otx passive dns to discover subdomains
+-- Description: Query alienvault otx passive dns for subdomains of a domain
 -- Version: 0.1.0
 -- Source: domains
 -- License: GPL-3.0
