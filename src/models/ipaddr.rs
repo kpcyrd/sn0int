@@ -7,12 +7,18 @@ use std::net;
 use std::result;
 
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
 #[table_name="ipaddrs"]
 pub struct IpAddr {
     pub id: i32,
     pub family: String,
     pub value: String,
+}
+
+impl fmt::Display for IpAddr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 impl Model for IpAddr {

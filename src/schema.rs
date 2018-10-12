@@ -6,6 +6,13 @@ table! {
 }
 
 table! {
+    emails (id) {
+        id -> Integer,
+        value -> Text,
+    }
+}
+
+table! {
     ipaddrs (id) {
         id -> Integer,
         family -> Text,
@@ -46,6 +53,7 @@ joinable!(urls -> domains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
     domains,
+    emails,
     ipaddrs,
     subdomain_ipaddrs,
     subdomains,

@@ -11,6 +11,8 @@ pub enum Args {
     Domain(AddDomain),
     #[structopt(name="subdomain")]
     Subdomain(AddSubdomain),
+    #[structopt(name="email")]
+    Email(AddEmail),
 }
 
 #[derive(Debug, StructOpt)]
@@ -23,11 +25,17 @@ pub struct AddSubdomain {
     subdomain: Option<String>,
 }
 
+#[derive(Debug, StructOpt)]
+pub struct AddEmail {
+    email: Option<String>,
+}
+
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
         Args::Domain(args) => add_domain(rl, args),
         Args::Subdomain(args) => add_subdomain(rl, args),
+        Args::Email(args) => add_email(rl, args),
     }
 }
 
@@ -64,6 +72,17 @@ fn add_subdomain(rl: &mut Readline, args: AddSubdomain) -> Result<()> {
         .to_string();
 
     rl.db().insert_subdomain(&subdomain, &domain)?;
+
+    Ok(())
+}
+
+fn add_email(rl: &mut Readline, args: AddEmail) -> Result<()> {
+    let email = match args.email {
+        Some(email) => email,
+        _ => utils::question("Email")?,
+    };
+
+    rl.db().insert_email(&email)?;
 
     Ok(())
 }

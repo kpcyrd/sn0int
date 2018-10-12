@@ -8,6 +8,7 @@ use publicsuffix::{self, Domain, DnsName};
 use worker;
 
 
+#[derive(Debug)]
 pub struct Psl {
     list: publicsuffix::List,
 }
@@ -34,11 +35,27 @@ impl Psl {
         })
     }
 
+    pub fn open_into_string() -> Result<String> {
+        let path = paths::cache_dir()?.join("public_suffix_list.dat");
+
+        let s = fs::read_to_string(&path)?;
+        Ok(s)
+    }
+
     pub fn download(path: &PathBuf, url: &str) -> Result<()> {
         let client = Client::with_system_resolver()?;
         let resp = client.get(url)?;
         fs::write(path, &resp.body)?;
         Ok(())
+    }
+
+    pub fn from_str(s: &str) -> Result<Psl> {
+        let list = publicsuffix::List::from_str(s)
+            .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
+
+        Ok(Psl {
+            list,
+        })
     }
 
     pub fn parse_domain(&self, domain: &str) -> Result<Domain> {

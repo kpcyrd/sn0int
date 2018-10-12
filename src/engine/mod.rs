@@ -10,7 +10,9 @@ use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::DnsConfig;
+use psl::Psl;
 use paths;
+use std::cmp::Ordering;
 use term;
 use worker::{self, Event};
 
@@ -99,12 +101,13 @@ impl Engine {
         }
     }
 
-    // TODO: this should return an iter
     pub fn list(&self) -> Vec<&Module> {
-        self.modules.iter()
+        let mut modules: Vec<_> = self.modules.iter()
             .filter(|(key, _)| key.contains('/'))
             .flat_map(|(_, v)| v.iter())
-            .collect()
+            .collect();
+        modules.sort_by(|a, b| a.cmp_canonical(b));
+        modules
     }
 
     pub fn variants(&self) -> Vec<String> {
@@ -166,9 +169,19 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, dns_config: DnsConfig, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, dns_config: DnsConfig, psl: String, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+        debug!("Loading public suffix list");
+        let psl = Psl::from_str(&psl)?;
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(dns_config, reporter, arg.into())
+        self.script.run(dns_config, psl, reporter, arg.into())
+    }
+
+    fn cmp_canonical(&self, other: &Module) -> Ordering {
+        if self.author == other.author {
+            self.name.cmp(&other.name)
+        } else {
+            self.author.cmp(&other.author)
+        }
     }
 }
 

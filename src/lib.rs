@@ -21,6 +21,8 @@ extern crate kuchiki;
 extern crate ctrlc;
 extern crate opener;
 extern crate separator;
+extern crate sloppy_rfc4880;
+extern crate regex;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_urlencoded;

@@ -14,6 +14,10 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
         let object = LuaJsonValue::from(object);
 
         let object = match family.as_str() {
+            "domain" => {
+                Object::Domain(NewDomainOwned::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
             "subdomain" => {
                 Object::Subdomain(NewSubdomainOwned::from_lua(object)
                     .map_err(|e| state.set_error(e))?)
@@ -28,6 +32,10 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
             },
             "url" => {
                 Object::Url(NewUrlOwned::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
+            "email" => {
+                Object::Email(NewEmailOwned::from_lua(object)
                     .map_err(|e| state.set_error(e))?)
             },
             _ => return Err(state.set_error(format_err!("Unknown object family"))),

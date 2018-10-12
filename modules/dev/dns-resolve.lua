@@ -1,6 +1,7 @@
 -- Description: Query subdomains to discovery ip addresses and verify the record is visible
 -- Version: 0.1.0
 -- Source: subdomains
+-- License: GPL-3.0
 
 function run(arg)
     records = dns(arg['value'], 'A')

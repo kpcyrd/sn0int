@@ -51,6 +51,9 @@ impl Database {
     /// Returns true if we didn't have this value yet
     pub fn insert_generic(&self, object: &Object) -> Result<(bool, i32)> {
         match object {
+            Object::Domain(object) => self.insert_domain_struct(&NewDomain {
+                value: &object.value,
+            }),
             Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
                 domain_id: object.domain_id,
                 value: &object.value,
@@ -69,6 +72,9 @@ impl Database {
                 status: object.status,
                 body: object.body.as_ref().map(|x| x.as_ref()),
             }),
+            Object::Email(object) => self.insert_email_struct(&NewEmail {
+                value: &object.value,
+            }),
         }
     }
 
@@ -82,6 +88,21 @@ impl Database {
             .execute(&self.db)?;
 
         Ok(())
+    }
+
+    pub fn insert_domain_struct(&self, domain: &NewDomain) -> Result<(bool, i32)> {
+        // upsert is not supported by diesel
+
+        if let Some(domain_id) = Domain::id_opt(self, domain.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok((false, domain_id))
+        } else {
+            diesel::insert_into(domains::table)
+                .values(domain)
+                .execute(&self.db)?;
+            let id = Domain::id(self, domain.value)?;
+            Ok((true, id))
+        }
     }
 
     /// Returns true if we didn't have this value yet
@@ -170,6 +191,33 @@ impl Database {
                 .values(url)
                 .execute(&self.db)?;
             let id = Url::id(self, url.value)?;
+            Ok((true, id))
+        }
+    }
+
+    pub fn insert_email(&self, email: &str) -> Result<()> {
+        let new_email = NewEmail {
+            value: email,
+        };
+
+        diesel::insert_into(emails::table)
+            .values(&new_email)
+            .execute(&self.db)?;
+
+        Ok(())
+    }
+
+    pub fn insert_email_struct(&self, email: &NewEmail) -> Result<(bool, i32)> {
+        // upsert is not supported by diesel
+
+        if let Some(email_id) = Email::id_opt(self, email.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok((false, email_id))
+        } else {
+            diesel::insert_into(emails::table)
+                .values(email)
+                .execute(&self.db)?;
+            let id = Email::id(self, email.value)?;
             Ok((true, id))
         }
     }

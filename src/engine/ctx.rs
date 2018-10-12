@@ -3,6 +3,7 @@ use errors::*;
 use engine::Reporter;
 use hlua::{self, AnyLuaValue};
 use models::Object;
+use psl::Psl;
 use runtime;
 use serde_json;
 use std::collections::HashMap;
@@ -44,6 +45,8 @@ pub trait State {
 
     fn dns_config(&self) -> Arc<DnsConfig>;
 
+    fn psl(&self) -> Arc<Psl>;
+
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
@@ -51,12 +54,13 @@ pub trait State {
     fn register_in_jar(&self, session: &str, key: String, value: String);
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
     dns_config: Arc<DnsConfig>,
+    psl: Arc<Psl>,
 }
 
 impl State for LuaState {
@@ -104,6 +108,10 @@ impl State for LuaState {
         self.dns_config.clone()
     }
 
+    fn psl(&self) -> Arc<Psl> {
+        self.psl.clone()
+    }
+
     fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -131,13 +139,17 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>(dns_config: DnsConfig) -> (hlua::Lua<'a>, Arc<LuaState>) {
+fn ctx<'a>(dns_config: DnsConfig, psl: Psl) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
     let state = Arc::new(LuaState {
+        error: Arc::new(Mutex::new(None)),
+        logger: Arc::new(Mutex::new(None)),
+        http_sessions: Arc::new(Mutex::new(HashMap::new())),
+
         dns_config: Arc::new(dns_config),
-        ..Default::default()
+        psl: Arc::new(psl),
     });
 
     runtime::clear_err(&mut lua, state.clone());
@@ -154,7 +166,12 @@ fn ctx<'a>(dns_config: DnsConfig) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::json_encode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
+    runtime::pgp_pubkey(&mut lua, state.clone());
+    runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
+    runtime::psl_domain_from_dns_name(&mut lua, state.clone());
+    runtime::regex_find(&mut lua, state.clone());
+    runtime::regex_find_all(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
@@ -185,8 +202,8 @@ impl Script {
         })
     }
 
-    pub fn run(&self, dns_config: DnsConfig, tx: Arc<Mutex<Box<Reporter>>>, arg: AnyLuaValue) -> Result<()> {
-        let (mut lua, state) = ctx(dns_config);
+    pub fn run(&self, dns_config: DnsConfig, psl: Psl, tx: Arc<Mutex<Box<Reporter>>>, arg: AnyLuaValue) -> Result<()> {
+        let (mut lua, state) = ctx(dns_config, psl);
 
         debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
@@ -218,6 +235,11 @@ impl Script {
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
         let dns_config = DnsConfig::from_system()?;
-        self.run(dns_config, DummyReporter::new(), AnyLuaValue::LuaNil)
+        let psl = Psl::from_str(r#"
+// ===BEGIN ICANN DOMAINS===
+com
+// ===END ICANN DOMAINS===
+"#)?;
+        self.run(dns_config, psl, DummyReporter::new(), AnyLuaValue::LuaNil)
     }
 }

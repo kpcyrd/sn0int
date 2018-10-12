@@ -2,6 +2,7 @@ use errors::*;
 use channel;
 use chrootable_https::dns::DnsConfig;
 use engine::{Module, Event, Reporter};
+use psl::Psl;
 use serde_json;
 
 use std::env;
@@ -15,14 +16,17 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
     dns_config: DnsConfig,
+    psl: String,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(dns_config: DnsConfig, psl: String, module: Module, arg: serde_json::Value) -> StartCommand {
+        // TODO: compress psl
         StartCommand {
             dns_config,
+            psl,
             module,
             arg
         }
@@ -59,8 +63,8 @@ impl Supervisor {
         })
     }
 
-    pub fn send_start(&mut self, dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> Result<()> {
-        let start = serde_json::to_value(StartCommand::new(dns_config, module, arg))?;
+    pub fn send_start(&mut self, dns_config: DnsConfig, psl: String, module: Module, arg: serde_json::Value) -> Result<()> {
+        let start = serde_json::to_value(StartCommand::new(dns_config, psl, module, arg))?;
         self.send(start)?;
         Ok(())
     }
@@ -140,8 +144,10 @@ impl Reporter for StdioReporter {
 pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
     let dns_config = DnsConfig::from_system()?;
 
+    let psl = Psl::open_into_string()?;
+
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(dns_config, module, arg)?;
+    supervisor.send_start(dns_config, psl, module, arg)?;
 
     loop {
         match supervisor.recv()? {
@@ -174,7 +180,10 @@ pub fn run_worker() -> Result<()> {
     let start = reporter.recv_start()?;
 
     let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
-    let result = start.module.run(start.dns_config, mtx.clone(), start.arg.into());
+    let result = start.module.run(start.dns_config,
+                                  start.psl,
+                                  mtx.clone(),
+                                  start.arg.into());
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 
