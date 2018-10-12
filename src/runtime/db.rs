@@ -34,6 +34,10 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
                 Object::Url(NewUrlOwned::from_lua(object)
                     .map_err(|e| state.set_error(e))?)
             },
+            "email" => {
+                Object::Email(NewEmailOwned::from_lua(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
             _ => return Err(state.set_error(format_err!("Unknown object family"))),
         };
 

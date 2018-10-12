@@ -72,6 +72,9 @@ impl Database {
                 status: object.status,
                 body: object.body.as_ref().map(|x| x.as_ref()),
             }),
+            Object::Email(object) => self.insert_email_struct(&NewEmail {
+                value: &object.value,
+            }),
         }
     }
 
@@ -188,6 +191,33 @@ impl Database {
                 .values(url)
                 .execute(&self.db)?;
             let id = Url::id(self, url.value)?;
+            Ok((true, id))
+        }
+    }
+
+    pub fn insert_email(&self, email: &str) -> Result<()> {
+        let new_email = NewEmail {
+            value: email,
+        };
+
+        diesel::insert_into(emails::table)
+            .values(&new_email)
+            .execute(&self.db)?;
+
+        Ok(())
+    }
+
+    pub fn insert_email_struct(&self, email: &NewEmail) -> Result<(bool, i32)> {
+        // upsert is not supported by diesel
+
+        if let Some(email_id) = Email::id_opt(self, email.value)? {
+            // TODO: right now we don't have any fields to update
+            Ok((false, email_id))
+        } else {
+            diesel::insert_into(emails::table)
+                .values(email)
+                .execute(&self.db)?;
+            let id = Email::id(self, email.value)?;
             Ok((true, id))
         }
     }

@@ -11,6 +11,7 @@ pub enum Object {
     IpAddr(NewIpAddrOwned),
     SubdomainIpAddr(NewSubdomainIpAddr),
     Url(NewUrlOwned),
+    Email(NewEmailOwned),
 }
 
 impl Object {
@@ -21,6 +22,7 @@ impl Object {
             Object::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
             Object::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
             Object::Url(x) => format!("Url: {}", x.printable(db)?),
+            Object::Email(x) => format!("Email: {}", x.printable(db)?),
         })
     }
 }
@@ -63,3 +65,6 @@ pub use self::subdomain_ipaddr::*;
 
 mod url;
 pub use self::url::*;
+
+mod email;
+pub use self::email::*;
