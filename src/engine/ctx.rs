@@ -170,6 +170,8 @@ fn ctx<'a>(dns_config: DnsConfig, psl: Psl) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::psl_domain_from_dns_name(&mut lua, state.clone());
+    runtime::regex_find(&mut lua, state.clone());
+    runtime::regex_find_all(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());

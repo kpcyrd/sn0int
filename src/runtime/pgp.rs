@@ -96,7 +96,7 @@ vA==
 
             print(key)
 
-            if key['uid'] ~= "Hans Acker (example comment) <hans.acker@example.com>" then
+            if key['uids'][1] ~= "Hans Acker (example comment) <hans.acker@example.com>" then
                 return "Unexpected uid: " .. key['uid']
             end
         end

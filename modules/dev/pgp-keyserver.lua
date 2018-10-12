@@ -36,13 +36,18 @@ function run(arg)
 
             pubkey = pgp_pubkey_armored(resp['text'])
 
-            print(pubkey)
+            -- print(pubkey)
 
             -- TODO: ensure at least one email matches our target domain
             if pubkey['uids'] then
                 j = 1
                 while j <= #pubkey['uids'] do
-                    print(pubkey['uids'][j])
+                    m = regex_find("<([^< ]+@[^< ]+)>$", pubkey['uids'][j])
+                    if m then
+                        db_add('email', {
+                            value=m[2],
+                        })
+                    end
                     j = j+1
                 end
             end

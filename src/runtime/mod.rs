@@ -15,5 +15,6 @@ import_fns!(logger);
 import_fns!(pgp);
 import_fns!(print);
 import_fns!(psl);
+import_fns!(regex);
 import_fns!(sleep);
 import_fns!(url);
