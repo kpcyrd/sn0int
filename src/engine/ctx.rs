@@ -31,6 +31,10 @@ pub trait State {
         self.send(&Event::Info(msg))
     }
 
+    fn error(&self, msg: String) {
+        self.send(&Event::Error(msg))
+    }
+
     fn status(&self, msg: String) {
         self.send(&Event::Status(msg))
     }

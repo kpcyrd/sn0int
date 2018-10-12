@@ -152,8 +152,8 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
     loop {
         match supervisor.recv()? {
             Event::Done => break,
-            Event::Error(err) => {
-                tx.send((Event::Error(err), None));
+            Event::Fatal(err) => {
+                tx.send((Event::Fatal(err), None));
                 break;
             },
             Event::Object(object) => {
@@ -188,7 +188,7 @@ pub fn run_worker() -> Result<()> {
                         .into_inner().expect("Failed to consume Mutex");
 
     if let Err(err) = result {
-        reporter.send(&Event::Error(err.to_string()))?;
+        reporter.send(&Event::Fatal(err.to_string()))?;
     } else {
         reporter.send(&Event::Done)?;
     }

@@ -15,6 +15,7 @@ use term::Spinner;
 pub enum Event {
     Info(String),
     Error(String),
+    Fatal(String),
     Status(String),
     Object(Object),
     Done,
@@ -41,7 +42,8 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
         select! {
             recv(rx, msg) => match msg {
                 Some((Event::Info(info), _)) => spinner.log(&info),
-                Some((Event::Error(error), _)) => {
+                Some((Event::Error(error), _)) => spinner.error(&error),
+                Some((Event::Fatal(error), _)) => {
                     failed = Some(error);
                     break;
                 },
@@ -101,6 +103,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                 recv(rx, msg) => match msg {
                     Some(Event::Info(info)) => spinner.log(&info),
                     Some(Event::Error(error)) => spinner.error(&error),
+                    Some(Event::Fatal(error)) => spinner.error(&error),
                     Some(Event::Status(status)) => spinner.status(status),
                     Some(Event::Object(_)) => (),
                     Some(Event::Done) => break,
