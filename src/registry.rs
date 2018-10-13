@@ -1,7 +1,8 @@
 use errors::*;
 use args::{Args, Publish, Install, Search};
-use api::{API_URL, Client};
+use api::Client;
 use auth;
+use config::Config;
 use colored::Colorize;
 use separator::Separatable;
 use sn0int_common::metadata::Metadata;
@@ -12,11 +13,11 @@ use term;
 use worker;
 
 
-pub fn run_publish(_args: &Args, publish: &Publish) -> Result<()> {
+pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<()> {
     let session = auth::load_token()
         .context("Failed to load auth token")?;
 
-    let mut client = Client::new(API_URL)?;
+    let mut client = Client::new(&config)?;
     client.authenticate(session);
 
     let path = Path::new(&publish.path);
@@ -46,8 +47,8 @@ pub fn run_publish(_args: &Args, publish: &Publish) -> Result<()> {
     Ok(())
 }
 
-pub fn run_install(install: &Install) -> Result<()> {
-    let client = Client::new(API_URL)?;
+pub fn run_install(install: &Install, config: &Config) -> Result<()> {
+    let client = Client::new(&config)?;
 
     let label = format!("Installing {}", install.module);
     worker::spawn_fn(&label, || {
@@ -76,8 +77,8 @@ pub fn run_install(install: &Install) -> Result<()> {
     }, false)
 }
 
-pub fn run_search(search: &Search) -> Result<()> {
-    let client = Client::new(API_URL)?;
+pub fn run_search(search: &Search, config: &Config) -> Result<()> {
+    let client = Client::new(&config)?;
 
     let label = format!("Searching {:?}", search.query);
     let modules = worker::spawn_fn(&label, || {

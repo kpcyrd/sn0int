@@ -39,6 +39,7 @@ pub struct Reload {
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
+    let config = rl.config().clone();
 
     match args.subcommand {
         SubCommand::List(_) => {
@@ -49,11 +50,11 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             }
         },
         SubCommand::Install(install) => {
-            registry::run_install(&install)?;
+            registry::run_install(&install, &config)?;
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
         },
-        SubCommand::Search(search) => registry::run_search(&search)?,
+        SubCommand::Search(search) => registry::run_search(&search, &config)?,
         SubCommand::Reload(_) => {
             let current = rl.take_module()
                             .map(|m| m.canonical());

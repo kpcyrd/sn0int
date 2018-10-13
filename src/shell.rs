@@ -3,12 +3,13 @@ use errors::*;
 use args::Args;
 use cmd::*;
 use complete::CmdCompleter;
+use config::Config;
 use colored::Colorize;
 use ctrlc;
 use db::Database;
 use engine::{Engine, Module};
 use rustyline::error::ReadlineError;
-use rustyline::{CompletionType, Config, EditMode, Editor};
+use rustyline::{self, CompletionType, EditMode, Editor};
 use shellwords;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -94,17 +95,18 @@ pub struct Readline {
     prompt: Prompt,
     db: Database,
     psl: Psl,
+    config: Config,
     engine: Engine,
     signal_register: Arc<AtomicUsize>,
 }
 
 impl Readline {
-    pub fn new(db: Database, psl: Psl, engine: Engine) -> Readline {
-        let config = Config::builder()
+    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine) -> Readline {
+        let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
             .build();
-        let mut rl: Editor<CmdCompleter> = Editor::with_config(config);
+        let mut rl: Editor<CmdCompleter> = Editor::with_config(rl_config);
 
         let h = CmdCompleter::default();
         rl.set_helper(Some(h));
@@ -116,6 +118,7 @@ impl Readline {
             prompt,
             db,
             psl,
+            config,
             engine,
             signal_register: Arc::new(AtomicUsize::new(1)),
         };
@@ -148,6 +151,10 @@ impl Readline {
 
     pub fn psl(&self) -> &Psl {
         &self.psl
+    }
+
+    pub fn config(&self) -> &Config {
+        &self.config
     }
 
     pub fn engine(&self) -> &Engine {
@@ -291,7 +298,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn init(args: &Args) -> Result<Readline> {
+pub fn init(args: &Args, config: Config) -> Result<Readline> {
     // TODO: enforce valid characters for workspace name
     let workspace = match args.workspace {
         Some(ref workspace) => workspace.as_str(),
@@ -301,15 +308,15 @@ pub fn init(args: &Args) -> Result<Readline> {
     let db = Database::establish(workspace)?;
     let psl = Psl::open_or_download()?;
     let engine = Engine::new()?;
-    let rl = Readline::new(db, psl, engine);
+    let rl = Readline::new(config, db, psl, engine);
 
     Ok(rl)
 }
 
-pub fn run(args: &Args) -> Result<()> {
+pub fn run(args: &Args, config: Config) -> Result<()> {
     print_banner();
 
-    let mut rl = init(args)?;
+    let mut rl = init(args, config)?;
     rl.load_history().ok();
 
     rl.set_signal_handler()

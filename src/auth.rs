@@ -3,7 +3,8 @@ use opener;
 use std::fs;
 use std::thread;
 use std::time::Duration;
-use api::{API_URL, Client};
+use api::Client;
+use config::Config;
 use paths;
 use term;
 
@@ -22,8 +23,8 @@ pub fn save_token(session: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn run_login() -> Result<()> {
-    let mut client = Client::new(API_URL)?;
+pub fn run_login(config: &Config) -> Result<()> {
+    let mut client = Client::new(config)?;
 
     if let Ok(session) = load_token() {
         client.authenticate(session);
@@ -35,7 +36,7 @@ pub fn run_login() -> Result<()> {
 
     let session = Client::random_session();
     client.authenticate(session.clone());
-    let url = format!("{}/auth/{}", API_URL, session);
+    let url = format!("{}/auth/{}", config.core.registry, session);
 
     term::success(&format!("Opening url: {}", url));
     opener::open(url)?;

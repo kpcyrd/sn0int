@@ -8,6 +8,7 @@ use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
 use sn0int::complete;
+use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
 use sn0int::registry;
@@ -17,8 +18,8 @@ use structopt::StructOpt;
 use std::path::Path;
 
 
-fn run_run(gargs: &Args, args: &args::Run) -> Result<()> {
-    let mut rl = shell::init(gargs)?;
+fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
+    let mut rl = shell::init(gargs, config)?;
 
     if let Some(module) = &args.module {
         let module = rl.engine().get(&module)?.clone();
@@ -54,15 +55,18 @@ fn run() -> Result<()> {
         sandbox::fasten_seatbelt()?;
     }
 
+    let config = Config::load_or_default()
+        .context("Failed to load config")?;
+
     match args.subcommand {
-        Some(SubCommand::Run(ref run)) => run_run(&args, run),
+        Some(SubCommand::Run(ref run)) => run_run(&args, run, config),
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
-        Some(SubCommand::Login(_)) => auth::run_login(),
-        Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish),
-        Some(SubCommand::Install(ref install)) => registry::run_install(install),
-        Some(SubCommand::Search(ref search)) => registry::run_search(search),
+        Some(SubCommand::Login(_)) => auth::run_login(&config),
+        Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish, &config),
+        Some(SubCommand::Install(ref install)) => registry::run_install(install, &config),
+        Some(SubCommand::Search(ref search)) => registry::run_search(search, &config),
         Some(SubCommand::Completions(ref completions)) => complete::run_generate(completions),
-        None => shell::run(&args),
+        None => shell::run(&args, config),
     }
 }
 

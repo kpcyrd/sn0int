@@ -1,5 +1,6 @@
 use errors::*;
 use std::fmt;
+use config::Config;
 use chrootable_https::{self, HttpClient, Body, Request, Uri};
 use chrootable_https::http::request::Builder as RequestBuilder;
 use chrootable_https::header::CONTENT_TYPE;
@@ -12,8 +13,6 @@ use sn0int_common::api::*;
 use sn0int_common::ModuleID;
 use web;
 
-pub const API_URL: &str = "http://[::1]:8000";
-
 
 pub struct Client {
     server: String,
@@ -22,10 +21,10 @@ pub struct Client {
 }
 
 impl Client {
-    pub fn new<I: Into<String>>(server: I) -> Result<Client> {
+    pub fn new(config: &Config) -> Result<Client> {
         let client = chrootable_https::Client::with_system_resolver()?;
         Ok(Client {
-            server: server.into(),
+            server: config.core.registry.clone(),
             client,
             session: None,
         })
