@@ -11,6 +11,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sigaltstack)?;
     ctx.allow_syscall(Syscall::munmap)?;
     ctx.allow_syscall(Syscall::openat)?;
+    ctx.allow_syscall(Syscall::open)?;
     ctx.allow_syscall(Syscall::fcntl)?;
     ctx.allow_syscall(Syscall::uname)?;
     ctx.allow_syscall(Syscall::close)?;
@@ -21,6 +22,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::socket)?;
     ctx.allow_syscall(Syscall::connect)?;
     ctx.allow_syscall(Syscall::epoll_wait)?;
+    ctx.allow_syscall(Syscall::epoll_pwait)?;
     ctx.allow_syscall(Syscall::getrandom)?;
     ctx.allow_syscall(Syscall::bind)?;
     ctx.allow_syscall(Syscall::ioctl)?;
@@ -38,6 +40,8 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::nanosleep)?;
     ctx.allow_syscall(Syscall::exit)?;
     ctx.allow_syscall(Syscall::exit_group)?;
+    ctx.allow_syscall(Syscall::brk)?;
+    ctx.allow_syscall(Syscall::rt_sigprocmask)?;
 
     ctx.load()?;
 
