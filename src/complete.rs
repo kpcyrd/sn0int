@@ -1,3 +1,5 @@
+use args::{Args, Completions};
+use errors::*;
 use rustyline;
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
@@ -5,6 +7,8 @@ use rustyline::hint::Hinter;
 use shellwords;
 use std::borrow::Cow::{self, Borrowed, Owned};
 use std::str::FromStr;
+use std::io::stdout;
+use structopt::StructOpt;
 use shell::Command;
 
 
@@ -161,3 +165,8 @@ impl Highlighter for CmdCompleter {
 }
 
 impl rustyline::Helper for CmdCompleter {}
+
+pub fn run_generate(args: &Completions) -> Result<()> {
+    Args::clap().gen_completions_to("sn0int", args.shell, &mut stdout());
+    Ok(())
+}

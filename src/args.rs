@@ -1,4 +1,4 @@
-use structopt::clap::AppSettings;
+use structopt::clap::{AppSettings, Shell};
 use sn0int_common::ModuleID;
 
 
@@ -43,6 +43,9 @@ pub enum SubCommand {
     #[structopt(author="", name="search")]
     /// Search in the registry
     Search(Search),
+    #[structopt(author="", name="completions")]
+    /// Generate shell completions
+    Completions(Completions),
 }
 
 #[derive(Debug, StructOpt)]
@@ -80,4 +83,10 @@ pub struct Install {
 pub struct Search {
     /// The search query
     pub query: String,
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Completions {
+    #[structopt(raw(possible_values="&Shell::variants()"))]
+    pub shell: Shell,
 }

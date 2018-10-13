@@ -7,6 +7,7 @@ extern crate structopt;
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
+use sn0int::complete;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
 use sn0int::registry;
@@ -60,6 +61,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish),
         Some(SubCommand::Install(ref install)) => registry::run_install(install),
         Some(SubCommand::Search(ref search)) => registry::run_search(search),
+        Some(SubCommand::Completions(ref completions)) => complete::run_generate(completions),
         None => shell::run(&args),
     }
 }
