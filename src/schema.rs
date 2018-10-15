@@ -2,6 +2,7 @@ table! {
     domains (id) {
         id -> Integer,
         value -> Text,
+        unscoped -> Bool,
     }
 }
 
@@ -9,6 +10,7 @@ table! {
     emails (id) {
         id -> Integer,
         value -> Text,
+        unscoped -> Bool,
     }
 }
 
@@ -17,6 +19,7 @@ table! {
         id -> Integer,
         family -> Text,
         value -> Text,
+        unscoped -> Bool,
     }
 }
 
@@ -33,6 +36,7 @@ table! {
         id -> Integer,
         domain_id -> Integer,
         value -> Text,
+        unscoped -> Bool,
     }
 }
 
@@ -43,6 +47,7 @@ table! {
         value -> Text,
         status -> Nullable<Integer>,
         body -> Nullable<Binary>,
+        unscoped -> Bool,
     }
 }
 

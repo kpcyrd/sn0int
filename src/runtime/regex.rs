@@ -7,7 +7,7 @@ use regex::{Regex, Captures};
 use std::sync::Arc;
 
 
-fn capture_to_lua(caps: Captures) -> AnyLuaValue {
+fn capture_to_lua(caps: &Captures) -> AnyLuaValue {
     let mut i = 0;
     let mut list = LuaList::new();
     while let Some(cap) = caps.get(i) {
@@ -23,7 +23,7 @@ pub fn regex_find(lua: &mut hlua::Lua, state: Arc<State>) {
             .map_err(|err| state.set_error(Error::from(err)))?;
 
         match re.captures(&data) {
-            Some(caps) => Ok(capture_to_lua(caps)),
+            Some(caps) => Ok(capture_to_lua(&caps)),
             None => Ok(AnyLuaValue::LuaNil),
         }
     }))
@@ -35,7 +35,7 @@ pub fn regex_find_all(lua: &mut hlua::Lua, state: Arc<State>) {
             .map_err(|err| state.set_error(Error::from(err)))?;
 
         let list = re.captures_iter(&data)
-            .map(capture_to_lua)
+            .map(|x| capture_to_lua(&x))
             .collect();
 
         Ok(list)

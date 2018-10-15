@@ -91,7 +91,7 @@ impl HttpRequest {
         let cookies = session.cookies.clone();
 
         let user_agent = options.user_agent.or_else(|| Some("sn0int".to_string())); // TODO
-        let timeout = options.timeout.map(|x| Duration::from_millis(x));
+        let timeout = options.timeout.map(Duration::from_millis);
 
         let mut request = HttpRequest {
             session: session.id.clone(),
@@ -103,7 +103,7 @@ impl HttpRequest {
             basic_auth: options.basic_auth,
             user_agent,
             body: None,
-            timeout: timeout,
+            timeout,
         };
 
         if let Some(json) = options.json {

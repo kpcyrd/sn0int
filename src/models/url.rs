@@ -1,4 +1,5 @@
 use errors::*;
+use diesel;
 use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
@@ -15,6 +16,7 @@ pub struct Url {
     pub value: String,
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
+    pub unscoped: bool,
 }
 
 impl Model for Url {
@@ -68,6 +70,30 @@ impl Model for Url {
     }
 }
 
+impl Scopable for Url {
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
+
+    fn scope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::urls::dsl::*;
+
+        diesel::update(urls.filter(filter.sql()))
+            .set(unscoped.eq(false))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
+    fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::urls::dsl::*;
+
+        diesel::update(urls.filter(filter.sql()))
+            .set(unscoped.eq(true))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableUrl {
     value: String,
     status: Option<u16>,
@@ -98,14 +124,23 @@ pub struct DetailedUrl {
     id: i32,
     value: String,
     status: Option<u16>,
+    unscoped: bool,
 }
 
 impl fmt::Display for DetailedUrl {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+        if !self.unscoped {
+            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
 
-        if let Some(status) = self.status {
-            write!(w, " (\x1b[33m{}\x1b[0m)", status)?;
+            if let Some(status) = self.status {
+                write!(w, " (\x1b[33m{}\x1b[0m)", status)?;
+            }
+        } else {
+            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
+
+            if let Some(status) = self.status {
+                write!(w, "\x1b[90m ({})\x1b[0m", status)?;
+            }
         }
 
         Ok(())
@@ -120,6 +155,7 @@ impl Detailed for Url {
             id: self.id,
             value: self.value.to_string(),
             status: self.status.map(|x| x as u16),
+            unscoped: self.unscoped,
         })
     }
 }

@@ -21,8 +21,8 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
     client.authenticate(session);
 
     let path = Path::new(&publish.path);
-    let name = path.file_stem().ok_or(format_err!("Couldn't get file name"))?;
-    let ext = path.extension().ok_or(format_err!("Couldn't get file extension"))?;
+    let name = path.file_stem().ok_or_else(|| format_err!("Couldn't get file name"))?;
+    let ext = path.extension().ok_or_else(|| format_err!("Couldn't get file extension"))?;
 
     if ext != "lua" {
         bail!("File extension has to be .lua");
@@ -57,7 +57,7 @@ pub fn run_install(install: &Install, config: &Config) -> Result<()> {
             None => client.query_module(&install.module)
                         .context("Failed to query module infos")?
                         .latest
-                        .ok_or(format_err!("Module doesn't have a latest version"))?,
+                        .ok_or_else(|| format_err!("Module doesn't have a latest version"))?,
         };
 
         let module = client.download_module(&install.module, &version)

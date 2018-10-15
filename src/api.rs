@@ -97,7 +97,7 @@ impl Client {
     pub fn publish_module(&self, name: &str, body: String) -> Result<PublishResponse> {
         let url = format!("{}/api/v0/publish/{}", self.server, name);
         let reply = self.post::<PublishResponse, _>(&url, &PublishRequest {
-            code: body.into(),
+            code: body,
         })?;
         Ok(reply)
     }

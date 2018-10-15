@@ -169,7 +169,7 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, dns_config: DnsConfig, psl: String, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, dns_config: DnsConfig, psl: &str, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Loading public suffix list");
         let psl = Psl::from_str(&psl)?;
         debug!("Executing lua script {}", self.canonical());

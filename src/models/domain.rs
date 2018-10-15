@@ -1,4 +1,5 @@
 use errors::*;
+use diesel;
 use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
@@ -10,6 +11,7 @@ use serde_json;
 pub struct Domain {
     pub id: i32,
     pub value: String,
+    pub unscoped: bool,
 }
 
 impl fmt::Display for Domain {
@@ -69,6 +71,30 @@ impl Model for Domain {
     }
 }
 
+impl Scopable for Domain {
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
+
+    fn scope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::domains::dsl::*;
+
+        diesel::update(domains.filter(filter.sql()))
+            .set(unscoped.eq(false))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
+    fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::domains::dsl::*;
+
+        diesel::update(domains.filter(filter.sql()))
+            .set(unscoped.eq(true))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableDomain {
     value: String,
 }
@@ -90,11 +116,16 @@ impl Printable<PrintableDomain> for Domain {
 pub struct DetailedDomain {
     id: i32,
     value: String,
+    unscoped: bool,
 }
 
 impl fmt::Display for DetailedDomain {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)
+        if !self.unscoped {
+            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)
+        } else {
+            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)
+        }
     }
 }
 
@@ -105,6 +136,7 @@ impl Detailed for Domain {
         Ok(DetailedDomain {
             id: self.id,
             value: self.value.to_string(),
+            unscoped: self.unscoped,
         })
     }
 }

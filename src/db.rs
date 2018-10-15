@@ -231,6 +231,14 @@ impl Database {
     pub fn filter<T: Model>(&self, filter: &Filter) -> Result<Vec<T>> {
         T::filter(self, filter)
     }
+
+    pub fn scope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {
+        T::scope(self, filter)
+    }
+
+    pub fn noscope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {
+        T::noscope(self, filter)
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -249,7 +257,7 @@ impl Filter {
         debug!("Parsing query: {:?}", args);
 
         if args.is_empty() {
-            return Ok(Filter::new("1"));
+            bail!("Filter condition is required");
         }
 
         if args[0].to_lowercase() == "where" {
@@ -263,7 +271,7 @@ impl Filter {
         let mut expect_value = false;
 
         for arg in args {
-            if let Some(idx) = arg.find("=") {
+            if let Some(idx) = arg.find('=') {
                 if idx != 0 {
                     let (key, value) = arg.split_at(idx);
                     query += &format!(" {} = {:?}", key, &value[1..]);
@@ -285,6 +293,17 @@ impl Filter {
         debug!("Parsed query: {:?}", query);
 
         Ok(Filter::new(query))
+    }
+
+    pub fn parse_optional(args: &[String]) -> Result<Filter> {
+        debug!("Parsing optional query: {:?}", args);
+
+        if args.is_empty() {
+            debug!("Using filter with no condition");
+            return Ok(Filter::new("1"));
+        }
+
+        Self::parse(args)
     }
 
     pub fn query(&self) -> &str {

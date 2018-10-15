@@ -6,7 +6,7 @@ use std::sync::Arc;
 pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("psl_domain_from_dns_name", hlua::function1(move |dns_name: String| -> Result<String> {
         let dns_name = state.psl().parse_dns_name(&dns_name)
-            .map_err(|err| state.set_error(Error::from(err)))?;
+            .map_err(|err| state.set_error(err))?;
 
         let domain = dns_name.domain()
             .ok_or_else(|| format_err!("Failed to get domain from {:?}", dns_name))

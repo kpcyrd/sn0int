@@ -1,4 +1,5 @@
 use errors::*;
+use diesel;
 use diesel::prelude::*;
 use json::LuaJsonValue;
 use models::*;
@@ -13,6 +14,7 @@ pub struct IpAddr {
     pub id: i32,
     pub family: String,
     pub value: String,
+    pub unscoped: bool,
 }
 
 impl fmt::Display for IpAddr {
@@ -72,6 +74,30 @@ impl Model for IpAddr {
     }
 }
 
+impl Scopable for IpAddr {
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
+
+    fn scope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::ipaddrs::dsl::*;
+
+        diesel::update(ipaddrs.filter(filter.sql()))
+            .set(unscoped.eq(false))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
+    fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::ipaddrs::dsl::*;
+
+        diesel::update(ipaddrs.filter(filter.sql()))
+            .set(unscoped.eq(true))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+}
+
 impl IpAddr {
     fn subdomains(&self, db: &Database) -> Result<Vec<Subdomain>> {
         let subdomain_ids = SubdomainIpAddr::belonging_to(self)
@@ -110,14 +136,23 @@ pub struct DetailedIpAddr {
     id: i32,
     value: net::IpAddr,
     subdomains: Vec<PrintableSubdomain>,
+    unscoped: bool,
 }
 
 impl fmt::Display for DetailedIpAddr {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{}\x1b[0m", self.id, self.value)?;
+        if !self.unscoped {
+            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{}\x1b[0m", self.id, self.value)?;
 
-        for subdomain in &self.subdomains {
-            write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
+            for subdomain in &self.subdomains {
+                write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
+            }
+        } else {
+            write!(w, "\x1b[90m#{}, {}\x1b[0m", self.id, self.value)?;
+
+            for subdomain in &self.subdomains {
+                write!(w, "\n\t\x1b[90m{}\x1b[0m", subdomain)?;
+            }
         }
 
         Ok(())
@@ -136,6 +171,7 @@ impl Detailed for IpAddr {
             id: self.id,
             value: self.value.parse()?,
             subdomains,
+            unscoped: self.unscoped,
         })
     }
 }

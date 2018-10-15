@@ -135,9 +135,7 @@ named!(metaline<&str, (EntryType, &str)>, do_parse!(
     tag!(": ") >>
     value: take_until!("\n") >>
     tag!("\n") >>
-    (
-        (name, value)
-    )
+    (name, value)
 ));
 
 named!(metalines<&str, Vec<(EntryType, &str)>>, do_parse!(

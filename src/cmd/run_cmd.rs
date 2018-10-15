@@ -22,9 +22,10 @@ fn prepare_arg<T: Serialize + fmt::Display>(x: T) -> Result<(serde_json::Value, 
     Ok((arg, Some(pretty)))
 }
 
-fn prepare_args<T: Model + Serialize + fmt::Display>(db: &Database) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+fn prepare_args<T: Scopable + Serialize + fmt::Display>(db: &Database) -> Result<Vec<(serde_json::Value, Option<String>)>> {
     db.list::<T>()?
         .into_iter()
+        .filter(|x| x.scoped())
         .map(prepare_arg)
         .collect()
 }

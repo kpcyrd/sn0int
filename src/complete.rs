@@ -18,6 +18,26 @@ pub struct CmdCompleter {
 }
 
 impl CmdCompleter {
+    pub fn filter(&self, cmd: &str, args: &[String]) -> rustyline::Result<(usize, Vec<String>)> {
+        // we can only complete the 2nd argument
+        if args.len() != 2 {
+            Ok((0, vec![]))
+        } else {
+            let arg = &args[1];
+
+            let options = &["domains",
+                            "subdomains",
+                            "ipaddrs",
+                            "urls",
+                            "emails"];
+
+            let results: Vec<String> = options.iter()
+                .filter(|x| x.starts_with(arg))
+                .map(|x| format!("{} {} ", cmd, x))
+                .collect();
+            Ok((0, results))
+        }
+    }
 }
 
 impl Completer for CmdCompleter {
@@ -94,6 +114,7 @@ impl Completer for CmdCompleter {
                     }
 
                 },
+                Command::Noscope => self.filter("noscope", &cmd),
                 Command::Use => {
                     // we can only complete the 2nd argument
                     if args != 2 {
@@ -108,26 +129,8 @@ impl Completer for CmdCompleter {
                         Ok((0, results))
                     }
                 },
-                Command::Select => {
-                    // we can only complete the 2nd argument
-                    if args != 2 {
-                        Ok((0, vec![]))
-                    } else {
-                        let arg = &cmd[1];
-
-                        let options = &["domains",
-                                        "subdomains",
-                                        "ipaddrs",
-                                        "urls",
-                                        "emails"];
-
-                        let results: Vec<String> = options.iter()
-                            .filter(|x| x.starts_with(arg))
-                            .map(|x| format!("select {} ", x))
-                            .collect();
-                        Ok((0, results))
-                    }
-                },
+                Command::Scope => self.filter("scope", &cmd),
+                Command::Select => self.filter("select", &cmd),
                 _ => Ok((0, vec![])),
             }
         }

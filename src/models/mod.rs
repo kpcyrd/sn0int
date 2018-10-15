@@ -41,11 +41,19 @@ pub trait Model: Sized {
     fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>>;
 }
 
+pub trait Scopable: Model {
+    fn scoped(&self) -> bool;
+
+    fn scope(db: &Database, filter: &Filter) -> Result<usize>;
+
+    fn noscope(db: &Database, filter: &Filter) -> Result<usize>;
+}
+
 pub trait Printable<T: Sized> {
     fn printable(&self, db: &Database) -> Result<T>;
 }
 
-pub trait Detailed {
+pub trait Detailed: Scopable {
     type T: fmt::Display;
 
     fn detailed(&self, db: &Database) -> Result<Self::T>;

@@ -18,9 +18,9 @@ pub fn fasten_seatbelt() -> Result<()> {
 }
 
 pub fn init() -> Result<()> {
-    if let Err(_) = nix::unistd::chroot(CHROOT) {
+    if let Err(err) = nix::unistd::chroot(CHROOT) {
         // TODO: add setting to make this a hard fail
-        warn!("Failed to chroot");
+        warn!("Failed to chroot: {:?}", err);
     } else {
         nix::unistd::chdir("/")?;
         info!("Successful chroot to {:?}", CHROOT);

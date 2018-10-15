@@ -8,10 +8,10 @@ use std::sync::Arc;
 use std::io::BufReader;
 
 
-fn pgp_pubkey_lua(pubkey: Vec<u8>) -> Result<AnyLuaValue> {
+fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
     let mut uids = LuaList::new();
 
-    for (tag, body) in sloppy_rfc4880::Parser::new(pubkey.as_slice()) {
+    for (tag, body) in sloppy_rfc4880::Parser::new(pubkey) {
         match tag {
             Tag::UserID => {
                 let body = String::from_utf8(body)?;
@@ -32,7 +32,7 @@ pub fn pgp_pubkey(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("pgp_pubkey", hlua::function1(move |pubkey: AnyLuaValue| -> Result<AnyLuaValue> {
         let pubkey = byte_array(pubkey)
             .map_err(|err| state.set_error(err))?;
-        pgp_pubkey_lua(pubkey)
+        pgp_pubkey_lua(&pubkey)
             .map_err(|err| state.set_error(err))
     }))
 }
@@ -43,7 +43,7 @@ pub fn pgp_pubkey_armored(lua: &mut hlua::Lua, state: Arc<State>) {
         let pubkey = sloppy_rfc4880::armor::read_armored(&mut r)
             .map_err(|err| state.set_error(err))?;
 
-        pgp_pubkey_lua(pubkey)
+        pgp_pubkey_lua(&pubkey)
             .map_err(|err| state.set_error(err))
     }))
 }

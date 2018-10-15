@@ -65,12 +65,12 @@ impl Supervisor {
 
     pub fn send_start(&mut self, dns_config: DnsConfig, psl: String, module: Module, arg: serde_json::Value) -> Result<()> {
         let start = serde_json::to_value(StartCommand::new(dns_config, psl, module, arg))?;
-        self.send(start)?;
+        self.send(&start)?;
         Ok(())
     }
 
-    pub fn send(&mut self, value: serde_json::Value) -> Result<()> {
-        let mut value = serde_json::to_string(&value)?;
+    pub fn send(&mut self, value: &serde_json::Value) -> Result<()> {
+        let mut value = serde_json::to_string(value)?;
         value.push('\n');
         self.stdin.write_all(value.as_bytes())?;
         debug!("Supervisor sent: {:?}", value);
@@ -162,7 +162,7 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");
-                if let Err(_) = supervisor.send(value) {
+                if let Err(_) = supervisor.send(&value) {
                     tx.send((Event::Error("Failed to send to child".into()), None));
                 }
             },
@@ -181,7 +181,7 @@ pub fn run_worker() -> Result<()> {
 
     let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
     let result = start.module.run(start.dns_config,
-                                  start.psl,
+                                  &start.psl,
                                   mtx.clone(),
                                   start.arg.into());
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
