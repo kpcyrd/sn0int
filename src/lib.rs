@@ -13,7 +13,9 @@ extern crate chrootable_https;
 extern crate trust_dns_proto;
 extern crate url;
 extern crate nix;
+#[cfg(target_os = "linux")]
 extern crate caps;
+#[cfg(target_os = "linux")]
 extern crate syscallz;
 extern crate hlua_badtouch as hlua;
 extern crate base64;
