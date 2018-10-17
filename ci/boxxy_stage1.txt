@@ -1,0 +1,3 @@
+stage1
+ls
+echo sandbox fail
