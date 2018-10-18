@@ -5,7 +5,7 @@ use schema::*;
 
 
 #[derive(Debug, Serialize, Deserialize)]
-pub enum Object {
+pub enum Insert {
     Domain(NewDomainOwned),
     Subdomain(NewSubdomainOwned),
     IpAddr(NewIpAddrOwned),
@@ -14,16 +14,34 @@ pub enum Object {
     Email(NewEmailOwned),
 }
 
-impl Object {
+impl Insert {
     pub fn printable(&self, db: &Database) -> Result<String> {
         Ok(match self {
-            Object::Domain(x) => format!("Domain: {}", x.printable(db)?),
-            Object::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
-            Object::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
-            Object::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
-            Object::Url(x) => format!("Url: {}", x.printable(db)?),
-            Object::Email(x) => format!("Email: {}", x.printable(db)?),
+            Insert::Domain(x) => format!("Domain: {}", x.printable(db)?),
+            Insert::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
+            Insert::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
+            Insert::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
+            Insert::Url(x) => format!("Url: {}", x.printable(db)?),
+            Insert::Email(x) => format!("Email: {}", x.printable(db)?),
         })
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Update {
+    Subdomain(SubdomainUpdate),
+    Url(UrlUpdate),
+    Email(EmailUpdate),
+}
+
+impl fmt::Display for Update {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: this should contain an identifier which object got updated
+        match self {
+            Update::Subdomain(update) => write!(w, "subdomain({})", update),
+            Update::Url(update) => write!(w, "url({})", update),
+            Update::Email(update) => write!(w, "email({})", update),
+        }
     }
 }
 

@@ -15,6 +15,7 @@ pub struct Subdomain {
     pub domain_id: i32,
     pub value: String,
     pub unscoped: bool,
+    pub resolvable: Option<bool>,
 }
 
 impl fmt::Display for Subdomain {
@@ -111,6 +112,29 @@ impl Subdomain {
             )
             .collect::<result::Result<_, _>>()
             .map_err(Error::from)
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="subdomains"]
+pub struct SubdomainUpdate {
+    pub id: i32,
+    pub resolvable: Option<bool>,
+}
+
+impl SubdomainUpdate {
+    pub fn from_lua(x: LuaJsonValue) -> Result<Self> {
+        let x = serde_json::from_value(x.into())?;
+        Ok(x)
+    }
+}
+
+impl fmt::Display for SubdomainUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(resolvable) = self.resolvable {
+            write!(w, "resolvable => {:?}", resolvable)?;
+        }
+        Ok(())
     }
 }
 

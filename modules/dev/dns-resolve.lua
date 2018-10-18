@@ -7,8 +7,17 @@ function run(arg)
     records = dns(arg['value'], 'A')
     if last_err() then return end
 
-    if records['success'] == nil then
-        -- TODO: consider marking the subdomain is inaccessible
+    -- update subdomain
+    resolvable = records['success'] ~= nil
+    if arg['resolvable'] ~= resolvable then
+        -- TODO: pass arg to function as well
+        db_update('subdomain', {
+            id=arg['id'],
+            resolvable=resolvable
+        })
+    end
+
+    if not resolvable then
         return
     end
 

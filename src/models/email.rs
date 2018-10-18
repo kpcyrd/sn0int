@@ -12,6 +12,7 @@ pub struct Email {
     pub id: i32,
     pub value: String,
     pub unscoped: bool,
+    pub valid: Option<bool>,
 }
 
 impl fmt::Display for Email {
@@ -92,6 +93,29 @@ impl Scopable for Email {
             .set(unscoped.eq(true))
             .execute(db.db())
             .map_err(Error::from)
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="emails"]
+pub struct EmailUpdate {
+    pub id: i32,
+    pub valid: Option<bool>,
+}
+
+impl EmailUpdate {
+    pub fn from_lua(x: LuaJsonValue) -> Result<Self> {
+        let x = serde_json::from_value(x.into())?;
+        Ok(x)
+    }
+}
+
+impl fmt::Display for EmailUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(valid) = self.valid {
+            write!(w, "valid => {:?}", valid)?;
+        }
+        Ok(())
     }
 }
 

@@ -2,7 +2,7 @@ use errors::*;
 
 use channel;
 use engine::{self, Module};
-use models::Object;
+use models::{Insert, Update};
 use serde_json;
 use shell::Readline;
 use std::time::Duration;
@@ -17,7 +17,8 @@ pub enum Event {
     Error(String),
     Fatal(String),
     Status(String),
-    Object(Object),
+    Insert(Insert),
+    Update(Update),
     Done,
 }
 
@@ -48,7 +49,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     break;
                 },
                 Some((Event::Status(status), _)) => spinner.status(status),
-                Some((Event::Object(object), tx)) => {
+                Some((Event::Insert(object), tx)) => {
                     let result = rl.db().insert_generic(&object);
                     debug!("{:?} => {:?}", object, result);
                     let result = match result {
@@ -67,6 +68,20 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                             Err(err)
                         },
                     };
+
+                    tx.expect("Failed to get db result channel")
+                        .send(result).expect("Failed to send db result to channel");
+                },
+                Some((Event::Update(object), tx)) => {
+                    let result = rl.db().update_generic(&object);
+                    debug!("{:?} => {:?}", object, result);
+                    let result = result.map_err(|e| e.to_string());
+
+                    if let Err(ref err) = result {
+                        spinner.error(&err);
+                    } else {
+                        spinner.log(&format!("Updating {}", object));
+                    }
 
                     tx.expect("Failed to get db result channel")
                         .send(result).expect("Failed to send db result to channel");
@@ -105,7 +120,8 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     Some(Event::Error(error)) => spinner.error(&error),
                     Some(Event::Fatal(error)) => spinner.error(&error),
                     Some(Event::Status(status)) => spinner.status(status),
-                    Some(Event::Object(_)) => (),
+                    Some(Event::Insert(_)) => (),
+                    Some(Event::Update(_)) => (),
                     Some(Event::Done) => break,
                     None => break, // channel closed
                 },

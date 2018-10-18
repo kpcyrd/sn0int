@@ -49,30 +49,30 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_generic(&self, object: &Object) -> Result<(bool, i32)> {
+    pub fn insert_generic(&self, object: &Insert) -> Result<(bool, i32)> {
         match object {
-            Object::Domain(object) => self.insert_domain_struct(&NewDomain {
+            Insert::Domain(object) => self.insert_domain_struct(&NewDomain {
                 value: &object.value,
             }),
-            Object::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
+            Insert::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
                 domain_id: object.domain_id,
                 value: &object.value,
             }),
-            Object::IpAddr(object) => self.insert_ipaddr_struct(&NewIpAddr {
+            Insert::IpAddr(object) => self.insert_ipaddr_struct(&NewIpAddr {
                 family: &object.family,
                 value: &object.value,
             }),
-            Object::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
+            Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
                 subdomain_id: object.subdomain_id,
                 ip_addr_id: object.ip_addr_id,
             }),
-            Object::Url(object) => self.insert_url_struct(&NewUrl {
+            Insert::Url(object) => self.insert_url_struct(&NewUrl {
                 subdomain_id: object.subdomain_id,
                 value: &object.value,
                 status: object.status,
                 body: object.body.as_ref().map(|x| x.as_ref()),
             }),
-            Object::Email(object) => self.insert_email_struct(&NewEmail {
+            Insert::Email(object) => self.insert_email_struct(&NewEmail {
                 value: &object.value,
             }),
         }
@@ -220,6 +220,37 @@ impl Database {
             let id = Email::id(self, email.value)?;
             Ok((true, id))
         }
+    }
+
+    //
+
+    pub fn update_generic(&self, object: &Update) -> Result<i32> {
+        match object {
+            Update::Subdomain(object) => self.update_subdomain(object),
+            Update::Url(object) => self.update_url(object),
+            Update::Email(object) => self.update_email(object),
+        }
+    }
+
+    pub fn update_subdomain(&self, subdomain: &SubdomainUpdate) -> Result<i32> {
+        diesel::update(subdomains::table)
+            .set(subdomain)
+            .execute(&self.db)?;
+        Ok(subdomain.id)
+    }
+
+    pub fn update_url(&self, url: &UrlUpdate) -> Result<i32> {
+        diesel::update(urls::table)
+            .set(url)
+            .execute(&self.db)?;
+        Ok(url.id)
+    }
+
+    pub fn update_email(&self, email: &EmailUpdate) -> Result<i32> {
+        diesel::update(emails::table)
+            .set(email)
+            .execute(&self.db)?;
+        Ok(email.id)
     }
 
     //
