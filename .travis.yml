@@ -14,6 +14,14 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=boxxy
+  - os: linux
+    rust: stable
+    env:
+    - BUILD_MODE=docker
+  - os: linux
+    rust: stable
+    env:
+    - BUILD_MODE=docker-registry
   - os: osx
     rust: stable
     env:

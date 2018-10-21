@@ -25,4 +25,13 @@ case "$1" in
             exit 1
         fi
         ;;
+    docker)
+        docker build -t sn0int .
+        docker images
+        docker run --rm sn0int --help
+        ;;
+    docker-registry)
+        docker build -t sn0int-registry sn0int-registry/
+        docker images
+        ;;
 esac
