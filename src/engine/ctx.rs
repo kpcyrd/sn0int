@@ -2,7 +2,7 @@ use errors::*;
 
 use engine::Reporter;
 use hlua::{self, AnyLuaValue};
-use models::Object;
+use models::{Insert, Update};
 use psl::Psl;
 use runtime;
 use serde_json;
@@ -39,12 +39,20 @@ pub trait State {
         self.send(&Event::Status(msg))
     }
 
-    fn db_insert(&self, object: Object) -> Result<i32> {
-        self.send(&Event::Object(object));
+    fn db_insert(&self, object: Insert) -> Result<i32> {
+        self.send(&Event::Insert(object));
         let reply = self.recv()?;
         let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
 
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+    }
+
+    fn db_update(&self, object: String, update: Update) -> Result<i32> {
+        self.send(&Event::Update((object, update)));
+        let reply = self.recv()?;
+        let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
+
+        reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
     }
 
     fn dns_config(&self) -> Arc<DnsConfig>;
@@ -158,6 +166,7 @@ fn ctx<'a>(dns_config: DnsConfig, psl: Psl) -> (hlua::Lua<'a>, Arc<LuaState>) {
 
     runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
+    runtime::db_update(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());

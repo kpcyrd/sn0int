@@ -24,7 +24,7 @@ CREATE TABLE subdomain_ipaddrs (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     subdomain_id INTEGER NOT NULL,
     ip_addr_id INTEGER NOT NULL,
-    FOREIGN KEY(subdomain_id) REFERENCES domains(id),
+    FOREIGN KEY(subdomain_id) REFERENCES subdomains(id),
     FOREIGN KEY(ip_addr_id) REFERENCES ipaddrs(id),
     CONSTRAINT subdomain_ipaddr_unique UNIQUE (subdomain_id, ip_addr_id)
 );
@@ -35,6 +35,6 @@ CREATE TABLE urls (
     value VARCHAR NOT NULL,
     status INTEGER,
     body BLOB,
-    FOREIGN KEY(subdomain_id) REFERENCES domains(id),
+    FOREIGN KEY(subdomain_id) REFERENCES subdomains(id),
     CONSTRAINT url_unique UNIQUE (value)
 );

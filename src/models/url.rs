@@ -1,13 +1,11 @@
 use errors::*;
 use diesel;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
 use ser;
-use serde_json;
 
 
-#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Subdomain)]
 #[table_name="urls"]
 pub struct Url {
@@ -17,6 +15,13 @@ pub struct Url {
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
     pub unscoped: bool,
+    pub online: Option<bool>,
+}
+
+impl fmt::Display for Url {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 impl Model for Url {
@@ -91,6 +96,33 @@ impl Scopable for Url {
             .set(unscoped.eq(true))
             .execute(db.db())
             .map_err(Error::from)
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="urls"]
+pub struct UrlUpdate {
+    pub id: i32,
+    pub status: Option<i32>,
+    pub body: Option<Vec<u8>>,
+    pub online: Option<bool>,
+}
+
+impl fmt::Display for UrlUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        let mut updates = Vec::new();
+
+        if let Some(online) = self.online {
+            updates.push(format!("online => {:?}, ", online));
+        }
+        if let Some(status) = self.status {
+            updates.push(format!("status => {:?}, ", status));
+        }
+        if let Some(ref body) = self.body {
+            updates.push(format!("body => [{} bytes], ", body.len()));
+        }
+
+        write!(w, "{}", updates.join(", "))
     }
 }
 
@@ -177,13 +209,6 @@ pub struct NewUrlOwned {
     pub status: Option<i32>,
     #[serde(deserialize_with="ser::opt_string_or_bytes")]
     pub body: Option<Vec<u8>>,
-}
-
-impl NewUrlOwned {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewUrlOwned> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableUrl> for NewUrlOwned {

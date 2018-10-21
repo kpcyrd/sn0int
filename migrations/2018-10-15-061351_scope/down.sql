@@ -61,7 +61,7 @@ CREATE TABLE urls (
     value VARCHAR NOT NULL,
     status INTEGER,
     body BLOB,
-    FOREIGN KEY(subdomain_id) REFERENCES domains(id),
+    FOREIGN KEY(subdomain_id) REFERENCES subdomains(id),
     CONSTRAINT url_unique UNIQUE (value)
 );
 

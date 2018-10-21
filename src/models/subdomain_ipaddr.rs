@@ -1,8 +1,6 @@
 use errors::*;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
-use serde_json;
 use std::net;
 
 
@@ -98,13 +96,6 @@ impl Printable<PrintableSubdomainIpAddr> for SubdomainIpAddr {
 pub struct NewSubdomainIpAddr {
     pub subdomain_id: i32,
     pub ip_addr_id: i32,
-}
-
-impl NewSubdomainIpAddr {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewSubdomainIpAddr> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {

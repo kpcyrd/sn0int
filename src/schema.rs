@@ -11,6 +11,7 @@ table! {
         id -> Integer,
         value -> Text,
         unscoped -> Bool,
+        valid -> Nullable<Bool>,
     }
 }
 
@@ -37,6 +38,7 @@ table! {
         domain_id -> Integer,
         value -> Text,
         unscoped -> Bool,
+        resolvable -> Nullable<Bool>,
     }
 }
 
@@ -48,13 +50,14 @@ table! {
         status -> Nullable<Integer>,
         body -> Nullable<Binary>,
         unscoped -> Bool,
+        online -> Nullable<Bool>,
     }
 }
 
-joinable!(subdomain_ipaddrs -> domains (subdomain_id));
 joinable!(subdomain_ipaddrs -> ipaddrs (ip_addr_id));
+joinable!(subdomain_ipaddrs -> subdomains (subdomain_id));
 joinable!(subdomains -> domains (domain_id));
-joinable!(urls -> domains (subdomain_id));
+joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
     domains,

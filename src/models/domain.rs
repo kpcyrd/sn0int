@@ -1,12 +1,10 @@
 use errors::*;
 use diesel;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
-use serde_json;
 
 
-#[derive(Identifiable, Queryable, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="domains"]
 pub struct Domain {
     pub id: i32,
@@ -151,13 +149,6 @@ pub struct NewDomain<'a> {
 #[table_name="domains"]
 pub struct NewDomainOwned {
     pub value: String,
-}
-
-impl NewDomainOwned {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewDomainOwned> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableDomain> for NewDomainOwned {
