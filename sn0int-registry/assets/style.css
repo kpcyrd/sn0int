@@ -19,3 +19,12 @@ h1 a {
     text-decoration: none;
     color: #00aa00;
 }
+
+a {
+    color: #00aa00;
+}
+
+.code {
+    background-color: #222;
+    padding: 10px;
+}

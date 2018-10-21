@@ -4,10 +4,16 @@ use db;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket_contrib::Template;
+use assets::ASSET_REV;
+use serde_json::{self, Value};
 
 
 #[get("/?<auth>")]
 pub fn get(auth: OAuth) -> Template {
+    let mut auth = serde_json::to_value(&auth).expect("OAuth serialization failed");
+    if let Value::Object(ref mut map) = auth {
+        map.insert("ASSET_REV".to_string(), Value::String(ASSET_REV.to_string()));
+    }
     Template::render("auth-confirm", auth)
 }
 
@@ -17,7 +23,9 @@ pub fn post(auth: Form<OAuth>, connection: db::Connection) -> ApiResult<Template
     let client = Authenticator::from_env()?;
     client.store_code(code, state, &connection)?;
 
-    Ok(Template::render("auth-done", vec![1]))
+    Ok(Template::render("auth-done", hashmap!{
+        "ASSET_REV" => ASSET_REV.as_str(),
+    }))
 }
 
 #[get("/<session>")]

@@ -1,6 +1,49 @@
 {{#*inline "page"}}
         <p>
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+        This is the registry server of sn0int, an OSINT framework and package
+        manager. It's purpose is semi-automatically processing public
+        information to enumerate attack surface. sn0int itself is only
+        providing an engine that can be extended with scripts.
+        </p>
+        <p>
+        The registry server allows uploading modules that can be installed by
+        users afterwards. This is done using sn0int which needs to be
+        <a href="https://github.com/kpcyrd/sn0int#installation" target="_blank"
+        rel="noopener">installed</a>.
+        </p>
+
+        <p>
+        You can search for modules with sn0int using:
+        </p>
+        <p class="code"><code>
+        sn0int search ctlogs
+        </code></p>
+
+        <p>
+        To install the module afterwards run:
+        </p>
+        <p class="code"><code>
+        sn0int install kpcyrd/ctlogs
+        </code></p>
+
+        <p>
+        If you want to publish your own module, you need to login with github first:
+        </p>
+        <p class="code"><code>
+        sn0int login
+        </code></p>
+
+        <p>
+        Afterwards you can upload your module to the registry (this is going to
+        publish your module as yourgithubuser/example):
+        </p>
+        <p class="code"><code>
+        sn0int publish ./path/to/example.lua
+        </code></p>
+
+        <p>
+        For more information, visit <a href="https://github.com/kpcyrd/sn0int"
+        target="_blank" rel="noopener">sn0int on github</a>.
         </p>
 {{/inline}}
 {{~> base }}

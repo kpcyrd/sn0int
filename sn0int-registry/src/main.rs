@@ -8,9 +8,12 @@ extern crate sn0int_common;
 extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 extern crate dotenv;
-// extern crate serde;
+extern crate blake2;
+extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
+#[macro_use] extern crate maplit;
+#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate failure;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
@@ -20,13 +23,13 @@ extern crate url;
 extern crate reqwest;
 extern crate semver;
 
-use rocket::response::content;
 use rocket_contrib::{Json, Value, Template};
 use dotenv::dotenv;
 
 use std::env;
 use errors::*;
 
+pub mod assets;
 pub mod auth;
 pub mod auth2;
 pub mod db;
@@ -37,21 +40,6 @@ pub mod routes;
 #[allow(unused_imports)]
 pub mod schema;
 
-
-#[get("/")]
-fn index() -> Template {
-    Template::render("index", ())
-}
-
-#[get("/favicon.ico")]
-fn favicon() -> Vec<u8> {
-    include_bytes!("../assets/favicon.ico").to_vec()
-}
-
-#[get("/assets/style.css")]
-fn style() -> content::Css<&'static str> {
-    content::Css(include_str!("../assets/style.css"))
-}
 
 #[catch(400)]
 fn bad_request() -> Json<Value> {
@@ -100,9 +88,9 @@ fn run() -> Result<()> {
             routes::auth::login,
         ])
         .mount("/", routes![
-            index,
-            favicon,
-            style
+            routes::assets::index,
+            routes::assets::favicon,
+            routes::assets::style,
         ])
     .catch(catchers![
         bad_request,
