@@ -11,8 +11,7 @@ function run(arg)
     resolvable = records['success'] ~= nil
     if arg['resolvable'] ~= resolvable then
         -- TODO: pass arg to function as well
-        db_update('subdomain', {
-            id=arg['id'],
+        db_update('subdomain', arg, {
             resolvable=resolvable
         })
     end

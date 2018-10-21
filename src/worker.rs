@@ -18,7 +18,7 @@ pub enum Event {
     Fatal(String),
     Status(String),
     Insert(Insert),
-    Update(Update),
+    Update((String, Update)),
     Done,
 }
 
@@ -72,15 +72,15 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     tx.expect("Failed to get db result channel")
                         .send(result).expect("Failed to send db result to channel");
                 },
-                Some((Event::Update(object), tx)) => {
-                    let result = rl.db().update_generic(&object);
-                    debug!("{:?} => {:?}", object, result);
+                Some((Event::Update((object, update)), tx)) => {
+                    let result = rl.db().update_generic(&update);
+                    debug!("{:?}: {:?} => {:?}", object, update, result);
                     let result = result.map_err(|e| e.to_string());
 
                     if let Err(ref err) = result {
                         spinner.error(&err);
                     } else {
-                        spinner.log(&format!("Updating {}", object));
+                        spinner.log(&format!("Updating {:?} ({})", object, update));
                     }
 
                     tx.expect("Failed to get db result channel")

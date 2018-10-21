@@ -121,4 +121,17 @@ mod tests {
         "#).expect("Failed to load script");
         script.test().expect("Script failed");
     }
+
+    #[test]
+    #[ignore]
+    fn verify_nx_record() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            x = dns('doesntexist.example.com', 'A')
+            print(x)
+            return x['success'] == nil
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
 }

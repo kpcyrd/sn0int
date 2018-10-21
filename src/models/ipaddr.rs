@@ -1,9 +1,7 @@
 use errors::*;
 use diesel;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
-use serde_json;
 use std::net;
 use std::result;
 
@@ -188,13 +186,6 @@ pub struct NewIpAddr<'a> {
 pub struct NewIpAddrOwned {
     pub family: String,
     pub value: String,
-}
-
-impl NewIpAddrOwned {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewIpAddrOwned> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableIpAddr> for NewIpAddrOwned {

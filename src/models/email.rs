@@ -1,12 +1,10 @@
 use errors::*;
 use diesel;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
-use serde_json;
 
 
-#[derive(Identifiable, Queryable, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="emails"]
 pub struct Email {
     pub id: i32,
@@ -103,13 +101,6 @@ pub struct EmailUpdate {
     pub valid: Option<bool>,
 }
 
-impl EmailUpdate {
-    pub fn from_lua(x: LuaJsonValue) -> Result<Self> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
-}
-
 impl fmt::Display for EmailUpdate {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         if let Some(valid) = self.valid {
@@ -175,13 +166,6 @@ pub struct NewEmail<'a> {
 #[table_name="emails"]
 pub struct NewEmailOwned {
     pub value: String,
-}
-
-impl NewEmailOwned {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewEmailOwned> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableEmail> for NewEmailOwned {

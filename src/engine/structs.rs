@@ -1,6 +1,17 @@
 use errors::*;
 use hlua::{AnyHashableLuaValue, AnyLuaValue};
 use std::collections::{self, HashMap};
+use json::LuaJsonValue;
+use serde;
+use serde_json;
+
+
+pub fn from_lua<T>(x: LuaJsonValue) -> Result<T>
+    where for<'de> T: serde::Deserialize<'de>
+{
+    serde_json::from_value(x.into())
+        .map_err(Error::from)
+}
 
 #[derive(Debug, Default)]
 pub struct LuaMap(HashMap<AnyHashableLuaValue, AnyLuaValue>);

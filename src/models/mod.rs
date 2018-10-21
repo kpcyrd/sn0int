@@ -36,11 +36,10 @@ pub enum Update {
 
 impl fmt::Display for Update {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: this should contain an identifier which object got updated
         match self {
-            Update::Subdomain(update) => write!(w, "subdomain({})", update),
-            Update::Url(update) => write!(w, "url({})", update),
-            Update::Email(update) => write!(w, "email({})", update),
+            Update::Subdomain(update) => write!(w, "{}", update),
+            Update::Url(update) => write!(w, "{}", update),
+            Update::Email(update) => write!(w, "{}", update),
         }
     }
 }

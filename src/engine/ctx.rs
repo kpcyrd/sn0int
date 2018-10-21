@@ -47,8 +47,8 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
     }
 
-    fn db_update(&self, object: Update) -> Result<i32> {
-        self.send(&Event::Update(object));
+    fn db_update(&self, object: String, update: Update) -> Result<i32> {
+        self.send(&Event::Update((object, update)));
         let reply = self.recv()?;
         let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
 

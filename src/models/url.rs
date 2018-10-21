@@ -1,13 +1,11 @@
 use errors::*;
 use diesel;
 use diesel::prelude::*;
-use json::LuaJsonValue;
 use models::*;
 use ser;
-use serde_json;
 
 
-#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Subdomain)]
 #[table_name="urls"]
 pub struct Url {
@@ -18,6 +16,12 @@ pub struct Url {
     pub body: Option<Vec<u8>>,
     pub unscoped: bool,
     pub online: Option<bool>,
+}
+
+impl fmt::Display for Url {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.value)
+    }
 }
 
 impl Model for Url {
@@ -102,13 +106,6 @@ pub struct UrlUpdate {
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
     pub online: Option<bool>,
-}
-
-impl UrlUpdate {
-    pub fn from_lua(x: LuaJsonValue) -> Result<Self> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl fmt::Display for UrlUpdate {
@@ -212,13 +209,6 @@ pub struct NewUrlOwned {
     pub status: Option<i32>,
     #[serde(deserialize_with="ser::opt_string_or_bytes")]
     pub body: Option<Vec<u8>>,
-}
-
-impl NewUrlOwned {
-    pub fn from_lua(x: LuaJsonValue) -> Result<NewUrlOwned> {
-        let x = serde_json::from_value(x.into())?;
-        Ok(x)
-    }
 }
 
 impl Printable<PrintableUrl> for NewUrlOwned {
