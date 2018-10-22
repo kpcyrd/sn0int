@@ -61,6 +61,13 @@ impl Database {
             Insert::IpAddr(object) => self.insert_ipaddr_struct(&NewIpAddr {
                 family: &object.family,
                 value: &object.value,
+                continent: object.continent.as_ref(),
+                continent_code: object.continent_code.as_ref(),
+                country: object.country.as_ref(),
+                country_code: object.country_code.as_ref(),
+                city: object.city.as_ref(),
+                longitude: object.longitude,
+                latitude: object.latitude,
             }),
             Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
                 subdomain_id: object.subdomain_id,
@@ -144,6 +151,13 @@ impl Database {
         let new_ipaddr = NewIpAddr {
             family: &family,
             value: &ipaddr,
+            continent: None,
+            continent_code: None,
+            country: None,
+            country_code: None,
+            city: None,
+            longitude: None,
+            latitude: None,
         };
 
         self.insert_ipaddr_struct(&new_ipaddr)
@@ -227,27 +241,39 @@ impl Database {
     pub fn update_generic(&self, object: &Update) -> Result<i32> {
         match object {
             Update::Subdomain(object) => self.update_subdomain(object),
+            Update::IpAddr(object) => self.update_ipaddr(object),
             Update::Url(object) => self.update_url(object),
             Update::Email(object) => self.update_email(object),
         }
     }
 
     pub fn update_subdomain(&self, subdomain: &SubdomainUpdate) -> Result<i32> {
-        diesel::update(subdomains::table)
+        use schema::subdomains::columns::*;
+        diesel::update(subdomains::table.filter(id.eq(subdomain.id)))
             .set(subdomain)
             .execute(&self.db)?;
         Ok(subdomain.id)
     }
 
+    pub fn update_ipaddr(&self, ipaddr: &IpAddrUpdate) -> Result<i32> {
+        use schema::ipaddrs::columns::*;
+        diesel::update(ipaddrs::table.filter(id.eq(ipaddr.id)))
+            .set(ipaddr)
+            .execute(&self.db)?;
+        Ok(ipaddr.id)
+    }
+
     pub fn update_url(&self, url: &UrlUpdate) -> Result<i32> {
-        diesel::update(urls::table)
+        use schema::urls::columns::*;
+        diesel::update(urls::table.filter(id.eq(url.id)))
             .set(url)
             .execute(&self.db)?;
         Ok(url.id)
     }
 
     pub fn update_email(&self, email: &EmailUpdate) -> Result<i32> {
-        diesel::update(emails::table)
+        use schema::emails::columns::*;
+        diesel::update(emails::table.filter(id.eq(email.id)))
             .set(email)
             .execute(&self.db)?;
         Ok(email.id)

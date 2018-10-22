@@ -85,7 +85,9 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
             Family::Subdomain => structs::from_lua::<Domain>(object)
                     .map(|x| (x.id, x.to_string()))
                     .map_err(|e| state.set_error(e)),
-            Family::IpAddr => bail!("IpAddr doesn't have mutable fields"),
+            Family::IpAddr => structs::from_lua::<IpAddr>(object)
+                    .map(|x| (x.id, x.to_string()))
+                    .map_err(|e| state.set_error(e)),
             Family::SubdomainIpAddr => bail!("Unsupported operation"),
             Family::Url => structs::from_lua::<Url>(object)
                     .map(|x| (x.id, x.to_string()))
@@ -102,20 +104,15 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
 
         let update = match family {
             Family::Domain => bail!("Domain doesn't have mutable fields"),
-            Family::Subdomain => {
-                Update::Subdomain(structs::from_lua::<SubdomainUpdate>(update)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::IpAddr => bail!("IpAddr doesn't have mutable fields"),
+            Family::Subdomain => Update::Subdomain(structs::from_lua::<SubdomainUpdate>(update)
+                .map_err(|e| state.set_error(e))?),
+            Family::IpAddr => Update::IpAddr(structs::from_lua::<IpAddrUpdate>(update)
+                .map_err(|e| state.set_error(e))?),
             Family::SubdomainIpAddr => bail!("Unsupported operation"),
-            Family::Url => {
-                Update::Url(structs::from_lua::<UrlUpdate>(update)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Email => {
-                Update::Email(structs::from_lua::<EmailUpdate>(update)
-                    .map_err(|e| state.set_error(e))?)
-            },
+            Family::Url => Update::Url(structs::from_lua::<UrlUpdate>(update)
+                .map_err(|e| state.set_error(e))?),
+            Family::Email => Update::Email(structs::from_lua::<EmailUpdate>(update)
+                .map_err(|e| state.set_error(e))?),
         };
 
         state.db_update(object, update)

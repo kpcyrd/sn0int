@@ -30,6 +30,7 @@ impl Insert {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Update {
     Subdomain(SubdomainUpdate),
+    IpAddr(IpAddrUpdate),
     Url(UrlUpdate),
     Email(EmailUpdate),
 }
@@ -38,6 +39,7 @@ impl fmt::Display for Update {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Update::Subdomain(update) => write!(w, "{}", update),
+            Update::IpAddr(update) => write!(w, "{}", update),
             Update::Url(update) => write!(w, "{}", update),
             Update::Email(update) => write!(w, "{}", update),
         }

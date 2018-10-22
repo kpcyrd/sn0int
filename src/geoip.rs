@@ -19,14 +19,18 @@ fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<Str
 
 #[derive(Debug, Serialize)]
 pub struct Lookup {
-    continent: Option<Continent>,
-    country: Option<Country>,
+    continent: Option<String>,
+    continent_code: Option<String>,
+    country: Option<String>,
+    country_code: Option<String>,
     city: Option<String>,
-    location: Option<Location>,
+    latitude: Option<f64>,
+    longitude: Option<f64>,
 }
 
 impl From<geoip2::City> for Lookup {
     fn from(lookup: geoip2::City) -> Lookup {
+        // parse maxminddb lookup
         let continent = match lookup.continent {
             Some(continent) => Continent::from_maxmind(continent),
             _ => None,
@@ -44,11 +48,29 @@ impl From<geoip2::City> for Lookup {
             _ => None,
         };
 
+        // flatten datastructure
+        let (continent, continent_code) = match continent {
+            Some(x) => (Some(x.name), Some(x.code)),
+            _ => (None, None),
+        };
+        let (country, country_code) = match country {
+            Some(x) => (Some(x.name), Some(x.code)),
+            _ => (None, None),
+        };
+        let (latitude, longitude) = match location {
+            Some(x) => (Some(x.latitude), Some(x.longitude)),
+            _ => (None, None),
+        };
+
+        // return result
         Lookup {
             continent,
+            continent_code,
             country,
+            country_code,
             city,
-            location,
+            latitude,
+            longitude,
         }
     }
 }

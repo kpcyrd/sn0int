@@ -6,13 +6,20 @@ use std::net;
 use std::result;
 
 
-#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="ipaddrs"]
 pub struct IpAddr {
     pub id: i32,
     pub family: String,
     pub value: String,
     pub unscoped: bool,
+    pub continent: Option<String>,
+    pub continent_code: Option<String>,
+    pub country: Option<String>,
+    pub country_code: Option<String>,
+    pub city: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
 }
 
 impl fmt::Display for IpAddr {
@@ -135,6 +142,9 @@ pub struct DetailedIpAddr {
     value: net::IpAddr,
     subdomains: Vec<PrintableSubdomain>,
     unscoped: bool,
+    continent: Option<String>,
+    country: Option<String>,
+    city: Option<String>,
 }
 
 impl fmt::Display for DetailedIpAddr {
@@ -142,11 +152,40 @@ impl fmt::Display for DetailedIpAddr {
         if !self.unscoped {
             write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{}\x1b[0m", self.id, self.value)?;
 
+            if let Some(ref continent) = self.continent {
+                write!(w, " [{}", continent)?;
+
+                if let Some(ref country) = self.country {
+                    write!(w, " / {}", country)?;
+                }
+
+                if let Some(ref city) = self.city {
+                    write!(w, " / {}", city)?;
+                }
+
+                write!(w, "]")?;
+            }
+
             for subdomain in &self.subdomains {
                 write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
             }
         } else {
-            write!(w, "\x1b[90m#{}, {}\x1b[0m", self.id, self.value)?;
+            write!(w, "\x1b[90m#{}, {}", self.id, self.value)?;
+
+            if let Some(ref continent) = self.continent {
+                write!(w, " [{}", continent)?;
+
+                if let Some(ref country) = self.country {
+                    write!(w, " / {}", country)?;
+                }
+
+                if let Some(ref city) = self.city {
+                    write!(w, " / {}", city)?;
+                }
+
+                write!(w, "]")?;
+            }
+            write!(w, "\x1b[0m");
 
             for subdomain in &self.subdomains {
                 write!(w, "\n\t\x1b[90m{}\x1b[0m", subdomain)?;
@@ -170,6 +209,9 @@ impl Detailed for IpAddr {
             value: self.value.parse()?,
             subdomains,
             unscoped: self.unscoped,
+            continent: self.continent.clone(),
+            country: self.country.clone(),
+            city: self.city.clone(),
         })
     }
 }
@@ -179,6 +221,13 @@ impl Detailed for IpAddr {
 pub struct NewIpAddr<'a> {
     pub family: &'a str,
     pub value: &'a str,
+    pub continent: Option<&'a String>,
+    pub continent_code: Option<&'a String>,
+    pub country: Option<&'a String>,
+    pub country_code: Option<&'a String>,
+    pub city: Option<&'a String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
@@ -186,6 +235,56 @@ pub struct NewIpAddr<'a> {
 pub struct NewIpAddrOwned {
     pub family: String,
     pub value: String,
+    pub continent: Option<String>,
+    pub continent_code: Option<String>,
+    pub country: Option<String>,
+    pub country_code: Option<String>,
+    pub city: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="ipaddrs"]
+pub struct IpAddrUpdate {
+    pub id: i32,
+    pub continent: Option<String>,
+    pub continent_code: Option<String>,
+    pub country: Option<String>,
+    pub country_code: Option<String>,
+    pub city: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+}
+
+impl fmt::Display for IpAddrUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        let mut updates = Vec::new();
+
+        if let Some(ref continent) = self.continent {
+            updates.push(format!("continent => {:?}", continent));
+        }
+        if let Some(ref continent_code) = self.continent_code {
+            updates.push(format!("continent_code => {:?}", continent_code));
+        }
+        if let Some(ref country) = self.country {
+            updates.push(format!("country => {:?}", country));
+        }
+        if let Some(ref country_code) = self.country_code {
+            updates.push(format!("country_code => {:?}", country_code));
+        }
+        if let Some(ref city) = self.city {
+            updates.push(format!("city => {:?}", city));
+        }
+        if let Some(ref latitude) = self.latitude {
+            updates.push(format!("latitude => {:?}", latitude));
+        }
+        if let Some(ref longitude) = self.longitude {
+            updates.push(format!("longitude => {:?}", longitude));
+        }
+
+        write!(w, "{}", updates.join(", "))
+    }
 }
 
 impl Printable<PrintableIpAddr> for NewIpAddrOwned {

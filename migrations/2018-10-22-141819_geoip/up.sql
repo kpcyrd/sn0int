@@ -1,0 +1,7 @@
+ALTER TABLE ipaddrs ADD COLUMN continent VARCHAR;
+ALTER TABLE ipaddrs ADD COLUMN continent_code VARCHAR;
+ALTER TABLE ipaddrs ADD COLUMN country VARCHAR;
+ALTER TABLE ipaddrs ADD COLUMN country_code VARCHAR;
+ALTER TABLE ipaddrs ADD COLUMN city VARCHAR;
+ALTER TABLE ipaddrs ADD COLUMN latitude FLOAT;
+ALTER TABLE ipaddrs ADD COLUMN longitude FLOAT;
