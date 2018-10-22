@@ -1,5 +1,6 @@
 use errors::*;
 use maxminddb::{self, geoip2};
+use std::fmt;
 use std::net::IpAddr;
 use std::collections::BTreeMap;
 
@@ -16,7 +17,7 @@ fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<Str
         .map(|x| x.to_owned())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Lookup {
     continent: Option<Continent>,
     country: Option<Country>,
@@ -52,7 +53,7 @@ impl From<geoip2::City> for Lookup {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Continent {
     code: String,
     name: String,
@@ -76,7 +77,7 @@ impl Continent {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Country {
     code: String,
     name: String,
@@ -100,7 +101,7 @@ impl Country {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Location {
     latitude: f64,
     longitude: f64,
@@ -124,12 +125,31 @@ impl Location {
     }
 }
 
-pub fn lookup(ip: IpAddr) -> Result<Lookup> {
-    let reader = maxminddb::Reader::open(PATH)
-        .context("Failed to open geoip database")?;
-    let city: geoip2::City = reader.lookup(ip)?;
-    debug!("GeoIP result: {:?}", city);
-    Ok(Lookup::from(city))
+pub struct GeoIP {
+    reader: maxminddb::Reader,
+}
+
+impl fmt::Debug for GeoIP {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "GeoIP {{ ... }}")
+    }
+}
+
+impl GeoIP {
+    pub fn new() -> Result<GeoIP> {
+        let reader = maxminddb::Reader::open(PATH)
+            .context("Failed to open geoip database")?;
+
+        Ok(GeoIP {
+            reader,
+        })
+    }
+
+    pub fn lookup(&self, ip: IpAddr) -> Result<Lookup> {
+        let city: geoip2::City = self.reader.lookup(ip)?;
+        debug!("GeoIP result: {:?}", city);
+        Ok(Lookup::from(city))
+    }
 }
 
 
@@ -140,7 +160,8 @@ mod tests {
     #[test]
     fn test_geoip_lookup() {
         let ip = "1.1.1.1".parse().unwrap();
-        let lookup = lookup(ip).expect("GeoIP lookup failed");
+        let geoip = GeoIP::new().expect("Failed to load geoip");
+        let lookup = geoip.lookup(ip).expect("GeoIP lookup failed");
         println!("{:#?}", lookup);
         assert_eq!(lookup.city, None);
     }

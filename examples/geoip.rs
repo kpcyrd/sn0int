@@ -6,9 +6,11 @@ use sn0int::errors::*;
 
 
 fn run() -> Result<()> {
+    let geoip = sn0int::geoip::GeoIP::new()?;
+
     for arg in env::args().skip(1) {
         let ip = arg.parse()?;
-        let lookup = sn0int::geoip::lookup(ip)?;
+        let lookup = geoip.lookup(ip)?;
         println!("{:#?}", lookup);
     }
 

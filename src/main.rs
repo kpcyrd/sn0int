@@ -11,6 +11,7 @@ use sn0int::complete;
 use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
+use sn0int::geoip::GeoIP;
 use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
@@ -43,9 +44,11 @@ fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
+    // TODO: this file should be processed after the sandbox is up
+    let geoip = GeoIP::new()?;
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker()
+    engine::isolation::run_worker(geoip)
 }
 
 fn run() -> Result<()> {
