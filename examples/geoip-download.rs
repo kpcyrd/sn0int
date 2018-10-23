@@ -5,6 +5,8 @@ extern crate chrootable_https;
 #[macro_use] extern crate structopt;
 
 use sn0int::errors::*;
+use sn0int::paths;
+use std::fs;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -12,12 +14,20 @@ pub struct Args {
     url: String,
     filter: String,
     target: String,
+    #[structopt(short="e", long="extract-only")]
+    extract_only: bool,
 }
 
 fn run() -> Result<()> {
     let args = Args::from_args();
     debug!("{:?}", args);
-    sn0int::geoip::GeoIP::download(&args.target, &args.filter, &args.url)?;
+    let path = paths::cache_dir()?.join(&args.target);
+    if args.extract_only {
+        let body = fs::read(&args.url)?;
+        sn0int::archive::extract(&mut &body[..], &args.filter, path)?;
+    } else {
+        sn0int::geoip::GeoIP::download(path, &args.filter, &args.url)?;
+    }
     Ok(())
 }
 

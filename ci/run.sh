@@ -7,6 +7,8 @@ case "$1" in
         ;;
     test)
         ci/run.sh build
+        wget https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz
+        cargo run --example geoip-download -- -e GeoLite2-City.tar.gz GeoLite2-City.mmdb GeoLite2-City.mmdb
         cargo test --verbose
         cargo test --verbose -- --ignored
         ;;
