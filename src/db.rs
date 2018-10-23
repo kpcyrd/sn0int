@@ -31,6 +31,8 @@ impl Database {
                 .context("Failed to connect to database")?;
             migrations::run(&db)
                 .context("Failed to run migrations")?;
+            db.execute("PRAGMA foreign_keys = ON")
+                .context("Failed to enforce foreign keys")?;
             Ok(db)
         }, false)?;
 
