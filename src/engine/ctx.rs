@@ -262,6 +262,7 @@ impl Script {
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
+        use geoip::Maxmind;
         let dns_config = DnsConfig::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===

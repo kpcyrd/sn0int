@@ -11,7 +11,7 @@ use sn0int::complete;
 use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
-use sn0int::geoip::GeoIP;
+use sn0int::geoip::{GeoIP, Maxmind};
 use sn0int::paths;
 use sn0int::registry;
 use sn0int::sandbox;

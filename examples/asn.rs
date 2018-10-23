@@ -1,18 +1,19 @@
 extern crate sn0int;
 extern crate env_logger;
+extern crate maxminddb;
 
 use std::env;
 use sn0int::errors::*;
-use sn0int::geoip::{GeoIP, Maxmind};
+use sn0int::geoip::{AsnDB, Maxmind};
 
 
 fn run() -> Result<()> {
-    let geoip = GeoIP::open_or_download()?;
+    let asndb = AsnDB::open_or_download()?;
 
     for arg in env::args().skip(1) {
         let ip = arg.parse()?;
-        let lookup = geoip.lookup(ip)?;
-        println!("{:#?}", lookup);
+        let asn = asndb.lookup(ip)?;
+        println!("{:#?}", asn);
     }
 
     Ok(())

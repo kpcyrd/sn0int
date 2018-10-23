@@ -1,16 +1,6 @@
 use errors::*;
-use archive;
-use chrootable_https::Client;
-use maxminddb::{self, geoip2};
-use std::fmt;
-use std::fs::File;
-use std::net::IpAddr;
+use maxminddb::geoip2;
 use std::collections::BTreeMap;
-use std::path::Path;
-use paths;
-use worker;
-
-pub static GEOIP_CITY_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz";
 
 
 fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<String> {
@@ -24,18 +14,18 @@ fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<Str
 }
 
 #[derive(Debug, Serialize)]
-pub struct Lookup {
-    continent: Option<String>,
-    continent_code: Option<String>,
-    country: Option<String>,
-    country_code: Option<String>,
-    city: Option<String>,
-    latitude: Option<f64>,
-    longitude: Option<f64>,
+pub struct GeoLookup {
+    pub continent: Option<String>,
+    pub continent_code: Option<String>,
+    pub country: Option<String>,
+    pub country_code: Option<String>,
+    pub city: Option<String>,
+    pub latitude: Option<f64>,
+    pub longitude: Option<f64>,
 }
 
-impl From<geoip2::City> for Lookup {
-    fn from(lookup: geoip2::City) -> Lookup {
+impl From<geoip2::City> for GeoLookup {
+    fn from(lookup: geoip2::City) -> GeoLookup {
         // parse maxminddb lookup
         let continent = match lookup.continent {
             Some(continent) => Continent::from_maxmind(continent),
@@ -69,7 +59,7 @@ impl From<geoip2::City> for Lookup {
         };
 
         // return result
-        Lookup {
+        GeoLookup {
             continent,
             continent_code,
             country,
@@ -153,66 +143,28 @@ impl Location {
     }
 }
 
-pub struct GeoIP {
-    reader: maxminddb::Reader,
+#[derive(Debug, Serialize)]
+pub struct AsnLookup {
+    asn: u32,
+    as_org: String,
 }
 
-impl fmt::Debug for GeoIP {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "GeoIP {{ ... }}")
-    }
-}
-
-impl GeoIP {
-    pub fn open(path: &str) -> Result<GeoIP> {
-        let reader = maxminddb::Reader::open(path)
-            .context("Failed to open geoip database")?;
-
-        Ok(GeoIP {
-            reader,
-        })
-    }
-
-    pub fn open_or_download() -> Result<GeoIP> {
-        let path = paths::cache_dir()?.join("GeoLite2-City.mmdb");
-
-        if File::open(&path).is_err() {
-            worker::spawn_fn("Downloading GeoIP city database", || {
-                GeoIP::download(&path, "GeoLite2-City.mmdb", GEOIP_CITY_URL)
-            }, false)?;
+impl AsnLookup {
+    pub fn try_from(lookup: geoip2::Isp) -> Result<AsnLookup> {
+        // parse maxminddb lookup
+        let asn = match lookup.autonomous_system_number {
+            Some(asn) => asn,
+            _ => bail!("autonomous_system_number not set"),
+        };
+        let as_org = match lookup.autonomous_system_organization {
+            Some(org) => org,
+            _ => bail!("autonomous_system_organization not set"),
         };
 
-        let path = path.to_str().ok_or(format_err!("Failed to decode path"))?;
-        GeoIP::open(&path)
-    }
-
-    pub fn download<P: AsRef<Path>>(path: P, filter: &str, url: &str) -> Result<()> {
-        debug!("Downloading {:?}...", url);
-        let client = Client::with_system_resolver()?;
-        let resp = client.get(url)?;
-        debug!("Downloaded {} bytes", resp.body.len());
-        archive::extract(&mut &resp.body[..], filter, path)?;
-        Ok(())
-    }
-
-    pub fn lookup(&self, ip: IpAddr) -> Result<Lookup> {
-        let city: geoip2::City = self.reader.lookup(ip)?;
-        debug!("GeoIP result: {:?}", city);
-        Ok(Lookup::from(city))
-    }
-}
-
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_geoip_lookup() {
-        let ip = "1.1.1.1".parse().unwrap();
-        let geoip = GeoIP::open_or_download().expect("Failed to load geoip");
-        let lookup = geoip.lookup(ip).expect("GeoIP lookup failed");
-        println!("{:#?}", lookup);
-        assert_eq!(lookup.city, None);
+        // return result
+        Ok(AsnLookup {
+            asn,
+            as_org,
+        })
     }
 }
