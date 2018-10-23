@@ -1,6 +1,6 @@
 [package]
 name = "sn0int-registry"
-version = "0.2.0"
+version = "0.3.0"
 description = "sn0int registry"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
