@@ -8,6 +8,7 @@ use colored::Colorize;
 use ctrlc;
 use db::Database;
 use engine::{Engine, Module};
+use geoip::GeoIP;
 use rustyline::error::ReadlineError;
 use rustyline::{self, CompletionType, EditMode, Editor};
 use shellwords;
@@ -317,6 +318,7 @@ pub fn init(args: &Args, config: Config) -> Result<Readline> {
 
     let db = Database::establish(workspace)?;
     let psl = Psl::open_or_download()?;
+    let _geoip = GeoIP::open_or_download()?;
     let engine = Engine::new()?;
     let rl = Readline::new(config, db, psl, engine);
 

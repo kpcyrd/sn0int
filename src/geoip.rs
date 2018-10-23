@@ -1,10 +1,16 @@
 use errors::*;
+use archive;
+use chrootable_https::Client;
 use maxminddb::{self, geoip2};
 use std::fmt;
+use std::fs::File;
 use std::net::IpAddr;
 use std::collections::BTreeMap;
+use std::path::Path;
+use paths;
+use worker;
 
-pub static PATH: &str = "/usr/share/GeoIP/GeoLite2-City.mmdb";
+pub static GEOIP_CITY_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz";
 
 
 fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<String> {
@@ -158,13 +164,35 @@ impl fmt::Debug for GeoIP {
 }
 
 impl GeoIP {
-    pub fn new() -> Result<GeoIP> {
-        let reader = maxminddb::Reader::open(PATH)
+    pub fn open(path: &str) -> Result<GeoIP> {
+        let reader = maxminddb::Reader::open(path)
             .context("Failed to open geoip database")?;
 
         Ok(GeoIP {
             reader,
         })
+    }
+
+    pub fn open_or_download() -> Result<GeoIP> {
+        let path = paths::cache_dir()?.join("GeoLite2-City.mmdb");
+
+        if File::open(&path).is_err() {
+            worker::spawn_fn("Downloading GeoIP city database", || {
+                GeoIP::download(&path, "GeoLite2-City.mmdb", GEOIP_CITY_URL)
+            }, false)?;
+        };
+
+        let path = path.to_str().ok_or(format_err!("Failed to decode path"))?;
+        GeoIP::open(&path)
+    }
+
+    pub fn download<P: AsRef<Path>>(path: P, filter: &str, url: &str) -> Result<()> {
+        debug!("Downloading {:?}...", url);
+        let client = Client::with_system_resolver()?;
+        let resp = client.get(url)?;
+        debug!("Downloaded {} bytes", resp.body.len());
+        archive::extract(&mut &resp.body[..], filter, path)?;
+        Ok(())
     }
 
     pub fn lookup(&self, ip: IpAddr) -> Result<Lookup> {
@@ -182,7 +210,7 @@ mod tests {
     #[test]
     fn test_geoip_lookup() {
         let ip = "1.1.1.1".parse().unwrap();
-        let geoip = GeoIP::new().expect("Failed to load geoip");
+        let geoip = GeoIP::open_or_download().expect("Failed to load geoip");
         let lookup = geoip.lookup(ip).expect("GeoIP lookup failed");
         println!("{:#?}", lookup);
         assert_eq!(lookup.city, None);

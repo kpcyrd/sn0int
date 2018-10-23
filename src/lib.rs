@@ -27,6 +27,8 @@ extern crate sloppy_rfc4880;
 extern crate regex;
 extern crate toml;
 extern crate maxminddb;
+extern crate tar;
+extern crate libflate;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_urlencoded;
@@ -39,6 +41,7 @@ extern crate serde_urlencoded;
 #[macro_use] extern crate crossbeam_channel as channel;
 
 pub mod api;
+pub mod archive;
 pub mod args;
 pub mod auth;
 pub mod cmd;

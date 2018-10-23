@@ -6,7 +6,7 @@ use sn0int::errors::*;
 
 
 fn run() -> Result<()> {
-    let geoip = sn0int::geoip::GeoIP::new()?;
+    let geoip = sn0int::geoip::GeoIP::open_or_download()?;
 
     for arg in env::args().skip(1) {
         let ip = arg.parse()?;

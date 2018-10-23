@@ -268,7 +268,7 @@ impl Script {
 com
 // ===END ICANN DOMAINS===
 "#)?;
-        let geoip = GeoIP::new()?;
+        let geoip = GeoIP::open_or_download()?;
         self.run(dns_config, psl, geoip, DummyReporter::new(), AnyLuaValue::LuaNil)
     }
 }
