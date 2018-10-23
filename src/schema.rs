@@ -21,6 +21,13 @@ table! {
         family -> Text,
         value -> Text,
         unscoped -> Bool,
+        continent -> Nullable<Text>,
+        continent_code -> Nullable<Text>,
+        country -> Nullable<Text>,
+        country_code -> Nullable<Text>,
+        city -> Nullable<Text>,
+        latitude -> Nullable<Float>,
+        longitude -> Nullable<Float>,
     }
 }
 

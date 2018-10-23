@@ -1,5 +1,6 @@
 use errors::*;
 
+use geoip::GeoIP;
 use json::LuaJsonValue;
 use serde_json;
 use std::fs;
@@ -169,11 +170,11 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, dns_config: DnsConfig, psl: &str, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, dns_config: DnsConfig, psl: &str, geoip: GeoIP, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Loading public suffix list");
         let psl = Psl::from_str(&psl)?;
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(dns_config, psl, reporter, arg.into())
+        self.script.run(dns_config, psl, geoip, reporter, arg.into())
     }
 
     fn cmp_canonical(&self, other: &Module) -> Ordering {

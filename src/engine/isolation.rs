@@ -2,6 +2,7 @@ use errors::*;
 use channel;
 use chrootable_https::dns::DnsConfig;
 use engine::{Module, Event, Reporter};
+use geoip::GeoIP;
 use psl::Psl;
 use serde_json;
 
@@ -185,13 +186,14 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
     Ok(())
 }
 
-pub fn run_worker() -> Result<()> {
+pub fn run_worker(geoip: GeoIP) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 
     let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
     let result = start.module.run(start.dns_config,
                                   &start.psl,
+                                  geoip,
                                   mtx.clone(),
                                   start.arg.into());
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")

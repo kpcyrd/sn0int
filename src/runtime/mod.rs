@@ -8,6 +8,7 @@ macro_rules! import_fns {
 import_fns!(db);
 import_fns!(dns);
 import_fns!(error);
+import_fns!(geoip);
 import_fns!(http);
 import_fns!(html);
 import_fns!(json);

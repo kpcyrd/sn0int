@@ -113,13 +113,13 @@ impl fmt::Display for UrlUpdate {
         let mut updates = Vec::new();
 
         if let Some(online) = self.online {
-            updates.push(format!("online => {:?}, ", online));
+            updates.push(format!("online => {:?}", online));
         }
         if let Some(status) = self.status {
-            updates.push(format!("status => {:?}, ", status));
+            updates.push(format!("status => {:?}", status));
         }
         if let Some(ref body) = self.body {
-            updates.push(format!("body => [{} bytes], ", body.len()));
+            updates.push(format!("body => [{} bytes]", body.len()));
         }
 
         write!(w, "{}", updates.join(", "))
