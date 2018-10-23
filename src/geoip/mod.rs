@@ -27,6 +27,14 @@ pub trait Maxmind: Sized {
     #[inline]
     fn new(reader: maxminddb::Reader) -> Self;
 
+    fn cache_path() -> Result<String> {
+        let path = paths::cache_dir()?
+            .join(Self::archive_filename());
+        let path = path.to_str()
+            .ok_or(format_err!("Failed to decode path"))?;
+        Ok(path.to_string())
+    }
+
     fn open(path: &str) -> Result<Self> {
         let reader = maxminddb::Reader::open(path)
             .context("Failed to open geoip database")?;
@@ -34,7 +42,7 @@ pub trait Maxmind: Sized {
     }
 
     fn open_or_download() -> Result<Self> {
-        let path = paths::cache_dir()?.join(Self::archive_filename());
+        let path = Self::cache_path()?;
 
         if File::open(&path).is_err() {
             worker::spawn_fn(&format!("Downloading {:?}", Self::archive_filename()), || {
@@ -42,7 +50,6 @@ pub trait Maxmind: Sized {
             }, false)?;
         };
 
-        let path = path.to_str().ok_or(format_err!("Failed to decode path"))?;
         Self::open(&path)
     }
 

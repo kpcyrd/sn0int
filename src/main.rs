@@ -11,8 +11,7 @@ use sn0int::complete;
 use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
-use sn0int::geoip::{GeoIP, Maxmind};
-use sn0int::paths;
+use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
@@ -46,15 +45,15 @@ fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
 
 fn run_sandbox() -> Result<()> {
     // TODO: this file should be processed after the sandbox is up
-    let geoip_path = paths::cache_dir()?
-        .join("GeoLite2-City.mmdb");
-    let geoip_path = geoip_path.to_str()
-        .ok_or(format_err!("Failed to decode geoip city path"))?;
-    let geoip = GeoIP::open(&geoip_path)?;
+    let path = GeoIP::cache_path()?;
+    let geoip = GeoIP::open(&path)?;
+
+    let path = AsnDB::cache_path()?;
+    let asn = AsnDB::open(&path)?;
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip)
+    engine::isolation::run_worker(geoip, asn)
 }
 
 fn run() -> Result<()> {

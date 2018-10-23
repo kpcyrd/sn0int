@@ -1,6 +1,6 @@
 use errors::*;
 
-use geoip::GeoIP;
+use geoip::{GeoIP, AsnDB};
 use json::LuaJsonValue;
 use serde_json;
 use std::fs;
@@ -21,6 +21,15 @@ pub mod ctx;
 pub mod isolation;
 pub mod structs;
 
+
+/// Data that is passed to every script
+#[derive(Debug)]
+pub struct Environment {
+  pub dns_config: DnsConfig,
+  pub psl: Psl,
+  pub geoip: GeoIP,
+  pub asn: AsnDB,
+}
 
 #[derive(Debug)]
 pub struct Engine {
@@ -170,11 +179,9 @@ impl Module {
         &self.source
     }
 
-    pub fn run(&self, dns_config: DnsConfig, psl: &str, geoip: GeoIP, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
-        debug!("Loading public suffix list");
-        let psl = Psl::from_str(&psl)?;
+    pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(dns_config, psl, geoip, reporter, arg.into())
+        self.script.run(env, reporter, arg.into())
     }
 
     fn cmp_canonical(&self, other: &Module) -> Ordering {

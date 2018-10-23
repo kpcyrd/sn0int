@@ -1,8 +1,8 @@
 use errors::*;
 use channel;
 use chrootable_https::dns::DnsConfig;
-use engine::{Module, Event, Reporter};
-use geoip::GeoIP;
+use engine::{Environment, Module, Event, Reporter};
+use geoip::{GeoIP, AsnDB};
 use psl::Psl;
 use serde_json;
 
@@ -186,14 +186,21 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
     Ok(())
 }
 
-pub fn run_worker(geoip: GeoIP) -> Result<()> {
+pub fn run_worker(geoip: GeoIP, asn: AsnDB) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 
+    let psl = Psl::from_str(&start.psl)
+        .context("Failed to load public suffix list")?;
+    let environment = Environment {
+        dns_config: start.dns_config,
+        psl,
+        geoip,
+        asn,
+    };
+
     let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
-    let result = start.module.run(start.dns_config,
-                                  &start.psl,
-                                  geoip,
+    let result = start.module.run(environment,
                                   mtx.clone(),
                                   start.arg.into());
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
