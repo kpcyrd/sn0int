@@ -70,6 +70,8 @@ impl Database {
                 city: object.city.as_ref(),
                 longitude: object.longitude,
                 latitude: object.latitude,
+                asn: object.asn,
+                as_org: object.as_org.as_ref(),
             }),
             Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
                 subdomain_id: object.subdomain_id,
@@ -160,6 +162,8 @@ impl Database {
             city: None,
             longitude: None,
             latitude: None,
+            asn: None,
+            as_org: None,
         };
 
         self.insert_ipaddr_struct(&new_ipaddr)
@@ -312,6 +316,18 @@ impl Filter {
         }
     }
 
+    fn escape(value: &str) -> String {
+        let mut out = String::from("'");
+        for c in value.chars() {
+            match c {
+                '\'' => out.push_str("''"),
+                c => out.push(c),
+            }
+        }
+        out.push('\'');
+        out
+    }
+
     pub fn parse(mut args: &[String]) -> Result<Filter> {
         debug!("Parsing query: {:?}", args);
 
@@ -333,13 +349,14 @@ impl Filter {
             if let Some(idx) = arg.find('=') {
                 if idx != 0 {
                     let (key, value) = arg.split_at(idx);
-                    query += &format!(" {} = {:?}", key, &value[1..]);
+                    query += &format!(" {} = {}", key, Self::escape(&value[1..]));
                     continue;
                 }
             }
 
             if expect_value {
-                query += &format!(" {:?}", arg);
+                query.push(' ');
+                query.push_str(&Self::escape(arg));
                 expect_value = false;
             } else {
                 if ["=", "!=", "like"].contains(&arg.to_lowercase().as_str()) {
@@ -384,7 +401,7 @@ mod tests {
         let filter = Filter::parse(&["where".to_string(),
                                      "value=1".to_string(),
                                     ]).unwrap();
-        assert_eq!(filter, Filter::new(" value = \"1\""));
+        assert_eq!(filter, Filter::new(" value = '1'"));
     }
 
     #[test]
@@ -392,7 +409,7 @@ mod tests {
         let filter = Filter::parse(&["where".to_string(),
                                      "value=abc".to_string(),
                                     ]).unwrap();
-        assert_eq!(filter, Filter::new(" value = \"abc\""));
+        assert_eq!(filter, Filter::new(" value = 'abc'"));
     }
 
     #[test]
@@ -402,7 +419,7 @@ mod tests {
                                      "=".to_string(),
                                      "asdf".to_string(),
                                     ]).unwrap();
-        assert_eq!(filter, Filter::new(" value = \"asdf\""));
+        assert_eq!(filter, Filter::new(" value = 'asdf'"));
     }
 
     #[test]
@@ -416,7 +433,7 @@ mod tests {
                                      "=".to_string(),
                                      "1".to_string(),
                                     ]).unwrap();
-        assert_eq!(filter, Filter::new(" value = \"foobar\" and id = \"1\""));
+        assert_eq!(filter, Filter::new(" value = 'foobar' and id = '1'"));
     }
 
     #[test]
@@ -426,6 +443,42 @@ mod tests {
                                      "like".to_string(),
                                      "%foobar".to_string(),
                                     ]).unwrap();
-        assert_eq!(filter, Filter::new(" value like \"%foobar\""));
+        assert_eq!(filter, Filter::new(" value like '%foobar'"));
+    }
+
+    #[test]
+    fn test_filter_backslash1() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value=\\".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = '\\'"));
+    }
+
+    #[test]
+    fn test_filter_backslash2() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "=".to_string(),
+                                     "\\".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = '\\'"));
+    }
+
+    #[test]
+    fn test_filter_quote1() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value=a'b".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = 'a''b'"));
+    }
+
+    #[test]
+    fn test_filter_quote2() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "=".to_string(),
+                                     "a'b".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value = 'a''b'"));
     }
 }

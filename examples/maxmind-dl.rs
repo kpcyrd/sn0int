@@ -5,6 +5,7 @@ extern crate chrootable_https;
 #[macro_use] extern crate structopt;
 
 use sn0int::errors::*;
+use sn0int::geoip::{GeoIP, Maxmind};
 use sn0int::paths;
 use std::fs;
 use structopt::StructOpt;
@@ -26,7 +27,7 @@ fn run() -> Result<()> {
         let body = fs::read(&args.url)?;
         sn0int::archive::extract(&mut &body[..], &args.filter, path)?;
     } else {
-        sn0int::geoip::GeoIP::download(path, &args.filter, &args.url)?;
+        GeoIP::download(path, &args.filter, &args.url)?;
     }
     Ok(())
 }

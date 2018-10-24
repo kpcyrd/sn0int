@@ -20,29 +20,31 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
     let mut client = Client::new(&config)?;
     client.authenticate(session);
 
-    let path = Path::new(&publish.path);
-    let name = path.file_stem().ok_or_else(|| format_err!("Couldn't get file name"))?;
-    let ext = path.extension().ok_or_else(|| format_err!("Couldn't get file extension"))?;
+    for path in &publish.paths {
+        let path = Path::new(path);
+        let name = path.file_stem().ok_or_else(|| format_err!("Couldn't get file name"))?;
+        let ext = path.extension().ok_or_else(|| format_err!("Couldn't get file extension"))?;
 
-    if ext != "lua" {
-        bail!("File extension has to be .lua");
+        if ext != "lua" {
+            bail!("File extension has to be .lua");
+        }
+
+        let name = name.to_os_string().into_string()
+            .map_err(|_| format_err!("Failed to decode file name"))?;
+
+        let code = fs::read_to_string(path)
+            .context("Failed to read module")?;
+        let metadata = code.parse::<Metadata>()?;
+
+        let label = format!("Uploading {} {} ({:?})", name, metadata.version, path);
+        let result = worker::spawn_fn(&label, || {
+            client.publish_module(&name, code.to_string())
+        }, false)?;
+
+        term::info(&format!("Published as {}/{} {}", result.author,
+                                                     result.name,
+                                                     result.version));
     }
-
-    let name = name.to_os_string().into_string()
-        .map_err(|_| format_err!("Failed to decode file name"))?;
-
-    let code = fs::read_to_string(path)
-        .context("Failed to read module")?;
-    let metadata = code.parse::<Metadata>()?;
-
-    let label = format!("Uploading {} {} ({:?})", name, metadata.version, path);
-    let result = worker::spawn_fn(&label, || {
-        client.publish_module(&name, code.to_string())
-    }, false)?;
-
-    term::info(&format!("Published as {}/{} {}", result.author,
-                                                 result.name,
-                                                 result.version));
 
     Ok(())
 }

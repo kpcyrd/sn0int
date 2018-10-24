@@ -1,7 +1,7 @@
 use errors::*;
 
-use engine::Reporter;
-use geoip::GeoIP;
+use engine::{Environment, Reporter};
+use geoip::{GeoIP, AsnDB};
 use hlua::{self, AnyLuaValue};
 use models::{Insert, Update};
 use psl::Psl;
@@ -62,6 +62,8 @@ pub trait State {
 
     fn geoip(&self) -> Arc<GeoIP>;
 
+    fn asn(&self) -> Arc<AsnDB>;
+
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
@@ -77,6 +79,7 @@ pub struct LuaState {
     dns_config: Arc<DnsConfig>,
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
+    asn: Arc<AsnDB>,
 }
 
 impl State for LuaState {
@@ -132,6 +135,10 @@ impl State for LuaState {
         self.geoip.clone()
     }
 
+    fn asn(&self) -> Arc<AsnDB> {
+        self.asn.clone()
+    }
+
     fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -159,7 +166,7 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>(dns_config: DnsConfig, psl: Psl, geoip: GeoIP) -> (hlua::Lua<'a>, Arc<LuaState>) {
+fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -168,9 +175,10 @@ fn ctx<'a>(dns_config: DnsConfig, psl: Psl, geoip: GeoIP) -> (hlua::Lua<'a>, Arc
         logger: Arc::new(Mutex::new(None)),
         http_sessions: Arc::new(Mutex::new(HashMap::new())),
 
-        dns_config: Arc::new(dns_config),
-        psl: Arc::new(psl),
-        geoip: Arc::new(geoip),
+        dns_config: Arc::new(env.dns_config),
+        psl: Arc::new(env.psl),
+        geoip: Arc::new(env.geoip),
+        asn: Arc::new(env.asn),
     });
 
     runtime::clear_err(&mut lua, state.clone());
@@ -178,6 +186,7 @@ fn ctx<'a>(dns_config: DnsConfig, psl: Psl, geoip: GeoIP) -> (hlua::Lua<'a>, Arc
     runtime::db_update(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
+    runtime::asn_lookup(&mut lua, state.clone());
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
@@ -225,13 +234,11 @@ impl Script {
         })
     }
 
-    pub fn run(&self, dns_config: DnsConfig,
-                      psl: Psl,
-                      geoip: GeoIP,
+    pub fn run(&self, env: Environment,
                       tx: Arc<Mutex<Box<Reporter>>>,
                       arg: AnyLuaValue
     ) -> Result<()> {
-        let (mut lua, state) = ctx(dns_config, psl, geoip);
+        let (mut lua, state) = ctx(env);
 
         debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
@@ -262,6 +269,7 @@ impl Script {
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
+        use geoip::Maxmind;
         let dns_config = DnsConfig::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===
@@ -269,6 +277,14 @@ com
 // ===END ICANN DOMAINS===
 "#)?;
         let geoip = GeoIP::open_or_download()?;
-        self.run(dns_config, psl, geoip, DummyReporter::new(), AnyLuaValue::LuaNil)
+        let asn = AsnDB::open_or_download()?;
+
+        let env = Environment {
+            dns_config,
+            psl,
+            geoip,
+            asn,
+        };
+        self.run(env, DummyReporter::new(), AnyLuaValue::LuaNil)
     }
 }

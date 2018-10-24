@@ -1,4 +1,4 @@
--- Description: Query certificate transparency logs to discover subdomains
+-- Description: Run a geoip lookup for an ip address
 -- Version: 0.1.0
 -- Source: ipaddrs
 -- License: GPL-3.0
