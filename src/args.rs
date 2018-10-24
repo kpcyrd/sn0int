@@ -67,8 +67,9 @@ pub struct Login {
 
 #[derive(Debug, StructOpt)]
 pub struct Publish {
-    /// The script to publish
-    pub path: String,
+    /// The scripts to publish
+    #[structopt(raw(required = "true"))]
+    pub paths: Vec<String>,
 }
 
 #[derive(Debug, StructOpt)]
