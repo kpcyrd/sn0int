@@ -58,5 +58,5 @@ impl Default for CoreConfig {
 
 #[inline]
 fn default_registry() -> String {
-    String::from("http://[::1]:8000")
+    String::from("https://sn0int.com")
 }
