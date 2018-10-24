@@ -7,7 +7,10 @@ function run(arg)
     lookup = asn_lookup(arg['value'])
     if last_err() then return end
 
-    print('')
-    print('ASN ' .. lookup['asn'])
-    print(lookup['as_org'])
+    if arg['asn'] ~= lookup['asn'] or arg['as_org'] ~= lookup['as_org'] then
+        db_update('ipaddr', arg, {
+            asn=lookup['asn'],
+            as_org=lookup['as_org'],
+        })
+    end
 end

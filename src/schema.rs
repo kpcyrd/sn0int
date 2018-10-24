@@ -28,6 +28,8 @@ table! {
         city -> Nullable<Text>,
         latitude -> Nullable<Float>,
         longitude -> Nullable<Float>,
+        asn -> Nullable<Integer>,
+        as_org -> Nullable<Text>,
     }
 }
 

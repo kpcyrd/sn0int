@@ -20,6 +20,8 @@ pub struct IpAddr {
     pub city: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub asn: Option<i32>,
+    pub as_org: Option<String>,
 }
 
 impl fmt::Display for IpAddr {
@@ -145,6 +147,8 @@ pub struct DetailedIpAddr {
     continent: Option<String>,
     country: Option<String>,
     city: Option<String>,
+    asn: Option<i32>,
+    as_org: Option<String>,
 }
 
 impl fmt::Display for DetailedIpAddr {
@@ -161,6 +165,16 @@ impl fmt::Display for DetailedIpAddr {
 
                 if let Some(ref city) = self.city {
                     write!(w, " / {}", city)?;
+                }
+
+                write!(w, "]")?;
+            }
+
+            if let Some(ref asn) = self.asn {
+                write!(w, " [{}", asn)?;
+
+                if let Some(ref as_org) = self.as_org {
+                    write!(w, " / {:?}", as_org)?;
                 }
 
                 write!(w, "]")?;
@@ -185,6 +199,17 @@ impl fmt::Display for DetailedIpAddr {
 
                 write!(w, "]")?;
             }
+
+            if let Some(ref asn) = self.asn {
+                write!(w, " [{}", asn)?;
+
+                if let Some(ref as_org) = self.as_org {
+                    write!(w, " / {:?}", as_org)?;
+                }
+
+                write!(w, "]")?;
+            }
+
             write!(w, "\x1b[0m");
 
             for subdomain in &self.subdomains {
@@ -212,6 +237,8 @@ impl Detailed for IpAddr {
             continent: self.continent.clone(),
             country: self.country.clone(),
             city: self.city.clone(),
+            asn: self.asn,
+            as_org: self.as_org.clone(),
         })
     }
 }
@@ -228,6 +255,8 @@ pub struct NewIpAddr<'a> {
     pub city: Option<&'a String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub asn: Option<i32>,
+    pub as_org: Option<&'a String>,
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
@@ -242,6 +271,8 @@ pub struct NewIpAddrOwned {
     pub city: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub asn: Option<i32>,
+    pub as_org: Option<String>,
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
@@ -255,6 +286,8 @@ pub struct IpAddrUpdate {
     pub city: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub asn: Option<i32>,
+    pub as_org: Option<String>,
 }
 
 impl fmt::Display for IpAddrUpdate {
@@ -281,6 +314,12 @@ impl fmt::Display for IpAddrUpdate {
         }
         if let Some(ref longitude) = self.longitude {
             updates.push(format!("longitude => {:?}", longitude));
+        }
+        if let Some(ref asn) = self.asn {
+            updates.push(format!("asn => {:?}", asn));
+        }
+        if let Some(ref as_org) = self.as_org {
+            updates.push(format!("as_org => {:?}", as_org));
         }
 
         write!(w, "{}", updates.join(", "))

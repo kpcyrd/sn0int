@@ -70,6 +70,8 @@ impl Database {
                 city: object.city.as_ref(),
                 longitude: object.longitude,
                 latitude: object.latitude,
+                asn: object.asn,
+                as_org: object.as_org.as_ref(),
             }),
             Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
                 subdomain_id: object.subdomain_id,
@@ -160,6 +162,8 @@ impl Database {
             city: None,
             longitude: None,
             latitude: None,
+            asn: None,
+            as_org: None,
         };
 
         self.insert_ipaddr_struct(&new_ipaddr)
