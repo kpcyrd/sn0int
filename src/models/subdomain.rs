@@ -42,6 +42,14 @@ impl Model for Subdomain {
         Ok(results)
     }
 
+    fn delete(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::subdomains::dsl::*;
+
+        diesel::delete(subdomains.filter(filter.sql()))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::subdomains::dsl::*;
 

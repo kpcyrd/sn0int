@@ -26,6 +26,7 @@ use term::Prompt;
 pub enum Command {
     Add,
     Back,
+    Delete,
     Mod,
     Noscope,
     Run,
@@ -44,6 +45,7 @@ impl Command {
         match *self {
             Command::Add => "add",
             Command::Back => "back",
+            Command::Delete => "delete",
             Command::Mod => "mod",
             Command::Noscope => "noscope",
             Command::Run => "run",
@@ -62,6 +64,7 @@ impl Command {
             static ref COMMANDS: Vec<&'static str> = vec![
                 Command::Add.as_str(),
                 Command::Back.as_str(),
+                Command::Delete.as_str(),
                 Command::Mod.as_str(),
                 Command::Noscope.as_str(),
                 Command::Run.as_str(),
@@ -85,6 +88,7 @@ impl FromStr for Command {
         match s {
             "add" => Ok(Command::Add),
             "back" => Ok(Command::Back),
+            "delete" => Ok(Command::Delete),
             "mod" => Ok(Command::Mod),
             "noscope" => Ok(Command::Noscope),
             "run"  => Ok(Command::Run),
@@ -286,6 +290,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
+        Some((Command::Delete, args)) => delete_cmd::run(rl, &args)?,
         Some((Command::Mod, args)) => mod_cmd::run(rl, &args)?,
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
         Some((Command::Run, args)) => run_cmd::run(rl, &args)?,

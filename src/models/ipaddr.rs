@@ -50,6 +50,14 @@ impl Model for IpAddr {
         Ok(results)
     }
 
+    fn delete(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::ipaddrs::dsl::*;
+
+        diesel::delete(ipaddrs.filter(filter.sql()))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::ipaddrs::dsl::*;
 

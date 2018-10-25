@@ -1,4 +1,5 @@
 use errors::*;
+use diesel;
 use diesel::prelude::*;
 use models::*;
 use std::net;
@@ -32,6 +33,14 @@ impl Model for SubdomainIpAddr {
         let results = query.load::<Self>(db.db())?;
 
         Ok(results)
+    }
+
+    fn delete(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        diesel::delete(subdomain_ipaddrs.filter(filter.sql()))
+            .execute(db.db())
+            .map_err(Error::from)
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {

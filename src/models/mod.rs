@@ -53,6 +53,8 @@ pub trait Model: Sized {
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>>;
 
+    fn delete(db: &Database, filter: &Filter) -> Result<usize>;
+
     fn by_id(db: &Database, id: i32) -> Result<Self>;
 
     fn id(db: &Database, query: &Self::ID) -> Result<i32>;

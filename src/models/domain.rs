@@ -38,6 +38,14 @@ impl Model for Domain {
         Ok(results)
     }
 
+    fn delete(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::domains::dsl::*;
+
+        diesel::delete(domains.filter(filter.sql()))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::domains::dsl::*;
 
