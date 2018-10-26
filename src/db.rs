@@ -302,6 +302,10 @@ impl Database {
     pub fn noscope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {
         T::noscope(self, filter)
     }
+
+    pub fn delete<T: Model>(&self, filter: &Filter) -> Result<usize> {
+        T::delete(self, filter)
+    }
 }
 
 #[derive(Debug, PartialEq)]

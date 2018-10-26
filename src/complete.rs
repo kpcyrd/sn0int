@@ -94,6 +94,7 @@ impl Completer for CmdCompleter {
                         Ok((0, results))
                     }
                 },
+                Command::Delete => self.filter("delete", &cmd),
                 Command::Mod => {
                     // we can only complete the 2nd argument
                     if args != 2 {

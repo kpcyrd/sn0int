@@ -39,6 +39,14 @@ impl Model for Email {
         Ok(results)
     }
 
+    fn delete(db: &Database, filter: &Filter) -> Result<usize> {
+        use schema::emails::dsl::*;
+
+        diesel::delete(emails.filter(filter.sql()))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::emails::dsl::*;
 
