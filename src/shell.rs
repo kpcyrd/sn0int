@@ -200,8 +200,13 @@ impl Readline {
                     return None;
                 }
 
-                Command::from_str(&cmd[0]).ok()
-                    .map(|x| (x, cmd))
+                match Command::from_str(&cmd[0]) {
+                    Ok(x) => Some((x, cmd)),
+                    Err(err) => {
+                        eprintln!("Error: {}", err);
+                        None
+                    },
+                }
             }
             Err(ReadlineError::Interrupted) => {
                 // ^C
