@@ -208,6 +208,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::status(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
+    runtime::utf8_decode(&mut lua, state.clone());
 
     debug!("Created lua context");
 

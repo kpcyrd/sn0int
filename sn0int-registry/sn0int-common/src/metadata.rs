@@ -30,6 +30,8 @@ pub enum Source {
     Domains,
     Subdomains,
     IpAddrs,
+    Urls,
+    Emails,
 }
 
 impl FromStr for Source {
@@ -40,6 +42,8 @@ impl FromStr for Source {
             "domains" => Ok(Source::Domains),
             "subdomains" => Ok(Source::Subdomains),
             "ipaddrs" => Ok(Source::IpAddrs),
+            "urls" => Ok(Source::Urls),
+            "emails" => Ok(Source::Emails),
             x => bail!("Unknown Source: {:?}", x),
         }
     }

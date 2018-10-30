@@ -2,7 +2,7 @@ extern crate sn0int;
 extern crate env_logger;
 extern crate chrootable_https;
 #[macro_use] extern crate log;
-#[macro_use] extern crate structopt;
+extern crate structopt;
 
 use sn0int::errors::*;
 use sn0int::geoip::{GeoIP, Maxmind};
