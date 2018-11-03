@@ -36,6 +36,7 @@ pub enum Command {
     SwitchDb,
     Update,
     Use,
+    Quickstart,
 
     Interrupt,
 }
@@ -55,6 +56,7 @@ impl Command {
             Command::SwitchDb => "switch_db",
             Command::Update => "update",
             Command::Use => "use",
+            Command::Quickstart => "quickstart",
             Command::Interrupt => unreachable!(),
         }
     }
@@ -74,6 +76,7 @@ impl Command {
                 Command::SwitchDb.as_str(),
                 Command::Update.as_str(),
                 Command::Use.as_str(),
+                Command::Quickstart.as_str(),
             ];
         }
 
@@ -98,6 +101,7 @@ impl FromStr for Command {
             "switch_db" => Ok(Command::SwitchDb),
             "update" => Ok(Command::Update),
             "use"  => Ok(Command::Use),
+            "quickstart"  => Ok(Command::Quickstart),
             x => bail!("unknown command: {:?}", x),
         }
     }
@@ -312,6 +316,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
             // worker::spawn("Updating modules");
         },
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
+        Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
         Some((Command::Interrupt, _)) => return Ok(true),
         None => (),
     }
@@ -331,6 +336,11 @@ pub fn init(args: &Args, config: Config) -> Result<Readline> {
     let _geoip = GeoIP::open_or_download()?;
     let _asndb = AsnDB::open_or_download()?;
     let engine = Engine::new()?;
+
+    if engine.list().is_empty() {
+        term::success("No modules found, run quickstart to install default modules");
+    }
+
     let rl = Readline::new(config, db, psl, engine);
 
     Ok(rl)

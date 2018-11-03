@@ -51,13 +51,13 @@ impl Engine {
         Ok(engine)
     }
 
-    pub fn reload_modules(&mut self) -> Result<()> {
+    pub fn reload_modules(&mut self) -> Result<usize> {
         let modules = worker::spawn_fn("Loading modules", || {
             self.reload_modules_quiet()?;
             Ok(self.list().len())
         }, true)?;
         term::info(&format!("Loaded {} modules", modules));
-        Ok(())
+        Ok(modules)
     }
 
     pub fn reload_modules_quiet(&mut self) -> Result<()> {

@@ -121,4 +121,10 @@ impl Client {
         })?;
         Ok(reply)
     }
+
+    pub fn quickstart(&self) -> Result<Vec<ModuleInfoResponse>> {
+        let url = format!("{}/api/v0/quickstart", self.server);
+        let reply = self.get::<Vec<ModuleInfoResponse>>(&url)?;
+        Ok(reply)
+    }
 }
