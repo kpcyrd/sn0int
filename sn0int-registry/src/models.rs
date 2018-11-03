@@ -182,6 +182,18 @@ impl Module {
             downloads,
         )).collect())
     }
+
+    pub fn quickstart(connection: &PgConnection) -> Result<Vec<Module>> {
+        modules::table
+            .select(ALL_MODULE_COLUMNS)
+            .filter(modules::featured)
+            .order((
+                modules::author.asc(),
+                modules::name.asc(),
+            ))
+            .load(connection)
+            .map_err(Error::from)
+    }
 }
 
 #[derive(Insertable)]

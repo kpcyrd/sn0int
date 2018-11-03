@@ -75,7 +75,7 @@ fn run() -> Result<()> {
         .manage(db::init(&database_url))
         .attach(Template::fairing())
         .mount("/api/v0", routes![
-            routes::api::dashboard,
+            routes::api::quickstart,
             routes::api::search,
             routes::api::info,
             routes::api::download,

@@ -6,13 +6,14 @@ use semver::Version;
 use sn0int_common::api::*;
 use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
-use rocket_contrib::{Json, Value};
+use rocket_contrib::Json;
 use models::*;
 
 
-#[get("/dashboard")]
-fn dashboard() -> Json<Value> {
-    Json(json!({ "dashboard": {}}))
+#[get("/quickstart")]
+fn quickstart(connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<Module>>>> {
+    let modules = Module::quickstart(&connection)?;
+    Ok(Json(ApiResponse::Success(modules)))
 }
 
 #[derive(Debug, FromForm)]
