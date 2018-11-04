@@ -50,6 +50,14 @@ impl Model for Subdomain {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn value(&self) -> &Self::ID {
+        &self.value
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::subdomains::dsl::*;
 
@@ -57,27 +65,6 @@ impl Model for Subdomain {
             .first::<Self>(db.db())?;
 
         Ok(subdomain)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::subdomains::dsl::*;
-
-        let subdomain_id = subdomains.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())?;
-
-        Ok(subdomain_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::subdomains::dsl::*;
-
-        let subdomain_id = subdomains.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())
-            .optional()?;
-
-        Ok(subdomain_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
@@ -137,22 +124,6 @@ impl Subdomain {
             )
             .collect::<result::Result<_, _>>()
             .map_err(Error::from)
-    }
-}
-
-#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="subdomains"]
-pub struct SubdomainUpdate {
-    pub id: i32,
-    pub resolvable: Option<bool>,
-}
-
-impl fmt::Display for SubdomainUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(resolvable) = self.resolvable {
-            write!(w, "resolvable => {:?}", resolvable)?;
-        }
-        Ok(())
     }
 }
 
@@ -224,6 +195,31 @@ impl Detailed for Subdomain {
 pub struct NewSubdomain<'a> {
     pub domain_id: i32,
     pub value: &'a str,
+    pub resolvable: Option<bool>,
+}
+
+impl<'a> InsertableStruct<Subdomain> for NewSubdomain<'a> {
+    fn value(&self) -> &str {
+        self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(subdomains::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl<'a> Upsertable<Subdomain> for NewSubdomain<'a> {
+    type Update = SubdomainUpdate;
+
+    fn upsert(&self, existing: &Subdomain) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            resolvable: if self.resolvable != existing.resolvable { self.resolvable } else { None },
+        }
+    }
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
@@ -231,6 +227,7 @@ pub struct NewSubdomain<'a> {
 pub struct NewSubdomainOwned {
     pub domain_id: i32,
     pub value: String,
+    pub resolvable: Option<bool>,
 }
 
 impl Printable<PrintableSubdomain> for NewSubdomainOwned {
@@ -238,5 +235,31 @@ impl Printable<PrintableSubdomain> for NewSubdomainOwned {
         Ok(PrintableSubdomain {
             value: self.value.to_string(),
         })
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="subdomains"]
+pub struct SubdomainUpdate {
+    pub id: i32,
+    pub resolvable: Option<bool>,
+}
+
+impl Upsert for SubdomainUpdate {
+    fn is_dirty(&self) -> bool {
+        self.resolvable.is_some()
+    }
+
+    fn apply(&self, db: &Database) -> Result<i32> {
+        db.update_subdomain(self)
+    }
+}
+
+impl fmt::Display for SubdomainUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(resolvable) = self.resolvable {
+            write!(w, "resolvable => {:?}", resolvable)?;
+        }
+        Ok(())
     }
 }

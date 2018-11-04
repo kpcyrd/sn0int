@@ -47,6 +47,14 @@ impl Model for Email {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn value(&self) -> &Self::ID {
+        &self.value
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::emails::dsl::*;
 
@@ -54,27 +62,6 @@ impl Model for Email {
             .first::<Self>(db.db())?;
 
         Ok(domain)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::emails::dsl::*;
-
-        let domain_id = emails.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())?;
-
-        Ok(domain_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::emails::dsl::*;
-
-        let domain_id = emails.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())
-            .optional()?;
-
-        Ok(domain_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
@@ -118,22 +105,6 @@ impl Scopable for Email {
             .set(unscoped.eq(true))
             .execute(db.db())
             .map_err(Error::from)
-    }
-}
-
-#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="emails"]
-pub struct EmailUpdate {
-    pub id: i32,
-    pub valid: Option<bool>,
-}
-
-impl fmt::Display for EmailUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(valid) = self.valid {
-            write!(w, "valid => {:?}", valid)?;
-        }
-        Ok(())
     }
 }
 
@@ -187,12 +158,38 @@ impl Detailed for Email {
 #[table_name="emails"]
 pub struct NewEmail<'a> {
     pub value: &'a str,
+    pub valid: Option<bool>,
+}
+
+impl<'a> InsertableStruct<Email> for NewEmail<'a> {
+    fn value(&self) -> &str {
+        self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(emails::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl<'a> Upsertable<Email> for NewEmail<'a> {
+    type Update = EmailUpdate;
+
+    fn upsert(&self, existing: &Email) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            valid: if self.valid != existing.valid { self.valid } else { None },
+        }
+    }
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
 #[table_name="emails"]
 pub struct NewEmailOwned {
     pub value: String,
+    pub valid: Option<bool>,
 }
 
 impl Printable<PrintableEmail> for NewEmailOwned {
@@ -200,5 +197,31 @@ impl Printable<PrintableEmail> for NewEmailOwned {
         Ok(PrintableEmail {
             value: self.value.to_string(),
         })
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="emails"]
+pub struct EmailUpdate {
+    pub id: i32,
+    pub valid: Option<bool>,
+}
+
+impl Upsert for EmailUpdate {
+    fn is_dirty(&self) -> bool {
+        self.valid.is_some()
+    }
+
+    fn apply(&self, db: &Database) -> Result<i32> {
+        db.update_email(self)
+    }
+}
+
+impl fmt::Display for EmailUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        if let Some(valid) = self.valid {
+            write!(w, "valid => {:?}", valid)?;
+        }
+        Ok(())
     }
 }

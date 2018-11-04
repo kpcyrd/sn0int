@@ -53,14 +53,15 @@ impl Database {
     /// Returns true if we didn't have this value yet
     pub fn insert_generic(&self, object: &Insert) -> Result<(bool, i32)> {
         match object {
-            Insert::Domain(object) => self.insert_domain_struct(&NewDomain {
+            Insert::Domain(object) => self.insert_struct(&NewDomain {
                 value: &object.value,
             }),
-            Insert::Subdomain(object) => self.insert_subdomain_struct(&NewSubdomain {
+            Insert::Subdomain(object) => self.insert_struct(&NewSubdomain {
                 domain_id: object.domain_id,
                 value: &object.value,
+                resolvable: object.resolvable,
             }),
-            Insert::IpAddr(object) => self.insert_ipaddr_struct(&NewIpAddr {
+            Insert::IpAddr(object) => self.insert_struct(&NewIpAddr {
                 family: &object.family,
                 value: &object.value,
                 continent: object.continent.as_ref(),
@@ -77,80 +78,63 @@ impl Database {
                 subdomain_id: object.subdomain_id,
                 ip_addr_id: object.ip_addr_id,
             }),
-            Insert::Url(object) => self.insert_url_struct(&NewUrl {
+            Insert::Url(object) => self.insert_struct(&NewUrl {
                 subdomain_id: object.subdomain_id,
                 value: &object.value,
                 status: object.status,
-                body: object.body.as_ref().map(|x| x.as_ref()),
+                body: object.body.as_ref(),
                 online: object.online,
-                title: object.title.as_ref().map(|x| x.as_ref()),
-                redirect: object.redirect.as_ref().map(|x| x.as_ref()),
+                title: object.title.as_ref(),
+                redirect: object.redirect.as_ref(),
             }),
-            Insert::Email(object) => self.insert_email_struct(&NewEmail {
+            Insert::Email(object) => self.insert_struct(&NewEmail {
                 value: &object.value,
+                valid: object.valid,
             }),
-        }
-    }
-
-    pub fn insert_domain(&self, domain: &str) -> Result<()> {
-        let new_domain = NewDomain {
-            value: domain,
-        };
-
-        diesel::insert_into(domains::table)
-            .values(&new_domain)
-            .execute(&self.db)?;
-
-        Ok(())
-    }
-
-    pub fn insert_domain_struct(&self, domain: &NewDomain) -> Result<(bool, i32)> {
-        // upsert is not supported by diesel
-
-        if let Some(domain_id) = Domain::id_opt(self, domain.value)? {
-            // TODO: right now we don't have any fields to update
-            Ok((false, domain_id))
-        } else {
-            diesel::insert_into(domains::table)
-                .values(domain)
-                .execute(&self.db)?;
-            let id = Domain::id(self, domain.value)?;
-            Ok((true, id))
         }
     }
 
     /// Returns true if we didn't have this value yet
+    /// TODO: return changeset if an update has been triggered
+    pub fn insert_struct<T: InsertableStruct<M>, M: Model>(&self, obj: &T) -> Result<(bool, i32)> {
+        if let Some(existing) = M::get_opt(self, obj.value())? {
+            let update = obj.upsert(&existing);
+            if update.is_dirty() {
+                update.apply(&self)?;
+                // TODO: this should return a changeset
+                Ok((true, existing.id()))
+            } else {
+                Ok((false, existing.id()))
+            }
+        } else {
+            obj.insert(&self)?;
+            let id = M::get_id(self, obj.value())?;
+            Ok((true, id))
+        }
+    }
+
+    pub fn insert_domain(&self, domain: &str) -> Result<(bool, i32)> {
+        let new_domain = NewDomain {
+            value: domain,
+        };
+
+        self.insert_struct(&new_domain)
+    }
+
+    /// Returns true if we didn't have this value yet
     pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<(bool, i32)> {
-        let domain_id = match Domain::id_opt(self, domain)? {
+        let domain_id = match Domain::get_id_opt(self, domain)? {
             Some(domain_id) => domain_id,
-            None => {
-                self.insert_domain(domain)?;
-                Domain::id(self, domain)?
-            },
+            None => self.insert_domain(domain)?.1,
         };
 
         let new_subdomain = NewSubdomain {
             domain_id,
             value: &subdomain,
+            resolvable: None,
         };
 
-        self.insert_subdomain_struct(&new_subdomain)
-    }
-
-    /// Returns true if we didn't have this value yet
-    pub fn insert_subdomain_struct(&self, subdomain: &NewSubdomain) -> Result<(bool, i32)> {
-        // upsert is not supported by diesel
-
-        if let Some(subdomain_id) = Subdomain::id_opt(self, subdomain.value)? {
-            // TODO: right now we don't have any fields to update
-            Ok((false, subdomain_id))
-        } else {
-            diesel::insert_into(subdomains::table)
-                .values(subdomain)
-                .execute(&self.db)?;
-            let id = Subdomain::id(self, subdomain.value)?;
-            Ok((true, id))
-        }
+        self.insert_struct(&new_subdomain)
     }
 
     pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<(bool, i32)> {
@@ -169,22 +153,7 @@ impl Database {
             as_org: None,
         };
 
-        self.insert_ipaddr_struct(&new_ipaddr)
-    }
-
-    pub fn insert_ipaddr_struct(&self, ipaddr: &NewIpAddr) -> Result<(bool, i32)> {
-        // upsert is not supported by diesel
-
-        if let Some(ipaddr_id) = IpAddr::id_opt(self, ipaddr.value)? {
-            // TODO: right now we don't have any fields to update
-            Ok((false, ipaddr_id))
-        } else {
-            diesel::insert_into(ipaddrs::table)
-                .values(ipaddr)
-                .execute(&self.db)?;
-            let id = IpAddr::id(self, ipaddr.value)?;
-            Ok((true, id))
-        }
+        self.insert_struct(&new_ipaddr)
     }
 
     pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<(bool, i32)> {
@@ -195,61 +164,24 @@ impl Database {
     }
 
     pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<(bool, i32)> {
-        if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
+        if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
             Ok((false, subdomain_ipaddr_id))
         } else {
             diesel::insert_into(subdomain_ipaddrs::table)
                 .values(subdomain_ipaddr)
                 .execute(&self.db)?;
-            let id = SubdomainIpAddr::id(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))?;
+            let id = SubdomainIpAddr::get_id(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))?;
             Ok((true, id))
         }
     }
 
-    pub fn insert_url_struct(&self, url: &NewUrl) -> Result<(bool, i32)> {
-        if let Some(existing) = Url::get_opt(self, url.value)? {
-            let update = url.upsert(&existing);
-            if update.is_dirty() {
-                self.update_url(&update)?;
-                // TODO: this should return a changeset
-                Ok((true, existing.id))
-            } else {
-                Ok((false, existing.id))
-            }
-        } else {
-            diesel::insert_into(urls::table)
-                .values(url)
-                .execute(&self.db)?;
-            let id = Url::id(self, url.value)?;
-            Ok((true, id))
-        }
-    }
-
-    pub fn insert_email(&self, email: &str) -> Result<()> {
+    pub fn insert_email(&self, email: &str) -> Result<(bool, i32)> {
         let new_email = NewEmail {
             value: email,
+            valid: None,
         };
 
-        diesel::insert_into(emails::table)
-            .values(&new_email)
-            .execute(&self.db)?;
-
-        Ok(())
-    }
-
-    pub fn insert_email_struct(&self, email: &NewEmail) -> Result<(bool, i32)> {
-        // upsert is not supported by diesel
-
-        if let Some(email_id) = Email::id_opt(self, email.value)? {
-            // TODO: right now we don't have any fields to update
-            Ok((false, email_id))
-        } else {
-            diesel::insert_into(emails::table)
-                .values(email)
-                .execute(&self.db)?;
-            let id = Email::id(self, email.value)?;
-            Ok((true, id))
-        }
+        self.insert_struct(&new_email)
     }
 
     //

@@ -58,6 +58,14 @@ impl Model for IpAddr {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn value(&self) -> &Self::ID {
+        &self.value
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::ipaddrs::dsl::*;
 
@@ -65,27 +73,6 @@ impl Model for IpAddr {
             .first::<Self>(db.db())?;
 
         Ok(ipaddr)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::ipaddrs::dsl::*;
-
-        let ipaddr_id = ipaddrs.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())?;
-
-        Ok(ipaddr_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::ipaddrs::dsl::*;
-
-        let ipaddr_id = ipaddrs.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())
-            .optional()?;
-
-        Ok(ipaddr_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
@@ -286,6 +273,38 @@ pub struct NewIpAddr<'a> {
     pub as_org: Option<&'a String>,
 }
 
+impl<'a> InsertableStruct<IpAddr> for NewIpAddr<'a> {
+    fn value(&self) -> &str {
+        self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(ipaddrs::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl<'a> Upsertable<IpAddr> for NewIpAddr<'a> {
+    type Update = IpAddrUpdate;
+
+    fn upsert(&self, existing: &IpAddr) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            continent: if self.continent != existing.continent.as_ref() { self.continent.map(|x| x.to_owned()) } else { None },
+            continent_code: if self.continent_code != existing.continent_code.as_ref() { self.continent_code.map(|x| x.to_owned()) } else { None },
+            country: if self.country != existing.country.as_ref() { self.country.map(|x| x.to_owned()) } else { None },
+            country_code: if self.country_code != existing.country_code.as_ref() { self.country_code.map(|x| x.to_owned()) } else { None },
+            city: if self.city != existing.city.as_ref() { self.city.map(|x| x.to_owned()) } else { None },
+            latitude: if self.latitude != existing.latitude { self.latitude } else { None },
+            longitude: if self.longitude != existing.longitude { self.longitude } else { None },
+            asn: if self.asn != existing.asn { self.asn } else { None },
+            as_org: if self.as_org != existing.as_org.as_ref() { self.as_org.map(|x| x.to_owned()) } else { None },
+        }
+    }
+}
+
 #[derive(Debug, Insertable, Serialize, Deserialize)]
 #[table_name="ipaddrs"]
 pub struct NewIpAddrOwned {
@@ -315,6 +334,24 @@ pub struct IpAddrUpdate {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<String>,
+}
+
+impl Upsert for IpAddrUpdate {
+    fn is_dirty(&self) -> bool {
+        self.continent.is_some() ||
+        self.continent_code.is_some() ||
+        self.country.is_some() ||
+        self.country_code.is_some() ||
+        self.city.is_some() ||
+        self.latitude.is_some() ||
+        self.longitude.is_some() ||
+        self.asn.is_some() ||
+        self.as_org.is_some()
+    }
+
+    fn apply(&self, db: &Database) -> Result<i32> {
+        db.update_ipaddr(self)
+    }
 }
 
 impl fmt::Display for IpAddrUpdate {

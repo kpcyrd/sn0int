@@ -55,11 +55,24 @@ pub trait Model: Sized {
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize>;
 
+    fn id(&self) -> i32;
+
+    fn value(&self) -> &Self::ID {
+        unimplemented!()
+    }
+
     fn by_id(db: &Database, id: i32) -> Result<Self>;
 
-    fn id(db: &Database, query: &Self::ID) -> Result<i32>;
+    fn get_id(db: &Database, query: &Self::ID) -> Result<i32> {
+        Self::get(db, query)
+            .map(|x| x.id())
+    }
 
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>>;
+    fn get_id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
+        Self::get_opt(db, query)
+            .map(|x| x
+                .map(|x| x.id()))
+    }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self>;
 
@@ -74,15 +87,36 @@ pub trait Scopable: Model {
     fn noscope(db: &Database, filter: &Filter) -> Result<usize>;
 }
 
-pub trait Upsertable {
-    type Struct;
-    type Update;
+pub trait InsertableStruct<T: Model>: Upsertable<T> {
+    fn value(&self) -> &T::ID;
 
-    fn upsert(&self, existing: &Self::Struct) -> Self::Update;
+    fn insert(&self, db: &Database) -> Result<()>;
+}
+
+pub trait Upsertable<M> {
+    type Update: Upsert;
+
+    fn upsert(&self, existing: &M) -> Self::Update;
 }
 
 pub trait Upsert {
     fn is_dirty(&self) -> bool;
+
+    fn apply(&self, db: &Database) -> Result<i32>;
+}
+
+pub struct NullUpdate {
+    pub id: i32,
+}
+
+impl Upsert for NullUpdate {
+    fn is_dirty(&self) -> bool {
+        false
+    }
+
+    fn apply(&self, _db: &Database) -> Result<i32> {
+        Ok(self.id)
+    }
 }
 
 pub trait Printable<T: Sized> {

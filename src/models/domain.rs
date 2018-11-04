@@ -46,6 +46,14 @@ impl Model for Domain {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn value(&self) -> &Self::ID {
+        &self.value
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::domains::dsl::*;
 
@@ -53,27 +61,6 @@ impl Model for Domain {
             .first::<Self>(db.db())?;
 
         Ok(domain)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::domains::dsl::*;
-
-        let domain_id = domains.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())?;
-
-        Ok(domain_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::domains::dsl::*;
-
-        let domain_id = domains.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())
-            .optional()?;
-
-        Ok(domain_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
@@ -170,6 +157,29 @@ impl Detailed for Domain {
 #[table_name="domains"]
 pub struct NewDomain<'a> {
     pub value: &'a str,
+}
+
+impl<'a> InsertableStruct<Domain> for NewDomain<'a> {
+    fn value(&self) -> &str {
+        self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(domains::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl<'a> Upsertable<Domain> for NewDomain<'a> {
+    type Update = NullUpdate;
+
+    fn upsert(&self, existing: &Domain) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+        }
+    }
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]

@@ -54,6 +54,14 @@ impl Model for Url {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
+    fn value(&self) -> &Self::ID {
+        &self.value
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::urls::dsl::*;
 
@@ -61,27 +69,6 @@ impl Model for Url {
             .first::<Self>(db.db())?;
 
         Ok(url)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::urls::dsl::*;
-
-        let url_id = urls.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())?;
-
-        Ok(url_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::urls::dsl::*;
-
-        let url_id = urls.filter(value.eq(query))
-            .select(id)
-            .first::<i32>(db.db())
-            .optional()?;
-
-        Ok(url_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
@@ -125,51 +112,6 @@ impl Scopable for Url {
             .set(unscoped.eq(true))
             .execute(db.db())
             .map_err(Error::from)
-    }
-}
-
-#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="urls"]
-pub struct UrlUpdate {
-    pub id: i32,
-    pub status: Option<i32>,
-    pub body: Option<Vec<u8>>,
-    pub online: Option<bool>,
-    pub title: Option<String>,
-    pub redirect: Option<String>,
-}
-
-impl Upsert for UrlUpdate {
-    fn is_dirty(&self) -> bool {
-        self.status.is_some() ||
-        self.body.is_some() ||
-        self.online.is_some() ||
-        self.title.is_some() ||
-        self.redirect.is_some()
-    }
-}
-
-impl fmt::Display for UrlUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        let mut updates = Vec::new();
-
-        if let Some(online) = self.online {
-            updates.push(format!("online => {:?}", online));
-        }
-        if let Some(status) = self.status {
-            updates.push(format!("status => {:?}", status));
-        }
-        if let Some(ref body) = self.body {
-            updates.push(format!("body => [{} bytes]", body.len()));
-        }
-        if let Some(ref title) = self.title {
-            updates.push(format!("title => {:?}", title));
-        }
-        if let Some(ref redirect) = self.redirect {
-            updates.push(format!("redirect => {:?}", redirect));
-        }
-
-        write!(w, "{}", updates.join(", "))
     }
 }
 
@@ -267,24 +209,36 @@ pub struct NewUrl<'a> {
     pub subdomain_id: i32,
     pub value: &'a str,
     pub status: Option<i32>,
-    pub body: Option<&'a [u8]>,
+    pub body: Option<&'a Vec<u8>>,
     pub online: Option<bool>,
-    pub title: Option<&'a str>,
-    pub redirect: Option<&'a str>,
+    pub title: Option<&'a String>,
+    pub redirect: Option<&'a String>,
 }
 
-impl<'a> Upsertable for NewUrl<'a> {
-    type Struct = Url;
+impl<'a> InsertableStruct<Url> for NewUrl<'a> {
+    fn value(&self) -> &str {
+        self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(urls::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl<'a> Upsertable<Url> for NewUrl<'a> {
     type Update = UrlUpdate;
 
-    fn upsert(&self, existing: &Self::Struct) -> Self::Update {
+    fn upsert(&self, existing: &Url) -> Self::Update {
         Self::Update {
             id: existing.id,
             status: if self.status != existing.status { self.status } else { None },
-            body: if self.body != existing.body.as_ref().map(|x| &x[..]) { self.body.map(|x| x.to_owned()) } else { None },
+            body: if self.body != existing.body.as_ref() { self.body.map(|x| x.to_owned()) } else { None },
             online: if self.online != existing.online { self.online } else { None },
-            title: if self.title != existing.title.as_ref().map(|x| x.as_str()) { self.title.map(|x| x.to_owned()) } else { None },
-            redirect: if self.redirect != existing.redirect.as_ref().map(|x| x.as_str()) { self.redirect.map(|x| x.to_owned()) } else { None },
+            title: if self.title != existing.title.as_ref() { self.title.map(|x| x.to_owned()) } else { None },
+            redirect: if self.redirect != existing.redirect.as_ref() { self.redirect.map(|x| x.to_owned()) } else { None },
         }
     }
 }
@@ -309,5 +263,54 @@ impl Printable<PrintableUrl> for NewUrlOwned {
             status: self.status.map(|x| x as u16),
             redirect: self.redirect.clone(),
         })
+    }
+}
+
+#[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
+#[table_name="urls"]
+pub struct UrlUpdate {
+    pub id: i32,
+    pub status: Option<i32>,
+    pub body: Option<Vec<u8>>,
+    pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
+}
+
+impl Upsert for UrlUpdate {
+    fn is_dirty(&self) -> bool {
+        self.status.is_some() ||
+        self.body.is_some() ||
+        self.online.is_some() ||
+        self.title.is_some() ||
+        self.redirect.is_some()
+    }
+
+    fn apply(&self, db: &Database) -> Result<i32> {
+        db.update_url(&self)
+    }
+}
+
+impl fmt::Display for UrlUpdate {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        let mut updates = Vec::new();
+
+        if let Some(online) = self.online {
+            updates.push(format!("online => {:?}", online));
+        }
+        if let Some(status) = self.status {
+            updates.push(format!("status => {:?}", status));
+        }
+        if let Some(ref body) = self.body {
+            updates.push(format!("body => [{} bytes]", body.len()));
+        }
+        if let Some(ref title) = self.title {
+            updates.push(format!("title => {:?}", title));
+        }
+        if let Some(ref redirect) = self.redirect {
+            updates.push(format!("redirect => {:?}", redirect));
+        }
+
+        write!(w, "{}", updates.join(", "))
     }
 }

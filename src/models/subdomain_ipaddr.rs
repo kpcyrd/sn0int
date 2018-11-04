@@ -43,6 +43,10 @@ impl Model for SubdomainIpAddr {
             .map_err(Error::from)
     }
 
+    fn id(&self) -> i32 {
+        self.id
+    }
+
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use schema::subdomain_ipaddrs::dsl::*;
 
@@ -50,31 +54,6 @@ impl Model for SubdomainIpAddr {
             .first::<Self>(db.db())?;
 
         Ok(subdomain_ipaddr)
-    }
-
-    fn id(db: &Database, query: &Self::ID) -> Result<i32> {
-        use schema::subdomain_ipaddrs::dsl::*;
-
-        let (my_subdomain_id, my_ip_addr_id) = query;
-        let subdomain_ipaddr_id = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
-                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
-                                                   .select(id)
-                                                   .first::<i32>(db.db())?;
-
-        Ok(subdomain_ipaddr_id)
-    }
-
-    fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        use schema::subdomain_ipaddrs::dsl::*;
-
-        let (my_subdomain_id, my_ip_addr_id) = query;
-        let subdomain_ipaddr_id = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
-                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
-                                                   .select(id)
-                                                   .first::<i32>(db.db())
-                                                   .optional()?;
-
-        Ok(subdomain_ipaddr_id)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
