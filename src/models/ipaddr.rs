@@ -87,6 +87,25 @@ impl Model for IpAddr {
 
         Ok(ipaddr_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr = ipaddrs.filter(value.eq(query))
+            .first::<Self>(db.db())?;
+
+        Ok(ipaddr)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::ipaddrs::dsl::*;
+
+        let ipaddr = ipaddrs.filter(value.eq(query))
+            .first::<Self>(db.db())
+            .optional()?;
+
+        Ok(ipaddr)
+    }
 }
 
 impl Scopable for IpAddr {

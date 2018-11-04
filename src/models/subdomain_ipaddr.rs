@@ -76,6 +76,29 @@ impl Model for SubdomainIpAddr {
 
         Ok(subdomain_ipaddr_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        let (my_subdomain_id, my_ip_addr_id) = query;
+        let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
+                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
+                                                   .first::<Self>(db.db())?;
+
+        Ok(subdomain_ipaddr)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::subdomain_ipaddrs::dsl::*;
+
+        let (my_subdomain_id, my_ip_addr_id) = query;
+        let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
+                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
+                                                   .first::<Self>(db.db())
+                                                   .optional()?;
+
+        Ok(subdomain_ipaddr)
+    }
 }
 
 pub struct PrintableSubdomainIpAddr {

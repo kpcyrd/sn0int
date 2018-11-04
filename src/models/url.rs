@@ -16,6 +16,8 @@ pub struct Url {
     pub body: Option<Vec<u8>>,
     pub unscoped: bool,
     pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
 }
 
 impl fmt::Display for Url {
@@ -81,6 +83,25 @@ impl Model for Url {
 
         Ok(url_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::urls::dsl::*;
+
+        let url = urls.filter(value.eq(query))
+            .first::<Self>(db.db())?;
+
+        Ok(url)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::urls::dsl::*;
+
+        let url = urls.filter(value.eq(query))
+            .first::<Self>(db.db())
+            .optional()?;
+
+        Ok(url)
+    }
 }
 
 impl Scopable for Url {
@@ -114,6 +135,18 @@ pub struct UrlUpdate {
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
     pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
+}
+
+impl Upsert for UrlUpdate {
+    fn is_dirty(&self) -> bool {
+        self.status.is_some() ||
+        self.body.is_some() ||
+        self.online.is_some() ||
+        self.title.is_some() ||
+        self.redirect.is_some()
+    }
 }
 
 impl fmt::Display for UrlUpdate {
@@ -129,6 +162,12 @@ impl fmt::Display for UrlUpdate {
         if let Some(ref body) = self.body {
             updates.push(format!("body => [{} bytes]", body.len()));
         }
+        if let Some(ref title) = self.title {
+            updates.push(format!("title => {:?}", title));
+        }
+        if let Some(ref redirect) = self.redirect {
+            updates.push(format!("redirect => {:?}", redirect));
+        }
 
         write!(w, "{}", updates.join(", "))
     }
@@ -137,6 +176,7 @@ impl fmt::Display for UrlUpdate {
 pub struct PrintableUrl {
     value: String,
     status: Option<u16>,
+    redirect: Option<String>,
 }
 
 impl fmt::Display for PrintableUrl {
@@ -144,7 +184,13 @@ impl fmt::Display for PrintableUrl {
         write!(w, "{:?}", self.value)?;
 
         if let Some(status) = self.status {
-            write!(w, " ({})", status)?;
+            write!(w, " ({}", status)?;
+
+            if let Some(ref redirect) = self.redirect {
+                write!(w, " => {:?}", redirect)?;
+            }
+
+            write!(w, ")")?;
         }
 
         Ok(())
@@ -156,6 +202,7 @@ impl Printable<PrintableUrl> for Url {
         Ok(PrintableUrl {
             value: self.value.to_string(),
             status: self.status.map(|x| x as u16),
+            redirect: self.redirect.clone(),
         })
     }
 }
@@ -165,6 +212,8 @@ pub struct DetailedUrl {
     value: String,
     status: Option<u16>,
     unscoped: bool,
+    title: Option<String>,
+    redirect: Option<String>,
 }
 
 impl fmt::Display for DetailedUrl {
@@ -173,7 +222,17 @@ impl fmt::Display for DetailedUrl {
             write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
 
             if let Some(status) = self.status {
-                write!(w, " (\x1b[33m{}\x1b[0m)", status)?;
+                write!(w, " (\x1b[33m{}\x1b[0m", status)?;
+
+                if let Some(ref redirect) = self.redirect {
+                    write!(w, " => \x1b[33m{:?}\x1b[0m", redirect)?;
+                }
+
+                write!(w, ")")?;
+            }
+
+            if let Some(ref title) = self.title {
+                write!(w, " {:?}", title)?;
             }
         } else {
             write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
@@ -196,6 +255,8 @@ impl Detailed for Url {
             value: self.value.to_string(),
             status: self.status.map(|x| x as u16),
             unscoped: self.unscoped,
+            title: self.title.clone(),
+            redirect: self.redirect.clone(),
         })
     }
 }
@@ -207,6 +268,25 @@ pub struct NewUrl<'a> {
     pub value: &'a str,
     pub status: Option<i32>,
     pub body: Option<&'a [u8]>,
+    pub online: Option<bool>,
+    pub title: Option<&'a str>,
+    pub redirect: Option<&'a str>,
+}
+
+impl<'a> Upsertable for NewUrl<'a> {
+    type Struct = Url;
+    type Update = UrlUpdate;
+
+    fn upsert(&self, existing: &Self::Struct) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            status: if self.status != existing.status { self.status } else { None },
+            body: if self.body != existing.body.as_ref().map(|x| &x[..]) { self.body.map(|x| x.to_owned()) } else { None },
+            online: if self.online != existing.online { self.online } else { None },
+            title: if self.title != existing.title.as_ref().map(|x| x.as_str()) { self.title.map(|x| x.to_owned()) } else { None },
+            redirect: if self.redirect != existing.redirect.as_ref().map(|x| x.as_str()) { self.redirect.map(|x| x.to_owned()) } else { None },
+        }
+    }
 }
 
 #[derive(Debug, Insertable, Serialize, Deserialize)]
@@ -217,6 +297,9 @@ pub struct NewUrlOwned {
     pub status: Option<i32>,
     #[serde(deserialize_with="ser::opt_string_or_bytes")]
     pub body: Option<Vec<u8>>,
+    pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
 }
 
 impl Printable<PrintableUrl> for NewUrlOwned {
@@ -224,6 +307,7 @@ impl Printable<PrintableUrl> for NewUrlOwned {
         Ok(PrintableUrl {
             value: self.value.to_string(),
             status: self.status.map(|x| x as u16),
+            redirect: self.redirect.clone(),
         })
     }
 }

@@ -14,12 +14,15 @@ function request(subdomain_id, url)
         return
     end
 
-    db_add('url', {
+    obj = {
         subdomain_id=subdomain_id,
         value=url,
         status=reply['status'],
         body=reply['text'],
-    })
+        redirect=reply['headers']['location'],
+    }
+
+    db_add('url', obj)
 
     -- info(json_encode(reply['status']))
     -- info(json_encode(reply['headers']['location']))

@@ -60,6 +60,8 @@ table! {
         body -> Nullable<Binary>,
         unscoped -> Bool,
         online -> Nullable<Bool>,
+        title -> Nullable<Text>,
+        redirect -> Nullable<Text>,
     }
 }
 

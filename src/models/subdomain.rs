@@ -79,6 +79,25 @@ impl Model for Subdomain {
 
         Ok(subdomain_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::subdomains::dsl::*;
+
+        let subdomain = subdomains.filter(value.eq(query))
+            .first::<Self>(db.db())?;
+
+        Ok(subdomain)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::subdomains::dsl::*;
+
+        let subdomain = subdomains.filter(value.eq(query))
+            .first::<Self>(db.db())
+            .optional()?;
+
+        Ok(subdomain)
+    }
 }
 
 impl Scopable for Subdomain {

@@ -82,6 +82,9 @@ impl Database {
                 value: &object.value,
                 status: object.status,
                 body: object.body.as_ref().map(|x| x.as_ref()),
+                online: object.online,
+                title: object.title.as_ref().map(|x| x.as_ref()),
+                redirect: object.redirect.as_ref().map(|x| x.as_ref()),
             }),
             Insert::Email(object) => self.insert_email_struct(&NewEmail {
                 value: &object.value,
@@ -204,8 +207,15 @@ impl Database {
     }
 
     pub fn insert_url_struct(&self, url: &NewUrl) -> Result<(bool, i32)> {
-        if let Some(url_id) = Url::id_opt(self, url.value)? {
-            Ok((false, url_id))
+        if let Some(existing) = Url::get_opt(self, url.value)? {
+            let update = url.upsert(&existing);
+            if update.is_dirty() {
+                self.update_url(&update)?;
+                // TODO: this should return a changeset
+                Ok((true, existing.id))
+            } else {
+                Ok((false, existing.id))
+            }
         } else {
             diesel::insert_into(urls::table)
                 .values(url)

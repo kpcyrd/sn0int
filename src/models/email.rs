@@ -76,6 +76,25 @@ impl Model for Email {
 
         Ok(domain_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::emails::dsl::*;
+
+        let email = emails.filter(value.eq(query))
+            .first::<Self>(db.db())?;
+
+        Ok(email)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::emails::dsl::*;
+
+        let email = emails.filter(value.eq(query))
+            .first::<Self>(db.db())
+            .optional()?;
+
+        Ok(email)
+    }
 }
 
 impl Scopable for Email {

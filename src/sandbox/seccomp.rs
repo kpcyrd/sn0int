@@ -42,6 +42,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::exit_group)?;
     ctx.allow_syscall(Syscall::brk)?;
     ctx.allow_syscall(Syscall::rt_sigprocmask)?;
+    ctx.allow_syscall(Syscall::getpeername)?;
 
     ctx.load()?;
 

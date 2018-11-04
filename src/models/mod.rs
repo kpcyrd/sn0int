@@ -60,6 +60,10 @@ pub trait Model: Sized {
     fn id(db: &Database, query: &Self::ID) -> Result<i32>;
 
     fn id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>>;
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self>;
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>>;
 }
 
 pub trait Scopable: Model {
@@ -68,6 +72,17 @@ pub trait Scopable: Model {
     fn scope(db: &Database, filter: &Filter) -> Result<usize>;
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize>;
+}
+
+pub trait Upsertable {
+    type Struct;
+    type Update;
+
+    fn upsert(&self, existing: &Self::Struct) -> Self::Update;
+}
+
+pub trait Upsert {
+    fn is_dirty(&self) -> bool;
 }
 
 pub trait Printable<T: Sized> {

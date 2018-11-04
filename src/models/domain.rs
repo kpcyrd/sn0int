@@ -75,6 +75,25 @@ impl Model for Domain {
 
         Ok(domain_id)
     }
+
+    fn get(db: &Database, query: &Self::ID) -> Result<Self> {
+        use schema::domains::dsl::*;
+
+        let domain = domains.filter(value.eq(query))
+            .first::<Self>(db.db())?;
+
+        Ok(domain)
+    }
+
+    fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
+        use schema::domains::dsl::*;
+
+        let domain = domains.filter(value.eq(query))
+            .first::<Self>(db.db())
+            .optional()?;
+
+        Ok(domain)
+    }
 }
 
 impl Scopable for Domain {
