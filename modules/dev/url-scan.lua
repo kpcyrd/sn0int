@@ -22,6 +22,11 @@ function request(subdomain_id, url)
         redirect=reply['headers']['location'],
     }
 
+    redirect = reply['headers']['location']
+    if redirect then
+        obj['redirect'] = url_join(url, redirect)
+    end
+
     db_add('url', obj)
 
     -- info(json_encode(reply['status']))

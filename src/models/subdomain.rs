@@ -5,7 +5,7 @@ use models::*;
 use std::result;
 
 
-#[derive(Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Domain)]
 #[table_name="subdomains"]
 pub struct Subdomain {
@@ -16,14 +16,12 @@ pub struct Subdomain {
     pub resolvable: Option<bool>,
 }
 
-impl fmt::Display for Subdomain {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
 impl Model for Subdomain {
     type ID = str;
+
+    fn to_string(&self) -> String {
+        self.value.to_owned()
+    }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::subdomains::dsl::*;
@@ -214,10 +212,10 @@ impl<'a> InsertableStruct<Subdomain> for NewSubdomain<'a> {
 impl<'a> Upsertable<Subdomain> for NewSubdomain<'a> {
     type Update = SubdomainUpdate;
 
-    fn upsert(&self, existing: &Subdomain) -> Self::Update {
+    fn upsert(self, existing: &Subdomain) -> Self::Update {
         Self::Update {
             id: existing.id,
-            resolvable: if self.resolvable != existing.resolvable { self.resolvable } else { None },
+            resolvable: Self::upsert_opt(self.resolvable, &existing.resolvable),
         }
     }
 }
@@ -250,16 +248,21 @@ impl Upsert for SubdomainUpdate {
         self.resolvable.is_some()
     }
 
+    fn generic(self) -> Update {
+        Update::Subdomain(self)
+    }
+
     fn apply(&self, db: &Database) -> Result<i32> {
         db.update_subdomain(self)
     }
 }
 
-impl fmt::Display for SubdomainUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(resolvable) = self.resolvable {
-            write!(w, "resolvable => {:?}", resolvable)?;
-        }
-        Ok(())
+impl Updateable<Subdomain> for SubdomainUpdate {
+    fn changeset(&mut self, existing: &Subdomain) {
+        Self::clear_if_equal(&mut self.resolvable, &existing.resolvable);
+    }
+
+    fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "resolvable", &self.resolvable);
     }
 }

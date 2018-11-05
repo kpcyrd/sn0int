@@ -5,7 +5,6 @@ use sn0int_common::metadata::Source;
 use serde::Serialize;
 use serde_json;
 use shell::Readline;
-use std::fmt;
 use structopt::StructOpt;
 use models::*;
 use term;
@@ -16,13 +15,13 @@ use worker;
 pub struct Args {
 }
 
-fn prepare_arg<T: Serialize + fmt::Display>(x: T) -> Result<(serde_json::Value, Option<String>)> {
+fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
     let pretty = x.to_string();
     let arg = serde_json::to_value(x)?;
     Ok((arg, Some(pretty)))
 }
 
-fn prepare_args<T: Scopable + Serialize + fmt::Display>(db: &Database) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+fn prepare_args<T: Scopable + Serialize + Model>(db: &Database) -> Result<Vec<(serde_json::Value, Option<String>)>> {
     db.list::<T>()?
         .into_iter()
         .filter(|x| x.scoped())

@@ -15,6 +15,17 @@ pub enum Insert {
 }
 
 impl Insert {
+    pub fn value(&self) -> &str {
+        match self {
+            Insert::Domain(x) => &x.value,
+            Insert::Subdomain(x) => &x.value,
+            Insert::IpAddr(x) => &x.value,
+            Insert::SubdomainIpAddr(_x) => unimplemented!("SubdomainIpAddr doesn't have value field"),
+            Insert::Url(x) => &x.value,
+            Insert::Email(x) => &x.value,
+        }
+    }
+
     pub fn printable(&self, db: &Database) -> Result<String> {
         Ok(match self {
             Insert::Domain(x) => format!("Domain: {}", x.printable(db)?),
@@ -35,19 +46,32 @@ pub enum Update {
     Email(EmailUpdate),
 }
 
+impl Update {
+    pub fn is_dirty(&self) -> bool {
+        match self {
+            Update::Subdomain(x) => x.is_dirty(),
+            Update::IpAddr(x) => x.is_dirty(),
+            Update::Url(x) => x.is_dirty(),
+            Update::Email(x) => x.is_dirty(),
+        }
+    }
+}
+
 impl fmt::Display for Update {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Update::Subdomain(update) => write!(w, "{}", update),
-            Update::IpAddr(update) => write!(w, "{}", update),
-            Update::Url(update) => write!(w, "{}", update),
-            Update::Email(update) => write!(w, "{}", update),
+            Update::Subdomain(update) => write!(w, "{}", update.to_string()),
+            Update::IpAddr(update) => write!(w, "{}", update.to_string()),
+            Update::Url(update) => write!(w, "{}", update.to_string()),
+            Update::Email(update) => write!(w, "{}", update.to_string()),
         }
     }
 }
 
 pub trait Model: Sized {
     type ID: ?Sized;
+
+    fn to_string(&self) -> String;
 
     fn list(db: &Database) -> Result<Vec<Self>>;
 
@@ -96,11 +120,28 @@ pub trait InsertableStruct<T: Model>: Upsertable<T> {
 pub trait Upsertable<M> {
     type Update: Upsert;
 
-    fn upsert(&self, existing: &M) -> Self::Update;
+    #[inline]
+    fn upsert_str(insert: Option<&String>, existing: &Option<String>) -> Option<String> {
+        if insert != existing.as_ref() { insert.map(|x| x.to_owned()) } else { None }
+    }
+
+    #[inline]
+    fn upsert_bytes(insert: Option<&Vec<u8>>, existing: &Option<Vec<u8>>) -> Option<Vec<u8>> {
+        if insert != existing.as_ref() { insert.map(|x| x.to_owned()) } else { None }
+    }
+
+    #[inline]
+    fn upsert_opt<T: PartialEq>(insert: Option<T>, existing: &Option<T>) -> Option<T> {
+        if insert != *existing { insert } else { None }
+    }
+
+    fn upsert(self, existing: &M) -> Self::Update;
 }
 
 pub trait Upsert {
     fn is_dirty(&self) -> bool;
+
+    fn generic(self) -> Update;
 
     fn apply(&self, db: &Database) -> Result<i32>;
 }
@@ -114,9 +155,44 @@ impl Upsert for NullUpdate {
         false
     }
 
+    fn generic(self) -> Update {
+        unreachable!("Object doesn't have any immutable fields")
+    }
+
     fn apply(&self, _db: &Database) -> Result<i32> {
         Ok(self.id)
     }
+}
+
+pub trait Updateable<M> {
+    fn to_string(&self) -> String {
+        let mut updates = Vec::new();
+        self.fmt(&mut updates);
+        updates.join(", ")
+    }
+
+    #[inline]
+    fn clear_if_equal<T: PartialEq>(update: &mut Option<T>, existing: &Option<T>) {
+        if update == existing { update.take(); }
+    }
+
+    fn changeset(&mut self, existing: &M);
+
+    #[inline]
+    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>) {
+        if let Some(v) = value {
+            updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
+        }
+    }
+
+    #[inline]
+    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>) {
+        if let Some(v) = value {
+            updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
+        }
+    }
+
+    fn fmt(&self, updates: &mut Vec<String>);
 }
 
 pub trait Printable<T: Sized> {

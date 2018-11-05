@@ -1,6 +1,7 @@
 use errors::*;
 
 use channel;
+use db::DbChange;
 use engine::{self, Module};
 use models::{Insert, Update};
 use serde_json;
@@ -53,7 +54,8 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     let result = rl.db().insert_generic(&object);
                     debug!("{:?} => {:?}", object, result);
                     let result = match result {
-                        Ok((true, id)) => {
+                        Ok((DbChange::Insert, id)) => {
+                            // TODO: replace id with actual object(?)
                             if let Ok(obj) = object.printable(rl.db()) {
                                 spinner.log(&obj.to_string());
                             } else {
@@ -61,7 +63,12 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                             }
                             Ok(id)
                         },
-                        Ok((_, id)) => Ok(id),
+                        Ok((DbChange::Update(update), id)) => {
+                            // TODO: replace id with actual object(?)
+                            spinner.log(&format!("Updating {:?} ({})", object.value(), update));
+                            Ok(id)
+                        },
+                        Ok((DbChange::None, id)) => Ok(id),
                         Err(err) => {
                             let err = err.to_string();
                             spinner.error(&err);
@@ -80,6 +87,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     if let Err(ref err) = result {
                         spinner.error(&err);
                     } else {
+                        // TODO: bring this somewhat closer to upsert code
                         spinner.log(&format!("Updating {:?} ({})", object, update));
                     }
 

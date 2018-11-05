@@ -12,14 +12,12 @@ pub struct Domain {
     pub unscoped: bool,
 }
 
-impl fmt::Display for Domain {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
 impl Model for Domain {
     type ID = str;
+
+    fn to_string(&self) -> String {
+        self.value.to_owned()
+    }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::domains::dsl::*;
@@ -175,7 +173,7 @@ impl<'a> InsertableStruct<Domain> for NewDomain<'a> {
 impl<'a> Upsertable<Domain> for NewDomain<'a> {
     type Update = NullUpdate;
 
-    fn upsert(&self, existing: &Domain) -> Self::Update {
+    fn upsert(self, existing: &Domain) -> Self::Update {
         Self::Update {
             id: existing.id,
         }

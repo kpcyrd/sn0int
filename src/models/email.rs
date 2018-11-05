@@ -13,14 +13,12 @@ pub struct Email {
     pub valid: Option<bool>,
 }
 
-impl fmt::Display for Email {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
 impl Model for Email {
     type ID = str;
+
+    fn to_string(&self) -> String {
+        self.value.to_owned()
+    }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::emails::dsl::*;
@@ -177,10 +175,10 @@ impl<'a> InsertableStruct<Email> for NewEmail<'a> {
 impl<'a> Upsertable<Email> for NewEmail<'a> {
     type Update = EmailUpdate;
 
-    fn upsert(&self, existing: &Email) -> Self::Update {
+    fn upsert(self, existing: &Email) -> Self::Update {
         Self::Update {
             id: existing.id,
-            valid: if self.valid != existing.valid { self.valid } else { None },
+            valid: Self::upsert_opt(self.valid, &existing.valid),
         }
     }
 }
@@ -212,16 +210,21 @@ impl Upsert for EmailUpdate {
         self.valid.is_some()
     }
 
+    fn generic(self) -> Update {
+        Update::Email(self)
+    }
+
     fn apply(&self, db: &Database) -> Result<i32> {
         db.update_email(self)
     }
 }
 
-impl fmt::Display for EmailUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(valid) = self.valid {
-            write!(w, "valid => {:?}", valid)?;
-        }
-        Ok(())
+impl Updateable<Email> for EmailUpdate {
+    fn changeset(&mut self, existing: &Email) {
+        Self::clear_if_equal(&mut self.valid, &existing.valid);
+    }
+
+    fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "valid", &self.valid);
     }
 }

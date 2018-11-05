@@ -20,14 +20,12 @@ pub struct Url {
     pub redirect: Option<String>,
 }
 
-impl fmt::Display for Url {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
 impl Model for Url {
     type ID = str;
+
+    fn to_string(&self) -> String {
+        self.value.to_owned()
+    }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::urls::dsl::*;
@@ -231,14 +229,14 @@ impl<'a> InsertableStruct<Url> for NewUrl<'a> {
 impl<'a> Upsertable<Url> for NewUrl<'a> {
     type Update = UrlUpdate;
 
-    fn upsert(&self, existing: &Url) -> Self::Update {
+    fn upsert(self, existing: &Url) -> Self::Update {
         Self::Update {
             id: existing.id,
-            status: if self.status != existing.status { self.status } else { None },
-            body: if self.body != existing.body.as_ref() { self.body.map(|x| x.to_owned()) } else { None },
-            online: if self.online != existing.online { self.online } else { None },
-            title: if self.title != existing.title.as_ref() { self.title.map(|x| x.to_owned()) } else { None },
-            redirect: if self.redirect != existing.redirect.as_ref() { self.redirect.map(|x| x.to_owned()) } else { None },
+            status: Self::upsert_opt(self.status, &existing.status),
+            body: Self::upsert_bytes(self.body, &existing.body),
+            online: Self::upsert_opt(self.online, &existing.online),
+            title: Self::upsert_str(self.title, &existing.title),
+            redirect: Self::upsert_str(self.redirect, &existing.redirect),
         }
     }
 }
@@ -286,31 +284,29 @@ impl Upsert for UrlUpdate {
         self.redirect.is_some()
     }
 
+    fn generic(self) -> Update {
+        Update::Url(self)
+    }
+
     fn apply(&self, db: &Database) -> Result<i32> {
         db.update_url(&self)
     }
 }
 
-impl fmt::Display for UrlUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        let mut updates = Vec::new();
+impl Updateable<Url> for UrlUpdate {
+    fn changeset(&mut self, existing: &Url) {
+        Self::clear_if_equal(&mut self.online, &existing.online);
+        Self::clear_if_equal(&mut self.status, &existing.status);
+        Self::clear_if_equal(&mut self.body, &existing.body);
+        Self::clear_if_equal(&mut self.title, &existing.title);
+        Self::clear_if_equal(&mut self.redirect, &existing.redirect);
+    }
 
-        if let Some(online) = self.online {
-            updates.push(format!("online => {:?}", online));
-        }
-        if let Some(status) = self.status {
-            updates.push(format!("status => {:?}", status));
-        }
-        if let Some(ref body) = self.body {
-            updates.push(format!("body => [{} bytes]", body.len()));
-        }
-        if let Some(ref title) = self.title {
-            updates.push(format!("title => {:?}", title));
-        }
-        if let Some(ref redirect) = self.redirect {
-            updates.push(format!("redirect => {:?}", redirect));
-        }
-
-        write!(w, "{}", updates.join(", "))
+    fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "online", &self.online);
+        Self::push_value(updates, "status", &self.status);
+        Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())));
+        Self::push_value(updates, "title", &self.title);
+        Self::push_value(updates, "redirect", &self.redirect);
     }
 }

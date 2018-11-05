@@ -12,6 +12,22 @@ use migrations;
 use worker;
 
 
+#[derive(Debug)]
+pub enum DbChange {
+    Insert,
+    Update(Update),
+    None,
+}
+
+impl DbChange {
+    pub fn is_some(&self) -> bool {
+        match self {
+            DbChange::None => false,
+            _ => true,
+        }
+    }
+}
+
 pub struct Database {
     name: String,
     db: SqliteConnection,
@@ -51,17 +67,17 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_generic(&self, object: &Insert) -> Result<(bool, i32)> {
+    pub fn insert_generic(&self, object: &Insert) -> Result<(DbChange, i32)> {
         match object {
-            Insert::Domain(object) => self.insert_struct(&NewDomain {
+            Insert::Domain(object) => self.insert_struct(NewDomain {
                 value: &object.value,
             }),
-            Insert::Subdomain(object) => self.insert_struct(&NewSubdomain {
+            Insert::Subdomain(object) => self.insert_struct(NewSubdomain {
                 domain_id: object.domain_id,
                 value: &object.value,
                 resolvable: object.resolvable,
             }),
-            Insert::IpAddr(object) => self.insert_struct(&NewIpAddr {
+            Insert::IpAddr(object) => self.insert_struct(NewIpAddr {
                 family: &object.family,
                 value: &object.value,
                 continent: object.continent.as_ref(),
@@ -78,7 +94,7 @@ impl Database {
                 subdomain_id: object.subdomain_id,
                 ip_addr_id: object.ip_addr_id,
             }),
-            Insert::Url(object) => self.insert_struct(&NewUrl {
+            Insert::Url(object) => self.insert_struct(NewUrl {
                 subdomain_id: object.subdomain_id,
                 value: &object.value,
                 status: object.status,
@@ -87,7 +103,7 @@ impl Database {
                 title: object.title.as_ref(),
                 redirect: object.redirect.as_ref(),
             }),
-            Insert::Email(object) => self.insert_struct(&NewEmail {
+            Insert::Email(object) => self.insert_struct(NewEmail {
                 value: &object.value,
                 valid: object.valid,
             }),
@@ -95,51 +111,45 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    /// TODO: return changeset if an update has been triggered
-    pub fn insert_struct<T: InsertableStruct<M>, M: Model>(&self, obj: &T) -> Result<(bool, i32)> {
+    pub fn insert_struct<T: InsertableStruct<M>, M: Model>(&self, obj: T) -> Result<(DbChange, i32)> {
         if let Some(existing) = M::get_opt(self, obj.value())? {
             let update = obj.upsert(&existing);
             if update.is_dirty() {
                 update.apply(&self)?;
-                // TODO: this should return a changeset
-                Ok((true, existing.id()))
+                Ok((DbChange::Update(update.generic()), existing.id()))
             } else {
-                Ok((false, existing.id()))
+                Ok((DbChange::None, existing.id()))
             }
         } else {
             obj.insert(&self)?;
             let id = M::get_id(self, obj.value())?;
-            Ok((true, id))
+            Ok((DbChange::Insert, id))
         }
     }
 
-    pub fn insert_domain(&self, domain: &str) -> Result<(bool, i32)> {
-        let new_domain = NewDomain {
+    pub fn insert_domain(&self, domain: &str) -> Result<(DbChange, i32)> {
+        self.insert_struct(NewDomain {
             value: domain,
-        };
-
-        self.insert_struct(&new_domain)
+        })
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<(bool, i32)> {
+    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<(DbChange, i32)> {
         let domain_id = match Domain::get_id_opt(self, domain)? {
             Some(domain_id) => domain_id,
             None => self.insert_domain(domain)?.1,
         };
 
-        let new_subdomain = NewSubdomain {
+        self.insert_struct(NewSubdomain {
             domain_id,
             value: &subdomain,
             resolvable: None,
-        };
-
-        self.insert_struct(&new_subdomain)
+        })
     }
 
-    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<(bool, i32)> {
+    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<(DbChange, i32)> {
         // TODO: maybe check if valid
-        let new_ipaddr = NewIpAddr {
+        self.insert_struct(NewIpAddr {
             family: &family,
             value: &ipaddr,
             continent: None,
@@ -151,37 +161,33 @@ impl Database {
             latitude: None,
             asn: None,
             as_org: None,
-        };
-
-        self.insert_struct(&new_ipaddr)
+        })
     }
 
-    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<(bool, i32)> {
+    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<(DbChange, i32)> {
         self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
             subdomain_id,
             ip_addr_id,
         })
     }
 
-    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<(bool, i32)> {
+    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<(DbChange, i32)> {
         if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
-            Ok((false, subdomain_ipaddr_id))
+            Ok((DbChange::None, subdomain_ipaddr_id))
         } else {
             diesel::insert_into(subdomain_ipaddrs::table)
                 .values(subdomain_ipaddr)
                 .execute(&self.db)?;
             let id = SubdomainIpAddr::get_id(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))?;
-            Ok((true, id))
+            Ok((DbChange::Insert, id))
         }
     }
 
-    pub fn insert_email(&self, email: &str) -> Result<(bool, i32)> {
-        let new_email = NewEmail {
+    pub fn insert_email(&self, email: &str) -> Result<(DbChange, i32)> {
+        self.insert_struct(NewEmail {
             value: email,
             valid: None,
-        };
-
-        self.insert_struct(&new_email)
+        })
     }
 
     //

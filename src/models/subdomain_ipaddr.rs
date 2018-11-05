@@ -18,6 +18,10 @@ pub struct SubdomainIpAddr {
 impl Model for SubdomainIpAddr {
     type ID = (i32, i32);
 
+    fn to_string(&self) -> String {
+        unimplemented!("SubdomainIpAddr can not be printed")
+    }
+
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::subdomain_ipaddrs::dsl::*;
 

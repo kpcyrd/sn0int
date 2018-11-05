@@ -24,14 +24,12 @@ pub struct IpAddr {
     pub as_org: Option<String>,
 }
 
-impl fmt::Display for IpAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.value)
-    }
-}
-
 impl Model for IpAddr {
     type ID = str;
+
+    fn to_string(&self) -> String {
+        self.value.to_owned()
+    }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
         use schema::ipaddrs::dsl::*;
@@ -289,18 +287,18 @@ impl<'a> InsertableStruct<IpAddr> for NewIpAddr<'a> {
 impl<'a> Upsertable<IpAddr> for NewIpAddr<'a> {
     type Update = IpAddrUpdate;
 
-    fn upsert(&self, existing: &IpAddr) -> Self::Update {
+    fn upsert(self, existing: &IpAddr) -> Self::Update {
         Self::Update {
             id: existing.id,
-            continent: if self.continent != existing.continent.as_ref() { self.continent.map(|x| x.to_owned()) } else { None },
-            continent_code: if self.continent_code != existing.continent_code.as_ref() { self.continent_code.map(|x| x.to_owned()) } else { None },
-            country: if self.country != existing.country.as_ref() { self.country.map(|x| x.to_owned()) } else { None },
-            country_code: if self.country_code != existing.country_code.as_ref() { self.country_code.map(|x| x.to_owned()) } else { None },
-            city: if self.city != existing.city.as_ref() { self.city.map(|x| x.to_owned()) } else { None },
-            latitude: if self.latitude != existing.latitude { self.latitude } else { None },
-            longitude: if self.longitude != existing.longitude { self.longitude } else { None },
-            asn: if self.asn != existing.asn { self.asn } else { None },
-            as_org: if self.as_org != existing.as_org.as_ref() { self.as_org.map(|x| x.to_owned()) } else { None },
+            continent: Self::upsert_str(self.continent, &existing.continent),
+            continent_code: Self::upsert_str(self.continent_code, &existing.continent_code),
+            country: Self::upsert_str(self.country, &existing.country),
+            country_code: Self::upsert_str(self.country_code, &existing.country_code),
+            city: Self::upsert_str(self.city, &existing.city),
+            latitude: Self::upsert_opt(self.latitude, &existing.latitude),
+            longitude: Self::upsert_opt(self.longitude, &existing.longitude),
+            asn: Self::upsert_opt(self.asn, &existing.asn),
+            as_org: Self::upsert_str(self.as_org, &existing.as_org),
         }
     }
 }
@@ -319,6 +317,14 @@ pub struct NewIpAddrOwned {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<String>,
+}
+
+impl Printable<PrintableIpAddr> for NewIpAddrOwned {
+    fn printable(&self, _db: &Database) -> Result<PrintableIpAddr> {
+        Ok(PrintableIpAddr {
+            value: self.value.parse()?,
+        })
+    }
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
@@ -349,51 +355,37 @@ impl Upsert for IpAddrUpdate {
         self.as_org.is_some()
     }
 
+    fn generic(self) -> Update {
+        Update::IpAddr(self)
+    }
+
     fn apply(&self, db: &Database) -> Result<i32> {
         db.update_ipaddr(self)
     }
 }
 
-impl fmt::Display for IpAddrUpdate {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        let mut updates = Vec::new();
-
-        if let Some(ref continent) = self.continent {
-            updates.push(format!("continent => {:?}", continent));
-        }
-        if let Some(ref continent_code) = self.continent_code {
-            updates.push(format!("continent_code => {:?}", continent_code));
-        }
-        if let Some(ref country) = self.country {
-            updates.push(format!("country => {:?}", country));
-        }
-        if let Some(ref country_code) = self.country_code {
-            updates.push(format!("country_code => {:?}", country_code));
-        }
-        if let Some(ref city) = self.city {
-            updates.push(format!("city => {:?}", city));
-        }
-        if let Some(ref latitude) = self.latitude {
-            updates.push(format!("latitude => {:?}", latitude));
-        }
-        if let Some(ref longitude) = self.longitude {
-            updates.push(format!("longitude => {:?}", longitude));
-        }
-        if let Some(ref asn) = self.asn {
-            updates.push(format!("asn => {:?}", asn));
-        }
-        if let Some(ref as_org) = self.as_org {
-            updates.push(format!("as_org => {:?}", as_org));
-        }
-
-        write!(w, "{}", updates.join(", "))
+impl Updateable<IpAddr> for IpAddrUpdate {
+    fn changeset(&mut self, existing: &IpAddr) {
+        Self::clear_if_equal(&mut self.continent, &existing.continent);
+        Self::clear_if_equal(&mut self.continent_code, &existing.continent_code);
+        Self::clear_if_equal(&mut self.country, &existing.country);
+        Self::clear_if_equal(&mut self.country_code, &existing.country_code);
+        Self::clear_if_equal(&mut self.city, &existing.city);
+        Self::clear_if_equal(&mut self.latitude, &existing.latitude);
+        Self::clear_if_equal(&mut self.longitude, &existing.longitude);
+        Self::clear_if_equal(&mut self.asn, &existing.asn);
+        Self::clear_if_equal(&mut self.as_org, &existing.as_org);
     }
-}
 
-impl Printable<PrintableIpAddr> for NewIpAddrOwned {
-    fn printable(&self, _db: &Database) -> Result<PrintableIpAddr> {
-        Ok(PrintableIpAddr {
-            value: self.value.parse()?,
-        })
+    fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "continent", &self.continent);
+        Self::push_value(updates, "continent_code", &self.continent_code);
+        Self::push_value(updates, "country", &self.country);
+        Self::push_value(updates, "country_code", &self.country_code);
+        Self::push_value(updates, "city", &self.city);
+        Self::push_value(updates, "latitude", &self.latitude);
+        Self::push_value(updates, "longitude", &self.longitude);
+        Self::push_value(updates, "asn", &self.asn);
+        Self::push_value(updates, "as_org", &self.as_org);
     }
 }
