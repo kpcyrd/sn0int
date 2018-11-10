@@ -32,10 +32,10 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=common
-  - os: windows
-    rust: stable
-    env:
-    - BUILD_MODE="windows test"
+  #- os: windows
+  #  rust: stable
+  #  env:
+  #  - BUILD_MODE="windows test"
   - os: windows
     rust: stable
     env:
