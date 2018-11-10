@@ -15,9 +15,9 @@ pub fn extract<R: io::Read, P: AsRef<Path>>(read: &mut R, filter: &str, target: 
         let file_name = {
             let path = entry.path()?;
             path.file_name()
-                .ok_or(format_err!("Invalid path in archive"))?
+                .ok_or_else(|| format_err!("Invalid path in archive"))?
                 .to_str()
-                .ok_or(format_err!("Filename is invalid utf8"))?
+                .ok_or_else(|| format_err!("Filename is invalid utf8"))?
                 .to_owned()
         };
 

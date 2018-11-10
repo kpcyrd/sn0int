@@ -1,10 +1,16 @@
 use errors::*;
 
 use args;
+use args::Install;
+use api::Client;
+use config::Config;
 use colored::Colorize;
+use engine::Module;
 use registry;
 use shell::Readline;
 use structopt::StructOpt;
+use term;
+use worker;
 
 
 #[derive(Debug, StructOpt)]
@@ -27,6 +33,9 @@ pub enum SubCommand {
     #[structopt(author="", name="reload")]
     /// Reload modules
     Reload(Reload),
+    #[structopt(author="", name="update")]
+    /// Update modules
+    Update(Update),
 }
 
 #[derive(Debug, StructOpt)]
@@ -35,6 +44,28 @@ pub struct List {
 
 #[derive(Debug, StructOpt)]
 pub struct Reload {
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Update {
+}
+
+fn update(client: &Client, config: &Config, module: &Module) -> Result<()> {
+    let installed = module.version();
+    let infos = client.query_module(&module.id())?;
+    debug!("Latest version: {:?}", infos);
+
+    let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
+
+    if installed != latest {
+        term::info(&format!("Updating {}: {:?} -> {:?}", module.canonical(), installed, latest));
+        registry::run_install(&Install {
+            module: module.id(),
+            version: None,
+        }, &config)?;
+    }
+
+    Ok(())
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
@@ -67,6 +98,25 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
                     rl.set_module(module);
                 }
             }
+        },
+        SubCommand::Update(_) => {
+            let client = Client::new(&config)?;
+
+            for module in rl.engine().list() {
+                let name = module.canonical();
+                let label = format!("Searching for updates {}", name);
+
+                let result = worker::spawn_fn(&label, || {
+                    update(&client, &config, &module)
+                }, true);
+
+                if let Err(err) = result {
+                    term::error(&format!("Failed to update {}: {:?}", name, err));
+                }
+            }
+
+            // trigger reload
+            run(rl, &[String::from("mod"), String::from("reload")])?;
         },
     }
 

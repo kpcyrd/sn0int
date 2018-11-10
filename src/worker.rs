@@ -91,7 +91,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     let result = rl.db().update_generic(&update);
                     debug!("{:?}: {:?} => {:?}", object, update, result);
                     let result = result
-                        .map(|x| Some(x))
+                        .map(Some)
                         .map_err(|e| e.to_string());
 
                     if let Err(ref err) = result {

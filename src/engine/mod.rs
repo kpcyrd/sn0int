@@ -9,6 +9,7 @@ use std::path::PathBuf;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
+use sn0int_common::ModuleID;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::DnsConfig;
 use psl::Psl;
@@ -165,6 +166,13 @@ impl Module {
 
     pub fn canonical(&self) -> String {
         format!("{}/{}", self.author, self.name)
+    }
+
+    pub fn id(&self) -> ModuleID {
+        ModuleID {
+            author: self.author.to_string(),
+            name: self.name.to_string(),
+        }
     }
 
     pub fn description(&self) -> &str {

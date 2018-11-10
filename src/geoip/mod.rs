@@ -18,20 +18,17 @@ use self::models::AsnLookup;
 
 
 pub trait Maxmind: Sized {
-    #[inline]
     fn archive_filename() -> &'static str;
 
-    #[inline]
     fn archive_url() -> &'static str;
 
-    #[inline]
     fn new(reader: maxminddb::Reader) -> Self;
 
     fn cache_path() -> Result<String> {
         let path = paths::cache_dir()?
             .join(Self::archive_filename());
         let path = path.to_str()
-            .ok_or(format_err!("Failed to decode path"))?;
+            .ok_or_else(|| format_err!("Failed to decode path"))?;
         Ok(path.to_string())
     }
 
@@ -74,14 +71,17 @@ impl fmt::Debug for GeoIP {
 }
 
 impl Maxmind for GeoIP {
+    #[inline]
     fn archive_filename() -> &'static str {
         "GeoLite2-City.mmdb"
     }
 
+    #[inline]
     fn archive_url() -> &'static str {
         GEOIP_CITY_URL
     }
 
+    #[inline]
     fn new(reader: maxminddb::Reader) -> Self {
         GeoIP {
             reader
@@ -108,14 +108,17 @@ impl fmt::Debug for AsnDB {
 }
 
 impl Maxmind for AsnDB {
+    #[inline]
     fn archive_filename() -> &'static str {
         "GeoLite2-ASN.mmdb"
     }
 
+    #[inline]
     fn archive_url() -> &'static str {
         GEOIP_ASN_URL
     }
 
+    #[inline]
     fn new(reader: maxminddb::Reader) -> Self {
         AsnDB {
             reader

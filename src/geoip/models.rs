@@ -40,7 +40,7 @@ impl From<geoip2::City> for GeoLookup {
             _ => None,
         };
         let location = match lookup.location {
-            Some(location) => Location::from_maxmind(location),
+            Some(location) => Location::from_maxmind(&location),
             _ => None,
         };
 
@@ -126,7 +126,7 @@ pub struct Location {
 }
 
 impl Location {
-    fn from_maxmind(location: geoip2::model::Location) -> Option<Self> {
+    fn from_maxmind(location: &geoip2::model::Location) -> Option<Self> {
         let latitude = match location.latitude {
             Some(latitude) => latitude,
             _ => return None,
