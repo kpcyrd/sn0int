@@ -1,6 +1,6 @@
 use errors::*;
 
-use db::Database;
+use db::{Database, Filter};
 use sn0int_common::metadata::Source;
 use serde::Serialize;
 use serde_json;
@@ -21,10 +21,9 @@ fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<
     Ok((arg, Some(pretty)))
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(db: &Database) -> Result<Vec<(serde_json::Value, Option<String>)>> {
-    db.list::<T>()?
+fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+    db.filter::<T>(filter)?
         .into_iter()
-        .filter(|x| x.scoped())
         .map(prepare_arg)
         .collect()
 }
@@ -34,12 +33,14 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
 
+    let filter = rl.scoped_targets();
+
     let args = match module.source() {
-        Some(Source::Domains) => prepare_args::<Domain>(rl.db()),
-        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db()),
-        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db()),
-        Some(Source::Urls) => prepare_args::<Url>(rl.db()),
-        Some(Source::Emails) => prepare_args::<Email>(rl.db()),
+        Some(Source::Domains) => prepare_args::<Domain>(rl.db(), &filter),
+        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db(), &filter),
+        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db(), &filter),
+        Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
+        Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
         None => Ok(vec![(serde_json::Value::Null, None)]),
     };
 

@@ -1,3 +1,4 @@
+use db;
 use engine::Module;
 use rand::prelude::*;
 use std::fmt;
@@ -129,6 +130,8 @@ pub fn error(line: &str) {
 pub struct Prompt {
     pub workspace: String,
     pub module: Option<Module>,
+    // TODO: wrapper type that holds module+options
+    pub target: Option<db::Filter>,
 }
 
 impl Prompt {
@@ -136,6 +139,7 @@ impl Prompt {
         Prompt {
             workspace,
             module: None,
+            target: None,
         }
     }
 }

@@ -338,6 +338,11 @@ impl Filter {
         &self.query
     }
 
+    pub fn and_scoped(&self) -> Filter {
+        let query = format!("({}) AND unscoped=0", self.query);
+        Filter::new(query)
+    }
+
     pub fn sql(&self) -> SqlLiteral<Bool> {
         sql::<Bool>(&self.query)
     }

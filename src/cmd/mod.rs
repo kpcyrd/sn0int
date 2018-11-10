@@ -7,4 +7,5 @@ pub mod select_cmd;
 pub mod mod_cmd;
 pub mod noscope_cmd;
 pub mod scope_cmd;
+pub mod target_cmd;
 pub mod quickstart_cmd;

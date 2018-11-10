@@ -6,7 +6,7 @@ use complete::CmdCompleter;
 use config::Config;
 use colored::Colorize;
 use ctrlc;
-use db::Database;
+use db::{self, Database};
 use engine::{Engine, Module};
 use geoip::{GeoIP, AsnDB, Maxmind};
 use rustyline::error::ReadlineError;
@@ -34,6 +34,7 @@ pub enum Command {
     Set,
     Select,
     SwitchDb,
+    Target,
     Update,
     Use,
     Quickstart,
@@ -54,6 +55,7 @@ impl Command {
             Command::Set => "set",
             Command::Select => "select",
             Command::SwitchDb => "switch_db",
+            Command::Target => "target",
             Command::Update => "update",
             Command::Use => "use",
             Command::Quickstart => "quickstart",
@@ -74,6 +76,7 @@ impl Command {
                 Command::Set.as_str(),
                 Command::Select.as_str(),
                 Command::SwitchDb.as_str(),
+                Command::Target.as_str(),
                 Command::Update.as_str(),
                 Command::Use.as_str(),
                 Command::Quickstart.as_str(),
@@ -99,6 +102,7 @@ impl FromStr for Command {
             "set"  => Ok(Command::Set),
             "select" => Ok(Command::Select),
             "switch_db" => Ok(Command::SwitchDb),
+            "target"  => Ok(Command::Target),
             "update" => Ok(Command::Update),
             "use"  => Ok(Command::Use),
             "quickstart"  => Ok(Command::Quickstart),
@@ -151,10 +155,27 @@ impl Readline {
 
     pub fn set_module(&mut self, module: Module) {
         self.prompt.module = Some(module);
+        // TODO: possibly refactor
+        self.prompt.target = None;
     }
 
     pub fn module(&self) -> Option<&Module> {
         self.prompt.module.as_ref()
+    }
+
+    pub fn set_target(&mut self, target: Option<db::Filter>) {
+        self.prompt.target = target;
+    }
+
+    pub fn target(&self) -> &Option<db::Filter> {
+        &self.prompt.target
+    }
+
+    pub fn scoped_targets(&self) -> db::Filter {
+        match &self.prompt.target {
+            Some(filter) => filter.and_scoped(),
+            _ => db::Filter::new("unscoped=0"),
+        }
     }
 
     pub fn db(&self) -> &Database {
@@ -310,6 +331,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Set, _args)) => println!("set"),
         Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
         Some((Command::SwitchDb, args)) => switch_db_cmd::run(rl, &args)?,
+        Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Update, _args)) => {
             // TODO
             // worker::spawn("Updating public suffix list");
