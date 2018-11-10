@@ -142,7 +142,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<i32, String>>>)>, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<Option<i32>, String>>>)>, arg: serde_json::Value) -> Result<()> {
     let dns_config = DnsConfig::from_system()?;
 
     let psl = Psl::open_into_string()?;
@@ -160,6 +160,16 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
             Event::Insert(object) => {
                 let (tx2, rx2) = mpsc::channel();
                 tx.send((Event::Insert(object), Some(tx2))).unwrap();
+                let reply = rx2.recv().unwrap();
+
+                let value = serde_json::to_value(reply).expect("Failed to serialize reply");
+                if let Err(_) = supervisor.send(&value) {
+                    tx.send((Event::Error("Failed to send to child".into()), None)).unwrap();
+                }
+            },
+            Event::Select(object) => {
+                let (tx2, rx2) = mpsc::channel();
+                tx.send((Event::Select(object), Some(tx2))).unwrap();
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");

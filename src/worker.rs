@@ -1,9 +1,9 @@
 use errors::*;
 
 use channel;
-use db::DbChange;
+use db::{DbChange, Family};
 use engine::{self, Module};
-use models::{Insert, Update};
+use models::*;
 use serde_json;
 use shell::Readline;
 use std::time::Duration;
@@ -19,6 +19,7 @@ pub enum Event {
     Fatal(String),
     Status(String),
     Insert(Insert),
+    Select((Family, String)),
     Update((String, Update)),
     Done,
 }
@@ -61,14 +62,14 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                             } else {
                                 spinner.error(&format!("Failed to query necessary fields for {:?}", object));
                             }
-                            Ok(id)
+                            Ok(Some(id))
                         },
                         Ok((DbChange::Update(update), id)) => {
                             // TODO: replace id with actual object(?)
                             spinner.log(&format!("Updating {:?} ({})", object.value(), update));
-                            Ok(id)
+                            Ok(Some(id))
                         },
-                        Ok((DbChange::None, id)) => Ok(id),
+                        Ok((DbChange::None, id)) => Ok(Some(id)),
                         Err(err) => {
                             let err = err.to_string();
                             spinner.error(&err);
@@ -79,10 +80,19 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                     tx.expect("Failed to get db result channel")
                         .send(result).expect("Failed to send db result to channel");
                 },
+                Some((Event::Select((family, value)), tx)) => {
+                    let result = rl.db().get_opt(&family, &value)
+                        .map_err(|e| e.to_string());
+
+                    tx.expect("Failed to get db result channel")
+                        .send(result).expect("Failed to send db result to channel");
+                },
                 Some((Event::Update((object, update)), tx)) => {
                     let result = rl.db().update_generic(&update);
                     debug!("{:?}: {:?} => {:?}", object, update, result);
-                    let result = result.map_err(|e| e.to_string());
+                    let result = result
+                        .map(|x| Some(x))
+                        .map_err(|e| e.to_string());
 
                     if let Err(ref err) = result {
                         spinner.error(&err);
@@ -129,6 +139,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     Some(Event::Fatal(error)) => spinner.error(&error),
                     Some(Event::Status(status)) => spinner.status(status),
                     Some(Event::Insert(_)) => (),
+                    Some(Event::Select(_)) => (),
                     Some(Event::Update(_)) => (),
                     Some(Event::Done) => break,
                     None => break, // channel closed

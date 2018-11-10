@@ -1,5 +1,6 @@
 use errors::*;
 
+use db::Family;
 use engine::ctx::State;
 use engine::structs;
 use hlua::{self, AnyLuaValue};
@@ -9,34 +10,8 @@ use models::*;
 use json::LuaJsonValue;
 
 
-#[derive(Debug)]
-pub enum Family {
-    Domain,
-    Subdomain,
-    IpAddr,
-    SubdomainIpAddr,
-    Url,
-    Email,
-}
-
-impl FromStr for Family {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Family> {
-        Ok(match s {
-            "domain" => Family::Domain,
-            "subdomain" => Family::Subdomain,
-            "ipaddr" => Family::IpAddr,
-            "subdomain-ipaddr" => Family::SubdomainIpAddr,
-            "url" => Family::Url,
-            "email" => Family::Email,
-            _ => bail!("Unknown object family"),
-        })
-    }
-}
-
 pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
-    lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<i32> {
+    lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e))?;
         let object = LuaJsonValue::from(object);
@@ -73,6 +48,16 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
+pub fn db_select(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("db_select", hlua::function2(move |family: String, value: String| -> Result<Option<i32>> {
+        let family = Family::from_str(&family)
+            .map_err(|e| state.set_error(e))?;
+
+        state.db_select(family, value)
+            .map_err(|e| state.set_error(e))
+    }))
+}
+
 fn gen_changeset<T: Model, U: Updateable<T>>(object: LuaJsonValue, mut update: LuaJsonValue) -> Result<(i32, String, U)>
     where
         for<'de> T: serde::Deserialize<'de>,
@@ -94,7 +79,7 @@ fn gen_changeset<T: Model, U: Updateable<T>>(object: LuaJsonValue, mut update: L
 }
 
 pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
-    lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<i32> {
+    lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e))?;
         let object = LuaJsonValue::from(object);
@@ -120,7 +105,7 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
             state.db_update(value, update)
                 .map_err(|e| state.set_error(e))
         } else {
-            Ok(id)
+            Ok(Some(id))
         }
     }))
 }

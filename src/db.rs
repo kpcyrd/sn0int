@@ -7,6 +7,7 @@ use diesel::sql_types::Bool;
 use diesel::prelude::*;
 use models::*;
 use schema::*;
+use std::str::FromStr;
 use paths;
 use migrations;
 use worker;
@@ -25,6 +26,32 @@ impl DbChange {
             DbChange::None => false,
             _ => true,
         }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Family {
+    Domain,
+    Subdomain,
+    IpAddr,
+    SubdomainIpAddr,
+    Url,
+    Email,
+}
+
+impl FromStr for Family {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Family> {
+        Ok(match s {
+            "domain" => Family::Domain,
+            "subdomain" => Family::Subdomain,
+            "ipaddr" => Family::IpAddr,
+            "subdomain-ipaddr" => Family::SubdomainIpAddr,
+            "url" => Family::Url,
+            "email" => Family::Email,
+            _ => bail!("Unknown object family"),
+        })
     }
 }
 
@@ -231,6 +258,24 @@ impl Database {
             .set(email)
             .execute(&self.db)?;
         Ok(email.id)
+    }
+
+    fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
+        match T::get_opt(self, &value)? {
+            Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
+            _ => Ok(None),
+        }
+    }
+
+    pub fn get_opt(&self, family: &Family, value: &str) -> Result<Option<i32>> {
+        match family {
+            Family::Domain => self.get_opt_typed::<Domain>(&value),
+            Family::Subdomain => self.get_opt_typed::<Subdomain>(&value),
+            Family::IpAddr => self.get_opt_typed::<IpAddr>(&value),
+            Family::SubdomainIpAddr => bail!("Unsupported operation"),
+            Family::Url => self.get_opt_typed::<Url>(&value),
+            Family::Email => self.get_opt_typed::<Email>(&value),
+        }
     }
 
     //

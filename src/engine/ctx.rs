@@ -1,5 +1,6 @@
 use errors::*;
 
+use db::Family;
 use engine::{Environment, Reporter};
 use geoip::{GeoIP, AsnDB};
 use hlua::{self, AnyLuaValue};
@@ -40,18 +41,26 @@ pub trait State {
         self.send(&Event::Status(msg))
     }
 
-    fn db_insert(&self, object: Insert) -> Result<i32> {
+    fn db_insert(&self, object: Insert) -> Result<Option<i32>> {
         self.send(&Event::Insert(object));
         let reply = self.recv()?;
-        let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
+        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
     }
 
-    fn db_update(&self, object: String, update: Update) -> Result<i32> {
+    fn db_select(&self, family: Family, value: String) -> Result<Option<i32>> {
+        self.send(&Event::Select((family, value)));
+        let reply = self.recv()?;
+        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
+
+        reply.map_err(|err| format_err!("Failed to query database: {:?}", err))
+    }
+
+    fn db_update(&self, object: String, update: Update) -> Result<Option<i32>> {
         self.send(&Event::Update((object, update)));
         let reply = self.recv()?;
-        let reply: result::Result<i32, String> = serde_json::from_value(reply)?;
+        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
         reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
     }
@@ -183,6 +192,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
 
     runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
+    runtime::db_select(&mut lua, state.clone());
     runtime::db_update(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
