@@ -34,7 +34,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
 
     let t = thread::spawn(move || {
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
-            tx.send((Event::Error(err.to_string()), None));
+            tx.send((Event::Error(err.to_string()), None)).unwrap();
         }
     });
 
@@ -42,7 +42,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     let timeout = Duration::from_millis(100);
     loop {
         select! {
-            recv(rx, msg) => match msg {
+            recv(rx) -> msg => match msg.ok() {
                 Some((Event::Info(info), _)) => spinner.log(&info),
                 Some((Event::Error(error), _)) => spinner.error(&error),
                 Some((Event::Fatal(error), _)) => {
@@ -97,7 +97,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                 Some((Event::Done, _)) => break,
                 None => break, // channel closed
             },
-            recv(channel::after(timeout)) => (),
+            default(timeout) => (),
         }
         spinner.tick();
     }
@@ -123,7 +123,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         let timeout = Duration::from_millis(100);
         loop {
             select! {
-                recv(rx, msg) => match msg {
+                recv(rx) -> msg => match msg.ok() {
                     Some(Event::Info(info)) => spinner.log(&info),
                     Some(Event::Error(error)) => spinner.error(&error),
                     Some(Event::Fatal(error)) => spinner.error(&error),
@@ -133,7 +133,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     Some(Event::Done) => break,
                     None => break, // channel closed
                 },
-                recv(channel::after(timeout)) => (),
+                default(timeout) => (),
             }
             spinner.tick();
         }
@@ -141,7 +141,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
 
     // run work in main thread
     let result = f()?;
-    tx.send(Event::Done);
+    tx.send(Event::Done)?;
 
     t.join().expect("thread failed");
 

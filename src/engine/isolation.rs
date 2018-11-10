@@ -154,30 +154,30 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
         match supervisor.recv()? {
             Event::Done => break,
             Event::Fatal(err) => {
-                tx.send((Event::Fatal(err), None));
+                tx.send((Event::Fatal(err), None)).unwrap();
                 break;
             },
             Event::Insert(object) => {
                 let (tx2, rx2) = mpsc::channel();
-                tx.send((Event::Insert(object), Some(tx2)));
+                tx.send((Event::Insert(object), Some(tx2))).unwrap();
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");
                 if let Err(_) = supervisor.send(&value) {
-                    tx.send((Event::Error("Failed to send to child".into()), None));
+                    tx.send((Event::Error("Failed to send to child".into()), None)).unwrap();
                 }
             },
             Event::Update(object) => {
                 let (tx2, rx2) = mpsc::channel();
-                tx.send((Event::Update(object), Some(tx2)));
+                tx.send((Event::Update(object), Some(tx2))).unwrap();
                 let reply = rx2.recv().unwrap();
 
                 let value = serde_json::to_value(reply).expect("Failed to serialize reply");
                 if let Err(_) = supervisor.send(&value) {
-                    tx.send((Event::Error("Failed to send to child".into()), None));
+                    tx.send((Event::Error("Failed to send to child".into()), None)).unwrap();
                 }
             },
-            event => tx.send((event, None)),
+            event => tx.send((event, None)).unwrap(),
         }
     }
 
