@@ -1,6 +1,6 @@
 [package]
 name = "sn0int"
-version = "0.3.0"
+version = "0.4.0"
 description = "OSINT framework and package manager"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
@@ -16,7 +16,7 @@ members = ["sn0int-registry/sn0int-common",
            "sn0int-registry"]
 
 [dependencies]
-sn0int-common = { version="0.2.0", path="sn0int-registry/sn0int-common" }
+sn0int-common = { version="0.3.0", path="sn0int-registry/sn0int-common" }
 rustyline = "2"
 log = "0.4"
 env_logger = "0.5"
