@@ -1,5 +1,6 @@
 use errors::*;
 
+use serde;
 use db::Family;
 use engine::ctx::State;
 use engine::structs;

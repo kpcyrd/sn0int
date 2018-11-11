@@ -2,7 +2,12 @@ extern crate sn0int;
 extern crate env_logger;
 extern crate chrootable_https;
 #[macro_use] extern crate log;
+
+// workaround for rustc 1.29.2 support
+#[cfg(not(target_os = "openbsd"))]
 extern crate structopt;
+#[cfg(target_os = "openbsd")]
+#[macro_use] extern crate structopt;
 
 use sn0int::errors::*;
 use sn0int::geoip::{GeoIP, Maxmind};

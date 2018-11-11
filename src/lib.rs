@@ -12,11 +12,16 @@ extern crate publicsuffix;
 extern crate chrootable_https;
 extern crate trust_dns_proto;
 extern crate url;
+#[cfg(target_os = "linux")]
 extern crate nix;
 #[cfg(target_os = "linux")]
 extern crate caps;
 #[cfg(target_os = "linux")]
 extern crate syscallz;
+#[cfg(target_os = "openbsd")]
+#[macro_use] extern crate pledge;
+#[cfg(target_os = "openbsd")]
+extern crate unveil;
 extern crate hlua_badtouch as hlua;
 extern crate base64;
 extern crate kuchiki;

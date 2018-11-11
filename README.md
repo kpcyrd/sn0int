@@ -24,6 +24,8 @@ be shipped much faster.
 - Archlinux: `yaourt -S sn0int`
 - Alpine: `apk add --no-cache sqlite-dev libseccomp-dev cargo` + build from source
 - Debian: `apt install libsqlite3-dev libseccomp-dev` + build from source
+- OpenBSD: `pkg_add sqlite3` + `SQLITE3_LIB_DIR=/usr/local/lib cargo build`
+- OSX: `brew install sqlite3` + build from source
 
 ## License
 

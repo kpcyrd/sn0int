@@ -1,11 +1,18 @@
 use errors::*;
 #[cfg(target_os = "linux")]
 use caps::{self, CapSet};
+#[cfg(target_os = "linux")]
 use nix;
+
+#[cfg(target_os = "openbsd")]
+use pledge::{pledge, Promise, ToPromiseString};
+#[cfg(target_os = "openbsd")]
+use unveil::unveil;
 
 #[cfg(target_os = "linux")]
 pub mod seccomp;
 
+#[cfg(target_os = "linux")]
 static CHROOT: &str = "/var/empty";
 
 
@@ -25,8 +32,18 @@ pub fn fasten_seatbelt() -> Result<()> {
     Ok(())
 }
 
-#[cfg(target_os = "linux")]
 pub fn init() -> Result<()> {
+    #[cfg(target_os = "linux")]
+    init_linux()?;
+
+    #[cfg(target_os = "openbsd")]
+    init_openbsd()?;
+
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+pub fn init_linux() -> Result<()> {
     if let Err(err) = nix::unistd::chroot(CHROOT) {
         // TODO: add setting to make this a hard fail
         warn!("Failed to chroot: {:?}", err);
@@ -43,7 +60,16 @@ pub fn init() -> Result<()> {
     Ok(())
 }
 
-#[cfg(not(target_os = "linux"))]
-pub fn init() -> Result<()> {
+#[cfg(target_os = "openbsd")]
+pub fn init_openbsd() -> Result<()> {
+    unveil("/etc/resolv.conf", "r")
+        .map_err(|_| format_err!("Failed to call unveil"))?;
+
+    // disable further unveil calls
+    unveil("", "")
+        .map_err(|_| format_err!("Failed to call unveil"))?;
+
+    pledge![Stdio, RPath, Dns, Inet]?;
+
     Ok(())
 }
