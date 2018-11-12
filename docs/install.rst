@@ -18,7 +18,7 @@ Debian/Ubuntu/Kali
     $ apt install libsqlite3-dev libseccomp-dev
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
-    $ cargo install
+    $ cargo install -f
 
 Alpine
 ------
@@ -28,7 +28,7 @@ Alpine
     $ apk add --no-cache sqlite-dev libseccomp-dev cargo
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
-    $ cargo install
+    $ cargo install -f
 
 OpenBSD
 -------
@@ -38,7 +38,7 @@ OpenBSD
     $ pkg_add sqlite3
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
-    $ SQLITE3_LIB_DIR=/usr/local/lib cargo install
+    $ cargo install -f
 
 Mac OSX
 -------
@@ -48,7 +48,7 @@ Mac OSX
     $ brew install sqlite3
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
-    $ cargo install
+    $ cargo install -f
 
 Windows
 -------
@@ -63,4 +63,4 @@ This is not recommended and only passively maintained. Please prefer linux in a 
     $ 7z e sqlite3.zip -y
     $ "C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\bin\\lib.exe" /def:sqlite3.def /OUT:sqlite3.lib /machine:x64
     $ export SQLITE3_LIB_DIR="$TRAVIS_BUILD_DIR"
-    $ cargo install
+    $ cargo install -f
