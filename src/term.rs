@@ -74,14 +74,19 @@ impl Spinner {
     }
 
     pub fn tick(&mut self) {
+        print!("{}", self.tick_bytes());
+        io::stdout().flush().unwrap();
+    }
+
+    pub fn tick_bytes(&mut self) -> String {
         if self.i >= self.indicator.len() {
             self.i = 0;
         }
 
-        print!("\r\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.status);
-        io::stdout().flush().unwrap();
-
+        let s = format!("\r\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.status);
         self.i += 1;
+
+        s
     }
 
     pub fn log(&self, line: &str) {
@@ -151,5 +156,65 @@ impl fmt::Display for Prompt {
             write!(f, "[{}]", module.canonical())?;
         }
         write!(f, " > ")
+    }
+}
+
+pub struct StackedSpinners {
+    spinners: Vec<Spinner>,
+    drawn: usize,
+}
+
+impl StackedSpinners {
+    pub fn new() -> StackedSpinners {
+        StackedSpinners {
+            spinners: Vec::new(),
+            drawn: 0,
+        }
+    }
+
+    pub fn add(&mut self, status: String) -> &Spinner {
+        let s = Spinner::random(status);
+        self.spinners.push(s);
+        // TODO
+        self.spinners.get(0).unwrap()
+    }
+
+    pub fn jump2start(&mut self) {
+        if self.drawn > 0 {
+            print!("\x1b[{}A", self.drawn);
+            self.drawn = 0;
+        }
+    }
+
+    pub fn tick(&mut self) {
+        self.jump2start();
+
+        let n = self.spinners.len() -1;
+        for (i, s) in self.spinners.iter_mut().enumerate() {
+            print!("{}", s.tick_bytes());
+            if i < n {
+                print!("\n");
+                self.drawn += 1;
+            }
+        }
+        io::stdout().flush().unwrap();
+    }
+
+    pub fn remove(&mut self, idx: usize) {
+        self.spinners.remove(idx);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.spinners.is_empty()
+    }
+
+    pub fn log(&mut self, line: &str) {
+        self.jump2start();
+        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
+    }
+
+    pub fn error(&mut self, line: &str) {
+        self.jump2start();
+        println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 }
