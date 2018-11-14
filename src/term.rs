@@ -218,6 +218,10 @@ impl StackedSpinners {
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
+    pub fn status(&mut self, status: String) {
+        self.error(&format!("TODO: set status: {:?}", status));
+    }
+
     pub fn clear(&self) {
         print!("\r\x1b[2K");
     }

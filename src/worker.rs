@@ -6,22 +6,45 @@ use engine::{self, Module};
 use models::*;
 use serde_json;
 use shell::Readline;
+use std::result;
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
 use std::thread;
-use term::Spinner;
+use term::{Spinner};
 
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
+    Log(LogEvent),
+    Database(DatabaseEvent),
+    Exit(ExitEvent),
+}
+
+#[derive(Debug)]
+pub enum Event2 {
+    Log(LogEvent),
+    Database((DatabaseEvent, mpsc::Sender<result::Result<Option<i32>, String>>)),
+    Exit(ExitEvent),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ExitEvent {
+    Ok,
+    Err(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum LogEvent {
     Info(String),
     Error(String),
-    Fatal(String),
     Status(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DatabaseEvent {
     Insert(Insert),
     Select((Family, String)),
     Update((String, Update)),
-    Done,
 }
 
 pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &Option<String>) {
@@ -35,7 +58,7 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
 
     let t = thread::spawn(move || {
         if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
-            tx.send((Event::Error(err.to_string()), None)).unwrap();
+            tx.send(Event2::Log(LogEvent::Error(err.to_string()))).unwrap();
         }
     });
 
@@ -44,14 +67,10 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     loop {
         select! {
             recv(rx) -> msg => match msg.ok() {
-                Some((Event::Info(info), _)) => spinner.log(&info),
-                Some((Event::Error(error), _)) => spinner.error(&error),
-                Some((Event::Fatal(error), _)) => {
-                    failed = Some(error);
-                    break;
-                },
-                Some((Event::Status(status), _)) => spinner.status(status),
-                Some((Event::Insert(object), tx)) => {
+                Some(Event2::Log(LogEvent::Info(info))) => spinner.log(&info),
+                Some(Event2::Log(LogEvent::Error(error))) => spinner.error(&error),
+                Some(Event2::Log(LogEvent::Status(status))) => spinner.status(status),
+                Some(Event2::Database((DatabaseEvent::Insert(object), tx))) => {
                     let result = rl.db().insert_generic(&object);
                     debug!("{:?} => {:?}", object, result);
                     let result = match result {
@@ -77,17 +96,15 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                         },
                     };
 
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
+                    tx.send(result).expect("Failed to send db result to channel");
                 },
-                Some((Event::Select((family, value)), tx)) => {
+                Some(Event2::Database((DatabaseEvent::Select((family, value)), tx))) => {
                     let result = rl.db().get_opt(&family, &value)
                         .map_err(|e| e.to_string());
 
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
+                    tx.send(result).expect("Failed to send db result to channel");
                 },
-                Some((Event::Update((object, update)), tx)) => {
+                Some(Event2::Database((DatabaseEvent::Update((object, update)), tx))) => {
                     let result = rl.db().update_generic(&update);
                     debug!("{:?}: {:?} => {:?}", object, update, result);
                     let result = result
@@ -101,10 +118,14 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
                         spinner.log(&format!("Updating {:?} ({})", object, update));
                     }
 
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
+                    tx.send(result).expect("Failed to send db result to channel");
                 },
-                Some((Event::Done, _)) => break,
+                Some(Event2::Exit(event)) => {
+                    if let ExitEvent::Err(error) = event {
+                        failed = Some(error);
+                    }
+                    break;
+                },
                 None => break, // channel closed
             },
             default(timeout) => (),
@@ -134,14 +155,13 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         loop {
             select! {
                 recv(rx) -> msg => match msg.ok() {
-                    Some(Event::Info(info)) => spinner.log(&info),
-                    Some(Event::Error(error)) => spinner.error(&error),
-                    Some(Event::Fatal(error)) => spinner.error(&error),
-                    Some(Event::Status(status)) => spinner.status(status),
-                    Some(Event::Insert(_)) => (),
-                    Some(Event::Select(_)) => (),
-                    Some(Event::Update(_)) => (),
-                    Some(Event::Done) => break,
+                    Some(Event::Log(LogEvent::Info(info))) => spinner.log(&info),
+                    Some(Event::Log(LogEvent::Error(error))) => spinner.error(&error),
+                    Some(Event::Log(LogEvent::Status(status))) => spinner.status(status),
+                    Some(Event::Database(_)) => (),
+                    // TODO: refactor
+                    Some(Event::Exit(ExitEvent::Ok)) => break,
+                    Some(Event::Exit(ExitEvent::Err(error))) => spinner.error(&error),
                     None => break, // channel closed
                 },
                 default(timeout) => (),
@@ -152,7 +172,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
 
     // run work in main thread
     let result = f()?;
-    tx.send(Event::Done)?;
+    tx.send(Event::Exit(ExitEvent::Ok))?;
 
     t.join().expect("thread failed");
 
