@@ -10,8 +10,11 @@ use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::thread;
-use term::{Spinner};
+use term::{Spinner, StackedSpinners, SpinLogger};
+use threadpool::ThreadPool;
 
+
+type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
@@ -22,9 +25,44 @@ pub enum Event {
 
 #[derive(Debug)]
 pub enum Event2 {
+    Start,
     Log(LogEvent),
-    Database((DatabaseEvent, mpsc::Sender<result::Result<Option<i32>, String>>)),
+    Database((DatabaseEvent, DbSender)),
     Exit(ExitEvent),
+}
+
+#[derive(Debug)]
+pub struct MultiEvent {
+    name: String,
+    event: Event2,
+}
+
+impl MultiEvent {
+    pub fn new<I: Into<String>>(name: I, event: Event2) -> MultiEvent {
+        MultiEvent {
+            name: name.into(),
+            event,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EventSender {
+    name: String,
+    tx: channel::Sender<MultiEvent>,
+}
+
+impl EventSender {
+    pub fn new(name: String, tx: channel::Sender<MultiEvent>) -> EventSender {
+        EventSender {
+            name,
+            tx,
+        }
+    }
+
+    pub fn send(&self, event: Event2) {
+        self.tx.send(MultiEvent::new(self.name.clone(), event)).unwrap();
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -41,7 +79,7 @@ pub enum LogEvent {
 }
 
 impl LogEvent {
-    pub fn apply(self, spinner: &mut Spinner) {
+    pub fn apply<T: SpinLogger>(self, spinner: &mut T) {
         match self {
             LogEvent::Info(info) => spinner.log(&info),
             LogEvent::Error(error) => spinner.error(&error),
@@ -58,7 +96,7 @@ pub enum DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    pub fn apply(self, tx: mpsc::Sender<result::Result<Option<i32>, String>>, spinner: &mut Spinner, db: &Database) {
+    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database) {
         match self {
             DatabaseEvent::Insert(object) => {
                 let result = db.insert_generic(&object);
@@ -114,48 +152,82 @@ impl DatabaseEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &Option<String>) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>) {
+    let mut stack = StackedSpinners::new();
+
     let (tx, rx) = channel::bounded(1);
+    let pool = ThreadPool::new(4); // TODO: this should by dynamic
 
-    let name = match pretty_arg {
-        Some(pretty_arg) => format!("{} ({:?})", module.canonical(), pretty_arg),
-        None => module.canonical(),
-    };
-    let mut spinner = Spinner::random(format!("Running {}", name));
+    let mut expected = 0;
+    for (arg, pretty_arg) in args {
+        let name = match pretty_arg {
+            Some(pretty_arg) => format!("{} ({:?})", module.canonical(), pretty_arg),
+            None => module.canonical(),
+        };
 
-    let t = thread::spawn(move || {
-        if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
-            tx.send(Event2::Log(LogEvent::Error(err.to_string()))).unwrap();
-        }
-    });
+        let tx = tx.clone();
+        let module = module.clone();
+        let signal_register = rl.signal_register().clone();
+        pool.execute(move || {
+            let tx = EventSender::new(name, tx);
 
-    let mut failed = None;
+            if signal_register.ctrlc_received() {
+                tx.send(Event2::Exit(ExitEvent::Ok));
+                return;
+            }
+
+            tx.send(Event2::Start);
+            let event = match engine::isolation::spawn_module(module, &tx, arg) {
+                Ok(_) => ExitEvent::Ok,
+                Err(err) => ExitEvent::Err(err.to_string()),
+            };
+            tx.send(Event2::Exit(event));
+        });
+        expected += 1;
+    }
+
+    let mut failed = Vec::new();
     let timeout = Duration::from_millis(100);
     loop {
         select! {
             recv(rx) -> msg => match msg.ok() {
-                Some(Event2::Log(log)) => log.apply(&mut spinner),
-                Some(Event2::Database((db, tx))) => db.apply(tx, &mut spinner, rl.db()),
-                Some(Event2::Exit(event)) => {
-                    if let ExitEvent::Err(error) = event {
-                        failed = Some(error);
+                Some(event) => {
+                    let (name, event) = (event.name, event.event);
+
+                    match event {
+                        Event2::Start => {
+                            let label = format!("Runnig {}", name);
+                            stack.add(name, label);
+                        },
+                        Event2::Log(log) => log.apply(&mut stack),
+                        Event2::Database((db, tx)) => db.apply(tx, &mut stack, rl.db()),
+                        Event2::Exit(event) => {
+                            stack.remove(&name);
+                            if let ExitEvent::Err(error) = event {
+                                failed.push((name, error));
+                            }
+
+                            // if every task reported back, exit
+                            expected -= 1;
+                            info!("spawn_all is expecting {} more results", expected);
+                            if expected == 0 {
+                                break;
+                            }
+                        },
                     }
-                    break;
                 },
                 None => break, // channel closed
             },
             default(timeout) => (),
         }
-        spinner.tick();
+        stack.tick();
     }
 
-    t.join().expect("thread failed");
-
-    if let Some(fail) = failed {
-        spinner.fail(&format!("Failed {}: {}", name, fail));
-    } else {
-        spinner.clear();
+    for (name, fail) in failed {
+        stack.error(&format!("Failed {}: {}", name, fail));
     }
+
+    stack.clear();
 }
 
 pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
@@ -171,7 +243,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         loop {
             select! {
                 recv(rx) -> msg => match msg.ok() {
-                    Some(Event::Log(log)) => log.apply(&mut spinner),
+                    Some(Event::Log(log)) => log.apply(&mut *spinner),
                     Some(Event::Database(_)) => (),
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,

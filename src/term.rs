@@ -1,6 +1,7 @@
 use db;
 use engine::Module;
 use rand::prelude::*;
+use std::collections::HashMap;
 use std::fmt;
 use std::io;
 use std::io::prelude::*;
@@ -37,7 +38,6 @@ pub static SPINNERS: &[&[&str]] = &[
     &["⠁", "⠉", "⠙", "⠚", "⠒", "⠂", "⠂", "⠒", "⠲", "⠴", "⠤", "⠄", "⠄", "⠤", "⠴", "⠲", "⠒", "⠂", "⠂", "⠒", "⠚", "⠙", "⠉", "⠁"],
     &["⢹", "⢺", "⢼", "⣸", "⣇", "⡧", "⡗", "⡏"],
     &["▙", "▛", "▜", "▟"],
-    &["☱", "☲", "☴"],
     &["▓", "▒", "░", "▒"],
     &["⠂       ", "⠈       ", " ⠂      ", " ⠠      ", "  ⡀     ", "  ⠠     ", "   ⠂    ", "   ⠈    ", "    ⠂   ", "    ⠠   ", "     ⡀  ", "     ⠠  ", "      ⠂ ", "      ⠈ ", "       ⠂", "       ⠠", "       ⡀", "      ⠠ ", "      ⠂ ", "     ⠈  ", "     ⠂  ", "    ⠠   ", "    ⡀   ", "   ⠠    ", "   ⠂    ", "  ⠈     ", "  ⠂     ", " ⠠      ", " ⡀      ", "⠠       "],
     &["|\\____________", "_|\\___________", "__|\\__________", "___|\\_________", "____|\\________", "_____|\\_______", "______|\\______", "_______|\\_____", "________|\\____", "_________|\\___", "__________|\\__", "___________|\\_", "____________|\\", "____________/|", "___________/|_", "__________/|__", "_________/|___", "________/|____", "_______/|_____", "______/|______", "_____/|_______", "____/|________", "___/|_________", "__/|__________", "_/|___________", "/|____________"],
@@ -48,6 +48,14 @@ pub static SPINNERS: &[&[&str]] = &[
     &["⠃", "⠊", "⠒", "⠢", "⠆", "⠰", "⠔", "⠒", "⠑", "⠘"],
     &[" ", "⠁", "⠉", "⠙", "⠚", "⠖", "⠦", "⠤", "⠠"],
 ];
+
+pub trait SpinLogger {
+    fn log(&mut self, line: &str);
+
+    fn error(&mut self, line: &str);
+
+    fn status(&mut self, status: String);
+}
 
 pub struct Spinner {
     indicator: &'static [&'static str],
@@ -62,10 +70,6 @@ impl Spinner {
             status,
             i: 0,
         }
-    }
-
-    pub fn status(&mut self, status: String) {
-        self.status = status;
     }
 
     pub fn random(status: String) -> Spinner {
@@ -83,18 +87,10 @@ impl Spinner {
             self.i = 0;
         }
 
-        let s = format!("\r\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.status);
+        let s = format!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}...", self.indicator[self.i], self.status);
         self.i += 1;
 
         s
-    }
-
-    pub fn log(&self, line: &str) {
-        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
-    }
-
-    pub fn error(&self, line: &str) {
-        println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
     pub fn done(&self) {
@@ -110,9 +106,23 @@ impl Spinner {
         print!("\r\x1b[2K");
     }
 
-    pub fn fail(&self, err: &str) {
+    pub fn fail(&mut self, err: &str) {
         self.error(err);
         self.clear();
+    }
+}
+
+impl SpinLogger for Spinner {
+    fn log(&mut self, line: &str) {
+        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
+    }
+
+    fn error(&mut self, line: &str) {
+        println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
+    }
+
+    fn status(&mut self, status: String) {
+        self.status = status;
     }
 }
 
@@ -160,23 +170,25 @@ impl fmt::Display for Prompt {
 }
 
 pub struct StackedSpinners {
-    spinners: Vec<Spinner>,
+    spinners: HashMap<String, Spinner>,
     drawn: usize,
 }
 
 impl StackedSpinners {
     pub fn new() -> StackedSpinners {
         StackedSpinners {
-            spinners: Vec::new(),
+            spinners: HashMap::new(),
             drawn: 0,
         }
     }
 
-    pub fn add(&mut self, status: String) -> &Spinner {
+    pub fn add(&mut self, key: String, status: String) {
         let s = Spinner::random(status);
-        self.spinners.push(s);
-        // TODO
-        self.spinners.get(0).unwrap()
+        self.spinners.insert(key, s);
+    }
+
+    pub fn remove(&mut self, key: &String) -> Option<Spinner> {
+        self.spinners.remove(key)
     }
 
     pub fn jump2start(&mut self) {
@@ -189,8 +201,12 @@ impl StackedSpinners {
     pub fn tick(&mut self) {
         self.jump2start();
 
+        if self.spinners.is_empty() {
+            return;
+        }
+
         let n = self.spinners.len() -1;
-        for (i, s) in self.spinners.iter_mut().enumerate() {
+        for (i, (_, s)) in self.spinners.iter_mut().enumerate() {
             print!("{}", s.tick_bytes());
             if i < n {
                 print!("\n");
@@ -200,29 +216,27 @@ impl StackedSpinners {
         io::stdout().flush().unwrap();
     }
 
-    pub fn remove(&mut self, idx: usize) {
-        self.spinners.remove(idx);
-    }
-
     pub fn is_empty(&self) -> bool {
         self.spinners.is_empty()
     }
 
-    pub fn log(&mut self, line: &str) {
+    pub fn clear(&self) {
+        print!("\r\x1b[2K");
+    }
+}
+
+impl SpinLogger for StackedSpinners {
+    fn log(&mut self, line: &str) {
         self.jump2start();
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
     }
 
-    pub fn error(&mut self, line: &str) {
+    fn error(&mut self, line: &str) {
         self.jump2start();
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
-    pub fn status(&mut self, status: String) {
+    fn status(&mut self, status: String) {
         self.error(&format!("TODO: set status: {:?}", status));
-    }
-
-    pub fn clear(&self) {
-        print!("\r\x1b[2K");
     }
 }

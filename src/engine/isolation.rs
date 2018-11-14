@@ -1,11 +1,10 @@
 use errors::*;
-use channel;
 use chrootable_https::dns::DnsConfig;
 use engine::{Environment, Module, Reporter};
 use geoip::{GeoIP, AsnDB};
 use psl::Psl;
 use serde_json;
-use worker::{Event, Event2, LogEvent, DatabaseEvent, ExitEvent};
+use worker::{Event, Event2, LogEvent, DatabaseEvent, ExitEvent, EventSender};
 
 use std::env;
 use std::io::prelude::*;
@@ -98,14 +97,14 @@ impl Supervisor {
         }
     }
 
-    pub fn send_event_callback(&mut self, event: DatabaseEvent, tx: &channel::Sender<Event2>) {
+    pub fn send_event_callback(&mut self, event: DatabaseEvent, tx: &EventSender) {
         let (tx2, rx2) = mpsc::channel();
-        tx.send(Event2::Database((event, tx2))).unwrap();
+        tx.send(Event2::Database((event, tx2)));
         let reply = rx2.recv().unwrap();
 
         let value = serde_json::to_value(reply).expect("Failed to serialize reply");
         if let Err(_) = self.send(&value) {
-            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into()))).unwrap();
+            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
         }
     }
 }
@@ -153,7 +152,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: channel::Sender<Event2>, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value) -> Result<()> {
     let dns_config = DnsConfig::from_system()?;
 
     let psl = Psl::open_into_string()?;
@@ -163,10 +162,12 @@ pub fn spawn_module(module: Module, tx: channel::Sender<Event2>, arg: serde_json
 
     loop {
         match supervisor.recv()? {
-            Event::Log(event) => tx.send(Event2::Log(event)).unwrap(),
+            Event::Log(event) => tx.send(Event2::Log(event)),
             Event::Database(object) => supervisor.send_event_callback(object, &tx),
             Event::Exit(event) => {
-                tx.send(Event2::Exit(event)).unwrap();
+                if let ExitEvent::Err(err) = event {
+                    tx.send(Event2::Log(LogEvent::Error(err)));
+                }
                 break;
             },
         }

@@ -34,6 +34,7 @@ extern crate toml;
 extern crate maxminddb;
 extern crate tar;
 extern crate libflate;
+extern crate threadpool;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_urlencoded;

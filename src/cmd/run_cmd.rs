@@ -42,16 +42,12 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
         Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
         Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
         None => Ok(vec![(serde_json::Value::Null, None)]),
-    };
+    }?;
 
-    rl.catch_ctrl();
-    for (arg, pretty_arg) in args? {
-        worker::spawn(rl, module.clone(), arg, &pretty_arg);
-        if rl.ctrlc_received() {
-            break;
-        }
-    }
-    rl.reset_ctrlc();
+    rl.signal_register().catch_ctrl();
+    worker::spawn(rl, &module, args);
+    rl.signal_register().reset_ctrlc();
+
     term::info(&format!("Finished {}", module.canonical()));
 
     Ok(())
