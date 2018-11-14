@@ -166,7 +166,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
     let mut expected = 0;
     for (arg, pretty_arg) in args {
         let name = match pretty_arg {
-            Some(pretty_arg) => format!("{} ({:?})", module.canonical(), pretty_arg),
+            Some(pretty_arg) => format!("{:?}", pretty_arg),
             None => module.canonical(),
         };
 
@@ -201,11 +201,11 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
 
                     match event {
                         Event2::Start => {
-                            let label = format!("Runnig {}", name);
+                            let label = format!("Investigating {}", name);
                             stack.add(name, label);
                         },
-                        Event2::Log(log) => log.apply(&mut stack),
-                        Event2::Database((db, tx)) => db.apply(tx, &mut stack, rl.db()),
+                        Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
+                        Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db()),
                         Event2::Exit(event) => {
                             stack.remove(&name);
                             if let ExitEvent::Err(error) = event {

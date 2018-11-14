@@ -223,6 +223,10 @@ impl StackedSpinners {
     pub fn clear(&self) {
         print!("\r\x1b[2K");
     }
+
+    pub fn prefixed<I: Into<String>>(&mut self, name: I) -> PrefixedLogger<StackedSpinners> {
+        PrefixedLogger::new(self, name)
+    }
 }
 
 impl SpinLogger for StackedSpinners {
@@ -238,5 +242,33 @@ impl SpinLogger for StackedSpinners {
 
     fn status(&mut self, status: String) {
         self.error(&format!("TODO: set status: {:?}", status));
+    }
+}
+
+pub struct PrefixedLogger<'a, T: 'a + SpinLogger> {
+    s: &'a mut T,
+    prefix: String,
+}
+
+impl<'a, T: SpinLogger> PrefixedLogger<'a, T> {
+    pub fn new<I: Into<String>>(s: &'a mut T, prefix: I) -> PrefixedLogger<T> {
+        PrefixedLogger {
+            s,
+            prefix: prefix.into(),
+        }
+    }
+}
+
+impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
+    fn log(&mut self, line: &str) {
+        self.s.log(&format!("{:50}: {}", self.prefix, line))
+    }
+
+    fn error(&mut self, line: &str) {
+        self.s.error(&format!("{:50}: {}", self.prefix, line))
+    }
+
+    fn status(&mut self, status: String) {
+        self.s.status(format!("{:50}: {}", self.prefix, status))
     }
 }
