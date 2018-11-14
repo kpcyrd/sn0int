@@ -1,7 +1,7 @@
 use errors::*;
 
 use channel;
-use db::{DbChange, Family};
+use db::{Database, DbChange, Family};
 use engine::{self, Module};
 use models::*;
 use serde_json;
@@ -40,11 +40,78 @@ pub enum LogEvent {
     Status(String),
 }
 
+impl LogEvent {
+    pub fn apply(self, spinner: &mut Spinner) {
+        match self {
+            LogEvent::Info(info) => spinner.log(&info),
+            LogEvent::Error(error) => spinner.error(&error),
+            LogEvent::Status(status) => spinner.status(status),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DatabaseEvent {
     Insert(Insert),
     Select((Family, String)),
     Update((String, Update)),
+}
+
+impl DatabaseEvent {
+    pub fn apply(self, tx: mpsc::Sender<result::Result<Option<i32>, String>>, spinner: &mut Spinner, db: &Database) {
+        match self {
+            DatabaseEvent::Insert(object) => {
+                let result = db.insert_generic(&object);
+                debug!("{:?} => {:?}", object, result);
+                let result = match result {
+                    Ok((DbChange::Insert, id)) => {
+                        // TODO: replace id with actual object(?)
+                        if let Ok(obj) = object.printable(db) {
+                            spinner.log(&obj.to_string());
+                        } else {
+                            spinner.error(&format!("Failed to query necessary fields for {:?}", object));
+                        }
+                        Ok(Some(id))
+                    },
+                    Ok((DbChange::Update(update), id)) => {
+                        // TODO: replace id with actual object(?)
+                        spinner.log(&format!("Updating {:?} ({})", object.value(), update));
+                        Ok(Some(id))
+                    },
+                    Ok((DbChange::None, id)) => Ok(Some(id)),
+                    Err(err) => {
+                        let err = err.to_string();
+                        spinner.error(&err);
+                        Err(err)
+                    },
+                };
+
+                tx.send(result).expect("Failed to send db result to channel");
+            },
+            DatabaseEvent::Select((family, value)) => {
+                let result = db.get_opt(&family, &value)
+                    .map_err(|e| e.to_string());
+
+                tx.send(result).expect("Failed to send db result to channel");
+            },
+            DatabaseEvent::Update((object, update)) => {
+                let result = db.update_generic(&update);
+                debug!("{:?}: {:?} => {:?}", object, update, result);
+                let result = result
+                    .map(Some)
+                    .map_err(|e| e.to_string());
+
+                if let Err(ref err) = result {
+                    spinner.error(&err);
+                } else {
+                    // TODO: bring this somewhat closer to upsert code
+                    spinner.log(&format!("Updating {:?} ({})", object, update));
+                }
+
+                tx.send(result).expect("Failed to send db result to channel");
+            },
+        }
+    }
 }
 
 pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &Option<String>) {
@@ -67,59 +134,8 @@ pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_a
     loop {
         select! {
             recv(rx) -> msg => match msg.ok() {
-                Some(Event2::Log(LogEvent::Info(info))) => spinner.log(&info),
-                Some(Event2::Log(LogEvent::Error(error))) => spinner.error(&error),
-                Some(Event2::Log(LogEvent::Status(status))) => spinner.status(status),
-                Some(Event2::Database((DatabaseEvent::Insert(object), tx))) => {
-                    let result = rl.db().insert_generic(&object);
-                    debug!("{:?} => {:?}", object, result);
-                    let result = match result {
-                        Ok((DbChange::Insert, id)) => {
-                            // TODO: replace id with actual object(?)
-                            if let Ok(obj) = object.printable(rl.db()) {
-                                spinner.log(&obj.to_string());
-                            } else {
-                                spinner.error(&format!("Failed to query necessary fields for {:?}", object));
-                            }
-                            Ok(Some(id))
-                        },
-                        Ok((DbChange::Update(update), id)) => {
-                            // TODO: replace id with actual object(?)
-                            spinner.log(&format!("Updating {:?} ({})", object.value(), update));
-                            Ok(Some(id))
-                        },
-                        Ok((DbChange::None, id)) => Ok(Some(id)),
-                        Err(err) => {
-                            let err = err.to_string();
-                            spinner.error(&err);
-                            Err(err)
-                        },
-                    };
-
-                    tx.send(result).expect("Failed to send db result to channel");
-                },
-                Some(Event2::Database((DatabaseEvent::Select((family, value)), tx))) => {
-                    let result = rl.db().get_opt(&family, &value)
-                        .map_err(|e| e.to_string());
-
-                    tx.send(result).expect("Failed to send db result to channel");
-                },
-                Some(Event2::Database((DatabaseEvent::Update((object, update)), tx))) => {
-                    let result = rl.db().update_generic(&update);
-                    debug!("{:?}: {:?} => {:?}", object, update, result);
-                    let result = result
-                        .map(Some)
-                        .map_err(|e| e.to_string());
-
-                    if let Err(ref err) = result {
-                        spinner.error(&err);
-                    } else {
-                        // TODO: bring this somewhat closer to upsert code
-                        spinner.log(&format!("Updating {:?} ({})", object, update));
-                    }
-
-                    tx.send(result).expect("Failed to send db result to channel");
-                },
+                Some(Event2::Log(log)) => log.apply(&mut spinner),
+                Some(Event2::Database((db, tx))) => db.apply(tx, &mut spinner, rl.db()),
                 Some(Event2::Exit(event)) => {
                     if let ExitEvent::Err(error) = event {
                         failed = Some(error);
@@ -155,9 +171,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         loop {
             select! {
                 recv(rx) -> msg => match msg.ok() {
-                    Some(Event::Log(LogEvent::Info(info))) => spinner.log(&info),
-                    Some(Event::Log(LogEvent::Error(error))) => spinner.error(&error),
-                    Some(Event::Log(LogEvent::Status(status))) => spinner.status(status),
+                    Some(Event::Log(log)) => log.apply(&mut spinner),
                     Some(Event::Database(_)) => (),
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,
