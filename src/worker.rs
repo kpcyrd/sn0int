@@ -153,6 +153,11 @@ impl DatabaseEvent {
 }
 
 pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>) {
+    // This function hangs if args is empty, so return early if that's the case
+    if args.is_empty() {
+        return;
+    }
+
     let mut stack = StackedSpinners::new();
 
     let (tx, rx) = channel::bounded(1);
