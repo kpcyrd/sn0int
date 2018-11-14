@@ -53,6 +53,8 @@ pub struct Run {
     pub module: Option<String>,
     #[structopt(short="f", long="file", conflicts_with="module")]
     pub file: Option<String>,
+    #[structopt(short="j", long="threads", default_value="1")]
+    pub threads: usize,
 }
 
 #[derive(Debug, StructOpt)]

@@ -152,7 +152,7 @@ impl DatabaseEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;
@@ -161,7 +161,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
     let mut stack = StackedSpinners::new();
 
     let (tx, rx) = channel::bounded(1);
-    let pool = ThreadPool::new(4); // TODO: this should by dynamic
+    let pool = ThreadPool::new(threads);
 
     let mut expected = 0;
     for (arg, pretty_arg) in args {

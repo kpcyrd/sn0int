@@ -19,11 +19,11 @@ members = ["sn0int-registry/sn0int-common",
 sn0int-common = { version="0.3.0", path="sn0int-registry/sn0int-common" }
 rustyline = "2"
 log = "0.4"
-env_logger = "0.5"
+env_logger = "0.6"
 hlua-badtouch = "0.4"
 structopt = "0.2"
 failure = "0.1"
-rand = "0.5"
+rand = "0.6"
 colored = "1.6"
 lazy_static = "1.0"
 shellwords = "1.0"

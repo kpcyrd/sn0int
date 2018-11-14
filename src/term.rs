@@ -73,7 +73,7 @@ impl Spinner {
     }
 
     pub fn random(status: String) -> Spinner {
-        let indicator = thread_rng().choose(SPINNERS).unwrap();
+        let indicator = SPINNERS.choose(&mut thread_rng()).unwrap();
         Spinner::new(indicator, status)
     }
 

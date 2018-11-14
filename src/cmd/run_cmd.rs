@@ -13,6 +13,8 @@ use worker;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
+    #[structopt(short="j", long="threads", default_value="1")]
+    threads: usize,
 }
 
 fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
@@ -28,7 +30,7 @@ fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter)
         .collect()
 }
 
-pub fn execute(rl: &mut Readline) -> Result<()> {
+pub fn execute(rl: &mut Readline, threads: usize) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -45,7 +47,7 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
     }?;
 
     rl.signal_register().catch_ctrl();
-    worker::spawn(rl, &module, args);
+    worker::spawn(rl, &module, args, threads);
     rl.signal_register().reset_ctrlc();
 
     term::info(&format!("Finished {}", module.canonical()));
@@ -54,6 +56,6 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
-    let _args = Args::from_iter_safe(args)?;
-    execute(rl)
+    let args = Args::from_iter_safe(args)?;
+    execute(rl, args.threads)
 }
