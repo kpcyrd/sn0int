@@ -181,7 +181,7 @@ impl StackedSpinners {
 
     pub fn jump2start(&mut self) {
         if self.drawn > 0 {
-            print!("\x1b[{}A", self.drawn);
+            print!("\r\x1b[2K\x1b[{}A", self.drawn);
             self.drawn = 0;
         }
     }
@@ -216,5 +216,9 @@ impl StackedSpinners {
     pub fn error(&mut self, line: &str) {
         self.jump2start();
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
+    }
+
+    pub fn clear(&self) {
+        print!("\r\x1b[2K");
     }
 }

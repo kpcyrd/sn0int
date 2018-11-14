@@ -15,9 +15,11 @@ fn main() {
             thread::sleep(Duration::from_millis(100));
             stack.tick();
         }
-        stack.log("ohai");
-        // stack.remove(0);
+        // stack.log("ohai");
+        stack.remove(0);
     }
+
+    stack.clear();
 
     // stack.finish("Done".to_string());
 }
