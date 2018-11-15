@@ -12,6 +12,7 @@ use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
+use sn0int::psl::Psl;
 use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
@@ -50,10 +51,11 @@ fn run_sandbox() -> Result<()> {
 
     let path = AsnDB::cache_path()?;
     let asn = AsnDB::open(&path)?;
+    let psl = Psl::open_into_string()?;
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn)
+    engine::isolation::run_worker(geoip, asn, psl)
 }
 
 fn run() -> Result<()> {
