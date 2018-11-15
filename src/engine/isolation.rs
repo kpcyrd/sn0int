@@ -1,15 +1,14 @@
 use errors::*;
-use channel;
 use chrootable_https::dns::DnsConfig;
-use engine::{Environment, Module, Event, Reporter};
+use engine::{Environment, Module, Reporter};
 use geoip::{GeoIP, AsnDB};
 use psl::Psl;
 use serde_json;
+use worker::{Event, Event2, LogEvent, DatabaseEvent, ExitEvent, EventSender};
 
 use std::env;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufRead, Stdin, Stdout};
-use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
@@ -98,14 +97,14 @@ impl Supervisor {
         }
     }
 
-    pub fn send_event_callback(&mut self, event: Event, tx: &channel::Sender<(Event, Option<mpsc::Sender<result::Result<Option<i32>, String>>>)>) {
+    pub fn send_event_callback(&mut self, event: DatabaseEvent, tx: &EventSender) {
         let (tx2, rx2) = mpsc::channel();
-        tx.send((event, Some(tx2))).unwrap();
+        tx.send(Event2::Database((event, tx2)));
         let reply = rx2.recv().unwrap();
 
         let value = serde_json::to_value(reply).expect("Failed to serialize reply");
         if let Err(_) = self.send(&value) {
-            tx.send((Event::Error("Failed to send to child".into()), None)).unwrap();
+            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
         }
     }
 }
@@ -153,7 +152,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sender<result::Result<Option<i32>, String>>>)>, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value) -> Result<()> {
     let dns_config = DnsConfig::from_system()?;
 
     let psl = Psl::open_into_string()?;
@@ -163,15 +162,14 @@ pub fn spawn_module(module: Module, tx: channel::Sender<(Event, Option<mpsc::Sen
 
     loop {
         match supervisor.recv()? {
-            Event::Done => break,
-            Event::Fatal(err) => {
-                tx.send((Event::Fatal(err), None)).unwrap();
+            Event::Log(event) => tx.send(Event2::Log(event)),
+            Event::Database(object) => supervisor.send_event_callback(object, &tx),
+            Event::Exit(event) => {
+                if let ExitEvent::Err(err) = event {
+                    tx.send(Event2::Log(LogEvent::Error(err)));
+                }
                 break;
             },
-            Event::Insert(object) => supervisor.send_event_callback(Event::Insert(object), &tx),
-            Event::Select(object) => supervisor.send_event_callback(Event::Select(object), &tx),
-            Event::Update(object) => supervisor.send_event_callback(Event::Update(object), &tx),
-            event => tx.send((event, None)).unwrap(),
         }
     }
 
@@ -200,11 +198,11 @@ pub fn run_worker(geoip: GeoIP, asn: AsnDB) -> Result<()> {
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 
-    if let Err(err) = result {
-        reporter.send(&Event::Fatal(err.to_string()))?;
-    } else {
-        reporter.send(&Event::Done)?;
-    }
+    let event = match result {
+        Ok(_) => ExitEvent::Ok,
+        Err(err) => ExitEvent::Err(err.to_string()),
+    };
+    reporter.send(&Event::Exit(event))?;
 
     Ok(())
 }

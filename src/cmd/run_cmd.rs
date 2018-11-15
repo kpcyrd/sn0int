@@ -13,6 +13,8 @@ use worker;
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
+    #[structopt(short="j", long="threads", default_value="1")]
+    threads: usize,
 }
 
 fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
@@ -28,7 +30,7 @@ fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter)
         .collect()
 }
 
-pub fn execute(rl: &mut Readline) -> Result<()> {
+pub fn execute(rl: &mut Readline, threads: usize) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -42,22 +44,18 @@ pub fn execute(rl: &mut Readline) -> Result<()> {
         Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
         Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
         None => Ok(vec![(serde_json::Value::Null, None)]),
-    };
+    }?;
 
-    rl.catch_ctrl();
-    for (arg, pretty_arg) in args? {
-        worker::spawn(rl, module.clone(), arg, &pretty_arg);
-        if rl.ctrlc_received() {
-            break;
-        }
-    }
-    rl.reset_ctrlc();
+    rl.signal_register().catch_ctrl();
+    worker::spawn(rl, &module, args, threads);
+    rl.signal_register().reset_ctrlc();
+
     term::info(&format!("Finished {}", module.canonical()));
 
     Ok(())
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
-    let _args = Args::from_iter_safe(args)?;
-    execute(rl)
+    let args = Args::from_iter_safe(args)?;
+    execute(rl, args.threads)
 }

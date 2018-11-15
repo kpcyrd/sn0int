@@ -118,7 +118,7 @@ pub struct Readline {
     psl: Psl,
     config: Config,
     engine: Engine,
-    signal_register: Arc<AtomicUsize>,
+    signal_register: Arc<SignalRegister>,
 }
 
 impl Readline {
@@ -141,7 +141,7 @@ impl Readline {
             psl,
             config,
             engine,
-            signal_register: Arc::new(AtomicUsize::new(1)),
+            signal_register: Arc::new(SignalRegister::new()),
         };
 
         rl.reload_module_cache();
@@ -278,26 +278,41 @@ impl Readline {
             // value of 2 afterwards. If we don't want to catch ctrlcs anymore we set the ctr back to 1.
             // This is important so we can still terminate the process while we are reading input from stdin,
             // eg while waiting for input during `add domain`.
-            let prev = ctr.fetch_add(1, Ordering::SeqCst);
+            let prev = ctr.add_ctrlc();
             if prev == 1 {
                 ::std::process::exit(0);
             }
         }).map_err(Error::from)
     }
 
-    pub fn catch_ctrl(&self) {
-        self.signal_register.store(0, Ordering::SeqCst);
-    }
-
-    pub fn ctrlc_received(&self) -> bool {
-        self.signal_register.load(Ordering::SeqCst) == 1
-    }
-
-    pub fn reset_ctrlc(&self) {
-        self.signal_register.store(1, Ordering::SeqCst);
+    pub fn signal_register(&self) -> &Arc<SignalRegister> {
+        &self.signal_register
     }
 }
 
+pub struct SignalRegister(AtomicUsize);
+
+impl SignalRegister {
+    pub fn new() -> SignalRegister {
+        SignalRegister(AtomicUsize::new(1))
+    }
+
+    pub fn catch_ctrl(&self) {
+        self.0.store(0, Ordering::SeqCst);
+    }
+
+    pub fn add_ctrlc(&self) -> usize {
+        self.0.fetch_add(1, Ordering::SeqCst)
+    }
+
+    pub fn ctrlc_received(&self) -> bool {
+        self.0.load(Ordering::SeqCst) == 1
+    }
+
+    pub fn reset_ctrlc(&self) {
+        self.0.store(1, Ordering::SeqCst);
+    }
+}
 
 #[inline]
 pub fn print_banner() {

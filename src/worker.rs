@@ -1,124 +1,238 @@
 use errors::*;
 
 use channel;
-use db::{DbChange, Family};
+use db::{Database, DbChange, Family};
 use engine::{self, Module};
 use models::*;
 use serde_json;
 use shell::Readline;
+use std::result;
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
-use std::sync::{Arc, Mutex};
 use std::thread;
-use term::Spinner;
+use term::{Spinner, StackedSpinners, SpinLogger};
+use threadpool::ThreadPool;
 
+
+type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
+    Log(LogEvent),
+    Database(DatabaseEvent),
+    Exit(ExitEvent),
+}
+
+#[derive(Debug)]
+pub enum Event2 {
+    Start,
+    Log(LogEvent),
+    Database((DatabaseEvent, DbSender)),
+    Exit(ExitEvent),
+}
+
+#[derive(Debug)]
+pub struct MultiEvent {
+    name: String,
+    event: Event2,
+}
+
+impl MultiEvent {
+    pub fn new<I: Into<String>>(name: I, event: Event2) -> MultiEvent {
+        MultiEvent {
+            name: name.into(),
+            event,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct EventSender {
+    name: String,
+    tx: channel::Sender<MultiEvent>,
+}
+
+impl EventSender {
+    pub fn new(name: String, tx: channel::Sender<MultiEvent>) -> EventSender {
+        EventSender {
+            name,
+            tx,
+        }
+    }
+
+    pub fn send(&self, event: Event2) {
+        self.tx.send(MultiEvent::new(self.name.clone(), event)).unwrap();
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ExitEvent {
+    Ok,
+    Err(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum LogEvent {
     Info(String),
     Error(String),
-    Fatal(String),
     Status(String),
+}
+
+impl LogEvent {
+    pub fn apply<T: SpinLogger>(self, spinner: &mut T) {
+        match self {
+            LogEvent::Info(info) => spinner.log(&info),
+            LogEvent::Error(error) => spinner.error(&error),
+            LogEvent::Status(status) => spinner.status(status),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DatabaseEvent {
     Insert(Insert),
     Select((Family, String)),
     Update((String, Update)),
-    Done,
 }
 
-pub fn spawn(rl: &mut Readline, module: Module, arg: serde_json::Value, pretty_arg: &Option<String>) {
-    let (tx, rx) = channel::bounded(1);
+impl DatabaseEvent {
+    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database) {
+        match self {
+            DatabaseEvent::Insert(object) => {
+                let result = db.insert_generic(&object);
+                debug!("{:?} => {:?}", object, result);
+                let result = match result {
+                    Ok((DbChange::Insert, id)) => {
+                        // TODO: replace id with actual object(?)
+                        if let Ok(obj) = object.printable(db) {
+                            spinner.log(&obj.to_string());
+                        } else {
+                            spinner.error(&format!("Failed to query necessary fields for {:?}", object));
+                        }
+                        Ok(Some(id))
+                    },
+                    Ok((DbChange::Update(update), id)) => {
+                        // TODO: replace id with actual object(?)
+                        spinner.log(&format!("Updating {:?} ({})", object.value(), update));
+                        Ok(Some(id))
+                    },
+                    Ok((DbChange::None, id)) => Ok(Some(id)),
+                    Err(err) => {
+                        let err = err.to_string();
+                        spinner.error(&err);
+                        Err(err)
+                    },
+                };
 
-    let name = match pretty_arg {
-        Some(pretty_arg) => format!("{} ({:?})", module.canonical(), pretty_arg),
-        None => module.canonical(),
-    };
-    let mut spinner = Spinner::random(format!("Running {}", name));
+                tx.send(result).expect("Failed to send db result to channel");
+            },
+            DatabaseEvent::Select((family, value)) => {
+                let result = db.get_opt(&family, &value)
+                    .map_err(|e| e.to_string());
 
-    let t = thread::spawn(move || {
-        if let Err(err) = engine::isolation::spawn_module(module, tx.clone(), arg) {
-            tx.send((Event::Error(err.to_string()), None)).unwrap();
+                tx.send(result).expect("Failed to send db result to channel");
+            },
+            DatabaseEvent::Update((object, update)) => {
+                let result = db.update_generic(&update);
+                debug!("{:?}: {:?} => {:?}", object, update, result);
+                let result = result
+                    .map(Some)
+                    .map_err(|e| e.to_string());
+
+                if let Err(ref err) = result {
+                    spinner.error(&err);
+                } else {
+                    // TODO: bring this somewhat closer to upsert code
+                    spinner.log(&format!("Updating {:?} ({})", object, update));
+                }
+
+                tx.send(result).expect("Failed to send db result to channel");
+            },
         }
-    });
+    }
+}
 
-    let mut failed = None;
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize) {
+    // This function hangs if args is empty, so return early if that's the case
+    if args.is_empty() {
+        return;
+    }
+
+    let mut stack = StackedSpinners::new();
+
+    let (tx, rx) = channel::bounded(1);
+    let pool = ThreadPool::new(threads);
+
+    let mut expected = 0;
+    for (arg, pretty_arg) in args {
+        let name = match pretty_arg {
+            Some(pretty_arg) => format!("{:?}", pretty_arg),
+            None => module.canonical(),
+        };
+
+        let tx = tx.clone();
+        let module = module.clone();
+        let signal_register = rl.signal_register().clone();
+        pool.execute(move || {
+            let tx = EventSender::new(name, tx);
+
+            if signal_register.ctrlc_received() {
+                tx.send(Event2::Exit(ExitEvent::Ok));
+                return;
+            }
+
+            tx.send(Event2::Start);
+            let event = match engine::isolation::spawn_module(module, &tx, arg) {
+                Ok(_) => ExitEvent::Ok,
+                Err(err) => ExitEvent::Err(err.to_string()),
+            };
+            tx.send(Event2::Exit(event));
+        });
+        expected += 1;
+    }
+
+    let mut failed = Vec::new();
     let timeout = Duration::from_millis(100);
     loop {
         select! {
             recv(rx) -> msg => match msg.ok() {
-                Some((Event::Info(info), _)) => spinner.log(&info),
-                Some((Event::Error(error), _)) => spinner.error(&error),
-                Some((Event::Fatal(error), _)) => {
-                    failed = Some(error);
-                    break;
-                },
-                Some((Event::Status(status), _)) => spinner.status(status),
-                Some((Event::Insert(object), tx)) => {
-                    let result = rl.db().insert_generic(&object);
-                    debug!("{:?} => {:?}", object, result);
-                    let result = match result {
-                        Ok((DbChange::Insert, id)) => {
-                            // TODO: replace id with actual object(?)
-                            if let Ok(obj) = object.printable(rl.db()) {
-                                spinner.log(&obj.to_string());
-                            } else {
-                                spinner.error(&format!("Failed to query necessary fields for {:?}", object));
+                Some(event) => {
+                    let (name, event) = (event.name, event.event);
+
+                    match event {
+                        Event2::Start => {
+                            let label = format!("Investigating {}", name);
+                            stack.add(name, label);
+                        },
+                        Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
+                        Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db()),
+                        Event2::Exit(event) => {
+                            stack.remove(&name);
+                            if let ExitEvent::Err(error) = event {
+                                failed.push((name, error));
                             }
-                            Ok(Some(id))
-                        },
-                        Ok((DbChange::Update(update), id)) => {
-                            // TODO: replace id with actual object(?)
-                            spinner.log(&format!("Updating {:?} ({})", object.value(), update));
-                            Ok(Some(id))
-                        },
-                        Ok((DbChange::None, id)) => Ok(Some(id)),
-                        Err(err) => {
-                            let err = err.to_string();
-                            spinner.error(&err);
-                            Err(err)
-                        },
-                    };
 
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
-                },
-                Some((Event::Select((family, value)), tx)) => {
-                    let result = rl.db().get_opt(&family, &value)
-                        .map_err(|e| e.to_string());
-
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
-                },
-                Some((Event::Update((object, update)), tx)) => {
-                    let result = rl.db().update_generic(&update);
-                    debug!("{:?}: {:?} => {:?}", object, update, result);
-                    let result = result
-                        .map(Some)
-                        .map_err(|e| e.to_string());
-
-                    if let Err(ref err) = result {
-                        spinner.error(&err);
-                    } else {
-                        // TODO: bring this somewhat closer to upsert code
-                        spinner.log(&format!("Updating {:?} ({})", object, update));
+                            // if every task reported back, exit
+                            expected -= 1;
+                            info!("spawn_all is expecting {} more results", expected);
+                            if expected == 0 {
+                                break;
+                            }
+                        },
                     }
-
-                    tx.expect("Failed to get db result channel")
-                        .send(result).expect("Failed to send db result to channel");
                 },
-                Some((Event::Done, _)) => break,
                 None => break, // channel closed
             },
             default(timeout) => (),
         }
-        spinner.tick();
+        stack.tick();
     }
 
-    t.join().expect("thread failed");
-
-    if let Some(fail) = failed {
-        spinner.fail(&format!("Failed {}: {}", name, fail));
-    } else {
-        spinner.clear();
+    for (name, fail) in failed {
+        stack.error(&format!("Failed {}: {}", name, fail));
     }
+
+    stack.clear();
 }
 
 pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
@@ -134,14 +248,11 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
         loop {
             select! {
                 recv(rx) -> msg => match msg.ok() {
-                    Some(Event::Info(info)) => spinner.log(&info),
-                    Some(Event::Error(error)) => spinner.error(&error),
-                    Some(Event::Fatal(error)) => spinner.error(&error),
-                    Some(Event::Status(status)) => spinner.status(status),
-                    Some(Event::Insert(_)) => (),
-                    Some(Event::Select(_)) => (),
-                    Some(Event::Update(_)) => (),
-                    Some(Event::Done) => break,
+                    Some(Event::Log(log)) => log.apply(&mut *spinner),
+                    Some(Event::Database(_)) => (),
+                    // TODO: refactor
+                    Some(Event::Exit(ExitEvent::Ok)) => break,
+                    Some(Event::Exit(ExitEvent::Err(error))) => spinner.error(&error),
                     None => break, // channel closed
                 },
                 default(timeout) => (),
@@ -152,7 +263,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
 
     // run work in main thread
     let result = f()?;
-    tx.send(Event::Done)?;
+    tx.send(Event::Exit(ExitEvent::Ok))?;
 
     t.join().expect("thread failed");
 

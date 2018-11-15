@@ -13,7 +13,7 @@ use std::result;
 use std::sync::{Arc, Mutex};
 use chrootable_https::dns::DnsConfig;
 use web::{HttpSession, HttpRequest, RequestOptions};
-use worker::Event;
+use worker::{Event, LogEvent, DatabaseEvent};
 
 
 pub trait State {
@@ -30,19 +30,19 @@ pub trait State {
     fn recv(&self) -> Result<serde_json::Value>;
 
     fn info(&self, msg: String) {
-        self.send(&Event::Info(msg))
+        self.send(&Event::Log(LogEvent::Info(msg)))
     }
 
     fn error(&self, msg: String) {
-        self.send(&Event::Error(msg))
+        self.send(&Event::Log(LogEvent::Error(msg)))
     }
 
     fn status(&self, msg: String) {
-        self.send(&Event::Status(msg))
+        self.send(&Event::Log(LogEvent::Status(msg)))
     }
 
     fn db_insert(&self, object: Insert) -> Result<Option<i32>> {
-        self.send(&Event::Insert(object));
+        self.send(&Event::Database(DatabaseEvent::Insert(object)));
         let reply = self.recv()?;
         let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
@@ -50,7 +50,7 @@ pub trait State {
     }
 
     fn db_select(&self, family: Family, value: String) -> Result<Option<i32>> {
-        self.send(&Event::Select((family, value)));
+        self.send(&Event::Database(DatabaseEvent::Select((family, value))));
         let reply = self.recv()?;
         let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
@@ -58,7 +58,7 @@ pub trait State {
     }
 
     fn db_update(&self, object: String, update: Update) -> Result<Option<i32>> {
-        self.send(&Event::Update((object, update)));
+        self.send(&Event::Database(DatabaseEvent::Update((object, update))));
         let reply = self.recv()?;
         let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
