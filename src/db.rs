@@ -94,7 +94,7 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_generic(&self, object: &Insert) -> Result<(DbChange, i32)> {
+    pub fn insert_generic(&self, object: &Insert) -> Result<Option<(DbChange, i32)>> {
         match object {
             Insert::Domain(object) => self.insert_struct(NewDomain {
                 value: &object.value,
@@ -138,83 +138,37 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_struct<T: InsertableStruct<M>, M: Model>(&self, obj: T) -> Result<(DbChange, i32)> {
+    pub fn insert_struct<T: InsertableStruct<M>, M: Model + Scopable>(&self, obj: T) -> Result<Option<(DbChange, i32)>> {
         if let Some(existing) = M::get_opt(self, obj.value())? {
+            // entity is out of scope
+            if !existing.scoped() {
+                return Ok(None);
+            }
+
             let update = obj.upsert(&existing);
             if update.is_dirty() {
                 update.apply(&self)?;
-                Ok((DbChange::Update(update.generic()), existing.id()))
+                Ok(Some((DbChange::Update(update.generic()), existing.id())))
             } else {
-                Ok((DbChange::None, existing.id()))
+                Ok(Some((DbChange::None, existing.id())))
             }
         } else {
             obj.insert(&self)?;
             let id = M::get_id(self, obj.value())?;
-            Ok((DbChange::Insert, id))
+            Ok(Some((DbChange::Insert, id)))
         }
     }
 
-    pub fn insert_domain(&self, domain: &str) -> Result<(DbChange, i32)> {
-        self.insert_struct(NewDomain {
-            value: domain,
-        })
-    }
-
-    /// Returns true if we didn't have this value yet
-    pub fn insert_subdomain(&self, subdomain: &str, domain: &str) -> Result<(DbChange, i32)> {
-        let domain_id = match Domain::get_id_opt(self, domain)? {
-            Some(domain_id) => domain_id,
-            None => self.insert_domain(domain)?.1,
-        };
-
-        self.insert_struct(NewSubdomain {
-            domain_id,
-            value: &subdomain,
-            resolvable: None,
-        })
-    }
-
-    pub fn insert_ipaddr(&self, family: &str, ipaddr: &str) -> Result<(DbChange, i32)> {
-        // TODO: maybe check if valid
-        self.insert_struct(NewIpAddr {
-            family: &family,
-            value: &ipaddr,
-            continent: None,
-            continent_code: None,
-            country: None,
-            country_code: None,
-            city: None,
-            longitude: None,
-            latitude: None,
-            asn: None,
-            as_org: None,
-        })
-    }
-
-    pub fn insert_subdomain_ipaddr(&self, subdomain_id: i32, ip_addr_id: i32) -> Result<(DbChange, i32)> {
-        self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
-            subdomain_id,
-            ip_addr_id,
-        })
-    }
-
-    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<(DbChange, i32)> {
+    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<Option<(DbChange, i32)>> {
         if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
-            Ok((DbChange::None, subdomain_ipaddr_id))
+            Ok(Some((DbChange::None, subdomain_ipaddr_id)))
         } else {
             diesel::insert_into(subdomain_ipaddrs::table)
                 .values(subdomain_ipaddr)
                 .execute(&self.db)?;
             let id = SubdomainIpAddr::get_id(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))?;
-            Ok((DbChange::Insert, id))
+            Ok(Some((DbChange::Insert, id)))
         }
-    }
-
-    pub fn insert_email(&self, email: &str) -> Result<(DbChange, i32)> {
-        self.insert_struct(NewEmail {
-            value: email,
-            valid: None,
-        })
     }
 
     //

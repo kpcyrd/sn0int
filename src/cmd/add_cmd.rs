@@ -1,5 +1,6 @@
 use errors::*;
 
+use models::*;
 use shell::Readline;
 use structopt::StructOpt;
 use utils;
@@ -53,7 +54,9 @@ fn add_domain(rl: &mut Readline, args: AddDomain) -> Result<()> {
         bail!("This is not a valid domain, might be a subdomain or tld");
     }
 
-    rl.db().insert_domain(&domain)?;
+    rl.db().insert_struct(NewDomain {
+        value: &domain,
+    })?;
 
     Ok(())
 }
@@ -71,7 +74,18 @@ fn add_subdomain(rl: &mut Readline, args: AddSubdomain) -> Result<()> {
         .ok_or_else(|| format_err!("Dns Name seems invalid"))?
         .to_string();
 
-    rl.db().insert_subdomain(&subdomain, &domain)?;
+    let domain_id = match rl.db().insert_struct(NewDomain {
+        value: &domain,
+    })? {
+        Some((_, domain_id)) => domain_id,
+        _ => bail!("Domain is out out of scope"),
+    };
+
+    rl.db().insert_struct(NewSubdomain {
+        domain_id,
+        value: &subdomain,
+        resolvable: None,
+    })?;
 
     Ok(())
 }
@@ -82,7 +96,10 @@ fn add_email(rl: &mut Readline, args: AddEmail) -> Result<()> {
         _ => utils::question("Email")?,
     };
 
-    rl.db().insert_email(&email)?;
+    rl.db().insert_struct(NewEmail {
+        value: &email,
+        valid: None,
+    })?;
 
     Ok(())
 }

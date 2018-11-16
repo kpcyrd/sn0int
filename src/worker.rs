@@ -102,7 +102,7 @@ impl DatabaseEvent {
                 let result = db.insert_generic(&object);
                 debug!("{:?} => {:?}", object, result);
                 let result = match result {
-                    Ok((DbChange::Insert, id)) => {
+                    Ok(Some((DbChange::Insert, id))) => {
                         // TODO: replace id with actual object(?)
                         if let Ok(obj) = object.printable(db) {
                             spinner.log(&obj.to_string());
@@ -111,12 +111,13 @@ impl DatabaseEvent {
                         }
                         Ok(Some(id))
                     },
-                    Ok((DbChange::Update(update), id)) => {
+                    Ok(Some((DbChange::Update(update), id))) => {
                         // TODO: replace id with actual object(?)
                         spinner.log(&format!("Updating {:?} ({})", object.value(), update));
                         Ok(Some(id))
                     },
-                    Ok((DbChange::None, id)) => Ok(Some(id)),
+                    Ok(Some((DbChange::None, id))) => Ok(Some(id)),
+                    Ok(None) => Ok(None),
                     Err(err) => {
                         let err = err.to_string();
                         spinner.error(&err);
