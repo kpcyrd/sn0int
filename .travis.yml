@@ -47,3 +47,11 @@ script:
 - df -h
 - ci/run.sh $BUILD_MODE
 - df -h
+
+notifications:
+  irc:
+    channels:
+    - "ircs://irc.hackint.org:6697/#sn0int"
+    #on_success: change # default: always
+    #on_failure: always # default: always
+    use_notice: true
