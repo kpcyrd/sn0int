@@ -324,7 +324,9 @@ pub fn print_banner() {
    \___.' /    | /`---' / /    |  \__/
 
         {} | {} | {}
-"#, "osint".green(), "recon".green(), "security".green());
+      {}
+"#, "osint".green(), "recon".green(), "security".green(),
+"irc.hackint.org:6697/#sn0int".green());
 }
 
 pub fn run_once(rl: &mut Readline) -> Result<bool> {

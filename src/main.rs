@@ -4,6 +4,7 @@ extern crate env_logger;
 #[macro_use] extern crate failure;
 extern crate structopt;
 
+use env_logger::Env;
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
@@ -81,7 +82,8 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    env_logger::init();
+    env_logger::init_from_env(Env::default()
+        .default_filter_or("off"));
 
     if let Err(err) = run() {
         eprintln!("Error: {}", err);
