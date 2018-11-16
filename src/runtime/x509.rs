@@ -1,4 +1,34 @@
------BEGIN CERTIFICATE-----
+use errors::*;
+
+use crt::Certificate;
+use engine::ctx::State;
+use json::LuaJsonValue;
+use hlua::{self, AnyLuaValue};
+use serde_json;
+use std::sync::Arc;
+
+
+pub fn x509_parse_pem(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("x509_parse_pem", hlua::function1(move |cert: String| -> Result<AnyLuaValue> {
+        let cert = Certificate::parse_pem(&cert)
+            .map_err(|e| state.set_error(e))?;
+
+        let cert = serde_json::to_value(cert)
+            .map_err(|e| state.set_error(e.into()))?;
+
+        Ok(LuaJsonValue::from(cert).into())
+    }))
+}
+
+#[cfg(test)]
+mod tests {
+    use engine::ctx::Script;
+
+    #[test]
+    fn verify_x509_parse_pem() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            x = x509_parse_pem([[-----BEGIN CERTIFICATE-----
 MIIHQjCCBiqgAwIBAgIQCgYwQn9bvO1pVzllk7ZFHzANBgkqhkiG9w0BAQsFADB1
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
 d3cuZGlnaWNlcnQuY29tMTQwMgYDVQQDEytEaWdpQ2VydCBTSEEyIEV4dGVuZGVk
@@ -39,3 +69,29 @@ Kqg6LK0Hcq4K0sZnxE8HFxiZ92WpV2AVWjRMEc/2z2shNoDvxvFUYyY1Oe67xINk
 myQKc+ygSBZzyLnXSFVWmHr3u5dcaaQGGAR42v6Ydr4iL38Hd4dOiBma+FXsXBIq
 WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
 -----END CERTIFICATE-----
+]])
+            print(x)
+
+            vn = {}
+            i = 0
+            while x['valid_names'][i] do
+                vn[x['valid_names'][i]] = true
+                i = i+1
+            end
+
+            if not vn['www.github.com'] then
+                return 'Not valid for www.github.com'
+            end
+
+            if not vn['github.com'] then
+                return 'Not valid for github.com'
+            end
+
+            if i ~= 2 then
+                return 'Unexpected number of names'
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+}
