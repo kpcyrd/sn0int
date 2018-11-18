@@ -25,3 +25,4 @@ Getting Started
    install
    usage
    scripting
+   database
