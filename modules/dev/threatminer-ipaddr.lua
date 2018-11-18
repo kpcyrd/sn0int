@@ -35,15 +35,17 @@ function run(arg)
             value=domain,
         })
 
-        subdomain_id = db_add('subdomain', {
-            domain_id=domain_id,
-            value=x['domain'],
-        })
+        if domain_id ~= nil then
+            subdomain_id = db_add('subdomain', {
+                domain_id=domain_id,
+                value=x['domain'],
+            })
 
-        db_add('subdomain-ipaddr', {
-            subdomain_id=subdomain_id,
-            ip_addr_id=arg['id'],
-        })
+            db_add('subdomain-ipaddr', {
+                subdomain_id=subdomain_id,
+                ip_addr_id=arg['id'],
+            })
+        end
 
         i = i+1
     end
