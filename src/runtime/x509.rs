@@ -25,7 +25,7 @@ mod tests {
     use engine::ctx::Script;
 
     #[test]
-    fn verify_x509_parse_pem() {
+    fn verify_x509_parse_pem_github() {
         let script = Script::load_unchecked(r#"
         function run()
             x = x509_parse_pem([[-----BEGIN CERTIFICATE-----
@@ -89,6 +89,81 @@ WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
 
             if i ~= 2 then
                 return 'Unexpected number of names'
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_x509_parse_pem_1_1_1_1() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            x = x509_parse_pem([[-----BEGIN CERTIFICATE-----
+MIID9DCCA3qgAwIBAgIQBWzetBRl/ycHFsBukRYuGTAKBggqhkjOPQQDAjBMMQsw
+CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMSYwJAYDVQQDEx1EaWdp
+Q2VydCBFQ0MgU2VjdXJlIFNlcnZlciBDQTAeFw0xODAzMzAwMDAwMDBaFw0yMDAz
+MjUxMjAwMDBaMGwxCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMN
+U2FuIEZyYW5jaXNjbzEZMBcGA1UEChMQQ2xvdWRmbGFyZSwgSW5jLjEdMBsGA1UE
+AwwUKi5jbG91ZGZsYXJlLWRucy5jb20wWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC
+AASyRQsxrFBjziHmfDQjGsXBU0WWl3oxh7vg6h2V9f8lBMp18PY/td9R6VvJPa20
+AwVzIJI+dL6OSxviaIZEbmK7o4ICHDCCAhgwHwYDVR0jBBgwFoAUo53mH/naOU/A
+buiRy5Wl2jHiCp8wHQYDVR0OBBYEFN+XTeVDs7BBp0LykM+Jf64SV4ThMGMGA1Ud
+EQRcMFqCFCouY2xvdWRmbGFyZS1kbnMuY29thwQBAQEBhwQBAAABghJjbG91ZGZs
+YXJlLWRucy5jb22HECYGRwBHAAAAAAAAAAAAERGHECYGRwBHAAAAAAAAAAAAEAEw
+DgYDVR0PAQH/BAQDAgeAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjBp
+BgNVHR8EYjBgMC6gLKAqhihodHRwOi8vY3JsMy5kaWdpY2VydC5jb20vc3NjYS1l
+Y2MtZzEuY3JsMC6gLKAqhihodHRwOi8vY3JsNC5kaWdpY2VydC5jb20vc3NjYS1l
+Y2MtZzEuY3JsMEwGA1UdIARFMEMwNwYJYIZIAYb9bAEBMCowKAYIKwYBBQUHAgEW
+HGh0dHBzOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMwCAYGZ4EMAQICMHsGCCsGAQUF
+BwEBBG8wbTAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tMEUG
+CCsGAQUFBzAChjlodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRF
+Q0NTZWN1cmVTZXJ2ZXJDQS5jcnQwDAYDVR0TAQH/BAIwADAKBggqhkjOPQQDAgNo
+ADBlAjEAjoyy2Ogh1i1/Kh9+psMc1OChlQIvQF6AkojZS8yliar6m8q5nqC3qe0h
+HR0fExwLAjAueWRnHX4QJ9loqMhsPk3NB0Cs0mStsNDNG6/DpCYw7XmjoG3y1LS7
+ZkZZmqNn2Q8=
+-----END CERTIFICATE-----
+]])
+            print(x)
+
+            vn = {}
+            i = 0
+            while x['valid_names'][i] do
+                vn[x['valid_names'][i]] = true
+                i = i+1
+            end
+
+            vi = {}
+            j = 0
+            while x['valid_ipaddrs'][j] do
+                vi[x['valid_ipaddrs'][j]] = true
+                j = j+1
+            end
+
+            if not vn['*.cloudflare-dns.com'] then
+                return 'Not valid for *.cloudflare-dns.com'
+            end
+            if not vn['cloudflare-dns.com'] then
+                return 'Not valid for cloudflare-dns.com'
+            end
+            if i ~= 2 then
+                return 'Unexpected number of names'
+            end
+
+            if not vi['1.0.0.1'] then
+                return 'Not valid for 1.0.0.1'
+            end
+            if not vi['1.1.1.1'] then
+                return 'Not valid for 1.1.1.1'
+            end
+            if not vi['2606:4700:4700::1001'] then
+                return 'Not valid for 2606:4700:4700::1001'
+            end
+            if not vi['2606:4700:4700::1111'] then
+                return 'Not valid for 2606:4700:4700::1111'
+            end
+            if j ~= 4 then
+                return 'Unexpected number of ip addrs'
             end
         end
         "#).expect("Failed to load script");

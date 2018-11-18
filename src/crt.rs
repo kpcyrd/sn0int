@@ -3,11 +3,17 @@ use errors::*;
 use x509_parser;
 use der_parser::oid::Oid;
 use std::collections::HashSet;
-use std::net::{Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use nom::be_u8;
 
 
-named!(san_extension<&[u8], Vec<String>>, do_parse!(
+#[derive(Debug, PartialEq)]
+pub enum AlternativeName {
+    DnsName(String),
+    IpAddr(IpAddr),
+}
+
+named!(san_extension<&[u8], Vec<AlternativeName>>, do_parse!(
     _tag:   tag!(b"\x30")   >>
     len:    be_u8           >>
     values: take!(len)      >>
@@ -26,7 +32,7 @@ named!(san_extension<&[u8], Vec<String>>, do_parse!(
     })
 ));
 
-named!(san_value<&[u8], Result<String>>,
+named!(san_value<&[u8], Result<AlternativeName>>,
     switch!(be_u8,
         0x82    => call!(san_value_dns) |
         0x87    => call!(san_value_ipaddr) |
@@ -34,35 +40,36 @@ named!(san_value<&[u8], Result<String>>,
     )
 );
 
-named!(san_value_dns<&[u8], Result<String>>, do_parse!(
+named!(san_value_dns<&[u8], Result<AlternativeName>>, do_parse!(
     len:    be_u8           >>
     value:  take!(len)      >>
     ({
         String::from_utf8(value.to_vec())
+            .map(|v| AlternativeName::DnsName(v))
             .map_err(Error::from)
     })
 ));
 
-named!(san_value_ipaddr<&[u8], Result<String>>, do_parse!(
+named!(san_value_ipaddr<&[u8], Result<AlternativeName>>, do_parse!(
     len:    be_u8           >>
     v:      take!(len)      >>
     ({
         match len {
-            4  => Ok(Ipv4Addr::from([
+            4  => Ok(AlternativeName::IpAddr(Ipv4Addr::from([
                 v[0], v[1], v[2], v[3],
-            ]).to_string()),
-            16 => Ok(Ipv6Addr::from([
+            ]).into())),
+            16 => Ok(AlternativeName::IpAddr(Ipv6Addr::from([
                 v[0],  v[1],  v[2],  v[3],
                 v[4],  v[5],  v[6],  v[7],
                 v[8],  v[9],  v[10], v[11],
                 v[12], v[13], v[14], v[15],
-            ]).to_string()),
+            ]).into())),
             _ => Err(format_err!("Invalid ipaddr")),
         }
     })
 ));
 
-named_args!(san_value_unknown(key: u8)<&[u8], Result<String>>, do_parse!(
+named_args!(san_value_unknown(key: u8)<&[u8], Result<AlternativeName>>, do_parse!(
     len:    be_u8           >>
     v:      take!(len)      >>
     ({
@@ -73,6 +80,7 @@ named_args!(san_value_unknown(key: u8)<&[u8], Result<String>>, do_parse!(
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
     pub valid_names: Vec<String>,
+    pub valid_ipaddrs: Vec<IpAddr>
 }
 
 impl Certificate {
@@ -107,6 +115,7 @@ impl Certificate {
         };
 
         let mut valid_names = HashSet::new();
+        let mut valid_ipaddrs = HashSet::new();
 
         for x in crt.tbs_certificate.subject.rdn_seq {
             for y in x.set {
@@ -139,12 +148,19 @@ impl Certificate {
                 Err(_) => bail!("Failed to parse san extension"),
             };
 
-            valid_names.extend(values);
+            for v in values {
+                match v {
+                    AlternativeName::DnsName(v) => valid_names.insert(v),
+                    AlternativeName::IpAddr(v) => valid_ipaddrs.insert(v),
+                };
+            }
         }
 
         let valid_names = valid_names.into_iter().collect();
+        let valid_ipaddrs = valid_ipaddrs.into_iter().collect();
         Ok(Certificate {
             valid_names,
+            valid_ipaddrs,
         })
     }
 }
@@ -200,6 +216,7 @@ WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
         x.valid_names.sort();
         assert_eq!(x, Certificate {
             valid_names: vec!["github.com".into(), "www.github.com".into()],
+            valid_ipaddrs: vec![],
         });
     }
 
@@ -231,14 +248,17 @@ ZkZZmqNn2Q8=
 -----END CERTIFICATE-----
 "#).expect("Failed to parse cert");
         x.valid_names.sort();
+        x.valid_ipaddrs.sort();
         assert_eq!(x, Certificate {
             valid_names: vec![
                 "*.cloudflare-dns.com".into(),
-                "1.0.0.1".into(),
-                "1.1.1.1".into(),
-                "2606:4700:4700::1001".into(),
-                "2606:4700:4700::1111".into(),
                 "cloudflare-dns.com".into(),
+            ],
+            valid_ipaddrs: vec![
+                "1.0.0.1".parse().unwrap(),
+                "1.1.1.1".parse().unwrap(),
+                "2606:4700:4700::1001".parse().unwrap(),
+                "2606:4700:4700::1111".parse().unwrap(),
             ],
         });
     }
@@ -252,17 +272,26 @@ ZkZZmqNn2Q8=
             .expect("Failed to parse extension");
         assert!(rem.is_empty());
         assert_eq!(ext, vec![
-            String::from("github.com"),
-            String::from("www.github.com"),
+            AlternativeName::DnsName(String::from("github.com")),
+            AlternativeName::DnsName(String::from("www.github.com")),
         ]);
     }
 
     #[test]
-    fn test_san_value() {
+    fn test_san_value_dns() {
         let (rem, v) = san_value(&[130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
             .expect("Failed to parse san value");
         let v = v.expect("Extension contains invalid data");
         assert!(rem.is_empty());
-        assert_eq!(v, String::from("github.com"));
+        assert_eq!(v, AlternativeName::DnsName(String::from("github.com")));
+    }
+
+    #[test]
+    fn test_san_value_ipaddr() {
+        let (rem, v) = san_value(&[135, 4, 1, 1, 1, 1])
+            .expect("Failed to parse san value");
+        let v = v.expect("Extension contains invalid data");
+        assert!(rem.is_empty());
+        assert_eq!(v, AlternativeName::IpAddr("1.1.1.1".parse().unwrap()));
     }
 }
