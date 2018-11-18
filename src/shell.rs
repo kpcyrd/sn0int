@@ -33,11 +33,11 @@ pub enum Command {
     Scope,
     Set,
     Select,
-    SwitchDb,
     Target,
     Update,
     Use,
     Quickstart,
+    Workspace,
 
     Interrupt,
 }
@@ -54,11 +54,11 @@ impl Command {
             Command::Scope => "scope",
             Command::Set => "set",
             Command::Select => "select",
-            Command::SwitchDb => "switch_db",
             Command::Target => "target",
             Command::Update => "update",
             Command::Use => "use",
             Command::Quickstart => "quickstart",
+            Command::Workspace => "workspace",
             Command::Interrupt => unreachable!(),
         }
     }
@@ -75,7 +75,7 @@ impl Command {
                 Command::Scope.as_str(),
                 Command::Set.as_str(),
                 Command::Select.as_str(),
-                Command::SwitchDb.as_str(),
+                Command::Workspace.as_str(),
                 Command::Target.as_str(),
                 Command::Update.as_str(),
                 Command::Use.as_str(),
@@ -101,11 +101,11 @@ impl FromStr for Command {
             "scope"  => Ok(Command::Scope),
             "set"  => Ok(Command::Set),
             "select" => Ok(Command::Select),
-            "switch_db" => Ok(Command::SwitchDb),
             "target"  => Ok(Command::Target),
             "update" => Ok(Command::Update),
             "use"  => Ok(Command::Use),
             "quickstart"  => Ok(Command::Quickstart),
+            "workspace" => Ok(Command::Workspace),
             x => bail!("unknown command: {:?}", x),
         }
     }
@@ -347,7 +347,6 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         // TODO: set jobs 25
         Some((Command::Set, _args)) => println!("set"),
         Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
-        Some((Command::SwitchDb, args)) => switch_db_cmd::run(rl, &args)?,
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Update, _args)) => {
             // TODO
@@ -356,6 +355,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         },
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
+        Some((Command::Workspace, args)) => workspace_cmd::run(rl, &args)?,
         Some((Command::Interrupt, _)) => return Ok(true),
         None => (),
     }

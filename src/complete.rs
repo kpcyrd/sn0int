@@ -10,6 +10,7 @@ use std::str::FromStr;
 use std::io::stdout;
 use structopt::StructOpt;
 use shell::Command;
+use workspaces;
 
 
 #[derive(Debug, Default)]
@@ -132,6 +133,24 @@ impl Completer for CmdCompleter {
                 },
                 Command::Scope => self.filter("scope", &cmd),
                 Command::Select => self.filter("select", &cmd),
+                Command::Workspace => {
+                    // we can only complete the 2nd argument
+                    if args != 2 {
+                        Ok((0, vec![]))
+                    } else {
+                        let arg = &cmd[1];
+
+                        let results: Vec<String> = match workspaces::list() {
+                            Ok(workspaces) => workspaces.iter()
+                                .filter(|x| x.starts_with(arg))
+                                .map(|x| format!("workspace {} ", x))
+                                .collect(),
+                            _ => Vec::new(),
+                        };
+
+                        Ok((0, results))
+                    }
+                },
                 _ => Ok((0, vec![])),
             }
         }

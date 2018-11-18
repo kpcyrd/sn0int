@@ -75,5 +75,6 @@ pub mod runtime;
 pub mod term;
 pub mod web;
 pub mod worker;
+pub mod workspaces;
 pub mod psl;
 pub mod utils;

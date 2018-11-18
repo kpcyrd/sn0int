@@ -1,6 +1,5 @@
 pub mod add_cmd;
 pub mod delete_cmd;
-pub mod switch_db_cmd;
 pub mod run_cmd;
 pub mod use_cmd;
 pub mod select_cmd;
@@ -9,3 +8,4 @@ pub mod noscope_cmd;
 pub mod scope_cmd;
 pub mod target_cmd;
 pub mod quickstart_cmd;
+pub mod workspace_cmd;
