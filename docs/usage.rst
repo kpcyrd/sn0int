@@ -20,6 +20,7 @@ number of recommended modules::
        \___.' /    | /`---' / /    |  \__/
 
             osint | recon | security
+          irc.hackint.org:6697/#sn0int
 
     [+] Connecting to database
     [+] Downloading public suffix list
@@ -53,7 +54,7 @@ Adding something to scope
 You probably want to separate your investigations so you should select a
 workspace where your results should go::
 
-    [sn0int][default] > switch_db demo
+    [sn0int][default] > workspace demo
     [+] Connecting to database
     [sn0int][demo] >
 
@@ -135,17 +136,20 @@ Let's start by querying certificate transparency logs::
 
     [sn0int][demo] > use ctlogs
     [sn0int][demo][kpcyrd/ctlogs] > run
-    [*] Subdomain: "www.example.com"
-    [*] Subdomain: "m.example.com"
-    [*] Subdomain: "dev.example.com"
-    [*] Subdomain: "products.example.com"
-    [*] Subdomain: "support.example.com"
+    [*] "example.com"                                     : Subdomain: "www.example.com"
+    [*] "example.com"                                     : Subdomain: "m.example.com"
+    [*] "example.com"                                     : Subdomain: "dev.example.com"
+    [*] "example.com"                                     : Subdomain: "products.example.com"
+    [*] "example.com"                                     : Subdomain: "support.example.com"
     [+] Finished kpcyrd/ctlogs
     [sn0int][demo][kpcyrd/ctlogs] >
 
 Looks like we've discovered some subdomains here. It might be tempting to throw
 some of them in a browser but hold on, there's a more efficient way to approach
 this.
+
+.. hint::
+   You can run the modules concurrently with ``run -j 8``.
 
 Running followup modules on the results
 ---------------------------------------
@@ -159,13 +163,13 @@ module, like LEGOs. Let's continue with a module to query the dns records::
 
     [sn0int][demo][kpcyrd/ctlogs] > use dns-resolve
     [sn0int][demo][kpcyrd/dns-resolve] > run
-    [*] Updating "www.example.com" (resolvable => true)
-    [*] IpAddr: 93.184.216.34
-    [*] "www.example.com" -> 93.184.216.34
-    [*] Updating "m.example.com" (resolvable => false)
-    [*] Updating "dev.example.com" (resolvable => false)
-    [*] Updating "products.example.com" (resolvable => false)
-    [*] Updating "support.example.com" (resolvable => false)
+    [*] "www.example.com"                                 : Updating "www.example.com" (resolvable => true)
+    [*] "www.example.com"                                 : IpAddr: 93.184.216.34
+    [*] "www.example.com"                                 : "www.example.com" -> 93.184.216.34
+    [*] "m.example.com"                                   : Updating "m.example.com" (resolvable => false)
+    [*] "dev.example.com"                                 : Updating "dev.example.com" (resolvable => false)
+    [*] "products.example.com"                            : Updating "products.example.com" (resolvable => false)
+    [*] "support.example.com"                             : Updating "support.example.com" (resolvable => false)
     [+] Finished kpcyrd/dns-resolve
     [sn0int][demo][kpcyrd/dns-resolve] >
 
@@ -198,8 +202,8 @@ module with the target command. Once we are satisfied with our selection we can
 run this module::
 
     [sn0int][demo][kpcyrd/url-scan] > run
-    [*] Url: "http://www.example.com/" (200)
-    [*] Url: "https://www.example.com/" (200)
+    [*] "www.example.com"                                 : Url: "http://www.example.com/" (200)
+    [*] "www.example.com"                                 : Url: "https://www.example.com/" (200)
     [+] Finished kpcyrd/url-scan
     [sn0int][demo][kpcyrd/url-scan] >
 
