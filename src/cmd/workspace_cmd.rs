@@ -3,12 +3,12 @@ use errors::*;
 use db::Database;
 use shell::Readline;
 use structopt::StructOpt;
-use workspaces;
+use workspaces::{self, Workspace};
 
 
 #[derive(Debug, StructOpt)]
 pub struct Args {
-    workspace: Option<String>,
+    workspace: Option<Workspace>,
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {

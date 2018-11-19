@@ -143,7 +143,7 @@ impl Completer for CmdCompleter {
                         let results: Vec<String> = match workspaces::list() {
                             Ok(workspaces) => workspaces.iter()
                                 .filter(|x| x.starts_with(arg))
-                                .map(|x| format!("workspace {} ", x))
+                                .map(|x| format!("workspace {} ", x.as_str()))
                                 .collect(),
                             _ => Vec::new(),
                         };

@@ -1,5 +1,6 @@
 use structopt::clap::{AppSettings, Shell};
 use sn0int_common::ModuleID;
+use workspaces::Workspace;
 
 
 #[derive(Debug, StructOpt)]
@@ -8,7 +9,7 @@ use sn0int_common::ModuleID;
 pub struct Args {
     #[structopt(short="w", long="workspace")]
     /// Select a different workspace instead of the default
-    pub workspace: Option<String>,
+    pub workspace: Option<Workspace>,
 
     #[structopt(subcommand)]
     pub subcommand: Option<SubCommand>,

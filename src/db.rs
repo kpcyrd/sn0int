@@ -11,6 +11,7 @@ use std::str::FromStr;
 use paths;
 use migrations;
 use worker;
+use workspaces::Workspace;
 
 
 #[derive(Debug)]
@@ -56,16 +57,13 @@ impl FromStr for Family {
 }
 
 pub struct Database {
-    name: String,
+    name: Workspace,
     db: SqliteConnection,
 }
 
 impl Database {
-    pub fn establish<I: Into<String>>(name: I) -> Result<Database> {
-        // TODO: enforce safe name for database
-        let name = name.into();
-
-        let path = paths::data_dir()?.join(name.clone() + ".db");
+    pub fn establish(name: Workspace) -> Result<Database> {
+        let path = paths::data_dir()?.join(name.to_string() + ".db");
         let path = path.into_os_string().into_string()
             .map_err(|_| format_err!("Failed to convert db path to utf-8"))?;
 

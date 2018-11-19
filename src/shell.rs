@@ -15,11 +15,10 @@ use shellwords;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use term;
+use term::{self, Prompt};
 use paths;
 use psl::Psl;
-
-use term::Prompt;
+use workspaces::Workspace;
 
 
 #[derive(Debug)]
@@ -364,10 +363,9 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
 }
 
 pub fn init(args: &Args, config: Config) -> Result<Readline> {
-    // TODO: enforce valid characters for workspace name
     let workspace = match args.workspace {
-        Some(ref workspace) => workspace.as_str(),
-        None => "default",
+        Some(ref workspace) => workspace.clone(),
+        None => Workspace::from_str("default").unwrap(),
     };
 
     let db = Database::establish(workspace)?;
