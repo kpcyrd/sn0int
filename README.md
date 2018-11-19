@@ -19,6 +19,8 @@ published to the sn0int registry and then installed by users. This means that
 you don't have to send pull requests to sn0int to add a module and updates can
 be shipped much faster.
 
+Join us on IRC: <ircs://irc.hackint.org/#sn0int>
+
 ## Installation
 
 - Archlinux: `yaourt -S sn0int`
