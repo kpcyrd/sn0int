@@ -28,3 +28,4 @@ Getting Started
    usage
    scripting
    database
+   reference

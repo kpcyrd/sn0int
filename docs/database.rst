@@ -30,7 +30,9 @@ db_add
 ------
 
 This operation is somewhat straight forward. It adds an entity to the
-database::
+database:
+
+.. code-block:: lua
 
     domain_id = db_add('domain', {
         value='example.com',
@@ -47,7 +49,9 @@ triggered and an db_update is performed instead.
 db_update
 ---------
 
-Update some mutable fields of an entity::
+Update some mutable fields of an entity:
+
+.. code-block:: lua
 
     db_update('ipaddr', arg, {
         asn=lookup['asn'],
@@ -69,7 +73,7 @@ added to the database and has not been removed from scope, this function
 returns that entities id. This is somewhat similar to ``db_add``, except that
 ``db_select`` never adds anything to the database.
 
-::
+.. code-block:: lua
 
     domain_id = db_select('domain', 'example.com')
     if domain_id ~= nil then

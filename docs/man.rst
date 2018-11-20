@@ -10,4 +10,4 @@ todo
     :glob:
 
     usage
-    scripting
+    reference
