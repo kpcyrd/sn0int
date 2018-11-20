@@ -1,9 +1,11 @@
-# sn0int [![Build Status][travis-img]][travis] [![Crates.io][crates-img]][crates]
+# sn0int [![Build Status][travis-img]][travis] [![Crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs]
 
 [travis-img]:   https://travis-ci.org/kpcyrd/sn0int.svg?branch=master
 [travis]:       https://travis-ci.org/kpcyrd/sn0int
 [crates-img]:   https://img.shields.io/crates/v/sn0int.svg
 [crates]:       https://crates.io/crates/sn0int
+[docs-img]: https://readthedocs.org/projects/sn0int/badge/?version=latest
+[docs]: https://sn0int.readthedocs.io/en/latest/?badge=latest
 
 sn0int is an OSINT framework and package manager. It's purpose is
 semi-automatically processing public information to enumerate attack surface.
