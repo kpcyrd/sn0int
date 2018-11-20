@@ -1,9 +1,5 @@
-# sn0int [![Build Status][travis-img]][travis] [![Crates.io][crates-img]][crates]
-
-[travis-img]:   https://travis-ci.org/kpcyrd/sn0int.svg?branch=master
-[travis]:       https://travis-ci.org/kpcyrd/sn0int
-[crates-img]:   https://img.shields.io/crates/v/sn0int.svg
-[crates]:       https://crates.io/crates/sn0int
+sn0int
+======
 
 sn0int is an OSINT framework and package manager. It's purpose is
 semi-automatically processing public information to enumerate attack surface.
@@ -19,16 +15,17 @@ published to the sn0int registry and then installed by users. This means that
 you don't have to send pull requests to sn0int to add a module and updates can
 be shipped much faster.
 
-Join us on IRC: <ircs://irc.hackint.org/#sn0int>
+Join us on IRC: ircs://irc.hackint.org/#sn0int
 
-## Installation
+Getting Started
+---------------
 
-- Archlinux: `yaourt -S sn0int`
-- Alpine: `apk add --no-cache sqlite-dev libseccomp-dev cargo` + build from source
-- Debian: `apt install libsqlite3-dev libseccomp-dev` + build from source
-- OpenBSD: `pkg_add sqlite3` + build from source
-- OSX: `brew install sqlite3` + build from source
+.. toctree::
+   :maxdepth: 3
+   :glob:
 
-## License
-
-GPLv3+
+   install
+   usage
+   scripting
+   database
+   reference

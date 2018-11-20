@@ -205,8 +205,8 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::http_send(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
     runtime::json_decode(&mut lua, state.clone());
-    runtime::json_encode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
+    runtime::json_encode(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());

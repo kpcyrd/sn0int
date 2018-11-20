@@ -1,0 +1,183 @@
+Scripting
+=========
+
+Scripting is the core feature in sn0int. It's not strictly required, but if you
+want to write your own modules, this section is for you.
+
+Write your first module
+-----------------------
+
+It's highly recommended to use a VCS for development, so let's start by setting
+that up. We're going to assume you store your repos in ``~/repos`` but you're
+free to change that to something else::
+
+    $ git init ~/repos/sn0int-modules
+    $ cd ~/repos/sn0int-modules
+    $ ln -s "$PWD" ~/.local/share/sn0int/modules/$YOUR_GITHUB_NAME
+
+Every module we're adding to ``~/repos/sn0int-modules`` is now going to be
+picked up by sn0int.
+
+Let's add our first module by opening ``~/repos/sn0int-modules/first.lua``.
+There's a bit of boilerplate that every module needs to load successfully:
+
+.. code-block:: lua
+
+    -- Description: ohai wurld
+    -- Version: 0.1.0
+    -- Source: domains
+    -- License: GPL-3.0
+
+    function run(arg)
+        -- TODO: do something here
+    end
+
+``Description`` (mandatory)
+  This should be a short text that describes what your module is doing.
+
+``Version`` (mandatory)
+  Every module requires a semver_ version. You can just set it to ``0.1.0``
+  during development, but you need to increase it every time you publish your
+  module. If you don't care about that one, just keep increasing ``0.X.0``.
+
+.. _semver: https://semver.org/
+
+``Source`` (mandatory)
+  This is going to specify what kind of entities we're interested in. If we
+  specify ``domains`` our module is going to be called with all domains that
+  are targeted.
+
+  - ``domains``
+  - ``subdomains``
+  - ``ipaddrs``
+  - ``urls``
+  - ``emails``
+
+``License`` (mandatory)
+  This is somewhat special. We require that every module is licensed under an
+  open source license. Pick one of the following licenses.
+
+  - ``MIT`` -  https://opensource.org/licenses/MIT
+  - ``GPL-3.0`` - https://opensource.org/licenses/gpl-license
+  - ``LGPL-3.0`` - https://opensource.org/licenses/lgpl-license
+  - ``BSD-2-Clause`` - https://opensource.org/licenses/BSD-2-Clause
+  - ``BSD-3-Clause`` - https://opensource.org/licenses/BSD-3-Clause
+  - ``WTFPL`` - https://spdx.org/licenses/WTFPL.html
+
+``function run(arg)`` (mandatory)
+  This is where the actual magic of our module happens. Our function is going
+  to be called in a loop for each entity that is targeted by the user.
+
+Let's continue. For the sake of an hello world we're going to take some
+``domains``, check if a ``www`` subdomain exists and if it does, add it to the
+database.
+
+.. code-block:: lua
+
+    function run(arg)
+        subdomain = 'www.' .. arg['value']
+        print(subdomain)
+    end
+
+Combined with the header we wrote previously we can already execute this
+module. Make sure you've added a domain to scope with ``add domain
+example.com``, save your file and run it like this::
+
+    sn0int run -f ./first.lua
+
+We should see some output by our print function.
+
+.. note::
+   ``print`` is useful for development but must be removed before publishing.
+
+Next, we want to actually resolve that name, we're going to use the ``dns``
+function for that. This function takes a name and a query type and returns a
+result. Note that this function might fail, in which case we want to abort our
+function. We do that by checking if the return value of ``last_err()`` is
+truth-y.
+
+.. code-block:: lua
+
+    function run(arg)
+        subdomain = 'www.' .. arg['value']
+
+        records = dns(subdomain, 'A')
+        if last_err() then return end
+
+        print(records)
+    end
+
+If you run your module again you're going to see some output, either
+``{"success": somedata}`` or ``{"error": "NX"}``. We decide if ``success`` is
+not ``nil``, we add the subdomain to our scope and set it to resolvable:
+
+.. code-block:: lua
+
+    function run(arg)
+        subdomain = 'www.' .. arg['value']
+
+        records = dns(subdomain, 'A')
+        if last_err() then return end
+
+        if records['success'] ~= nil then
+            db_add('subdomain', arg, {
+                domain_id=arg['id'],
+                value=subdomain,
+                resolvable=true,
+            })
+        end
+    end
+
+.. hint::
+   See the database section to understand how the database works in detail.
+
+If we execute our module one more time it's going to log that it discovered a
+subdomain, if it doesn't, try adding more domains to scope. Note that this only
+happens the first time. Modules that don't discover anything or don't discover
+anything new exit silently.
+
+After putting everything together, our final module looks like this:
+
+.. code-block:: lua
+
+    -- Description: ohai wurld
+    -- Version: 0.1.0
+    -- Source: domains
+    -- License: GPL-3.0
+
+    function run(arg)
+        subdomain = 'www.' .. arg['value']
+
+        records = dns(subdomain, 'A')
+        if last_err() then return end
+
+        if records['success'] ~= nil then
+            db_add('subdomain', arg, {
+                domain_id=arg['id'],
+                value=subdomain,
+                resolvable=true,
+            })
+        end
+    end
+
+There's still some room for improvement, for example, since we already resolved
+that record, we could also add the ip address to the scope and link it to the
+subdomain we added.
+
+Publish your module
+-------------------
+
+The public registry uses github usernames to namespace the registry. This means
+you need to authenticate to the registry using your github username. This can
+be done using::
+
+    sn0int login
+
+sn0int is going to open a new tab in your browser, if you are already signed
+into your github account you only need to confirm an authorization request. The
+application doesn't need any of your data, so it's only asking you to confirm
+your identity.
+
+Afterwards publish your module with::
+
+    sn0int publish ./first.lua
