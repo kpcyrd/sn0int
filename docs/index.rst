@@ -1,7 +1,7 @@
 sn0int
 ======
 
-sn0int is an OSINT framework and package manager. It's purpose is
+sn0int is an OSINT framework and package manager. Its purpose is
 semi-automatically processing public information to enumerate attack surface.
 sn0int itself is only providing an engine that can be extended with scripts.
 
