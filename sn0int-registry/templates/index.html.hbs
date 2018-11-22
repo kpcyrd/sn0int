@@ -1,10 +1,35 @@
 {{#*inline "page"}}
         <p>
-        This is the registry server of sn0int, an OSINT framework and package
-        manager. Its purpose is semi-automatically processing public
-        information to enumerate attack surface. sn0int itself is only
-        providing an engine that can be extended with scripts.
+This is the registry server of sn0int, an OSINT framework and package manager.
+It was built for IT security professionals and bug hunters to gather
+intelligence about a given target or about yourself. sn0int is enumerating
+attack surface by semi-automatically processing public information and mapping
+the results in a unified format for followup investigations.
         </p>
+
+        <p>
+Among other things, sn0int is currently able to:
+        </p>
+
+        <ul class="list-unstyled">
+<li>[X] Harvest subdomains from certificate transparency logs</li>
+<li>[X] Harvest subdomains from various passive dns logs</li>
+<li>[X] Sift through subdomain results for publicly accessible websites</li>
+<li>[X] Harvest emails from pgp keyservers</li>
+<li>[X] Enrich ip addresses with ASN and geoip info</li>
+<li>[X] Harvest subdomains from the wayback machine</li>
+        </ul>
+
+        <p>
+sn0int is heavily inspired by recon-ng and maltego, but remains more flexible
+and is fully opensource.  None of the investigations listed above are hardcoded
+in the source, instead those are provided by modules that are executed in a
+sandbox. You can easily extend sn0int by writing your own modules and share
+them with other users by publishing them to the sn0int registry. This allows
+you to ship updates for your modules on your own since you don't need to send a
+pull request.
+        </p>
+
         <p>
         The registry server allows uploading modules that can be installed by
         users afterwards. This is done using sn0int which needs to be
