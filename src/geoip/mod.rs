@@ -24,7 +24,19 @@ pub trait Maxmind: Sized {
 
     fn new(reader: maxminddb::Reader) -> Self;
 
+    // TODO: refactor this to return Path
     fn cache_path() -> Result<String> {
+        // use system path if exists
+        let path = Path::new("/usr/share/GeoIP/");
+        let path = path.join(Self::archive_filename());
+
+        if path.exists() {
+            let path = path.to_str()
+                .ok_or_else(|| format_err!("Failed to decode path"))?;
+            return Ok(path.to_string());
+        }
+
+        // use cache path
         let path = paths::cache_dir()?
             .join(Self::archive_filename());
         let path = path.to_str()
