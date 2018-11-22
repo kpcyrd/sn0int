@@ -2,7 +2,7 @@ use errors::*;
 
 use chrootable_https::Client;
 use std::fs::{self, File};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use paths;
 use publicsuffix::{self, Domain, DnsName};
 use worker;
@@ -15,7 +15,7 @@ pub struct Psl {
 
 impl Psl {
     pub fn open_or_download() -> Result<Psl> {
-        let path = paths::cache_dir()?.join("public_suffix_list.dat");
+        let path = Self::path()?;
 
         let reader = match File::open(&path) {
             Ok(f) => f,
@@ -33,6 +33,19 @@ impl Psl {
         Ok(Psl {
             list,
         })
+    }
+
+    pub fn path() -> Result<PathBuf> {
+        // use system path if exists
+        let path = Path::new("/usr/share/publicsuffix/public_suffix_list.dat");
+        if path.exists() {
+            return Ok(path.to_path_buf());
+        }
+
+        // else, use local cache
+        let path = paths::cache_dir()?
+            .join("public_suffix_list.dat");
+        Ok(path)
     }
 
     pub fn open_into_string() -> Result<String> {
