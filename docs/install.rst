@@ -8,7 +8,7 @@ Archlinux
 
 .. code-block:: bash
 
-    $ yaourt -S sn0int
+    $ pacman -S sn0int
 
 Debian/Ubuntu/Kali
 ------------------
