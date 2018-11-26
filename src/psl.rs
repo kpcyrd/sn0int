@@ -49,8 +49,7 @@ impl Psl {
     }
 
     pub fn open_into_string() -> Result<String> {
-        let path = paths::cache_dir()?.join("public_suffix_list.dat");
-
+        let path = Self::path()?;
         let s = fs::read_to_string(&path)?;
         Ok(s)
     }
