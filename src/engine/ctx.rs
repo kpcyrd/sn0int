@@ -11,7 +11,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{Arc, Mutex};
-use chrootable_https::dns::DnsConfig;
+use chrootable_https::dns::Resolver;
 use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::{Event, LogEvent, DatabaseEvent};
 
@@ -65,7 +65,7 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
     }
 
-    fn dns_config(&self) -> Arc<DnsConfig>;
+    fn dns_config(&self) -> Arc<Resolver>;
 
     fn psl(&self) -> Arc<Psl>;
 
@@ -85,7 +85,7 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
-    dns_config: Arc<DnsConfig>,
+    dns_config: Arc<Resolver>,
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
     asn: Arc<AsnDB>,
@@ -132,7 +132,7 @@ impl State for LuaState {
         }
     }
 
-    fn dns_config(&self) -> Arc<DnsConfig> {
+    fn dns_config(&self) -> Arc<Resolver> {
         self.dns_config.clone()
     }
 
@@ -282,7 +282,7 @@ impl Script {
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
         use geoip::Maxmind;
-        let dns_config = DnsConfig::from_system()?;
+        let dns_config = Resolver::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===
 com

@@ -1,5 +1,5 @@
 use errors::*;
-use chrootable_https::dns::DnsConfig;
+use chrootable_https::dns::Resolver;
 use engine::{Environment, Module, Reporter};
 use geoip::{GeoIP, AsnDB};
 use psl::Psl;
@@ -15,13 +15,13 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
-    dns_config: DnsConfig,
+    dns_config: Resolver,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
         // TODO: compress psl
         StartCommand {
             dns_config,
@@ -61,7 +61,7 @@ impl Supervisor {
         })
     }
 
-    pub fn send_start(&mut self, dns_config: DnsConfig, module: Module, arg: serde_json::Value) -> Result<()> {
+    pub fn send_start(&mut self, dns_config: Resolver, module: Module, arg: serde_json::Value) -> Result<()> {
         let start = serde_json::to_value(StartCommand::new(dns_config, module, arg))?;
         self.send(&start)?;
         Ok(())
@@ -151,7 +151,7 @@ impl Reporter for StdioReporter {
 }
 
 pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value) -> Result<()> {
-    let dns_config = DnsConfig::from_system()?;
+    let dns_config = Resolver::from_system()?;
 
     let mut supervisor = Supervisor::setup(&module)?;
     supervisor.send_start(dns_config, module, arg)?;
