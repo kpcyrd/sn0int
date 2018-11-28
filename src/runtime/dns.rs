@@ -57,7 +57,7 @@ pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
 
         let timeout = match options.timeout {
             Some(timeout) => Duration::from_millis(timeout),
-            _ => Duration::from_secs(1),
+            _ => Duration::from_secs(3),
         };
 
         let resolver = match options.nameserver {
@@ -92,7 +92,7 @@ mod tests {
             x = dns('example.com', 'A')
             if last_err() then return end
             print(x)
-            if x['success'][0]['A'] == nil then
+            if x['answers'][0]['A'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -111,7 +111,7 @@ mod tests {
             })
             if last_err() then return end
             print(x)
-            if x['success'][0]['A'] == nil then
+            if x['answers'][0]['A'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -194,7 +194,7 @@ mod tests {
             x = dns('example.com', 'AAAA')
             if last_err() then return end
             print(x)
-            if x['success'][0]['AAAA'] == nil then
+            if x['answers'][0]['AAAA'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -210,7 +210,7 @@ mod tests {
             x = dns('example.com', 'TXT')
             if last_err() then return end
             print(x)
-            if x['success'][0]['TXT'] == nil then
+            if x['answers'][0]['TXT'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -226,7 +226,7 @@ mod tests {
             x = dns('example.com', 'NS')
             if last_err() then return end
             print(x)
-            if x['success'][0]['NS'] == nil then
+            if x['answers'][0]['NS'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -242,7 +242,7 @@ mod tests {
             x = dns('example.com', 'SOA')
             if last_err() then return end
             print(x)
-            if x['success'][0]['SOA'] == nil then
+            if x['answers'][0]['SOA'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -258,7 +258,7 @@ mod tests {
             x = dns('1.1.1.1.in-addr.arpa', 'PTR')
             if last_err() then return end
             print(x)
-            if x['success'][0]['PTR'] == nil then
+            if x['answers'][0]['PTR'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -274,7 +274,25 @@ mod tests {
             x = dns('doesntexist.example.com', 'A')
             if last_err() then return end
             print(x)
-            return x['success'] == nil
+            if x['error'] ~= 'NX' then
+                return "Expected NXDomain"
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_empty_cname() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            x = dns('example.com', 'CNAME')
+            if last_err() then return end
+            print(x)
+            if x['error'] ~= nil then
+                return "Expected no error"
+            end
         end
         "#).expect("Failed to load script");
         script.test().expect("Script failed");

@@ -8,7 +8,7 @@ function run(arg)
     if last_err() then return end
 
     -- update subdomain
-    resolvable = records['success'] ~= nil
+    resolvable = records['error'] == nil
     if arg['resolvable'] ~= resolvable then
         -- TODO: pass arg to function as well
         db_update('subdomain', arg, {
@@ -20,7 +20,7 @@ function run(arg)
         return
     end
 
-    records = records['success']
+    records = records['answers']
 
     -- there is a bug in struct -> lua that causes tables to be zero indexed
     -- this checks if there's something at index 0 but uses index 1 if this is fixed
