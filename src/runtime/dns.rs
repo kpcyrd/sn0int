@@ -92,7 +92,7 @@ mod tests {
             x = dns('example.com', 'A')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['A'] == nil then
+            if x['answers'][1][2]['A'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -111,7 +111,7 @@ mod tests {
             })
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['A'] == nil then
+            if x['answers'][1][2]['A'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -142,10 +142,10 @@ mod tests {
             has_a = false
             has_mx = false
 
-            i = 0
+            i = 1
             answers = x['answers']
             while answers[i] do
-                r = answers[i][1]
+                r = answers[i][2]
 
                 if r['SOA'] ~= nil then
                     has_soa = true
@@ -194,7 +194,7 @@ mod tests {
             x = dns('example.com', 'AAAA')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['AAAA'] == nil then
+            if x['answers'][1][2]['AAAA'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -210,7 +210,7 @@ mod tests {
             x = dns('example.com', 'TXT')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['TXT'] == nil then
+            if x['answers'][1][2]['TXT'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -226,7 +226,7 @@ mod tests {
             x = dns('example.com', 'NS')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['NS'] == nil then
+            if x['answers'][1][2]['NS'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -242,7 +242,7 @@ mod tests {
             x = dns('example.com', 'SOA')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['SOA'] == nil then
+            if x['answers'][1][2]['SOA'] == nil then
                 return "Couldn't resolve"
             end
         end
@@ -258,7 +258,7 @@ mod tests {
             x = dns('1.1.1.1.in-addr.arpa', 'PTR')
             if last_err() then return end
             print(x)
-            if x['answers'][0][1]['PTR'] == nil then
+            if x['answers'][1][2]['PTR'] == nil then
                 return "Couldn't resolve"
             end
         end

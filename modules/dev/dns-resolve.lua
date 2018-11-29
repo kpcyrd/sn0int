@@ -22,11 +22,7 @@ function run(arg)
 
     records = records['answers']
 
-    -- there is a bug in struct -> lua that causes tables to be zero indexed
-    -- this checks if there's something at index 0 but uses index 1 if this is fixed
-    i = 0
-    if records[i] == nil then i = 1 end
-
+    i = 1
     while records[i] ~= nil do
         r = records[i][1]
         if r['A'] ~= nil then

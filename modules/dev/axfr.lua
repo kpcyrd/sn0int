@@ -41,8 +41,8 @@ function iter_axfr(zone, arg)
 
     -- info(json_encode(arg))
 
-    name = arg[0]
-    r = arg[1]
+    name = arg[1]
+    r = arg[2]
 
     -- select psl+1
     domain = psl_domain_from_dns_name(name)
@@ -92,7 +92,7 @@ function iter_axfr(zone, arg)
 
     if r['MX'] ~= nil then
         -- add the name and the name it's pointing to
-        name = strip_root_dot(r['MX'][1])
+        name = strip_root_dot(r['MX'][2])
         add_pointer(name:lower())
     end
 end
@@ -112,11 +112,7 @@ function iter_a(zone, arg)
     if records['error'] ~= nil then return end
     records = records['answers']
 
-    -- there is a bug in struct -> lua that causes tables to be zero indexed
-    -- this checks if there's something at index 0 but uses index 1 if this is fixed
-    i = 0
-    if records[i] == nil then i = 1 end
-
+    i = 1
     while records[i] ~= nil do
         iter_axfr(zone, records[i])
         if last_err() then return end
@@ -136,13 +132,9 @@ function iter_ns(zone, arg)
     if records['error'] ~= nil then return end
     records = records['answers']
 
-    -- there is a bug in struct -> lua that causes tables to be zero indexed
-    -- this checks if there's something at index 0 but uses index 1 if this is fixed
-    i = 0
-    if records[i] == nil then i = 1 end
-
+    i = 1
     while records[i] ~= nil do
-        r = records[i][1]
+        r = records[i][2]
         iter_a(zone, r['A'])
         if last_err() then return end
         i = i+1
@@ -157,13 +149,9 @@ function run(arg)
     if records['error'] ~= nil then return end
     records = records['answers']
 
-    -- there is a bug in struct -> lua that causes tables to be zero indexed
-    -- this checks if there's something at index 0 but uses index 1 if this is fixed
-    i = 0
-    if records[i] == nil then i = 1 end
-
+    i = 1
     while records[i] ~= nil do
-        r = records[i][1]
+        r = records[i][2]
         iter_ns(arg['value'], r['NS'])
         if last_err() then return end
         i = i+1

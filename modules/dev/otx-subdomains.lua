@@ -18,7 +18,7 @@ function run(arg)
     if last_err() then return end
     o = o['passive_dns']
 
-    i = 0
+    i = 1
     while o[i] do
         x = o[i]
 
