@@ -28,7 +28,7 @@ function run(arg)
     if records[i] == nil then i = 1 end
 
     while records[i] ~= nil do
-        r = records[i]
+        r = records[i][1]
         if r['A'] ~= nil then
             ipaddr_id = db_add('ipaddr', {
                 family='4',
@@ -40,6 +40,7 @@ function run(arg)
                 subdomain_id=arg['id'],
                 ip_addr_id=ipaddr_id,
             })
+            if last_err() then return end
         end
         i = i+1
     end

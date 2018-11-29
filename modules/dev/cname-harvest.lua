@@ -46,8 +46,8 @@ function run(arg)
     if records[i] == nil then i = 1 end
 
     while records[i] ~= nil do
-        r = records[i]['CNAME']
-        iter(r)
+        r = records[i][1]
+        iter(r['CNAME'])
         if last_err() then return end
         i = i+1
     end

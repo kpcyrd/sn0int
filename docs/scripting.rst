@@ -110,9 +110,9 @@ truth-y.
     end
 
 If you run your module again you're going to see some output, either
-``{"answers":[somedata],"error":null}`` or ``{"answers":[],"error":"NX"}``. We
-decide that we add the subdomain to our scope and set it to resolvable if
-``error`` is ``nil``.
+``{"answers":[somedata],"error":null}`` or
+``{"answers":[],"error":"NXDomain"}``. We decide that we add the subdomain to
+our scope and set it to resolvable if ``error`` is ``nil``.
 
 .. code-block:: lua
 
