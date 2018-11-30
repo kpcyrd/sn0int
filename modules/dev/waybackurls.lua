@@ -32,9 +32,7 @@ function run(arg)
     i = 2
     while o[i] do
         url = o[i][3]
-
-        -- debug(json_encode(url))
-
+        debug(json_encode(url))
         parts = url_parse(url)
 
         if last_err() then

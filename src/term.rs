@@ -52,6 +52,8 @@ pub static SPINNERS: &[&[&str]] = &[
 pub trait SpinLogger {
     fn log(&mut self, line: &str);
 
+    fn debug(&mut self, line: &str);
+
     fn error(&mut self, line: &str);
 
     fn status(&mut self, status: String);
@@ -117,6 +119,10 @@ impl SpinLogger for Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
     }
 
+    fn debug(&mut self, line: &str) {
+        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
+    }
+
     fn error(&mut self, line: &str) {
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
@@ -132,6 +138,10 @@ pub fn success(line: &str) {
 
 pub fn info(line: &str) {
     println!("\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+}
+
+pub fn debug(line: &str) {
+    println!("\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
 }
 
 pub fn warn(line: &str) {
@@ -235,6 +245,11 @@ impl SpinLogger for StackedSpinners {
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
     }
 
+    fn debug(&mut self, line: &str) {
+        self.jump2start();
+        println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
+    }
+
     fn error(&mut self, line: &str) {
         self.jump2start();
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
@@ -262,6 +277,10 @@ impl<'a, T: SpinLogger> PrefixedLogger<'a, T> {
 impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
     fn log(&mut self, line: &str) {
         self.s.log(&format!("{:50}: {}", self.prefix, line))
+    }
+
+    fn debug(&mut self, line: &str) {
+        self.s.debug(&format!("{:50}: {}", self.prefix, line))
     }
 
     fn error(&mut self, line: &str) {

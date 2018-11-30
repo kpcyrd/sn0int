@@ -15,15 +15,17 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
+    verbose: u64,
     dns_config: Resolver,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(verbose: u64, dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
         // TODO: compress psl
         StartCommand {
+            verbose,
             dns_config,
             module,
             arg
@@ -61,8 +63,8 @@ impl Supervisor {
         })
     }
 
-    pub fn send_start(&mut self, dns_config: Resolver, module: Module, arg: serde_json::Value) -> Result<()> {
-        let start = serde_json::to_value(StartCommand::new(dns_config, module, arg))?;
+    pub fn send_start(&mut self, start: &StartCommand) -> Result<()> {
+        let start = serde_json::to_value(&start)?;
         self.send(&start)?;
         Ok(())
     }
@@ -150,11 +152,11 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, verbose: u64) -> Result<()> {
     let dns_config = Resolver::from_system()?;
 
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(dns_config, module, arg)?;
+    supervisor.send_start(&StartCommand::new(verbose, dns_config, module, arg))?;
 
     loop {
         match supervisor.recv()? {
@@ -182,6 +184,7 @@ pub fn run_worker(geoip: GeoIP, asn: AsnDB, psl: String) -> Result<()> {
         .context("Failed to load public suffix list")?;
 
     let environment = Environment {
+        verbose: start.verbose,
         dns_config: start.dns_config,
         psl,
         geoip,

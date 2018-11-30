@@ -39,7 +39,7 @@ end
 function iter_axfr(zone, arg)
     local name, r, m, domain
 
-    -- info(json_encode(arg))
+    debug(json_encode(arg))
 
     name = arg[1]
     r = arg[2]
@@ -102,7 +102,7 @@ function iter_a(zone, arg)
 
     if arg == nil then return end
 
-    -- info('nameserver: ' .. arg)
+    debug('nameserver: ' .. arg)
     records = dns(zone, {
         record='AXFR',
         nameserver=arg .. ':53',

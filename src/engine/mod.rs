@@ -26,6 +26,7 @@ pub mod structs;
 /// Data that is passed to every script
 #[derive(Debug)]
 pub struct Environment {
+  pub verbose: u64,
   pub dns_config: Resolver,
   pub psl: Psl,
   pub geoip: GeoIP,

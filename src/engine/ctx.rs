@@ -29,8 +29,16 @@ pub trait State {
 
     fn recv(&self) -> Result<serde_json::Value>;
 
+    fn verbose(&self) -> u64;
+
     fn info(&self, msg: String) {
         self.send(&Event::Log(LogEvent::Info(msg)))
+    }
+
+    fn debug(&self, msg: String) {
+        if self.verbose() >= 2 {
+            self.send(&Event::Log(LogEvent::Debug(msg)))
+        }
     }
 
     fn error(&self, msg: String) {
@@ -85,6 +93,7 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
+    verbose: u64,
     dns_config: Arc<Resolver>,
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
@@ -130,6 +139,10 @@ impl State for LuaState {
         } else {
             bail!("Failed to read from reporter, non available");
         }
+    }
+
+    fn verbose(&self) -> u64 {
+        self.verbose
     }
 
     fn dns_config(&self) -> Arc<Resolver> {
@@ -184,6 +197,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
         logger: Arc::new(Mutex::new(None)),
         http_sessions: Arc::new(Mutex::new(HashMap::new())),
 
+        verbose: env.verbose,
         dns_config: Arc::new(env.dns_config),
         psl: Arc::new(env.psl),
         geoip: Arc::new(env.geoip),
@@ -194,6 +208,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::db_add(&mut lua, state.clone());
     runtime::db_select(&mut lua, state.clone());
     runtime::db_update(&mut lua, state.clone());
+    runtime::debug(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
     runtime::asn_lookup(&mut lua, state.clone());
@@ -292,6 +307,7 @@ com
         let asn = AsnDB::open_or_download()?;
 
         let env = Environment {
+            verbose: 0,
             dns_config,
             psl,
             geoip,
