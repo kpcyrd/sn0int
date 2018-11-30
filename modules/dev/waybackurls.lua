@@ -18,20 +18,22 @@ function run(arg)
     if last_err() then return end
 
     -- no known urls
-    if o[0] == nil then
+    if o[1] == nil then
         return
     end
 
     -- ensure the api response is still what we expect
-    if o[0][2] == nil then
+    if o[1][3] == nil then
         return 'api returned unexpected json format'
     end
 
     seen = {}
 
-    i = 1
+    i = 2
     while o[i] do
-        url = o[i][2]
+        url = o[i][3]
+
+        -- debug(json_encode(url))
 
         parts = url_parse(url)
 
@@ -40,6 +42,7 @@ function run(arg)
             error("Failed to parse url: " .. json_encode(url))
         else
             subdomain = parts['host']
+            subdomain, _ = subdomain:gsub('%.$', '')
 
             if seen[subdomain] == nil then
                 db_add('subdomain', {

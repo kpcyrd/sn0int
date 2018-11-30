@@ -24,7 +24,7 @@ function run(arg)
 
     i = 1
     while records[i] ~= nil do
-        r = records[i][1]
+        r = records[i][2]
         if r['A'] ~= nil then
             ipaddr_id = db_add('ipaddr', {
                 family='4',
