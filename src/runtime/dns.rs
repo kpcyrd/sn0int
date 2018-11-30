@@ -55,18 +55,18 @@ pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
         let options = ResolveOptions::from_lua(options)
             .map_err(|e| state.set_error(e))?;
 
-        let timeout = match options.timeout {
-            Some(timeout) => Duration::from_millis(timeout),
-            _ => Duration::from_secs(3),
+        let ns = match options.nameserver {
+            Some(ns) => vec![ns],
+            None => state.dns_config().ns.clone(),
         };
 
-        let resolver = match options.nameserver {
-            Some(nameserver) => Resolver {
-                ns: vec![nameserver],
-                tcp: options.tcp,
-                timeout: Some(timeout),
-            },
-            None => Resolver::clone(&state.dns_config()),
+        let timeout = options.timeout
+            .map(Duration::from_millis);
+
+        let resolver = Resolver {
+            ns,
+            tcp: options.tcp,
+            timeout,
         };
 
         let reply = resolver.resolve(&name, options.record_type()?)
