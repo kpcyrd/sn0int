@@ -105,6 +105,14 @@ impl Scopable for Domain {
     }
 }
 
+impl Domain {
+    fn subdomains(&self, db: &Database) -> Result<Vec<Subdomain>> {
+        Subdomain::belonging_to(self)
+            .load(db.db())
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableDomain {
     value: String,
 }
@@ -126,26 +134,42 @@ impl Printable<PrintableDomain> for Domain {
 pub struct DetailedDomain {
     id: i32,
     value: String,
+    subdomains: Vec<PrintableSubdomain>,
     unscoped: bool,
 }
 
 impl fmt::Display for DetailedDomain {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)
+            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+
+            for subdomain in &self.subdomains {
+                write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
+            }
         } else {
-            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)
+            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
+
+            for subdomain in &self.subdomains {
+                write!(w, "\n\t\x1b[90m{}\x1b[0m", subdomain)?;
+            }
         }
+
+        Ok(())
     }
 }
 
 impl Detailed for Domain {
     type T = DetailedDomain;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let subdomains = self.subdomains(db)?.into_iter()
+            .map(|sd| sd.printable(db))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedDomain {
             id: self.id,
             value: self.value.to_string(),
+            subdomains,
             unscoped: self.unscoped,
         })
     }
