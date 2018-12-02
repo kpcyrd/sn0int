@@ -10,7 +10,6 @@ extern crate shellwords;
 extern crate dirs;
 extern crate publicsuffix;
 extern crate chrootable_https;
-extern crate trust_dns_proto;
 extern crate url;
 #[cfg(target_os = "linux")]
 extern crate nix;

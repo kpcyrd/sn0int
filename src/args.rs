@@ -56,6 +56,8 @@ pub struct Run {
     pub file: Option<String>,
     #[structopt(short="j", long="threads", default_value="1")]
     pub threads: usize,
+    #[structopt(short="v", long="verbose", parse(from_occurrences))]
+    pub verbose: u64,
 }
 
 #[derive(Debug, StructOpt)]

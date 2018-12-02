@@ -55,14 +55,32 @@ Update an entity in the database. This function may fail. See `db_update
 dns
 ---
 
-Resolve a dns record. In the dns response contains an error, ``x['error']`` is
-set and ``x['success']`` is ``nil``. Otherwise, ``x['success']`` contains a
-list of records. This function may fail.
+Resolve a dns record. If the dns query was successful and the dns reply is
+``NoError`` then ``x['error']`` is ``nil``. The records of the reply are in
+``x['answers']``. This function may fail.
+
+This function accepts the following options:
+
+``record``
+  The ``query_type``, can be any of ``A``, ``AAAA``, ``MX``, ``AXFR``, etc.
+``nameserver``
+  The server that should be used for the lookup. Defaults to your system
+  resolver.
+``tcp``
+  If the lookup should use tcp, true/false.
+``timeout``
+  The time until the query times out in milliseconds.
 
 .. code-block:: lua
 
-    x = dns('example.com', 'A')
+    x = dns('example.com', {
+        record='A'
+    })
     if last_err() then return end
+
+.. note::
+   DNS replies with an error code set are not causing a change to
+   ``last_err()``. You have to test for this explicitly.
 
 error
 -----
@@ -147,19 +165,19 @@ Please note that you still need to specify an empty table ``{}`` even if no
 options are set. The following options are available:
 
 ``query``
-  A map of query parameters that should be set on the url
+  A map of query parameters that should be set on the url.
 ``headers``
-  A map of headers that should be set
+  A map of headers that should be set.
 ``basic_auth``
-  Configure the basic auth header with ``{"user, "password"}``
+  Configure the basic auth header with ``{"user, "password"}``.
 ``user_agent``
-  Overwrite the default user agent with a string
+  Overwrite the default user agent with a string.
 ``json``
-  The request body that should be json encoded
+  The request body that should be json encoded.
 ``form``
-  The request body that should be form encoded
+  The request body that should be form encoded.
 ``body``
-  The raw request body as string
+  The raw request body as string.
 
 This function may fail.
 

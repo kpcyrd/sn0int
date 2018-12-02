@@ -23,7 +23,7 @@ function run(arg)
     if last_err() then return end
     o = o['results']
 
-    i = 0
+    i = 1
     while o[i] do
         x = o[i]
 

@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use engine::ctx::Script;
 use sn0int_common::ModuleID;
 use sn0int_common::metadata::{Metadata, Source};
-use chrootable_https::dns::DnsConfig;
+use chrootable_https::dns::Resolver;
 use psl::Psl;
 use paths;
 use std::cmp::Ordering;
@@ -26,7 +26,8 @@ pub mod structs;
 /// Data that is passed to every script
 #[derive(Debug)]
 pub struct Environment {
-  pub dns_config: DnsConfig,
+  pub verbose: u64,
+  pub dns_config: Resolver,
   pub psl: Psl,
   pub geoip: GeoIP,
   pub asn: AsnDB,

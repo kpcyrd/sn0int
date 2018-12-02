@@ -34,20 +34,16 @@ function iter(r)
 end
 
 function run(arg)
-    records = dns(arg['value'], 'CNAME')
+    records = dns(arg['value'], 'A')
     if last_err() then return end
 
-    if records['success'] == nil then return end
-    records = records['success']
+    if records['error'] ~= nil then return end
+    records = records['answers']
 
-    -- there is a bug in struct -> lua that causes tables to be zero indexed
-    -- this checks if there's something at index 0 but uses index 1 if this is fixed
-    i = 0
-    if records[i] == nil then i = 1 end
-
+    i = 1
     while records[i] ~= nil do
-        r = records[i]['CNAME']
-        iter(r)
+        r = records[i][2]
+        iter(r['CNAME'])
         if last_err() then return end
         i = i+1
     end

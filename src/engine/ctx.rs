@@ -11,7 +11,7 @@ use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{Arc, Mutex};
-use chrootable_https::dns::DnsConfig;
+use chrootable_https::dns::Resolver;
 use web::{HttpSession, HttpRequest, RequestOptions};
 use worker::{Event, LogEvent, DatabaseEvent};
 
@@ -29,8 +29,16 @@ pub trait State {
 
     fn recv(&self) -> Result<serde_json::Value>;
 
+    fn verbose(&self) -> u64;
+
     fn info(&self, msg: String) {
         self.send(&Event::Log(LogEvent::Info(msg)))
+    }
+
+    fn debug(&self, msg: String) {
+        if self.verbose() >= 2 {
+            self.send(&Event::Log(LogEvent::Debug(msg)))
+        }
     }
 
     fn error(&self, msg: String) {
@@ -65,7 +73,7 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
     }
 
-    fn dns_config(&self) -> Arc<DnsConfig>;
+    fn dns_config(&self) -> Arc<Resolver>;
 
     fn psl(&self) -> Arc<Psl>;
 
@@ -85,7 +93,8 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
-    dns_config: Arc<DnsConfig>,
+    verbose: u64,
+    dns_config: Arc<Resolver>,
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
     asn: Arc<AsnDB>,
@@ -132,7 +141,11 @@ impl State for LuaState {
         }
     }
 
-    fn dns_config(&self) -> Arc<DnsConfig> {
+    fn verbose(&self) -> u64 {
+        self.verbose
+    }
+
+    fn dns_config(&self) -> Arc<Resolver> {
         self.dns_config.clone()
     }
 
@@ -184,6 +197,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
         logger: Arc::new(Mutex::new(None)),
         http_sessions: Arc::new(Mutex::new(HashMap::new())),
 
+        verbose: env.verbose,
         dns_config: Arc::new(env.dns_config),
         psl: Arc::new(env.psl),
         geoip: Arc::new(env.geoip),
@@ -194,6 +208,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::db_add(&mut lua, state.clone());
     runtime::db_select(&mut lua, state.clone());
     runtime::db_update(&mut lua, state.clone());
+    runtime::debug(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
     runtime::asn_lookup(&mut lua, state.clone());
@@ -282,7 +297,7 @@ impl Script {
     pub fn test(&self) -> Result<()> {
         use engine::tests::DummyReporter;
         use geoip::Maxmind;
-        let dns_config = DnsConfig::from_system()?;
+        let dns_config = Resolver::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===
 com
@@ -292,6 +307,7 @@ com
         let asn = AsnDB::open_or_download()?;
 
         let env = Environment {
+            verbose: 0,
             dns_config,
             psl,
             geoip,

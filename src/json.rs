@@ -64,9 +64,8 @@ impl Into<AnyLuaValue> for LuaJsonValue {
             // TODO: not sure if this might fail
             LuaJsonValue::Number(v) => AnyLuaValue::LuaNumber(v.as_f64().unwrap()),
             LuaJsonValue::String(v) => AnyLuaValue::LuaString(v),
-            // TODO: ensure lua tables always start at 1
             LuaJsonValue::Array(v) => AnyLuaValue::LuaArray(v.into_iter().enumerate()
-                .map(|(i, x)| (AnyLuaValue::LuaNumber(i as f64), x.into()))
+                .map(|(i, x)| (AnyLuaValue::LuaNumber((i+1) as f64), x.into()))
                 .collect()
             ),
             LuaJsonValue::Object(v) => AnyLuaValue::LuaArray(v.into_iter()

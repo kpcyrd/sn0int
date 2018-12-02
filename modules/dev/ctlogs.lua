@@ -28,6 +28,7 @@ function run(arg)
         -- print(c)
 
         name = c['name_value']
+        debug(json_encode(name))
 
         if name:find("*.") == 1 then
             -- ignore wildcard domains
@@ -35,7 +36,6 @@ function run(arg)
         end
 
         if seen[name] == nil then
-            -- info(name)
             db_add('subdomain', {
                 domain_id=arg['id'],
                 value=name,

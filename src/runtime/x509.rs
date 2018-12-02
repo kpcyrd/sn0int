@@ -73,7 +73,7 @@ WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
             print(x)
 
             vn = {}
-            i = 0
+            i = 1
             while x['valid_names'][i] do
                 vn[x['valid_names'][i]] = true
                 i = i+1
@@ -87,7 +87,7 @@ WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
                 return 'Not valid for github.com'
             end
 
-            if i ~= 2 then
+            if i ~= 3 then
                 return 'Unexpected number of names'
             end
         end
@@ -127,14 +127,14 @@ ZkZZmqNn2Q8=
             print(x)
 
             vn = {}
-            i = 0
+            i = 1
             while x['valid_names'][i] do
                 vn[x['valid_names'][i]] = true
                 i = i+1
             end
 
             vi = {}
-            j = 0
+            j = 1
             while x['valid_ipaddrs'][j] do
                 vi[x['valid_ipaddrs'][j]] = true
                 j = j+1
@@ -146,7 +146,7 @@ ZkZZmqNn2Q8=
             if not vn['cloudflare-dns.com'] then
                 return 'Not valid for cloudflare-dns.com'
             end
-            if i ~= 2 then
+            if i ~= 3 then
                 return 'Unexpected number of names'
             end
 
@@ -162,7 +162,7 @@ ZkZZmqNn2Q8=
             if not vi['2606:4700:4700::1111'] then
                 return 'Not valid for 2606:4700:4700::1111'
             end
-            if j ~= 4 then
+            if j ~= 5 then
                 return 'Unexpected number of ip addrs'
             end
         end

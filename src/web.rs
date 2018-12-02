@@ -202,8 +202,7 @@ impl HttpRequest {
         // send request
         debug!("Sending http request: {:?}", req);
 
-        let config = state.dns_config().as_ref().clone();
-        let resolver = Resolver::from_config(config)?;
+        let resolver = state.dns_config().as_ref().clone();
         let mut http = Client::new(resolver);
 
         if let Some(timeout) = self.timeout {

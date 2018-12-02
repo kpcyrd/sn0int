@@ -74,6 +74,7 @@ pub enum ExitEvent {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum LogEvent {
     Info(String),
+    Debug(String),
     Error(String),
     Status(String),
 }
@@ -82,6 +83,7 @@ impl LogEvent {
     pub fn apply<T: SpinLogger>(self, spinner: &mut T) {
         match self {
             LogEvent::Info(info) => spinner.log(&info),
+            LogEvent::Debug(debug) => spinner.debug(&debug),
             LogEvent::Error(error) => spinner.error(&error),
             LogEvent::Status(status) => spinner.status(status),
         }
@@ -96,11 +98,16 @@ pub enum DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database) {
+    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
         match self {
             DatabaseEvent::Insert(object) => {
+                if verbose >= 1 {
+                    spinner.debug(&format!("Inserting: {:?}", object));
+                }
+
                 let result = db.insert_generic(&object);
                 debug!("{:?} => {:?}", object, result);
+
                 let result = match result {
                     Ok(Some((DbChange::Insert, id))) => {
                         // TODO: replace id with actual object(?)
@@ -134,6 +141,10 @@ impl DatabaseEvent {
                 tx.send(result).expect("Failed to send db result to channel");
             },
             DatabaseEvent::Update((object, update)) => {
+                if verbose >= 1 {
+                    spinner.debug(&format!("Updating: {:?}", update));
+                }
+
                 let result = db.update_generic(&update);
                 debug!("{:?}: {:?} => {:?}", object, update, result);
                 let result = result
@@ -153,7 +164,7 @@ impl DatabaseEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize, verbose: u64) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;
@@ -183,7 +194,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, verbose) {
                 Ok(_) => ExitEvent::Ok,
                 Err(err) => ExitEvent::Err(err.to_string()),
             };
@@ -206,7 +217,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
                             stack.add(name, label);
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
-                        Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db()),
+                        Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db(), verbose),
                         Event2::Exit(event) => {
                             stack.remove(&name);
                             if let ExitEvent::Err(error) = event {

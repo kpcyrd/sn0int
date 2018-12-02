@@ -101,25 +101,30 @@ truth-y.
     function run(arg)
         subdomain = 'www.' .. arg['value']
 
-        records = dns(subdomain, 'A')
+        records = dns(subdomain, {
+            record='A'
+        })
         if last_err() then return end
 
         print(records)
     end
 
 If you run your module again you're going to see some output, either
-``{"success": somedata}`` or ``{"error": "NX"}``. We decide if ``success`` is
-not ``nil``, we add the subdomain to our scope and set it to resolvable:
+``{"answers":[somedata],"error":null}`` or
+``{"answers":[],"error":"NXDomain"}``. We decide that we add the subdomain to
+our scope and set it to resolvable if ``error`` is ``nil``.
 
 .. code-block:: lua
 
     function run(arg)
         subdomain = 'www.' .. arg['value']
 
-        records = dns(subdomain, 'A')
+        records = dns(subdomain, {
+            record='A'
+        })
         if last_err() then return end
 
-        if records['success'] ~= nil then
+        if records['error'] == nil then
             db_add('subdomain', arg, {
                 domain_id=arg['id'],
                 value=subdomain,
@@ -148,7 +153,9 @@ After putting everything together, our final module looks like this:
     function run(arg)
         subdomain = 'www.' .. arg['value']
 
-        records = dns(subdomain, 'A')
+        records = dns(subdomain, {
+            record='A'
+        })
         if last_err() then return end
 
         if records['success'] ~= nil then
