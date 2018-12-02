@@ -42,7 +42,7 @@ serde_json = "1.0"
 crossbeam-channel = "0.3"
 ctrlc = "3.1"
 opener = "0.3.0"
-separator = "0.3.1"
+separator = "0.4"
 maplit = "1.0.1"
 sloppy-rfc4880 = "0.1.2"
 regex = "1.0"
@@ -57,8 +57,8 @@ nom = "4.1.1"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
-syscallz = "0.7"
-nix = "0.11"
+syscallz = "0.8"
+nix = "0.12"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.3.1"
