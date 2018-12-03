@@ -156,35 +156,43 @@ pub struct DetailedUrl {
     redirect: Option<String>,
 }
 
-impl fmt::Display for DetailedUrl {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+impl DisplayableDetailed for DetailedUrl {
+    #[inline]
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
 
-            if let Some(status) = self.status {
-                write!(w, " (\x1b[33m{}\x1b[0m", status)?;
+    #[inline]
+    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        self.id(w, self.id)?;
+        self.green_debug(w, &self.value)?;
 
-                if let Some(ref redirect) = self.redirect {
-                    write!(w, " => \x1b[33m{:?}\x1b[0m", redirect)?;
-                }
+        if let Some(status) = self.status {
+            write!(w, " (")?;
+            self.green_display(w, status)?;
 
-                write!(w, ")")?;
+            if let Some(ref redirect) = self.redirect {
+                write!(w, " => ")?;
+                self.green_debug(w, redirect)?;
             }
 
-            if let Some(ref title) = self.title {
-                write!(w, " {:?}", title)?;
-            }
-        } else {
-            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
+            write!(w, ")")?;
+        }
 
-            if let Some(status) = self.status {
-                write!(w, "\x1b[90m ({})\x1b[0m", status)?;
-            }
+        if let Some(ref title) = self.title {
+            write!(w, " {:?}", title)?;
         }
 
         Ok(())
     }
+
+    #[inline]
+    fn children(&self, _w: &mut fmt::Formatter) -> fmt::Result {
+        Ok(())
+    }
 }
+
+display_detailed!(DetailedUrl);
 
 impl Detailed for Url {
     type T = DetailedUrl;

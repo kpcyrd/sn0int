@@ -151,25 +151,29 @@ pub struct DetailedSubdomain {
 }
 
 // TODO: maybe print urls as well
-impl fmt::Display for DetailedSubdomain {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+impl DisplayableDetailed for DetailedSubdomain {
+    #[inline]
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
 
-            for ipaddr in &self.ipaddrs {
-                write!(w, "\n\t\x1b[33m{}\x1b[0m", ipaddr)?;
-            }
-        } else {
-            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
+    #[inline]
+    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        self.id(w, self.id)?;
+        self.green_debug(w, &self.value)?;
+        Ok(())
+    }
 
-            for ipaddr in &self.ipaddrs {
-                write!(w, "\n\t\x1b[90m{}\x1b[0m", ipaddr)?;
-            }
+    #[inline]
+    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        for ipaddr in &self.ipaddrs {
+            self.child(w, ipaddr)?;
         }
-
         Ok(())
     }
 }
+
+display_detailed!(DetailedSubdomain);
 
 impl Detailed for Subdomain {
     type T = DetailedSubdomain;

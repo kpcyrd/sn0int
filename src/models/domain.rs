@@ -138,25 +138,29 @@ pub struct DetailedDomain {
     unscoped: bool,
 }
 
-impl fmt::Display for DetailedDomain {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)?;
+impl DisplayableDetailed for DetailedDomain {
+    #[inline]
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
 
-            for subdomain in &self.subdomains {
-                write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
-            }
-        } else {
-            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)?;
+    #[inline]
+    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        self.id(w, self.id)?;
+        self.green_debug(w, &self.value)?;
+        Ok(())
+    }
 
-            for subdomain in &self.subdomains {
-                write!(w, "\n\t\x1b[90m{}\x1b[0m", subdomain)?;
-            }
+    #[inline]
+    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        for subdomain in &self.subdomains {
+            self.child(w, subdomain)?;
         }
-
         Ok(())
     }
 }
+
+display_detailed!(DetailedDomain);
 
 impl Detailed for Domain {
     type T = DetailedDomain;

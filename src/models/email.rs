@@ -130,15 +130,26 @@ pub struct DetailedEmail {
     unscoped: bool,
 }
 
-impl fmt::Display for DetailedEmail {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{:?}\x1b[0m", self.id, self.value)
-        } else {
-            write!(w, "\x1b[90m#{}, {:?}\x1b[0m", self.id, self.value)
-        }
+impl DisplayableDetailed for DetailedEmail {
+    #[inline]
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
+
+    #[inline]
+    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        self.id(w, self.id)?;
+        self.green_debug(w, &self.value)?;
+        Ok(())
+    }
+
+    #[inline]
+    fn children(&self, _w: &mut fmt::Formatter) -> fmt::Result {
+        Ok(())
     }
 }
+
+display_detailed!(DetailedEmail);
 
 impl Detailed for Email {
     type T = DetailedEmail;

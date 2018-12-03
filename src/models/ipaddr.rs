@@ -163,75 +163,54 @@ pub struct DetailedIpAddr {
     as_org: Option<String>,
 }
 
-impl fmt::Display for DetailedIpAddr {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.unscoped {
-            write!(w, "\x1b[32m#{}\x1b[0m, \x1b[32m{}\x1b[0m", self.id, self.value)?;
+impl DisplayableDetailed for DetailedIpAddr {
+    #[inline]
+    fn scoped(&self) -> bool {
+        !self.unscoped
+    }
 
-            if let Some(ref continent) = self.continent {
-                write!(w, " [{}", continent)?;
+    #[inline]
+    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        self.id(w, self.id)?;
+        self.green_debug(w, &self.value)?;
 
-                if let Some(ref country) = self.country {
-                    write!(w, " / {}", country)?;
-                }
+        if let Some(ref continent) = self.continent {
+            write!(w, " [{}", continent)?;
 
-                if let Some(ref city) = self.city {
-                    write!(w, " / {}", city)?;
-                }
-
-                write!(w, "]")?;
+            if let Some(ref country) = self.country {
+                write!(w, " / {}", country)?;
             }
 
-            if let Some(ref asn) = self.asn {
-                write!(w, " [{}", asn)?;
-
-                if let Some(ref as_org) = self.as_org {
-                    write!(w, " / {:?}", as_org)?;
-                }
-
-                write!(w, "]")?;
+            if let Some(ref city) = self.city {
+                write!(w, " / {}", city)?;
             }
 
-            for subdomain in &self.subdomains {
-                write!(w, "\n\t\x1b[33m{}\x1b[0m", subdomain)?;
-            }
-        } else {
-            write!(w, "\x1b[90m#{}, {}", self.id, self.value)?;
+            write!(w, "]")?;
+        }
 
-            if let Some(ref continent) = self.continent {
-                write!(w, " [{}", continent)?;
+        if let Some(ref asn) = self.asn {
+            write!(w, " [{}", asn)?;
 
-                if let Some(ref country) = self.country {
-                    write!(w, " / {}", country)?;
-                }
-
-                if let Some(ref city) = self.city {
-                    write!(w, " / {}", city)?;
-                }
-
-                write!(w, "]")?;
+            if let Some(ref as_org) = self.as_org {
+                write!(w, " / {:?}", as_org)?;
             }
 
-            if let Some(ref asn) = self.asn {
-                write!(w, " [{}", asn)?;
-
-                if let Some(ref as_org) = self.as_org {
-                    write!(w, " / {:?}", as_org)?;
-                }
-
-                write!(w, "]")?;
-            }
-
-            write!(w, "\x1b[0m");
-
-            for subdomain in &self.subdomains {
-                write!(w, "\n\t\x1b[90m{}\x1b[0m", subdomain)?;
-            }
+            write!(w, "]")?;
         }
 
         Ok(())
     }
+
+    #[inline]
+    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        for subdomain in &self.subdomains {
+            self.child(w, subdomain)?;
+        }
+        Ok(())
+    }
 }
+
+display_detailed!(DetailedIpAddr);
 
 impl Detailed for IpAddr {
     type T = DetailedIpAddr;
