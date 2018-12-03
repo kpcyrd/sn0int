@@ -209,6 +209,16 @@ impl Printable<PrintableEmail> for NewEmailOwned {
     }
 }
 
+pub type InsertEmail = NewEmailOwned;
+
+impl LuaInsertToNewOwned for InsertEmail {
+    type Target = NewEmailOwned;
+
+    fn try_into_new(self) -> Result<NewEmailOwned> {
+        Ok(self)
+    }
+}
+
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
 #[table_name="emails"]
 pub struct EmailUpdate {

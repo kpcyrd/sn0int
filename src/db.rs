@@ -122,6 +122,7 @@ impl Database {
             Insert::Url(object) => self.insert_struct(NewUrl {
                 subdomain_id: object.subdomain_id,
                 value: &object.value,
+                path: &object.path,
                 status: object.status,
                 body: object.body.as_ref(),
                 online: object.online,

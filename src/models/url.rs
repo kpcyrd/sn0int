@@ -3,6 +3,7 @@ use diesel;
 use diesel::prelude::*;
 use models::*;
 use ser;
+use url;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -12,6 +13,7 @@ pub struct Url {
     pub id: i32,
     pub subdomain_id: i32,
     pub value: String,
+    pub path: String,
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
     pub unscoped: bool,
@@ -214,6 +216,7 @@ impl Detailed for Url {
 pub struct NewUrl<'a> {
     pub subdomain_id: i32,
     pub value: &'a str,
+    pub path: &'a str,
     pub status: Option<i32>,
     pub body: Option<&'a Vec<u8>>,
     pub online: Option<bool>,
@@ -254,6 +257,7 @@ impl<'a> Upsertable<Url> for NewUrl<'a> {
 pub struct NewUrlOwned {
     pub subdomain_id: i32,
     pub value: String,
+    pub path: String,
     pub status: Option<i32>,
     #[serde(deserialize_with="ser::opt_string_or_bytes")]
     pub body: Option<Vec<u8>>,
@@ -268,6 +272,38 @@ impl Printable<PrintableUrl> for NewUrlOwned {
             value: self.value.to_string(),
             status: self.status.map(|x| x as u16),
             redirect: self.redirect.clone(),
+        })
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertUrl {
+    pub subdomain_id: i32,
+    pub value: String,
+    pub status: Option<i32>,
+    #[serde(deserialize_with="ser::opt_string_or_bytes")]
+    pub body: Option<Vec<u8>>,
+    pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
+}
+
+impl LuaInsertToNewOwned for InsertUrl {
+    type Target = NewUrlOwned;
+
+    fn try_into_new(self) -> Result<NewUrlOwned> {
+        let url = url::Url::parse(&self.value)?;
+        let path = url.path().to_string();
+
+        Ok(NewUrlOwned {
+            subdomain_id: self.subdomain_id,
+            value: self.value,
+            path,
+            status: self.status,
+            body: self.body,
+            online: self.online,
+            title: self.title,
+            redirect: self.redirect,
         })
     }
 }
