@@ -309,6 +309,12 @@ macro_rules! display_detailed {
     };
 }
 
+pub trait LuaInsertToNewOwned {
+    type Target;
+
+    fn try_into_new(self) -> Result<Self::Target>;
+}
+
 mod domain;
 pub use self::domain::*;
 

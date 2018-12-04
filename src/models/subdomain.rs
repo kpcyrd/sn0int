@@ -240,6 +240,16 @@ impl Printable<PrintableSubdomain> for NewSubdomainOwned {
     }
 }
 
+pub type InsertSubdomain = NewSubdomainOwned;
+
+impl LuaInsertToNewOwned for InsertSubdomain {
+    type Target = NewSubdomainOwned;
+
+    fn try_into_new(self) -> Result<NewSubdomainOwned> {
+        Ok(self)
+    }
+}
+
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
 #[table_name="subdomains"]
 pub struct SubdomainUpdate {

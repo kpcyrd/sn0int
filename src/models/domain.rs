@@ -221,3 +221,13 @@ impl Printable<PrintableDomain> for NewDomainOwned {
         })
     }
 }
+
+pub type InsertDomain = NewDomainOwned;
+
+impl LuaInsertToNewOwned for InsertDomain {
+    type Target = NewDomainOwned;
+
+    fn try_into_new(self) -> Result<NewDomainOwned> {
+        Ok(self)
+    }
+}

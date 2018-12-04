@@ -306,6 +306,16 @@ impl Printable<PrintableIpAddr> for NewIpAddrOwned {
     }
 }
 
+pub type InsertIpAddr = NewIpAddrOwned;
+
+impl LuaInsertToNewOwned for InsertIpAddr {
+    type Target = NewIpAddrOwned;
+
+    fn try_into_new(self) -> Result<NewIpAddrOwned> {
+        Ok(self)
+    }
+}
+
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
 #[table_name="ipaddrs"]
 pub struct IpAddrUpdate {

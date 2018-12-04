@@ -123,3 +123,13 @@ impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {
         })
     }
 }
+
+pub type InsertSubdomainIpAddr = NewSubdomainIpAddr;
+
+impl LuaInsertToNewOwned for InsertSubdomainIpAddr {
+    type Target = NewSubdomainIpAddr;
+
+    fn try_into_new(self) -> Result<NewSubdomainIpAddr> {
+        Ok(self)
+    }
+}

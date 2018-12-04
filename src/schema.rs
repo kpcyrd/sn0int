@@ -56,6 +56,7 @@ table! {
         id -> Integer,
         subdomain_id -> Integer,
         value -> Text,
+        path -> Text,
         status -> Nullable<Integer>,
         body -> Nullable<Binary>,
         unscoped -> Bool,

@@ -11,6 +11,13 @@ use models::*;
 use json::LuaJsonValue;
 
 
+pub fn try_into_new<T: LuaInsertToNewOwned>(x: LuaJsonValue) -> Result<T::Target>
+    where for<'de> T: serde::Deserialize<'de>
+{
+    structs::from_lua::<T>(x)?
+        .try_into_new()
+}
+
 pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
@@ -19,27 +26,27 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
 
         let object = match family {
             Family::Domain => {
-                Insert::Domain(structs::from_lua::<NewDomainOwned>(object)
+                Insert::Domain(try_into_new::<InsertDomain>(object)
                     .map_err(|e| state.set_error(e))?)
             },
             Family::Subdomain => {
-                Insert::Subdomain(structs::from_lua::<NewSubdomainOwned>(object)
+                Insert::Subdomain(try_into_new::<InsertSubdomain>(object)
                     .map_err(|e| state.set_error(e))?)
             },
             Family::IpAddr => {
-                Insert::IpAddr(structs::from_lua::<NewIpAddrOwned>(object)
+                Insert::IpAddr(try_into_new::<InsertIpAddr>(object)
                     .map_err(|e| state.set_error(e))?)
             },
             Family::SubdomainIpAddr => {
-                Insert::SubdomainIpAddr(structs::from_lua::<NewSubdomainIpAddr>(object)
+                Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object)
                     .map_err(|e| state.set_error(e))?)
             },
             Family::Url => {
-                Insert::Url(structs::from_lua::<NewUrlOwned>(object)
+                Insert::Url(try_into_new::<InsertUrl>(object)
                     .map_err(|e| state.set_error(e))?)
             },
             Family::Email => {
-                Insert::Email(structs::from_lua::<NewEmailOwned>(object)
+                Insert::Email(try_into_new::<InsertEmail>(object)
                     .map_err(|e| state.set_error(e))?)
             },
         };
