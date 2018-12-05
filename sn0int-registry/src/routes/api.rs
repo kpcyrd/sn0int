@@ -93,7 +93,17 @@ fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, conn
 
     connection.transaction::<_, Error, _>(|| {
         let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;
-        module.add_version(&version, &upload.code, &connection)?;
+
+        match Release::try_find(module.id, &version, &connection)? {
+            Some(release) => {
+                // if the code is identical, pretend we published the version
+                if release.code != upload.code {
+                    bail!("Version number already in use")
+                }
+            },
+            None => module.add_version(&version, &upload.code, &connection)?,
+        }
+
         Ok(())
     })?;
 

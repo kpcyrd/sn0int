@@ -231,10 +231,18 @@ impl Release {
         */
     }
 
-    pub fn find(id: i32, version: &str, connection: &PgConnection) -> Result<Release> {
-        releases::table.filter(releases::columns::module_id.eq(id))
+    pub fn find(module_id: i32, version: &str, connection: &PgConnection) -> Result<Release> {
+        releases::table.filter(releases::columns::module_id.eq(module_id))
                         .filter(releases::columns::version.eq(version))
                         .first::<Release>(connection)
+                        .map_err(Error::from)
+    }
+
+    pub fn try_find(module_id: i32, version: &str, connection: &PgConnection) -> Result<Option<Release>> {
+        releases::table.filter(releases::columns::module_id.eq(module_id))
+                        .filter(releases::columns::version.eq(version))
+                        .first::<Release>(connection)
+                        .optional()
                         .map_err(Error::from)
     }
 

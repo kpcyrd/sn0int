@@ -40,7 +40,7 @@ impl Client {
 
     pub fn request<T: DeserializeOwned + fmt::Debug>(&self, mut request: RequestBuilder, body: Body) -> Result<T> {
         if let Some(session) = &self.session {
-            info!("Adding session token");
+            info!("Adding session token to request");
             request.header("Auth", session.as_str());
         }
 
