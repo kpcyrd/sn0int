@@ -32,6 +32,8 @@ pull request.
 
 Join us on IRC: <ircs://irc.hackint.org/#sn0int>
 
+[![asciicast](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB.svg)](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB)
+
 ## Installation
 
 - Archlinux: `pacman -S sn0int`
