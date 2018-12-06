@@ -37,25 +37,6 @@ INSERT INTO subdomains (id, domain_id, value, unscoped, resolvable)
 
 DROP TABLE _subdomains_old;
 
--- subdomain_ipaddrs
-
-ALTER TABLE subdomain_ipaddrs RENAME TO _subdomain_ipaddrs_old;
-
-CREATE TABLE subdomain_ipaddrs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    subdomain_id INTEGER NOT NULL,
-    ip_addr_id INTEGER NOT NULL,
-    FOREIGN KEY(subdomain_id) REFERENCES subdomains(id) ON DELETE CASCADE,
-    FOREIGN KEY(ip_addr_id) REFERENCES ipaddrs(id) ON DELETE CASCADE,
-    CONSTRAINT subdomain_ipaddr_unique UNIQUE (subdomain_id, ip_addr_id)
-);
-
-INSERT INTO subdomain_ipaddrs (id, subdomain_id, ip_addr_id)
-    SELECT id, subdomain_id, ip_addr_id
-    FROM _subdomain_ipaddrs_old;
-
-DROP TABLE _subdomain_ipaddrs_old;
-
 -- urls
 
 ALTER TABLE urls RENAME TO _urls_old;
@@ -122,5 +103,24 @@ INSERT INTO ipaddrs (id, family, value, unscoped, continent, continent_code, cou
   FROM _ipaddrs_old;
 
 DROP TABLE _ipaddrs_old;
+
+-- subdomain_ipaddrs
+
+ALTER TABLE subdomain_ipaddrs RENAME TO _subdomain_ipaddrs_old;
+
+CREATE TABLE subdomain_ipaddrs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    subdomain_id INTEGER NOT NULL,
+    ip_addr_id INTEGER NOT NULL,
+    FOREIGN KEY(subdomain_id) REFERENCES subdomains(id) ON DELETE CASCADE,
+    FOREIGN KEY(ip_addr_id) REFERENCES ipaddrs(id) ON DELETE CASCADE,
+    CONSTRAINT subdomain_ipaddr_unique UNIQUE (subdomain_id, ip_addr_id)
+);
+
+INSERT INTO subdomain_ipaddrs (id, subdomain_id, ip_addr_id)
+    SELECT id, subdomain_id, ip_addr_id
+    FROM _subdomain_ipaddrs_old;
+
+DROP TABLE _subdomain_ipaddrs_old;
 
 PRAGMA foreign_keys=on;
