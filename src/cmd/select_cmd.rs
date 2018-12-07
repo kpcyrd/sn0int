@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 
-use db;
-use shell::Readline;
+use crate::db;
+use crate::shell::Readline;
 use structopt::StructOpt;
-use models::*;
+use crate::models::*;
 
 
 #[derive(Debug, StructOpt)]

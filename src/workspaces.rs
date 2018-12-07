@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 
 use std::ffi::OsStr;
 use std::fs;
 use std::str::FromStr;
-use paths;
+use crate::paths;
 
 
 #[derive(Debug, Clone)]

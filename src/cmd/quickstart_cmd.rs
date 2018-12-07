@@ -1,11 +1,11 @@
-use errors::*;
+use crate::errors::*;
 
-use args::Install;
-use api::Client;
+use crate::args::Install;
+use crate::api::Client;
 // use colored::Colorize;
-use cmd::mod_cmd;
-use registry;
-use shell::Readline;
+use crate::cmd::mod_cmd;
+use crate::registry;
+use crate::shell::Readline;
 use structopt::StructOpt;
 use sn0int_common::ModuleID;
 

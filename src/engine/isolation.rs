@@ -1,10 +1,10 @@
-use errors::*;
+use crate::errors::*;
 use chrootable_https::dns::Resolver;
-use engine::{Environment, Module, Reporter};
-use geoip::{GeoIP, AsnDB};
-use psl::Psl;
+use crate::engine::{Environment, Module, Reporter};
+use crate::geoip::{GeoIP, AsnDB};
+use crate::psl::Psl;
 use serde_json;
-use worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
+use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
 
 use std::env;
 use std::io::prelude::*;

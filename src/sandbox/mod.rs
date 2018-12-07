@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 #[cfg(target_os = "linux")]
 use caps::{self, CapSet};
 #[cfg(target_os = "linux")]

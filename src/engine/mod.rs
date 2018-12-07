@@ -1,22 +1,22 @@
-use errors::*;
+use crate::errors::*;
 
-use geoip::{GeoIP, AsnDB};
-use json::LuaJsonValue;
+use crate::geoip::{GeoIP, AsnDB};
+use crate::json::LuaJsonValue;
 use serde_json;
 use std::fs;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use engine::ctx::Script;
+use crate::engine::ctx::Script;
 use sn0int_common::ModuleID;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::Resolver;
-use psl::Psl;
-use paths;
+use crate::psl::Psl;
+use crate::paths;
 use std::cmp::Ordering;
-use term;
-use worker::{self, Event};
+use crate::term;
+use crate::worker::{self, Event};
 
 pub mod ctx;
 pub mod isolation;

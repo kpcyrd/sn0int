@@ -1,16 +1,16 @@
-use errors::*;
+use crate::errors::*;
 
-use args;
-use args::Install;
-use api::Client;
-use config::Config;
+use crate::args;
+use crate::args::Install;
+use crate::api::Client;
+use crate::config::Config;
 use colored::Colorize;
-use engine::Module;
-use registry;
-use shell::Readline;
+use crate::engine::Module;
+use crate::registry;
+use crate::shell::Readline;
 use structopt::StructOpt;
-use term;
-use worker;
+use crate::term;
+use crate::worker;
 
 
 #[derive(Debug, StructOpt)]

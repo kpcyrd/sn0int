@@ -1,5 +1,5 @@
-use engine::ctx::State;
-use hlua::{self, AnyLuaValue};
+use crate::engine::ctx::State;
+use crate::hlua::{self, AnyLuaValue};
 use std::sync::Arc;
 
 fn format_lua(out: &mut String, x: &AnyLuaValue) {

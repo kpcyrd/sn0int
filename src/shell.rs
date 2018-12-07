@@ -1,24 +1,24 @@
-use errors::*;
+use crate::errors::*;
 
-use args::Args;
-use cmd::*;
-use complete::CmdCompleter;
-use config::Config;
+use crate::args::Args;
+use crate::cmd::*;
+use crate::complete::CmdCompleter;
+use crate::config::Config;
 use colored::Colorize;
 use ctrlc;
-use db::{self, Database};
-use engine::{Engine, Module};
-use geoip::{GeoIP, AsnDB, Maxmind};
+use crate::db::{self, Database};
+use crate::engine::{Engine, Module};
+use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use rustyline::error::ReadlineError;
 use rustyline::{self, CompletionType, EditMode, Editor};
 use shellwords;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use term::{self, Prompt};
-use paths;
-use psl::Psl;
-use workspaces::Workspace;
+use crate::term::{self, Prompt};
+use crate::paths;
+use crate::psl::Psl;
+use crate::workspaces::Workspace;
 
 
 #[derive(Debug)]

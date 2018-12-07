@@ -1,6 +1,6 @@
-use errors::*;
+use crate::errors::*;
 use std::fmt;
-use config::Config;
+use crate::config::Config;
 use chrootable_https::{self, HttpClient, Body, Request, Uri};
 use chrootable_https::http::request::Builder as RequestBuilder;
 use chrootable_https::header::CONTENT_TYPE;
@@ -11,7 +11,7 @@ use serde::ser::Serialize;
 use serde_json;
 use sn0int_common::api::*;
 use sn0int_common::ModuleID;
-use web;
+use crate::web;
 
 
 pub struct Client {

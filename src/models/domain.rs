@@ -1,7 +1,7 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
+use crate::models::*;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -20,7 +20,7 @@ impl Model for Domain {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         let results = domains.load::<Self>(db.db())?;
 
@@ -28,7 +28,7 @@ impl Model for Domain {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         let query = domains.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -37,7 +37,7 @@ impl Model for Domain {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         diesel::delete(domains.filter(filter.sql()))
             .execute(db.db())
@@ -53,7 +53,7 @@ impl Model for Domain {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         let domain = domains.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -62,7 +62,7 @@ impl Model for Domain {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         let domain = domains.filter(value.eq(query))
             .first::<Self>(db.db())?;
@@ -71,7 +71,7 @@ impl Model for Domain {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         let domain = domains.filter(value.eq(query))
             .first::<Self>(db.db())
@@ -87,7 +87,7 @@ impl Scopable for Domain {
     }
 
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         diesel::update(domains.filter(filter.sql()))
             .set(unscoped.eq(false))
@@ -96,7 +96,7 @@ impl Scopable for Domain {
     }
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::domains::dsl::*;
+        use crate::schema::domains::dsl::*;
 
         diesel::update(domains.filter(filter.sql()))
             .set(unscoped.eq(true))

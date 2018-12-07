@@ -1,8 +1,8 @@
-use errors::*;
+use crate::errors::*;
 
-use engine::ctx::State;
-use engine::structs::LuaList;
-use hlua::{self, AnyLuaValue};
+use crate::engine::ctx::State;
+use crate::engine::structs::LuaList;
+use crate::hlua::{self, AnyLuaValue};
 use regex::{Regex, Captures};
 use std::sync::Arc;
 
@@ -45,7 +45,7 @@ pub fn regex_find_all(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     fn verify_find() {

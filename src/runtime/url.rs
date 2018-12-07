@@ -1,7 +1,7 @@
-use errors::*;
-use engine::ctx::State;
-use engine::structs::LuaMap;
-use hlua::{self, AnyLuaValue};
+use crate::errors::*;
+use crate::engine::ctx::State;
+use crate::engine::structs::LuaMap;
+use crate::hlua::{self, AnyLuaValue};
 use url::Url;
 use std::sync::Arc;
 
@@ -58,7 +58,7 @@ pub fn url_parse(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     fn verify_relative_path() {

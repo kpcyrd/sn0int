@@ -1,5 +1,5 @@
 #![allow(unused_imports)]
-use errors::*;
+use crate::errors::*;
 
 use diesel::sqlite::*;
 

@@ -1,19 +1,19 @@
-use errors::*;
+use crate::errors::*;
 
-use db::Family;
-use engine::{Environment, Reporter};
-use geoip::{GeoIP, AsnDB};
-use hlua::{self, AnyLuaValue};
-use models::{Insert, Update};
-use psl::Psl;
-use runtime;
+use crate::db::Family;
+use crate::engine::{Environment, Reporter};
+use crate::geoip::{GeoIP, AsnDB};
+use crate::hlua::{self, AnyLuaValue};
+use crate::models::{Insert, Update};
+use crate::psl::Psl;
+use crate::runtime;
 use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{Arc, Mutex};
 use chrootable_https::dns::Resolver;
-use web::{HttpSession, HttpRequest, RequestOptions};
-use worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
+use crate::web::{HttpSession, HttpRequest, RequestOptions};
+use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 
 
 pub trait State {
@@ -294,7 +294,7 @@ impl Script {
             return Err(err);
         }
 
-        use hlua::AnyLuaValue::*;
+        use crate::hlua::AnyLuaValue::*;
         match result {
             LuaString(x) => bail!("Script returned error: {:?}", x),
             _ => Ok(())
@@ -303,8 +303,8 @@ impl Script {
 
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
-        use engine::tests::DummyReporter;
-        use geoip::Maxmind;
+        use crate::engine::tests::DummyReporter;
+        use crate::geoip::Maxmind;
         let dns_config = Resolver::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===

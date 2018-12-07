@@ -1,6 +1,6 @@
 use structopt::clap::{AppSettings, Shell};
 use sn0int_common::ModuleID;
-use workspaces::Workspace;
+use crate::workspaces::Workspace;
 
 
 #[derive(Debug, StructOpt)]

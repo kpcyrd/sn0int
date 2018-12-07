@@ -1,6 +1,6 @@
-use errors::*;
-use engine::ctx::State;
-use hlua;
+use crate::errors::*;
+use crate::engine::ctx::State;
+use crate::hlua;
 use std::sync::Arc;
 
 pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<State>) {
@@ -19,7 +19,7 @@ pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     fn verify_psl_lookup() {

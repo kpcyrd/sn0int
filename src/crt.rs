@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 
 use x509_parser;
 use der_parser::oid::Oid;

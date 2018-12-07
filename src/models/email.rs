@@ -1,7 +1,7 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
+use crate::models::*;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -21,7 +21,7 @@ impl Model for Email {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         let results = emails.load::<Self>(db.db())?;
 
@@ -29,7 +29,7 @@ impl Model for Email {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         let query = emails.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -38,7 +38,7 @@ impl Model for Email {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         diesel::delete(emails.filter(filter.sql()))
             .execute(db.db())
@@ -54,7 +54,7 @@ impl Model for Email {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         let domain = emails.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -63,7 +63,7 @@ impl Model for Email {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         let email = emails.filter(value.eq(query))
             .first::<Self>(db.db())?;
@@ -72,7 +72,7 @@ impl Model for Email {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         let email = emails.filter(value.eq(query))
             .first::<Self>(db.db())
@@ -88,7 +88,7 @@ impl Scopable for Email {
     }
 
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         diesel::update(emails.filter(filter.sql()))
             .set(unscoped.eq(false))
@@ -97,7 +97,7 @@ impl Scopable for Email {
     }
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::emails::dsl::*;
+        use crate::schema::emails::dsl::*;
 
         diesel::update(emails.filter(filter.sql()))
             .set(unscoped.eq(true))

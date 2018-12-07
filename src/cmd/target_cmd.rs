@@ -1,11 +1,11 @@
-use errors::*;
+use crate::errors::*;
 
-use db;
-use shell::Readline;
+use crate::db;
+use crate::shell::Readline;
 use sn0int_common::metadata::Source;
 use structopt::StructOpt;
-use term;
-use models::*;
+use crate::term;
+use crate::models::*;
 
 
 #[derive(Debug, StructOpt)]

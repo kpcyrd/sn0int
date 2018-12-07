@@ -1,11 +1,11 @@
-use errors::*;
+use crate::errors::*;
 
 use chrootable_https::Client;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use paths;
+use crate::paths;
 use publicsuffix::{self, Domain, DnsName};
-use worker;
+use crate::worker;
 
 
 #[derive(Debug)]

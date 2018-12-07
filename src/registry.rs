@@ -1,16 +1,16 @@
-use errors::*;
-use args::{Args, Publish, Install, Search};
-use api::Client;
-use auth;
-use config::Config;
+use crate::errors::*;
+use crate::args::{Args, Publish, Install, Search};
+use crate::api::Client;
+use crate::auth;
+use crate::config::Config;
 use colored::Colorize;
 use separator::Separatable;
 use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::Path;
-use paths;
-use term;
-use worker;
+use crate::paths;
+use crate::term;
+use crate::worker;
 
 
 pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<()> {

@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 use tar;
 use libflate::gzip;
 use std::io;

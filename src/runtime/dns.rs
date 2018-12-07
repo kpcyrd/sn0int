@@ -1,10 +1,10 @@
-use errors::*;
+use crate::errors::*;
 
 use chrootable_https::dns::{Resolver, DnsResolver, RecordType};
-use engine;
-use engine::ctx::State;
-use json::LuaJsonValue;
-use hlua::{self, AnyLuaValue};
+use crate::engine;
+use crate::engine::ctx::State;
+use crate::json::LuaJsonValue;
+use crate::hlua::{self, AnyLuaValue};
 use serde_json;
 use std::sync::Arc;
 use std::net::SocketAddr;
@@ -82,7 +82,7 @@ pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     #[ignore]

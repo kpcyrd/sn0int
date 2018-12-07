@@ -1,8 +1,8 @@
-use errors::*;
+use crate::errors::*;
 
 use std::iter::FromIterator;
 use std::collections::HashMap;
-use hlua::AnyLuaValue;
+use crate::hlua::AnyLuaValue;
 use serde_json::{self, Deserializer, Value, Number, Map};
 
 

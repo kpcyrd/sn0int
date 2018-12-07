@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 use maxminddb::geoip2;
 use std::collections::BTreeMap;
 
