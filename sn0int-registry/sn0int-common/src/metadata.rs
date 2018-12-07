@@ -172,6 +172,21 @@ mod tests {
     }
 
     #[test]
+    fn verify_no_source() {
+        let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
+-- Version: 1.0.0
+-- License: WTFPL
+
+"#).expect("parse");
+        assert_eq!(metadata, Metadata {
+            description: "Hello world, this is my description".to_string(),
+            version: "1.0.0".to_string(),
+            license: License::WTFPL,
+            source: None,
+        });
+    }
+
+    #[test]
     fn verify_require_license() {
         let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
 -- Version: 1.0.0

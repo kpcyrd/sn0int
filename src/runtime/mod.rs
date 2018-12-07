@@ -18,6 +18,7 @@ import_fns!(print);
 import_fns!(psl);
 import_fns!(regex);
 import_fns!(sleep);
+import_fns!(stdio);
 import_fns!(url);
 import_fns!(utf8);
 import_fns!(x509);

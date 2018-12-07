@@ -32,7 +32,7 @@ fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter)
         .collect()
 }
 
-pub fn execute(rl: &mut Readline, threads: usize, verbose: u64) -> Result<()> {
+pub fn execute(rl: &mut Readline, threads: usize, verbose: u64, has_stdin: bool) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -49,7 +49,7 @@ pub fn execute(rl: &mut Readline, threads: usize, verbose: u64) -> Result<()> {
     }?;
 
     rl.signal_register().catch_ctrl();
-    worker::spawn(rl, &module, args, threads, verbose);
+    worker::spawn(rl, &module, args, threads, verbose, has_stdin);
     rl.signal_register().reset_ctrlc();
 
     term::info(&format!("Finished {}", module.canonical()));
@@ -59,5 +59,5 @@ pub fn execute(rl: &mut Readline, threads: usize, verbose: u64) -> Result<()> {
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
-    execute(rl, args.threads, args.verbose)
+    execute(rl, args.threads, args.verbose, false)
 }

@@ -4,11 +4,11 @@ use engine::{Environment, Module, Reporter};
 use geoip::{GeoIP, AsnDB};
 use psl::Psl;
 use serde_json;
-use worker::{Event, Event2, LogEvent, DatabaseEvent, ExitEvent, EventSender};
+use worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
 
 use std::env;
 use std::io::prelude::*;
-use std::io::{self, BufReader, BufRead, Stdin, Stdout};
+use std::io::{self, BufReader, BufRead, stdin, Stdin, Stdout};
 use std::sync::{mpsc, Arc, Mutex};
 use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
@@ -23,7 +23,6 @@ pub struct StartCommand {
 
 impl StartCommand {
     pub fn new(verbose: u64, dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
-        // TODO: compress psl
         StartCommand {
             verbose,
             dns_config,
@@ -77,6 +76,13 @@ impl Supervisor {
         Ok(())
     }
 
+    pub fn send_struct<T: serde::Serialize>(&mut self, value: T, tx: &EventSender) {
+        let value = serde_json::to_value(value).expect("Failed to serialize reply");
+        if let Err(_) = self.send(&value) {
+            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
+        }
+    }
+
     pub fn recv(&mut self) -> Result<Event> {
         let mut line = String::new();
         let len = self.stdout.read_line(&mut line)?;
@@ -97,15 +103,14 @@ impl Supervisor {
         }
     }
 
-    pub fn send_event_callback(&mut self, event: DatabaseEvent, tx: &EventSender) {
+    pub fn send_event_callback<T: EventWithCallback>(&mut self, event: T, tx: &EventSender)
+        where <T as EventWithCallback>::Payload: serde::Serialize
+    {
         let (tx2, rx2) = mpsc::channel();
-        tx.send(Event2::Database((event, tx2)));
+        tx.send(event.with_callback(tx2));
         let reply = rx2.recv().unwrap();
 
-        let value = serde_json::to_value(reply).expect("Failed to serialize reply");
-        if let Err(_) = self.send(&value) {
-            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
-        }
+        self.send_struct(reply, tx);
     }
 }
 
@@ -152,8 +157,14 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, verbose: u64) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, verbose: u64, has_stdin: bool) -> Result<()> {
     let dns_config = Resolver::from_system()?;
+
+    let mut reader = if has_stdin {
+        Some(BufReader::new(stdin()))
+    } else {
+        None
+    };
 
     let mut supervisor = Supervisor::setup(&module)?;
     supervisor.send_start(&StartCommand::new(verbose, dns_config, module, arg))?;
@@ -162,6 +173,7 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ve
         match supervisor.recv()? {
             Event::Log(event) => tx.send(Event2::Log(event)),
             Event::Database(object) => supervisor.send_event_callback(object, &tx),
+            Event::Stdio(object) => object.apply(&mut supervisor, tx, &mut reader),
             Event::Exit(event) => {
                 if let ExitEvent::Err(err) = event {
                     tx.send(Event2::Log(LogEvent::Error(err)));
