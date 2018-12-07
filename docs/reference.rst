@@ -404,6 +404,18 @@ Update the label of the progress indicator.
 
     status('ohai')
 
+stdin_readline
+--------------
+
+Read a line from stdin. The final newline is not removed.
+
+.. code-block:: lua
+
+    stdin_readline()
+
+.. note::
+   This only works with `sn0int run --stdin`.
+
 url_join
 --------
 
