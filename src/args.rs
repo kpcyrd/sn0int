@@ -51,13 +51,21 @@ pub enum SubCommand {
 
 #[derive(Debug, StructOpt)]
 pub struct Run {
+    /// Execute a module that has been installed
     pub module: Option<String>,
     #[structopt(short="f", long="file", conflicts_with="module")]
+    /// Run a module from a path
     pub file: Option<String>,
     #[structopt(short="j", long="threads", default_value="1")]
+    /// Run modules concurrently
     pub threads: usize,
     #[structopt(short="v", long="verbose", parse(from_occurrences))]
+    /// Verbose logging, once to print inserts even if they don't add new
+    /// data, twice to activate the debug() function
     pub verbose: u64,
+    #[structopt(long="stdin")]
+    /// Expose stdin to modules
+    pub stdin: bool,
 }
 
 #[derive(Debug, StructOpt)]

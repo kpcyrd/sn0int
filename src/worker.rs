@@ -3,6 +3,7 @@ use errors::*;
 use channel;
 use db::{Database, DbChange, Family};
 use engine::{self, Module};
+use engine::isolation::Supervisor;
 use models::*;
 use serde_json;
 use shell::Readline;
@@ -10,6 +11,7 @@ use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::thread;
+use std::io::{Stdin, BufRead, BufReader};
 use term::{Spinner, StackedSpinners, SpinLogger};
 use threadpool::ThreadPool;
 
@@ -20,6 +22,7 @@ type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
 pub enum Event {
     Log(LogEvent),
     Database(DatabaseEvent),
+    Stdio(StdioEvent),
     Exit(ExitEvent),
 }
 
@@ -65,6 +68,12 @@ impl EventSender {
     }
 }
 
+pub trait EventWithCallback {
+    type Payload;
+
+    fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2;
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ExitEvent {
     Ok,
@@ -95,6 +104,14 @@ pub enum DatabaseEvent {
     Insert(Insert),
     Select((Family, String)),
     Update((String, Update)),
+}
+
+impl EventWithCallback for DatabaseEvent {
+    type Payload = Option<i32>;
+
+    fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
+        Event2::Database((self, tx))
+    }
 }
 
 impl DatabaseEvent {
@@ -164,7 +181,35 @@ impl DatabaseEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize, verbose: u64) {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StdioEvent {
+}
+
+impl StdioEvent {
+    fn read(reader: &mut Option<BufReader<Stdin>>) -> Result<Option<String>> {
+        if let Some(ref mut reader) = reader {
+            let mut line = String::new();
+            let len = reader.read_line(&mut line)?;
+            debug!("stdin: {:?}", line);
+
+            if len > 0 {
+                Ok(Some(line))
+            } else {
+                Ok(None)
+            }
+        } else {
+            bail!("stdin is unavailable");
+        }
+    }
+
+    pub fn apply(self, supervisor: &mut Supervisor, tx: &EventSender, reader: &mut Option<BufReader<Stdin>>) {
+        let reply = Self::read(reader)
+            .map_err(|e| e.to_string());
+        supervisor.send_struct(reply, tx);
+    }
+}
+
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize, verbose: u64, has_stdin: bool) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;
@@ -194,7 +239,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, verbose) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, verbose, has_stdin) {
                 Ok(_) => ExitEvent::Ok,
                 Err(err) => ExitEvent::Err(err.to_string()),
             };
@@ -262,6 +307,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                 recv(rx) -> msg => match msg.ok() {
                     Some(Event::Log(log)) => log.apply(&mut *spinner),
                     Some(Event::Database(_)) => (),
+                    Some(Event::Stdio(_)) => (),
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,
                     Some(Event::Exit(ExitEvent::Err(error))) => spinner.error(&error),

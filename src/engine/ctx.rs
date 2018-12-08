@@ -13,7 +13,7 @@ use std::result;
 use std::sync::{Arc, Mutex};
 use chrootable_https::dns::Resolver;
 use web::{HttpSession, HttpRequest, RequestOptions};
-use worker::{Event, LogEvent, DatabaseEvent};
+use worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 
 
 pub trait State {
@@ -71,6 +71,13 @@ pub trait State {
         let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
         reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
+    }
+
+    fn stdin_readline(&self) -> Result<Option<String>> {
+        self.send(&Event::Stdio(StdioEvent {}));
+        let reply = self.recv()?;
+        let reply: result::Result<Option<String>, String> = serde_json::from_value(reply)?;
+        reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
     }
 
     fn dns_config(&self) -> Arc<Resolver>;
@@ -231,6 +238,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
+    runtime::stdin_readline(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
     runtime::utf8_decode(&mut lua, state.clone());
