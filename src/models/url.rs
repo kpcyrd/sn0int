@@ -3,7 +3,7 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use crate::ser;
-use url;
+use crate::url;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
