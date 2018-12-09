@@ -9,9 +9,8 @@ edition = "2018"
 
 [dependencies]
 sn0int-common = { version="0.3.0", path="sn0int-common" }
-rocket = "0.3.16"
-rocket_codegen = "0.3.16"
-rocket_contrib = { version = "0.3.16", features = ["handlebars_templates"] }
+rocket = "0.4"
+rocket_contrib = { version = "0.4", features = ["handlebars_templates"] }
 
 diesel = { version = "1.3", features = ["postgres", "r2d2"] }
 diesel_migrations = { version = "1.3.0", features = ["postgres"] }

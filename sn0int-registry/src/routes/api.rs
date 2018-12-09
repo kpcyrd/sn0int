@@ -1,17 +1,18 @@
 use crate::errors::*;
 use crate::auth2::AuthHeader;
 use crate::db;
+use crate::models::*;
 use diesel::Connection;
+use rocket::request::Form;
+use rocket_contrib::json::Json;
 use semver::Version;
 use sn0int_common::api::*;
 use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
-use rocket_contrib::Json;
-use crate::models::*;
 
 
 #[get("/quickstart")]
-fn quickstart(connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<Module>>>> {
+pub fn quickstart(connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<Module>>>> {
     let modules = Module::quickstart(&connection)?;
     Ok(Json(ApiResponse::Success(modules)))
 }
@@ -21,8 +22,8 @@ pub struct Search {
     q: String,
 }
 
-#[get("/search?<q>")]
-fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<SearchResponse>>>> {
+#[get("/search?<q..>")]
+pub fn search(q: Form<Search>, connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<SearchResponse>>>> {
     info!("Searching: {:?}", q.q);
 
     let modules = Module::search(&q.q, &connection)?;
@@ -43,7 +44,7 @@ fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<V
 }
 
 #[get("/info/<author>/<name>", format="application/json")]
-fn info(author: String, name: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<ModuleInfoResponse>>> {
+pub fn info(author: String, name: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<ModuleInfoResponse>>> {
     info!("Querying {:?}/{:?}", author, name);
     let module = Module::find(&author, &name, &connection)?;
 
@@ -56,7 +57,7 @@ fn info(author: String, name: String, connection: db::Connection) -> ApiResult<J
 }
 
 #[get("/dl/<author>/<name>/<version>", format="application/json")]
-fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<DownloadResponse>>> {
+pub fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<DownloadResponse>>> {
     info!("Downloading {:?}/{:?} ({:?})", author, name, version);
     let module = Module::find(&author, &name, &connection)?;
     debug!("Module: {:?}", module);
@@ -74,7 +75,7 @@ fn download(author: String, name: String, version: String, connection: db::Conne
 }
 
 #[post("/publish/<name>", format="application/json", data="<upload>")]
-fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<PublishResponse>>> {
+pub fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<PublishResponse>>> {
     let user = session.verify(&connection)?;
 
     id::valid_name(&user)
@@ -115,7 +116,7 @@ fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, conn
 }
 
 #[get("/whoami")]
-fn whoami(session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<WhoamiResponse>>> {
+pub fn whoami(session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<WhoamiResponse>>> {
     let user = session.verify(&connection)?;
     Ok(Json(ApiResponse::Success(WhoamiResponse {
         user,

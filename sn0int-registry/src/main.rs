@@ -1,9 +1,9 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![warn(unused_extern_crates)]
-#![feature(plugin)]
 #![feature(custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
+#[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
@@ -13,7 +13,8 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
-use rocket_contrib::{Json, Value, Template};
+use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::templates::Template;
 use dotenv::dotenv;
 
 use std::env;
@@ -32,21 +33,21 @@ pub mod schema;
 
 
 #[catch(400)]
-fn bad_request() -> Json<Value> {
+fn bad_request() -> Json<JsonValue> {
     Json(json!({
         "error": "Bad request"
     }))
 }
 
 #[catch(404)]
-fn not_found() -> Json<Value> {
+fn not_found() -> Json<JsonValue> {
     Json(json!({
         "error": "Resource was not found"
     }))
 }
 
 #[catch(500)]
-fn internal_error() -> Json<Value> {
+fn internal_error() -> Json<JsonValue> {
     Json(json!({
         "error": "Internal server error"
     }))
@@ -82,12 +83,12 @@ fn run() -> Result<()> {
             routes::assets::favicon,
             routes::assets::style,
         ])
-    .catch(catchers![
-        bad_request,
-        not_found,
-        internal_error,
-    ])
-    .launch();
+        .register(catchers![
+            bad_request,
+            not_found,
+            internal_error,
+        ])
+        .launch();
 
     Ok(())
 }
