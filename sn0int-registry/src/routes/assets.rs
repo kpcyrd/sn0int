@@ -1,7 +1,8 @@
-use rocket::http::Status;
-use rocket::response::content;
-use rocket_contrib::templates::Template;
 use crate::assets::{ASSET_REV, FAVICON, STYLE_SHEET};
+use rocket::http::ContentType;
+use rocket::http::Status;
+use rocket::http::hyper::header::{CacheControl, CacheDirective};
+use rocket_contrib::templates::Template;
 
 
 #[get("/")]
@@ -11,15 +12,49 @@ pub fn index() -> Template {
     })
 }
 
+#[derive(Responder)]
+pub struct CachableResponder {
+    inner: Vec<u8>,
+    content_type: ContentType,
+    cache: CacheControl,
+}
+
+impl CachableResponder {
+    pub fn new<I: Into<Vec<u8>>>(inner: I, content_type: ContentType, max_age: u32) -> CachableResponder {
+        let cache = CacheControl(vec![
+            CacheDirective::Public,
+            CacheDirective::MaxAge(max_age),
+        ]);
+        CachableResponder {
+            inner: inner.into(),
+            content_type,
+            cache,
+        }
+    }
+
+    pub fn immutable<I: Into<Vec<u8>>>(inner: I, content_type: ContentType) -> CachableResponder {
+        let cache = CacheControl(vec![
+            CacheDirective::Public,
+            CacheDirective::MaxAge(31536000),
+            CacheDirective::Extension("immutable".into(), None),
+        ]);
+        CachableResponder {
+            inner: inner.into(),
+            content_type,
+            cache,
+        }
+    }
+}
+
 #[get("/favicon.ico")]
-pub fn favicon() -> Vec<u8> {
-    FAVICON.to_vec()
+pub fn favicon() -> CachableResponder {
+    CachableResponder::new(FAVICON, ContentType::Binary, 3600)
 }
 
 #[get("/assets/<rev>/style.css")]
-pub fn style(rev: String) -> Result<content::Css<&'static str>, Status> {
+pub fn style(rev: String) -> Result<CachableResponder, Status> {
     if rev == *ASSET_REV {
-        Ok(content::Css(STYLE_SHEET))
+        Ok(CachableResponder::immutable(STYLE_SHEET, ContentType::CSS))
     } else {
         Err(Status::NotFound)
     }
