@@ -22,7 +22,9 @@ pub fn get(auth: Form<OAuth>) -> Template {
 pub fn post(auth: Form<OAuth>, connection: db::Connection) -> ApiResult<Template> {
     let (code, state) = auth.into_inner().extract()?;
     let client = Authenticator::from_env()?;
-    client.store_code(code, state, &connection)?;
+    client.store_code(code, state, &connection)
+        .bad_request()
+        .public_context("Authentication failed")?;
 
     Ok(Template::render("auth-done", hashmap!{
         "ASSET_REV" => ASSET_REV.as_str(),
