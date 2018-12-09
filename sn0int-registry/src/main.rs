@@ -13,6 +13,8 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
+use rocket::fairing::AdHoc;
+use rocket::http::Header;
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::templates::Template;
 use dotenv::dotenv;
@@ -65,6 +67,15 @@ fn run() -> Result<()> {
     rocket::ignite()
         .manage(db::init(&database_url))
         .attach(Template::fairing())
+        .attach(AdHoc::on_response("Security Headers", |_, resp| {
+            resp.set_header(Header::new("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload"));
+            resp.set_header(Header::new("Content-Security-Policy", "style-src 'self'"));
+            resp.set_header(Header::new("Feature-Policy", "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'none'; payment 'none'"));
+            resp.set_header(Header::new("X-Frame-Options", "deny"));
+            resp.set_header(Header::new("X-XSS-Protection", "1; mode=block"));
+            resp.set_header(Header::new("X-Content-Type-Options", "nosniff"));
+            resp.set_header(Header::new("Referrer-Policy", "same-origin"));
+        }))
         .mount("/api/v0", routes![
             routes::api::quickstart,
             routes::api::search,
