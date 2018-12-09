@@ -1,10 +1,10 @@
-use errors::*;
-use auth::Authenticator;
-use db;
+use crate::errors::*;
+use crate::auth::Authenticator;
+use crate::db;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket_contrib::Template;
-use assets::ASSET_REV;
+use crate::assets::ASSET_REV;
 use serde_json::{self, Value};
 
 

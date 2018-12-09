@@ -1,7 +1,7 @@
 use rocket::http::Status;
 use rocket::response::content;
 use rocket_contrib::Template;
-use assets::{ASSET_REV, FAVICON, STYLE_SHEET};
+use crate::assets::{ASSET_REV, FAVICON, STYLE_SHEET};
 
 
 #[get("/")]
