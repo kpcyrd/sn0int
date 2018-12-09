@@ -1,4 +1,4 @@
-use errors::*;
+use crate::errors::*;
 use nom;
 use nom::types::CompleteStr;
 use std::fmt;
