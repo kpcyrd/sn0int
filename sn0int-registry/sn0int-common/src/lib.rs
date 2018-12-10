@@ -9,6 +9,8 @@ pub mod metadata;
 pub mod id;
 pub use crate::id::*;
 
+pub use rocket_failure::StrictApiResponse as ApiResponse;
+
 #[cfg(test)]
 mod tests {
     #[test]

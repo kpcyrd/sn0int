@@ -1,19 +1,20 @@
 use crate::errors::*;
 use crate::auth2::AuthHeader;
 use crate::db;
+use crate::models::*;
 use diesel::Connection;
+use rocket::request::Form;
+use rocket_contrib::json::Json;
 use semver::Version;
 use sn0int_common::api::*;
 use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
-use rocket_contrib::Json;
-use crate::models::*;
 
 
 #[get("/quickstart")]
-fn quickstart(connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<Module>>>> {
+pub fn quickstart(connection: db::Connection) -> ApiResult<ApiResponse<Vec<Module>>> {
     let modules = Module::quickstart(&connection)?;
-    Ok(Json(ApiResponse::Success(modules)))
+    Ok(ApiResponse::Success(modules))
 }
 
 #[derive(Debug, FromForm)]
@@ -21,8 +22,8 @@ pub struct Search {
     q: String,
 }
 
-#[get("/search?<q>")]
-fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<Vec<SearchResponse>>>> {
+#[get("/search?<q..>")]
+pub fn search(q: Form<Search>, connection: db::Connection) -> ApiResult<ApiResponse<Vec<SearchResponse>>> {
     info!("Searching: {:?}", q.q);
 
     let modules = Module::search(&q.q, &connection)?;
@@ -39,85 +40,99 @@ fn search(q: Search, connection: db::Connection) -> ApiResult<Json<ApiResponse<V
         })
         .collect();
 
-    Ok(Json(ApiResponse::Success(modules)))
+    Ok(ApiResponse::Success(modules))
 }
 
 #[get("/info/<author>/<name>", format="application/json")]
-fn info(author: String, name: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<ModuleInfoResponse>>> {
+pub fn info(author: String, name: String, connection: db::Connection) -> ApiResult<ApiResponse<ModuleInfoResponse>> {
     info!("Querying {:?}/{:?}", author, name);
-    let module = Module::find(&author, &name, &connection)?;
+    let module = Module::find(&author, &name, &connection)
+        .not_found()
+        .public_context("Module does not exist")?;
 
-    Ok(Json(ApiResponse::Success(ModuleInfoResponse {
+    Ok(ApiResponse::Success(ModuleInfoResponse {
         author: module.author,
         name: module.name,
         description: module.description,
         latest: module.latest,
-    })))
+    }))
 }
 
 #[get("/dl/<author>/<name>/<version>", format="application/json")]
-fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<Json<ApiResponse<DownloadResponse>>> {
+pub fn download(author: String, name: String, version: String, connection: db::Connection) -> ApiResult<ApiResponse<DownloadResponse>> {
     info!("Downloading {:?}/{:?} ({:?})", author, name, version);
-    let module = Module::find(&author, &name, &connection)?;
+    let module = Module::find(&author, &name, &connection)
+        .not_found()
+        .public_context("Module does not exist")?;
     debug!("Module: {:?}", module);
-    let release = Release::find(module.id, &version, &connection)?;
+    let release = Release::find(module.id, &version, &connection)
+        .not_found()
+        .public_context("Release does not exist")?;
     debug!("Release: {:?}", release);
 
     release.bump_downloads(&connection)?;
 
-    Ok(Json(ApiResponse::Success(DownloadResponse {
+    Ok(ApiResponse::Success(DownloadResponse {
         author,
         name,
         version,
         code: release.code,
-    })))
+    }))
 }
 
 #[post("/publish/<name>", format="application/json", data="<upload>")]
-fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<PublishResponse>>> {
-    let user = session.verify(&connection)?;
+pub fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, connection: db::Connection) -> ApiResult<ApiResponse<PublishResponse>> {
+    let user = session.verify(&connection)
+        .bad_request()
+        .public_context("Invalid auth token")?;
 
     id::valid_name(&user)
-        .context("Username is invalid")
-        .map_err(Error::from)?;
+        .bad_request()
+        .public_context("Username is invalid")?;
     id::valid_name(&name)
-        .context("Module name is invalid")
-        .map_err(Error::from)?;
+        .bad_request()
+        .public_context("Module name is invalid")?;
 
-    let metadata = upload.code.parse::<Metadata>()?;
+    let metadata = upload.code.parse::<Metadata>()
+        .bad_request()
+        .public_context("Failed to parse module metadata")?;
 
     let version = metadata.version.clone();
     Version::parse(&version)
-        .context("Version is invalid")
-        .map_err(Error::from)?;
+        .bad_request()
+        .public_context("Version is invalid")?;
 
-    connection.transaction::<_, Error, _>(|| {
-        let module = Module::update_or_create(&user, &name, &metadata.description, &connection)?;
+    connection.transaction::<_, WebError, _>(|| {
+        let module = Module::update_or_create(&user, &name, &metadata.description, &connection)
+            .private_context("Failed to write module metadata")?;
 
         match Release::try_find(module.id, &version, &connection)? {
             Some(release) => {
                 // if the code is identical, pretend we published the version
                 if release.code != upload.code {
-                    bail!("Version number already in use")
+                    bad_request!("Version number already in use")
                 }
             },
-            None => module.add_version(&version, &upload.code, &connection)?,
+            None => module.add_version(&version, &upload.code, &connection)
+                .private_context("Failed to add release")?,
         }
 
         Ok(())
     })?;
 
-    Ok(Json(ApiResponse::Success(PublishResponse {
+    Ok(ApiResponse::Success(PublishResponse {
         author: user,
         name,
         version,
-    })))
+    }))
 }
 
 #[get("/whoami")]
-fn whoami(session: AuthHeader, connection: db::Connection) -> ApiResult<Json<ApiResponse<WhoamiResponse>>> {
-    let user = session.verify(&connection)?;
-    Ok(Json(ApiResponse::Success(WhoamiResponse {
+pub fn whoami(session: AuthHeader, connection: db::Connection) -> ApiResult<ApiResponse<WhoamiResponse>> {
+    let user = session.verify(&connection)
+        .bad_request()
+        .public_context("Invalid auth token")?;
+    Ok(ApiResponse::Success(WhoamiResponse {
         user,
-    })))
+    }))
 }

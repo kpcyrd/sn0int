@@ -10,5 +10,7 @@ edition = "2018"
 [dependencies]
 serde = "1.0"
 serde_derive = "1.0"
+#rocket_failure = { path = "../../../rocket_failure" }
+rocket_failure = "0.1.1"
 failure = "0.1"
 nom = "4.0"

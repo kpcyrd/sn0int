@@ -1,10 +1,10 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![warn(unused_extern_crates)]
-#![feature(plugin)]
-#![feature(custom_derive)]
-#![plugin(rocket_codegen)]
+#![feature(proc_macro_hygiene, decl_macro)]
 
+#[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
+#[macro_use] extern crate rocket_failure;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
 #[macro_use] extern crate maplit;
@@ -13,7 +13,10 @@
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 
-use rocket_contrib::{Json, Value, Template};
+use rocket::fairing::AdHoc;
+use rocket::http::Header;
+use rocket_contrib::json::{Json, JsonValue};
+use rocket_contrib::templates::Template;
 use dotenv::dotenv;
 
 use std::env;
@@ -32,21 +35,21 @@ pub mod schema;
 
 
 #[catch(400)]
-fn bad_request() -> Json<Value> {
+fn bad_request() -> Json<JsonValue> {
     Json(json!({
         "error": "Bad request"
     }))
 }
 
 #[catch(404)]
-fn not_found() -> Json<Value> {
+fn not_found() -> Json<JsonValue> {
     Json(json!({
         "error": "Resource was not found"
     }))
 }
 
 #[catch(500)]
-fn internal_error() -> Json<Value> {
+fn internal_error() -> Json<JsonValue> {
     Json(json!({
         "error": "Internal server error"
     }))
@@ -64,6 +67,15 @@ fn run() -> Result<()> {
     rocket::ignite()
         .manage(db::init(&database_url))
         .attach(Template::fairing())
+        .attach(AdHoc::on_response("Security Headers", |_, resp| {
+            resp.set_header(Header::new("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload"));
+            resp.set_header(Header::new("Content-Security-Policy", "style-src 'self'"));
+            resp.set_header(Header::new("Feature-Policy", "geolocation 'none'; midi 'none'; notifications 'none'; push 'none'; sync-xhr 'none'; microphone 'none'; camera 'none'; magnetometer 'none'; gyroscope 'none'; speaker 'none'; vibrate 'none'; fullscreen 'none'; payment 'none'"));
+            resp.set_header(Header::new("X-Frame-Options", "deny"));
+            resp.set_header(Header::new("X-XSS-Protection", "1; mode=block"));
+            resp.set_header(Header::new("X-Content-Type-Options", "nosniff"));
+            resp.set_header(Header::new("Referrer-Policy", "same-origin"));
+        }))
         .mount("/api/v0", routes![
             routes::api::quickstart,
             routes::api::search,
@@ -82,12 +94,12 @@ fn run() -> Result<()> {
             routes::assets::favicon,
             routes::assets::style,
         ])
-    .catch(catchers![
-        bad_request,
-        not_found,
-        internal_error,
-    ])
-    .launch();
+        .register(catchers![
+            bad_request,
+            not_found,
+            internal_error,
+        ])
+        .launch();
 
     Ok(())
 }
