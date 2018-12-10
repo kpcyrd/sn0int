@@ -18,7 +18,7 @@ members = ["sn0int-registry/sn0int-common",
 
 [dependencies]
 sn0int-common = { version="0.3.0", path="sn0int-registry/sn0int-common" }
-rustyline = "2"
+rustyline = "3"
 log = "0.4"
 env_logger = "0.6"
 hlua-badtouch = "0.4"
@@ -48,7 +48,7 @@ maplit = "1.0.1"
 sloppy-rfc4880 = "0.1.2"
 regex = "1.0"
 toml = "0.4"
-maxminddb = "0.10.0"
+maxminddb = "0.12"
 tar = "0.4.17"
 libflate = "0.1.14"
 threadpool = "1.7"

@@ -44,12 +44,8 @@ fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    // TODO: this file should be processed after the sandbox is up
-    let path = GeoIP::cache_path()?;
-    let geoip = GeoIP::open(&path)?;
-
-    let path = AsnDB::cache_path()?;
-    let asn = AsnDB::open(&path)?;
+    let geoip = GeoIP::open_into_buf()?;
+    let asn = AsnDB::open_into_buf()?;
     let psl = Psl::open_into_string()?;
 
     sandbox::init()

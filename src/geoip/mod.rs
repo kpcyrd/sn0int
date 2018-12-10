@@ -1,13 +1,13 @@
-use crate::errors::*;
-use crate::archive;
 use chrootable_https::Client;
-use maxminddb::{self, geoip2};
-use std::fmt;
-use std::fs::File;
-use std::net::IpAddr;
-use std::path::Path;
+use crate::archive;
+use crate::errors::*;
 use crate::paths;
 use crate::worker;
+use maxminddb::{self, geoip2};
+use std::fmt;
+use std::fs::{self, File};
+use std::net::IpAddr;
+use std::path::Path;
 
 pub static GEOIP_CITY_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz";
 pub static GEOIP_ASN_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz";
@@ -22,7 +22,7 @@ pub trait Maxmind: Sized {
 
     fn archive_url() -> &'static str;
 
-    fn new(reader: maxminddb::Reader) -> Self;
+    fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self;
 
     // TODO: refactor this to return Path
     fn cache_path() -> Result<String> {
@@ -44,10 +44,21 @@ pub trait Maxmind: Sized {
         Ok(path.to_string())
     }
 
-    fn open(path: &str) -> Result<Self> {
-        let reader = maxminddb::Reader::open(path)
-            .context("Failed to open geoip database")?;
+    fn from_buf(buf: Vec<u8>) -> Result<Self> {
+        let reader = maxminddb::Reader::from_source(buf)
+            .context("Failed to read geoip database")?;
         Ok(Self::new(reader))
+    }
+
+    fn open(path: &str) -> Result<Self> {
+        let buf = fs::read(path)?;
+        Self::from_buf(buf)
+    }
+
+    fn open_into_buf() -> Result<Vec<u8>> {
+        let path = Self::cache_path()?;
+        let buf = fs::read(path)?;
+        Ok(buf)
     }
 
     fn open_or_download() -> Result<Self> {
@@ -73,7 +84,7 @@ pub trait Maxmind: Sized {
 }
 
 pub struct GeoIP {
-    reader: maxminddb::Reader,
+    reader: maxminddb::Reader<Vec<u8>>,
 }
 
 impl fmt::Debug for GeoIP {
@@ -94,7 +105,7 @@ impl Maxmind for GeoIP {
     }
 
     #[inline]
-    fn new(reader: maxminddb::Reader) -> Self {
+    fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self {
         GeoIP {
             reader
         }
@@ -110,7 +121,7 @@ impl GeoIP {
 }
 
 pub struct AsnDB {
-    reader: maxminddb::Reader,
+    reader: maxminddb::Reader<Vec<u8>>,
 }
 
 impl fmt::Debug for AsnDB {
@@ -131,7 +142,7 @@ impl Maxmind for AsnDB {
     }
 
     #[inline]
-    fn new(reader: maxminddb::Reader) -> Self {
+    fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self {
         AsnDB {
             reader
         }
