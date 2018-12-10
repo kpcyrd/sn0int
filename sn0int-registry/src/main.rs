@@ -1,6 +1,5 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 #![warn(unused_extern_crates)]
-#![feature(custom_derive)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
 #[macro_use] extern crate rocket;
