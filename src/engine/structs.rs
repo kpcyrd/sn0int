@@ -1,7 +1,7 @@
-use errors::*;
-use hlua::{AnyHashableLuaValue, AnyLuaValue};
+use crate::errors::*;
+use crate::hlua::{AnyHashableLuaValue, AnyLuaValue};
 use std::collections::{self, HashMap};
-use json::LuaJsonValue;
+use crate::json::LuaJsonValue;
 use serde;
 use serde_json;
 

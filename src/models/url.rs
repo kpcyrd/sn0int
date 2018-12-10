@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
-use ser;
-use url;
+use crate::models::*;
+use crate::ser;
+use crate::url;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -30,7 +30,7 @@ impl Model for Url {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         let results = urls.load::<Self>(db.db())?;
 
@@ -38,7 +38,7 @@ impl Model for Url {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         let query = urls.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -47,7 +47,7 @@ impl Model for Url {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         diesel::delete(urls.filter(filter.sql()))
             .execute(db.db())
@@ -63,7 +63,7 @@ impl Model for Url {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         let url = urls.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -72,7 +72,7 @@ impl Model for Url {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         let url = urls.filter(value.eq(query))
             .first::<Self>(db.db())?;
@@ -81,7 +81,7 @@ impl Model for Url {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         let url = urls.filter(value.eq(query))
             .first::<Self>(db.db())
@@ -97,7 +97,7 @@ impl Scopable for Url {
     }
 
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         diesel::update(urls.filter(filter.sql()))
             .set(unscoped.eq(false))
@@ -106,7 +106,7 @@ impl Scopable for Url {
     }
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::urls::dsl::*;
+        use crate::schema::urls::dsl::*;
 
         diesel::update(urls.filter(filter.sql()))
             .set(unscoped.eq(true))

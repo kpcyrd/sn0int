@@ -5,6 +5,7 @@ description = "sn0int registry"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
 repository = "https://github.com/kpcyrd/sn0int"
+edition = "2018"
 
 [dependencies]
 sn0int-common = { version="0.3.0", path="sn0int-common" }

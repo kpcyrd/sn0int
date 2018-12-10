@@ -1,6 +1,6 @@
-use errors::*;
+use crate::errors::*;
 
-use shell::Readline;
+use crate::shell::Readline;
 use structopt::StructOpt;
 
 

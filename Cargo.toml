@@ -7,6 +7,7 @@ license = "GPL-3.0"
 repository = "https://github.com/kpcyrd/sn0int"
 categories = ["command-line-utilities"]
 readme = "README.md"
+edition = "2018"
 
 [badges]
 travis-ci = { repository = "kpcyrd/sn0int" }

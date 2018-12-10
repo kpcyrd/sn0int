@@ -1,5 +1,5 @@
-use args::{Args, Completions};
-use errors::*;
+use crate::args::{Args, Completions};
+use crate::errors::*;
 use rustyline;
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
@@ -9,8 +9,8 @@ use std::borrow::Cow::{self, Borrowed, Owned};
 use std::str::FromStr;
 use std::io::stdout;
 use structopt::StructOpt;
-use shell::Command;
-use workspaces;
+use crate::shell::Command;
+use crate::workspaces;
 
 
 #[derive(Debug, Default)]

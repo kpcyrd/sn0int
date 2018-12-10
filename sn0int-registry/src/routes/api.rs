@@ -1,13 +1,13 @@
-use errors::*;
-use auth2::AuthHeader;
-use db;
+use crate::errors::*;
+use crate::auth2::AuthHeader;
+use crate::db;
 use diesel::Connection;
 use semver::Version;
 use sn0int_common::api::*;
 use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
 use rocket_contrib::Json;
-use models::*;
+use crate::models::*;
 
 
 #[get("/quickstart")]

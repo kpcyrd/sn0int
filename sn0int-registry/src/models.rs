@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
 use diesel::sql_types::BigInt;
 use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
-use schema::*;
+use crate::schema::*;
 
 
 #[derive(AsChangeset, Serialize, Deserialize, Queryable, Insertable)]

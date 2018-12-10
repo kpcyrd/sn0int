@@ -4,10 +4,10 @@
 
 pub mod api;
 pub mod errors;
-pub use errors::*;
+pub use crate::errors::*;
 pub mod metadata;
 pub mod id;
-pub use id::*;
+pub use crate::id::*;
 
 #[cfg(test)]
 mod tests {

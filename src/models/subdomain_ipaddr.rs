@@ -1,7 +1,7 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
+use crate::models::*;
 use std::net;
 
 
@@ -23,7 +23,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let results = subdomain_ipaddrs.load::<Self>(db.db())?;
 
@@ -31,7 +31,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let query = subdomain_ipaddrs.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -40,7 +40,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         diesel::delete(subdomain_ipaddrs.filter(filter.sql()))
             .execute(db.db())
@@ -52,7 +52,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let subdomain_ipaddr = subdomain_ipaddrs.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -61,7 +61,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let (my_subdomain_id, my_ip_addr_id) = query;
         let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
@@ -72,7 +72,7 @@ impl Model for SubdomainIpAddr {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::subdomain_ipaddrs::dsl::*;
+        use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let (my_subdomain_id, my_ip_addr_id) = query;
         let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))

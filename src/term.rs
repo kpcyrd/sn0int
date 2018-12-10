@@ -1,5 +1,5 @@
-use db;
-use engine::Module;
+use crate::db;
+use crate::engine::Module;
 use rand::prelude::*;
 use std::collections::HashMap;
 use std::fmt;

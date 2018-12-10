@@ -1,7 +1,7 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
+use crate::models::*;
 use std::net;
 use std::result;
 
@@ -32,7 +32,7 @@ impl Model for IpAddr {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         let results = ipaddrs.load::<Self>(db.db())?;
 
@@ -40,7 +40,7 @@ impl Model for IpAddr {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         let query = ipaddrs.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -49,7 +49,7 @@ impl Model for IpAddr {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         diesel::delete(ipaddrs.filter(filter.sql()))
             .execute(db.db())
@@ -65,7 +65,7 @@ impl Model for IpAddr {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         let ipaddr = ipaddrs.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -74,7 +74,7 @@ impl Model for IpAddr {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         let ipaddr = ipaddrs.filter(value.eq(query))
             .first::<Self>(db.db())?;
@@ -83,7 +83,7 @@ impl Model for IpAddr {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         let ipaddr = ipaddrs.filter(value.eq(query))
             .first::<Self>(db.db())
@@ -99,7 +99,7 @@ impl Scopable for IpAddr {
     }
 
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         diesel::update(ipaddrs.filter(filter.sql()))
             .set(unscoped.eq(false))
@@ -108,7 +108,7 @@ impl Scopable for IpAddr {
     }
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::ipaddrs::dsl::*;
+        use crate::schema::ipaddrs::dsl::*;
 
         diesel::update(ipaddrs.filter(filter.sql()))
             .set(unscoped.eq(true))

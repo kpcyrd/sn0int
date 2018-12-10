@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 
 use sloppy_rfc4880::{self, Tag};
-use engine::ctx::State;
-use engine::structs::{LuaMap, LuaList, byte_array};
-use hlua::{self, AnyLuaValue};
+use crate::engine::ctx::State;
+use crate::engine::structs::{LuaMap, LuaList, byte_array};
+use crate::hlua::{self, AnyLuaValue};
 use std::sync::Arc;
 use std::io::BufReader;
 
@@ -51,7 +51,7 @@ pub fn pgp_pubkey_armored(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     fn verify_pgp_pubkey_armored() {

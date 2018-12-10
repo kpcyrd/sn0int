@@ -1,13 +1,13 @@
-use errors::*;
-use archive;
+use crate::errors::*;
+use crate::archive;
 use chrootable_https::Client;
 use maxminddb::{self, geoip2};
 use std::fmt;
 use std::fs::File;
 use std::net::IpAddr;
 use std::path::Path;
-use paths;
-use worker;
+use crate::paths;
+use crate::worker;
 
 pub static GEOIP_CITY_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz";
 pub static GEOIP_ASN_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz";

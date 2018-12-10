@@ -1,12 +1,12 @@
-use errors::*;
+use crate::errors::*;
 use opener;
 use std::fs;
 use std::thread;
 use std::time::Duration;
-use api::Client;
-use config::Config;
-use paths;
-use term;
+use crate::api::Client;
+use crate::config::Config;
+use crate::paths;
+use crate::term;
 
 
 pub fn load_token() -> Result<String> {

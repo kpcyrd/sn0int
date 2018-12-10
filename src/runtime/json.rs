@@ -1,8 +1,8 @@
-use errors::*;
-use engine::ctx::State;
-use hlua::{self, AnyLuaValue};
+use crate::errors::*;
+use crate::engine::ctx::State;
+use crate::hlua::{self, AnyLuaValue};
 use std::sync::Arc;
-use json;
+use crate::json;
 
 
 pub fn json_decode(lua: &mut hlua::Lua, state: Arc<State>) {

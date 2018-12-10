@@ -1,17 +1,17 @@
-use errors::*;
+use crate::errors::*;
 
 use diesel;
 use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;
 use diesel::sql_types::Bool;
 use diesel::prelude::*;
-use models::*;
-use schema::*;
+use crate::models::*;
+use crate::schema::*;
 use std::str::FromStr;
-use paths;
-use migrations;
-use worker;
-use workspaces::Workspace;
+use crate::paths;
+use crate::migrations;
+use crate::worker;
+use crate::workspaces::Workspace;
 
 
 #[derive(Debug)]
@@ -182,7 +182,7 @@ impl Database {
     }
 
     pub fn update_subdomain(&self, subdomain: &SubdomainUpdate) -> Result<i32> {
-        use schema::subdomains::columns::*;
+        use crate::schema::subdomains::columns::*;
         diesel::update(subdomains::table.filter(id.eq(subdomain.id)))
             .set(subdomain)
             .execute(&self.db)?;
@@ -190,7 +190,7 @@ impl Database {
     }
 
     pub fn update_ipaddr(&self, ipaddr: &IpAddrUpdate) -> Result<i32> {
-        use schema::ipaddrs::columns::*;
+        use crate::schema::ipaddrs::columns::*;
         diesel::update(ipaddrs::table.filter(id.eq(ipaddr.id)))
             .set(ipaddr)
             .execute(&self.db)?;
@@ -198,7 +198,7 @@ impl Database {
     }
 
     pub fn update_url(&self, url: &UrlUpdate) -> Result<i32> {
-        use schema::urls::columns::*;
+        use crate::schema::urls::columns::*;
         diesel::update(urls::table.filter(id.eq(url.id)))
             .set(url)
             .execute(&self.db)?;
@@ -206,7 +206,7 @@ impl Database {
     }
 
     pub fn update_email(&self, email: &EmailUpdate) -> Result<i32> {
-        use schema::emails::columns::*;
+        use crate::schema::emails::columns::*;
         diesel::update(emails::table.filter(id.eq(email.id)))
             .set(email)
             .execute(&self.db)?;

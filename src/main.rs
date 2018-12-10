@@ -1,8 +1,6 @@
 #![warn(unused_extern_crates)]
-extern crate sn0int;
-extern crate env_logger;
+use env_logger;
 #[macro_use] extern crate failure;
-extern crate structopt;
 
 use env_logger::Env;
 use sn0int::args::{self, Args, SubCommand};

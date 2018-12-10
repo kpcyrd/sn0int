@@ -1,10 +1,10 @@
-use errors::*;
+use crate::errors::*;
 
-use engine::ctx::State;
-use hlua::{self, AnyLuaValue, AnyHashableLuaValue};
+use crate::engine::ctx::State;
+use crate::hlua::{self, AnyLuaValue, AnyHashableLuaValue};
 use std::sync::Arc;
 use std::collections::HashMap;
-use web::{RequestOptions, HttpRequest};
+use crate::web::{RequestOptions, HttpRequest};
 
 
 pub fn http_mksession(lua: &mut hlua::Lua, state: Arc<State>) {
@@ -41,7 +41,7 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
     use std::time::{Instant, Duration};
 
     #[test]

@@ -1,7 +1,7 @@
-use errors::*;
+use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
-use models::*;
+use crate::models::*;
 use std::result;
 
 
@@ -24,7 +24,7 @@ impl Model for Subdomain {
     }
 
     fn list(db: &Database) -> Result<Vec<Self>> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         let results = subdomains.load::<Self>(db.db())?;
 
@@ -32,7 +32,7 @@ impl Model for Subdomain {
     }
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         let query = subdomains.filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
@@ -41,7 +41,7 @@ impl Model for Subdomain {
     }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         diesel::delete(subdomains.filter(filter.sql()))
             .execute(db.db())
@@ -57,7 +57,7 @@ impl Model for Subdomain {
     }
 
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         let subdomain = subdomains.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
@@ -66,7 +66,7 @@ impl Model for Subdomain {
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         let subdomain = subdomains.filter(value.eq(query))
             .first::<Self>(db.db())?;
@@ -75,7 +75,7 @@ impl Model for Subdomain {
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         let subdomain = subdomains.filter(value.eq(query))
             .first::<Self>(db.db())
@@ -91,7 +91,7 @@ impl Scopable for Subdomain {
     }
 
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         diesel::update(subdomains.filter(filter.sql()))
             .set(unscoped.eq(false))
@@ -100,7 +100,7 @@ impl Scopable for Subdomain {
     }
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize> {
-        use schema::subdomains::dsl::*;
+        use crate::schema::subdomains::dsl::*;
 
         diesel::update(subdomains.filter(filter.sql()))
             .set(unscoped.eq(true))

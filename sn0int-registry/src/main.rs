@@ -4,12 +4,7 @@
 #![feature(custom_derive)]
 #![plugin(rocket_codegen)]
 
-extern crate sn0int_common;
-extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
-extern crate dotenv;
-extern crate blake2;
-extern crate serde_json;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate log;
 #[macro_use] extern crate maplit;
@@ -17,17 +12,12 @@ extern crate serde_json;
 #[macro_use] extern crate failure;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
-extern crate diesel_full_text_search;
-extern crate oauth2;
-extern crate url;
-extern crate reqwest;
-extern crate semver;
 
 use rocket_contrib::{Json, Value, Template};
 use dotenv::dotenv;
 
 use std::env;
-use errors::*;
+use crate::errors::*;
 
 pub mod assets;
 pub mod auth;

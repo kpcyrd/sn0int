@@ -1,5 +1,5 @@
 use dirs;
-use errors::*;
+use crate::errors::*;
 use std::fs;
 use std::path::{Path, PathBuf};
 use toml;

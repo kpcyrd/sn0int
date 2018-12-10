@@ -5,6 +5,7 @@ description = "Common code for sn0int"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
 repository = "https://github.com/kpcyrd/sn0int"
+edition = "2018"
 
 [dependencies]
 serde = "1.0"

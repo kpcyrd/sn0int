@@ -1,8 +1,8 @@
-use errors::*;
+use crate::errors::*;
 
-use engine::ctx::State;
-use json::LuaJsonValue;
-use hlua::{self, AnyLuaValue};
+use crate::engine::ctx::State;
+use crate::json::LuaJsonValue;
+use crate::hlua::{self, AnyLuaValue};
 use serde_json;
 use std::sync::Arc;
 use std::net::IpAddr;
@@ -43,7 +43,7 @@ pub fn geoip_lookup(lua: &mut hlua::Lua, state: Arc<State>) {
 
 #[cfg(test)]
 mod tests {
-    use engine::ctx::Script;
+    use crate::engine::ctx::Script;
 
     #[test]
     fn verify_asn_lookup() {

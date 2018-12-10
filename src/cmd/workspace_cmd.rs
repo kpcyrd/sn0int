@@ -1,9 +1,9 @@
-use errors::*;
+use crate::errors::*;
 
-use db::Database;
-use shell::Readline;
+use crate::db::Database;
+use crate::shell::Readline;
 use structopt::StructOpt;
-use workspaces::{self, Workspace};
+use crate::workspaces::{self, Workspace};
 
 
 #[derive(Debug, StructOpt)]

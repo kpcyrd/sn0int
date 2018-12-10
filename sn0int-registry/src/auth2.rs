@@ -1,10 +1,10 @@
-use errors::*;
-use models::AuthToken;
-use db::Connection;
+use crate::errors::*;
+use crate::models::AuthToken;
+use crate::db::Connection;
 use rocket::http::Status;
 use rocket::{Request, Outcome};
 use rocket::request::{self, FromRequest};
-use github::GithubAuthenticator;
+use crate::github::GithubAuthenticator;
 
 
 pub struct AuthHeader(String);

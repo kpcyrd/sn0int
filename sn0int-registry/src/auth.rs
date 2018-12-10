@@ -1,10 +1,10 @@
-use errors::*;
+use crate::errors::*;
 use diesel::pg::PgConnection;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, TokenUrl};
-use github::GithubAuthenticator;
-use models::AuthToken;
+use crate::github::GithubAuthenticator;
+use crate::models::AuthToken;
 use url::Url;
 use std::env;
 
