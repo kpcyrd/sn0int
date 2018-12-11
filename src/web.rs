@@ -208,7 +208,8 @@ impl HttpRequest {
         if let Some(timeout) = self.timeout {
             http.timeout(timeout);
         }
-        let res = http.request(req)?;
+        let res = http.request(req)
+            .wait_for_response()?;
 
         // map result to LuaMap
         let mut resp = LuaMap::new();

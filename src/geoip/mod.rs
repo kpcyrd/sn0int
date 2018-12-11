@@ -76,7 +76,8 @@ pub trait Maxmind: Sized {
     fn download<P: AsRef<Path>>(path: P, filter: &str, url: &str) -> Result<()> {
         debug!("Downloading {:?}...", url);
         let client = Client::with_system_resolver()?;
-        let resp = client.get(url)?;
+        let resp = client.get(url)
+            .wait_for_response()?;
         debug!("Downloaded {} bytes", resp.body.len());
         archive::extract(&mut &resp.body[..], filter, path)?;
         Ok(())

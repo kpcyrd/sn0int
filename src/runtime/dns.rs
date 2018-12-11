@@ -70,6 +70,7 @@ pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
         };
 
         let reply = resolver.resolve(&name, options.record_type()?)
+            .wait_for_response()
             .map_err(|e| state.set_error(e))?;
 
         let reply = serde_json::to_value(reply)
