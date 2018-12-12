@@ -46,7 +46,8 @@ impl Client {
 
         let request = request.body(body)?;
 
-        let resp = self.client.request(request)?;
+        let resp = self.client.request(request)
+            .wait_for_response()?;
         info!("response: {:?}", resp);
 
         let reply = serde_json::from_slice::<ApiResponse<T>>(&resp.body)?;
