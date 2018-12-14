@@ -32,6 +32,7 @@ pub enum Source {
     IpAddrs,
     Urls,
     Emails,
+    PhoneNumbers,
 }
 
 impl FromStr for Source {
@@ -44,6 +45,7 @@ impl FromStr for Source {
             "ipaddrs" => Ok(Source::IpAddrs),
             "urls" => Ok(Source::Urls),
             "emails" => Ok(Source::Emails),
+            "phonenumbers" => Ok(Source::Emails),
             x => bail!("Unknown Source: {:?}", x),
         }
     }

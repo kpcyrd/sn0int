@@ -34,6 +34,16 @@ table! {
 }
 
 table! {
+    phonenumbers (id) {
+        id -> Integer,
+        value -> Text,
+        name -> Nullable<Text>,
+        unscoped -> Bool,
+        valid -> Nullable<Bool>,
+    }
+}
+
+table! {
     subdomain_ipaddrs (id) {
         id -> Integer,
         subdomain_id -> Integer,
@@ -75,6 +85,7 @@ allow_tables_to_appear_in_same_query!(
     domains,
     emails,
     ipaddrs,
+    phonenumbers,
     subdomain_ipaddrs,
     subdomains,
     urls,

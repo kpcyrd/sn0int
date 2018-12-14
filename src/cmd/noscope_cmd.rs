@@ -19,6 +19,8 @@ pub enum Args {
     Urls(Filter),
     #[structopt(name="emails")]
     Emails(Filter),
+    #[structopt(name="phonenumbers")]
+    PhoneNumbers(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -40,6 +42,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::IpAddrs(filter) => noscope::<IpAddr>(rl, &filter),
         Args::Urls(filter) => noscope::<Url>(rl, &filter),
         Args::Emails(filter) => noscope::<Email>(rl, &filter),
+        Args::PhoneNumbers(filter) => noscope::<PhoneNumber>(rl, &filter),
     }?;
     term::info(&format!("Updated {} rows", rows));
     Ok(())

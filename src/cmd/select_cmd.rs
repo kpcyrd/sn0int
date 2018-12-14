@@ -18,6 +18,8 @@ pub enum Args {
     Urls(Filter),
     #[structopt(name="emails")]
     Emails(Filter),
+    #[structopt(name="phonenumbers")]
+    PhoneNumbers(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -39,6 +41,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::IpAddrs(filter) => select::<IpAddr>(rl, &filter),
         Args::Urls(filter) => select::<Url>(rl, &filter),
         Args::Emails(filter) => select::<Email>(rl, &filter),
+        Args::PhoneNumbers(filter) => select::<PhoneNumber>(rl, &filter),
     }
 }
 

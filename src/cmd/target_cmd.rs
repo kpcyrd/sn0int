@@ -33,6 +33,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             Source::IpAddrs => select::<IpAddr>(rl)?,
             Source::Urls => select::<Url>(rl)?,
             Source::Emails => select::<Email>(rl)?,
+            Source::PhoneNumbers => select::<PhoneNumber>(rl)?,
         }
     } else {
         debug!("Setting filter to {:?}", args.filter);
@@ -54,6 +55,7 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
         Source::IpAddrs => db.filter::<IpAddr>(&filter)?.len(),
         Source::Urls => db.filter::<Url>(&filter)?.len(),
         Source::Emails => db.filter::<Email>(&filter)?.len(),
+        Source::PhoneNumbers => db.filter::<PhoneNumber>(&filter)?.len(),
     };
     Ok(num)
 }

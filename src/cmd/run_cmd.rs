@@ -45,6 +45,7 @@ pub fn execute(rl: &mut Readline, threads: usize, verbose: u64, has_stdin: bool)
         Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db(), &filter),
         Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
         Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
+        Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl.db(), &filter),
         None => Ok(vec![(serde_json::Value::Null, None)]),
     }?;
 

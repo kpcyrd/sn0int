@@ -38,6 +38,7 @@ pub enum Family {
     SubdomainIpAddr,
     Url,
     Email,
+    PhoneNumber,
 }
 
 impl FromStr for Family {
@@ -51,6 +52,7 @@ impl FromStr for Family {
             "subdomain-ipaddr" => Family::SubdomainIpAddr,
             "url" => Family::Url,
             "email" => Family::Email,
+            "phonenumber" => Family::PhoneNumber,
             _ => bail!("Unknown object family"),
         })
     }
@@ -133,6 +135,11 @@ impl Database {
                 value: &object.value,
                 valid: object.valid,
             }),
+            Insert::PhoneNumber(object) => self.insert_struct(NewPhoneNumber {
+                value: &object.value,
+                name: object.name.as_ref(),
+                valid: object.valid,
+            }),
         }
     }
 
@@ -178,6 +185,7 @@ impl Database {
             Update::IpAddr(object) => self.update_ipaddr(object),
             Update::Url(object) => self.update_url(object),
             Update::Email(object) => self.update_email(object),
+            Update::PhoneNumber(object) => self.update_phonenumber(object),
         }
     }
 
@@ -213,6 +221,14 @@ impl Database {
         Ok(email.id)
     }
 
+    pub fn update_phonenumber(&self, phonenumber: &PhoneNumberUpdate) -> Result<i32> {
+        use crate::schema::phonenumbers::columns::*;
+        diesel::update(phonenumbers::table.filter(id.eq(phonenumber.id)))
+            .set(phonenumber)
+            .execute(&self.db)?;
+        Ok(phonenumber.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -228,6 +244,7 @@ impl Database {
             Family::SubdomainIpAddr => bail!("Unsupported operation"),
             Family::Url => self.get_opt_typed::<Url>(&value),
             Family::Email => self.get_opt_typed::<Email>(&value),
+            Family::PhoneNumber => self.get_opt_typed::<PhoneNumber>(&value),
         }
     }
 

@@ -12,6 +12,7 @@ pub enum Insert {
     SubdomainIpAddr(NewSubdomainIpAddr),
     Url(NewUrlOwned),
     Email(NewEmailOwned),
+    PhoneNumber(NewPhoneNumberOwned),
 }
 
 impl Insert {
@@ -23,6 +24,7 @@ impl Insert {
             Insert::SubdomainIpAddr(_x) => unimplemented!("SubdomainIpAddr doesn't have value field"),
             Insert::Url(x) => &x.value,
             Insert::Email(x) => &x.value,
+            Insert::PhoneNumber(x) => &x.value,
         }
     }
 
@@ -34,6 +36,7 @@ impl Insert {
             Insert::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
             Insert::Url(x) => format!("Url: {}", x.printable(db)?),
             Insert::Email(x) => format!("Email: {}", x.printable(db)?),
+            Insert::PhoneNumber(x) => format!("Email: {}", x.printable(db)?),
         })
     }
 }
@@ -44,6 +47,7 @@ pub enum Update {
     IpAddr(IpAddrUpdate),
     Url(UrlUpdate),
     Email(EmailUpdate),
+    PhoneNumber(PhoneNumberUpdate),
 }
 
 impl Update {
@@ -53,6 +57,7 @@ impl Update {
             Update::IpAddr(x) => x.is_dirty(),
             Update::Url(x) => x.is_dirty(),
             Update::Email(x) => x.is_dirty(),
+            Update::PhoneNumber(x) => x.is_dirty(),
         }
     }
 }
@@ -64,6 +69,7 @@ impl fmt::Display for Update {
             Update::IpAddr(update) => write!(w, "{}", update.to_string()),
             Update::Url(update) => write!(w, "{}", update.to_string()),
             Update::Email(update) => write!(w, "{}", update.to_string()),
+            Update::PhoneNumber(update) => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -236,6 +242,15 @@ pub trait DisplayableDetailed {
     }
 
     #[inline]
+    fn red_display<D: fmt::Display>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
+        if self.scoped() {
+            write!(w, "\x1b[31m{}\x1b[0m", v)
+        } else {
+            write!(w, "{}", v)
+        }
+    }
+
+    #[inline]
     fn green(&self, w: &mut fmt::Formatter) -> fmt::Result {
         if self.scoped() {
             write!(w, "\x1b[32m")
@@ -268,6 +283,15 @@ pub trait DisplayableDetailed {
             write!(w, "\x1b[33m")
         } else {
             Ok(())
+        }
+    }
+
+    #[inline]
+    fn yellow_debug<D: fmt::Debug>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
+        if self.scoped() {
+            write!(w, "\x1b[33m{:?}\x1b[0m", v)
+        } else {
+            write!(w, "{:?}", v)
         }
     }
 
@@ -332,3 +356,6 @@ pub use self::url::*;
 
 mod email;
 pub use self::email::*;
+
+mod phonenumber;
+pub use self::phonenumber::*;
