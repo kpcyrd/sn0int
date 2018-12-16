@@ -29,8 +29,9 @@ colored = "1.6"
 lazy_static = "1.0"
 shellwords = "1.0"
 publicsuffix = { version="1.5", default-features=false }
-diesel = { version = "1.0.0", features = ["sqlite"] }
+diesel = { version = "1.0.0", features = ["sqlite", "chrono"] }
 diesel_migrations = { version = "1.3.0", features = ["sqlite"] }
+chrono = { version = "0.4", features = ["serde"] }
 dirs = "1.0"
 url = "1.7"
 #chrootable-https = { path = "../chrootable-https" }

@@ -129,6 +129,9 @@ fn add_phonenumber(rl: &mut Readline, args: AddPhoneNumber) -> Result<()> {
         value: &phonenumber,
         name: name.as_ref(),
         valid: None,
+        last_online: None,
+        country: None,
+        provider: None,
     })?;
 
     Ok(())

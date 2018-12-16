@@ -1,7 +1,8 @@
 use crate::errors::*;
+use crate::models::*;
+use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -12,6 +13,9 @@ pub struct PhoneNumber {
     pub name: Option<String>,
     pub unscoped: bool,
     pub valid: Option<bool>,
+    pub last_online: Option<NaiveDateTime>,
+    pub country: Option<String>,
+    pub provider: Option<String>,
 }
 
 impl Model for PhoneNumber {
@@ -201,6 +205,9 @@ pub struct NewPhoneNumber<'a> {
     pub value: &'a str,
     pub name: Option<&'a String>,
     pub valid: Option<bool>,
+    pub last_online: Option<NaiveDateTime>,
+    pub country: Option<&'a String>,
+    pub provider: Option<&'a String>,
 }
 
 impl<'a> InsertableStruct<PhoneNumber> for NewPhoneNumber<'a> {
@@ -224,6 +231,9 @@ impl<'a> Upsertable<PhoneNumber> for NewPhoneNumber<'a> {
             id: existing.id,
             name: Self::upsert_str(self.name, &existing.name),
             valid: Self::upsert_opt(self.valid, &existing.valid),
+            last_online: Self::upsert_opt(self.last_online, &existing.last_online),
+            country: Self::upsert_str(self.country, &existing.country),
+            provider: Self::upsert_str(self.provider, &existing.provider),
         }
     }
 }
@@ -234,6 +244,9 @@ pub struct NewPhoneNumberOwned {
     pub value: String,
     pub name: Option<String>,
     pub valid: Option<bool>,
+    pub last_online: Option<NaiveDateTime>,
+    pub country: Option<String>,
+    pub provider: Option<String>,
 }
 
 impl Printable<PrintablePhoneNumber> for NewPhoneNumberOwned {
@@ -269,6 +282,9 @@ pub struct PhoneNumberUpdate {
     pub id: i32,
     pub name: Option<String>,
     pub valid: Option<bool>,
+    pub last_online: Option<NaiveDateTime>,
+    pub country: Option<String>,
+    pub provider: Option<String>,
 }
 
 impl Upsert for PhoneNumberUpdate {

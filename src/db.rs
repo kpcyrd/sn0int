@@ -139,6 +139,9 @@ impl Database {
                 value: &object.value,
                 name: object.name.as_ref(),
                 valid: object.valid,
+                last_online: object.last_online,
+                country: object.country.as_ref(),
+                provider: object.provider.as_ref(),
             }),
         }
     }

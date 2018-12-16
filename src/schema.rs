@@ -40,6 +40,9 @@ table! {
         name -> Nullable<Text>,
         unscoped -> Bool,
         valid -> Nullable<Bool>,
+        last_online -> Nullable<Timestamp>,
+        country -> Nullable<Text>,
+        provider -> Nullable<Text>,
     }
 }
 
