@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::accesskey::KeyStore;
 use crate::args::Args;
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
@@ -23,6 +24,7 @@ use crate::workspaces::Workspace;
 
 #[derive(Debug)]
 pub enum Command {
+    AccessKey,
     Add,
     Back,
     Delete,
@@ -43,6 +45,7 @@ pub enum Command {
 impl Command {
     pub fn as_str(&self) -> &'static str {
         match *self {
+            Command::AccessKey => "accesskey",
             Command::Add => "add",
             Command::Back => "back",
             Command::Delete => "delete",
@@ -63,6 +66,7 @@ impl Command {
     pub fn list_all() -> &'static [&'static str] {
         lazy_static! {
             static ref COMMANDS: Vec<&'static str> = vec![
+                Command::AccessKey.as_str(),
                 Command::Add.as_str(),
                 Command::Back.as_str(),
                 Command::Delete.as_str(),
@@ -88,6 +92,7 @@ impl FromStr for Command {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
+            "accesskey" => Ok(Command::AccessKey),
             "add" => Ok(Command::Add),
             "back" => Ok(Command::Back),
             "delete" => Ok(Command::Delete),
@@ -113,11 +118,12 @@ pub struct Readline {
     psl: Psl,
     config: Config,
     engine: Engine,
+    keystore: KeyStore,
     signal_register: Arc<SignalRegister>,
 }
 
 impl Readline {
-    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine) -> Readline {
+    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine, keystore: KeyStore) -> Readline {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -136,6 +142,7 @@ impl Readline {
             psl,
             config,
             engine,
+            keystore,
             signal_register: Arc::new(SignalRegister::new()),
         };
 
@@ -196,6 +203,14 @@ impl Readline {
 
     pub fn engine_mut(&mut self) -> &mut Engine {
         &mut self.engine
+    }
+
+    pub fn keystore(&self) -> &KeyStore {
+        &self.keystore
+    }
+
+    pub fn keystore_mut(&mut self) -> &mut KeyStore {
+        &mut self.keystore
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -328,6 +343,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     let line = rl.readline();
     debug!("Received line: {:?}", line);
     match line {
+        Some((Command::AccessKey, args)) => accesskey_cmd::run(rl, &args)?,
         Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
@@ -364,12 +380,13 @@ pub fn init(args: &Args, config: Config) -> Result<Readline> {
     let _geoip = GeoIP::open_or_download()?;
     let _asndb = AsnDB::open_or_download()?;
     let engine = Engine::new()?;
+    let keystore = KeyStore::init()?;
 
     if engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
     }
 
-    let rl = Readline::new(config, db, psl, engine);
+    let rl = Readline::new(config, db, psl, engine, keystore);
 
     Ok(rl)
 }

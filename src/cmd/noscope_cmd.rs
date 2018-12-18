@@ -3,11 +3,14 @@ use crate::errors::*;
 use crate::db;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::models::*;
 use crate::term;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
     #[structopt(name="domains")]
     Domains(Filter),

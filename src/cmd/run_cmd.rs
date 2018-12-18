@@ -6,12 +6,15 @@ use serde::Serialize;
 use serde_json;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::models::*;
 use crate::term;
 use crate::worker;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub struct Args {
     #[structopt(short="j", long="threads", default_value="1")]
     threads: usize,

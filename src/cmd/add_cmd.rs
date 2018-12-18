@@ -3,10 +3,13 @@ use crate::errors::*;
 use crate::models::*;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::utils;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
     #[structopt(name="domain")]
     Domain(AddDomain),

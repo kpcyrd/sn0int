@@ -9,11 +9,14 @@ use crate::engine::Module;
 use crate::registry;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::term;
 use crate::worker;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub struct Args {
     #[structopt(subcommand)]
     pub subcommand: SubCommand,

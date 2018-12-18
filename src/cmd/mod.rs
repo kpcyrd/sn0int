@@ -1,3 +1,4 @@
+pub mod accesskey_cmd;
 pub mod add_cmd;
 pub mod delete_cmd;
 pub mod run_cmd;
