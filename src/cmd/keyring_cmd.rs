@@ -1,6 +1,6 @@
 use crate::errors::*;
 
-use crate::accesskey::{KeyName, KeyStore};
+use crate::keyring::{KeyName, KeyRing};
 use crate::shell::Readline;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -12,32 +12,32 @@ use crate::utils;
             raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
     #[structopt(name="add")]
-    /// Add a new key to the keystore
-    Add(AccessKeyAdd),
+    /// Add a new key to the keyring
+    Add(KeyRingAdd),
     #[structopt(name="delete")]
-    /// Delete a key from the keystore
-    Delete(AccessKeyDelete),
+    /// Delete a key from the keyring
+    Delete(KeyRingDelete),
     #[structopt(name="get")]
-    /// Get a key from the keystore
-    Get(AccessKeyGet),
+    /// Get a key from the keyring
+    Get(KeyRingGet),
     #[structopt(name="list")]
-    /// List keys in the keystore
-    List(AccessKeyList),
+    /// List keys in the keyring
+    List(KeyRingList),
 }
 
 #[derive(Debug, StructOpt)]
-pub struct AccessKeyAdd {
+pub struct KeyRingAdd {
     key: KeyName,
     secret: Option<String>,
 }
 
 #[derive(Debug, StructOpt)]
-pub struct AccessKeyDelete {
+pub struct KeyRingDelete {
     key: KeyName,
 }
 
 #[derive(Debug, StructOpt)]
-pub struct AccessKeyGet {
+pub struct KeyRingGet {
     key: KeyName,
     #[structopt(short="q",
                 long="quiet")]
@@ -46,35 +46,35 @@ pub struct AccessKeyGet {
 }
 
 #[derive(Debug, StructOpt)]
-pub struct AccessKeyList {
+pub struct KeyRingList {
     namespace: Option<String>,
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
-        Args::Add(add) => accesskey_add(rl.keystore_mut(), add),
-        Args::Delete(delete) => accesskey_delete(rl.keystore_mut(), delete),
-        Args::Get(get) => accesskey_get(rl.keystore(), get),
-        Args::List(list) => accesskey_list(rl.keystore(), list),
+        Args::Add(add) => keyring_add(rl.keyring_mut(), add),
+        Args::Delete(delete) => keyring_delete(rl.keyring_mut(), delete),
+        Args::Get(get) => keyring_get(rl.keyring(), get),
+        Args::List(list) => keyring_list(rl.keyring(), list),
     }
 }
 
-fn accesskey_add(keystore: &mut KeyStore, add: AccessKeyAdd) -> Result<()> {
+fn keyring_add(keyring: &mut KeyRing, add: KeyRingAdd) -> Result<()> {
     let secret = match add.secret {
         Some(secret) => secret,
         None => utils::question("Secretkey")?,
     };
 
-    keystore.insert(add.key, secret)
+    keyring.insert(add.key, secret)
 }
 
-fn accesskey_delete(keystore: &mut KeyStore, delete: AccessKeyDelete) -> Result<()> {
-    keystore.delete(delete.key)
+fn keyring_delete(keyring: &mut KeyRing, delete: KeyRingDelete) -> Result<()> {
+    keyring.delete(delete.key)
 }
 
-fn accesskey_get(keystore: &KeyStore, get: AccessKeyGet) -> Result<()> {
-    if let Some(key) = keystore.get(&get.key) {
+fn keyring_get(keyring: &KeyRing, get: KeyRingGet) -> Result<()> {
+    if let Some(key) = keyring.get(&get.key) {
         if get.quiet {
             println!("{}", key);
         } else {
@@ -86,10 +86,10 @@ fn accesskey_get(keystore: &KeyStore, get: AccessKeyGet) -> Result<()> {
     Ok(())
 }
 
-fn accesskey_list(keystore: &KeyStore, list: AccessKeyList) -> Result<()> {
+fn keyring_list(keyring: &KeyRing, list: KeyRingList) -> Result<()> {
     let list = match list.namespace {
-        Some(namespace) => keystore.list_for(&namespace),
-        None => keystore.list(),
+        Some(namespace) => keyring.list_for(&namespace),
+        None => keyring.list(),
     };
 
     for key in list {

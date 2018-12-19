@@ -15,7 +15,6 @@ use hlua_badtouch as hlua;
 #[macro_use] extern crate crossbeam_channel as channel;
 #[macro_use] extern crate nom;
 
-pub mod accesskey;
 pub mod api;
 pub mod archive;
 pub mod args;
@@ -30,6 +29,7 @@ pub mod engine;
 pub mod geoip;
 pub mod html;
 pub mod json;
+pub mod keyring;
 pub mod migrations;
 pub mod models;
 pub mod paths;

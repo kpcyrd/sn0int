@@ -37,4 +37,5 @@ Getting Started
    usage
    scripting
    database
+   keyring
    reference

@@ -55,35 +55,35 @@ impl FromStr for KeyName {
     }
 }
 
-pub struct KeyStore {
+pub struct KeyRing {
     path: PathBuf,
     keys: HashMap<String, HashMap<String, String>>,
 }
 
-impl KeyStore {
+impl KeyRing {
     pub fn path() -> Result<PathBuf> {
         let path = paths::data_dir()?;
-        let path = path.join("secrets.json");
+        let path = path.join("keyring.json");
         Ok(path)
     }
 
-    pub fn init() -> Result<KeyStore> {
+    pub fn init() -> Result<KeyRing> {
         let path = Self::path()?;
 
         if path.exists() {
             Self::load(path)
         } else {
-            Ok(KeyStore {
+            Ok(KeyRing {
                 path,
                 keys: HashMap::new(),
             })
         }
     }
 
-    pub fn load(path: PathBuf) -> Result<KeyStore> {
+    pub fn load(path: PathBuf) -> Result<KeyRing> {
         let buf = fs::read(&path)?;
         let keys = serde_json::from_slice(&buf)?;
-        Ok(KeyStore {
+        Ok(KeyRing {
             path,
             keys,
         })

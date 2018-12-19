@@ -79,25 +79,6 @@ impl Completer for CmdCompleter {
             };
 
             match action {
-                Command::AccessKey => {
-                    // we can only complete the 2nd argument
-                    if args != 2 {
-                        Ok((0, vec![]))
-                    } else {
-                        let arg = &cmd[1];
-
-                        let options = &["add",
-                                        "delete",
-                                        "get",
-                                        "list"];
-
-                        let results: Vec<String> = options.iter()
-                            .filter(|x| x.starts_with(arg))
-                            .map(|x| format!("accesskey {} ", x))
-                            .collect();
-                        Ok((0, results))
-                    }
-                },
                 Command::Add => {
                     // we can only complete the 2nd argument
                     if args != 2 {
@@ -118,6 +99,25 @@ impl Completer for CmdCompleter {
                     }
                 },
                 Command::Delete => self.filter("delete", &cmd),
+                Command::Keyring => {
+                    // we can only complete the 2nd argument
+                    if args != 2 {
+                        Ok((0, vec![]))
+                    } else {
+                        let arg = &cmd[1];
+
+                        let options = &["add",
+                                        "delete",
+                                        "get",
+                                        "list"];
+
+                        let results: Vec<String> = options.iter()
+                            .filter(|x| x.starts_with(arg))
+                            .map(|x| format!("keyring {} ", x))
+                            .collect();
+                        Ok((0, results))
+                    }
+                },
                 Command::Mod => {
                     // we can only complete the 2nd argument
                     if args != 2 {
