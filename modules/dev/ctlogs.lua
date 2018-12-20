@@ -1,5 +1,5 @@
 -- Description: Query certificate transparency logs to discover subdomains
--- Version: 0.1.0
+-- Version: 0.2.0
 -- Source: domains
 -- License: GPL-3.0
 

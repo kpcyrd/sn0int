@@ -1,5 +1,5 @@
 -- Description: Query for CNAMES to find subdomains
--- Version: 0.1.0
+-- Version: 0.2.0
 -- Source: subdomains
 -- License: GPL-3.0
 
