@@ -1,6 +1,9 @@
 target
 Dockerfile
 .dockerignore
+docker
+docs
+ci
 .git
 .gitignore
 *.sw[op]
