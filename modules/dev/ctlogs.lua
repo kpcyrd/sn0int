@@ -28,7 +28,7 @@ function run(arg)
         -- print(c)
 
         name = c['name_value']
-        debug(json_encode(name))
+        debug(name)
 
         if name:find("*.") == 1 then
             -- ignore wildcard domains

@@ -1,5 +1,5 @@
 -- Description: Retrieve additional information about a phone number
--- Version: 0.2.0
+-- Version: 0.1.0
 -- Source: phonenumbers
 -- License: GPL-3.0
 
@@ -8,7 +8,7 @@ function run(arg)
     --url = 'https://lookups.twilio.com/v1/PhoneNumbers/' .. number
     url = 'https://lookups.twilio.com/v1/PhoneNumbers/' .. number .. '?Type=carrier&Type=caller-name'
 
-    --debug(json_encode(url))
+    --debug(url)
 
     session = http_mksession()
     req = http_request(session, 'GET', url, {
@@ -23,7 +23,7 @@ function run(arg)
 
     v = json_decode(reply['text'])
     if last_err() then return end
-    debug(json_encode(v))
+    debug(v)
 
     update = {}
     update['country'] = v['country_code']

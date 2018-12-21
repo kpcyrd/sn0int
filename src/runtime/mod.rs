@@ -14,7 +14,6 @@ import_fns!(html);
 import_fns!(json);
 import_fns!(logger);
 import_fns!(pgp);
-import_fns!(print);
 import_fns!(psl);
 import_fns!(regex);
 import_fns!(sleep);

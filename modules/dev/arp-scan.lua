@@ -15,7 +15,7 @@ function run()
         if m ~= nil then
             ip = m[2]
             mac = m[3]
-            info(json_encode({ip, mac}))
+            info({ip, mac})
         end
     end
 end
