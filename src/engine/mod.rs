@@ -55,7 +55,8 @@ impl Engine {
 
     pub fn reload_modules(&mut self) -> Result<usize> {
         let modules = worker::spawn_fn("Loading modules", || {
-            self.reload_modules_quiet()?;
+            self.reload_modules_quiet()
+                .context("Failed to load modules")?;
             Ok(self.list().len())
         }, true)?;
         term::info(&format!("Loaded {} modules", modules));
@@ -67,32 +68,45 @@ impl Engine {
 
         for author in fs::read_dir(&self.path)? {
             let author = author?;
+
+            if !author.path().is_dir() {
+                continue;
+            }
+
             let author_name = author.file_name()
                                     .into_string()
                                     .map_err(|_| format_err!("Failed to decode filename"))?;
             for module in fs::read_dir(&author.path())? {
                 let module = module?;
-                let mut module_name = module.file_name()
+                let module_name = module.file_name()
                                         .into_string()
                                         .map_err(|_| format_err!("Failed to decode filename"))?;
 
-                if module_name.ends_with(".lua") {
-                    module_name = module_name[..(module_name.len() - 4)].to_string();
+                // find last instance of .lua in filename, if any
+                let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
+                    module_name.split_at(idx)
                 } else {
+                    // TODO: show warning
+                    continue;
+                };
+
+                // if .lua is not at the end, skip
+                if ext != ".lua" {
                     // TODO: show warning
                     continue;
                 }
 
                 let path = module.path();
+                let module_name = module_name.to_string();
                 let module = Module::load(&path, &author_name, &module_name)
                     .context(format!("Failed to parse {}/{}", author_name, module_name))?;
 
-                for key in &[module_name.clone(), format!("{}/{}", author_name, module_name)] {
-                    if !self.modules.contains_key(key) {
+                for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
+                    if !self.modules.contains_key(*key) {
                         self.modules.insert(key.to_string(), Vec::new());
                     }
 
-                    let vec = self.modules.get_mut(key).unwrap();
+                    let vec = self.modules.get_mut(*key).unwrap();
                     vec.push(module.clone());
                 }
             }
