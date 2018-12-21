@@ -33,7 +33,6 @@ pub enum Command {
     Set,
     Select,
     Target,
-    Update,
     Use,
     Quickstart,
     Workspace,
@@ -54,7 +53,6 @@ impl Command {
             Command::Set => "set",
             Command::Select => "select",
             Command::Target => "target",
-            Command::Update => "update",
             Command::Use => "use",
             Command::Quickstart => "quickstart",
             Command::Workspace => "workspace",
@@ -76,7 +74,6 @@ impl Command {
                 Command::Select.as_str(),
                 Command::Workspace.as_str(),
                 Command::Target.as_str(),
-                Command::Update.as_str(),
                 Command::Use.as_str(),
                 Command::Quickstart.as_str(),
             ];
@@ -101,7 +98,6 @@ impl FromStr for Command {
             "set"  => Ok(Command::Set),
             "select" => Ok(Command::Select),
             "target"  => Ok(Command::Target),
-            "update" => Ok(Command::Update),
             "use"  => Ok(Command::Use),
             "quickstart"  => Ok(Command::Quickstart),
             "workspace" => Ok(Command::Workspace),
@@ -347,11 +343,6 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Set, _args)) => println!("set"),
         Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
-        Some((Command::Update, _args)) => {
-            // TODO
-            // worker::spawn("Updating public suffix list");
-            // worker::spawn("Updating modules");
-        },
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
         Some((Command::Workspace, args)) => workspace_cmd::run(rl, &args)?,

@@ -106,7 +106,8 @@ impl Completer for CmdCompleter {
                         let options = &["list",
                                         "install",
                                         "search",
-                                        "reload"];
+                                        "reload",
+                                        "update"];
 
                         let results: Vec<String> = options.iter()
                             .filter(|x| x.starts_with(arg))
