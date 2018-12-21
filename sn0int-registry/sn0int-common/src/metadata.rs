@@ -45,7 +45,7 @@ impl FromStr for Source {
             "ipaddrs" => Ok(Source::IpAddrs),
             "urls" => Ok(Source::Urls),
             "emails" => Ok(Source::Emails),
-            "phonenumbers" => Ok(Source::Emails),
+            "phonenumbers" => Ok(Source::PhoneNumbers),
             x => bail!("Unknown Source: {:?}", x),
         }
     }

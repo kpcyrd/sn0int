@@ -2,7 +2,11 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::engine::structs::LuaMap;
 use crate::hlua::{self, AnyLuaValue};
+use crate::json::LuaJsonValue;
 use url::Url;
+use url::percent_encoding::{percent_encode, percent_decode, DEFAULT_ENCODE_SET};
+use serde_json::Value;
+use serde_urlencoded;
 use std::sync::Arc;
 
 pub fn url_join(lua: &mut hlua::Lua, state: Arc<State>) {
@@ -53,6 +57,40 @@ pub fn url_parse(lua: &mut hlua::Lua, state: Arc<State>) {
         }
 
         Ok(map.into())
+    }))
+}
+
+pub fn url_encode(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("url_encode", hlua::function1(move |v: AnyLuaValue| -> Result<String> {
+        let v: LuaJsonValue = v.into();
+        let v: Value = v.into();
+        serde_urlencoded::to_string(v)
+            .map_err(|err| state.set_error(Error::from(err)))
+    }))
+}
+
+pub fn url_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("url_decode", hlua::function1(move |v: String| -> Result<AnyLuaValue> {
+        let v: Value = serde_urlencoded::from_str(&v)
+            .map_err(|err| state.set_error(Error::from(err)))?;
+        let v: LuaJsonValue = v.into();
+        Ok(v.into())
+    }))
+}
+
+pub fn url_escape(lua: &mut hlua::Lua, _state: Arc<State>) {
+    lua.set("url_escape", hlua::function1(move |v: String| -> String {
+        percent_encode(v.as_bytes(), DEFAULT_ENCODE_SET)
+            .to_string()
+    }))
+}
+
+pub fn url_unescape(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("url_unescape", hlua::function1(move |v: String| -> Result<String> {
+        percent_decode(v.as_bytes())
+            .decode_utf8()
+            .map_err(|err| state.set_error(Error::from(err)))
+            .map(String::from)
     }))
 }
 
@@ -205,6 +243,58 @@ mod tests {
             if url['params']['a'] ~= "b" then return 'params' end
             if url['params']['x'] ~= "2" then return 'params' end
             if url['params']['y[]'] ~= "asdf" then return 'params' end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_url_encode() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            v = url_encode({
+                a='b',
+                c='d',
+            })
+            print(v)
+            if v ~= 'a=b&c=d' then return 'wrong value' end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_url_decode() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            v = url_decode('a=b&c=d')
+            print(v)
+            if v['a'] ~= 'b' then return 'wrong a value' end
+            if v['c'] ~= 'd' then return 'wrong c value' end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_url_escape() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            v = url_escape('foo bar?')
+            print(v)
+            if v ~= 'foo%20bar%3F' then return 'wrong value' end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_url_unescape() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            v = url_unescape('foo%20bar%3F')
+            print(v)
+            if v ~= 'foo bar?' then return 'wrong value' end
         end
         "#).expect("Failed to load script");
         script.test().expect("Script failed");

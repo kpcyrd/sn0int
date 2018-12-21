@@ -239,8 +239,12 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::sleep(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::stdin_readline(&mut lua, state.clone());
+    runtime::url_decode(&mut lua, state.clone());
+    runtime::url_encode(&mut lua, state.clone());
+    runtime::url_escape(&mut lua, state.clone());
     runtime::url_join(&mut lua, state.clone());
     runtime::url_parse(&mut lua, state.clone());
+    runtime::url_unescape(&mut lua, state.clone());
     runtime::utf8_decode(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
 

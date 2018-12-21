@@ -416,6 +416,40 @@ Read a line from stdin. The final newline is not removed.
 .. note::
    This only works with `sn0int run --stdin`.
 
+url_decode
+----------
+
+Parse a query string into a map. For raw percent decoding see ``url_unescape``.
+
+.. code-block:: lua
+
+    v = url_decode('a=b&c=d')
+    print(v['a'] == 'b')
+    print(v['c'] == 'd')
+
+url_encode
+----------
+
+Encode a map into a query string. For raw percent encoding see ``url_escape``.
+
+.. code-block:: lua
+
+    v = url_encode({
+        a='b',
+        c='d',
+    })
+    print(v == 'a=b&c=d')
+
+url_escape
+----------
+
+Apply url escaping to a string.
+
+.. code-block:: lua
+
+    v = url_escape('foo bar?')
+    print(v == 'foo%20bar%3F')
+
 url_join
 --------
 
@@ -445,10 +479,20 @@ Parse a url into its components. The following components are returned:
 
 .. code-block:: lua
 
-    url = url_parse("https://example.com")
+    url = url_parse('https://example.com')
     print(url['scheme'] == 'https')
     print(url['host'] == 'example.com')
     print(url['path'] == '/')
+
+url_unescape
+------------
+
+Remove url escaping of a string.
+
+.. code-block:: lua
+
+    v = url_unescape('foo%20bar%3F')
+    print(v == 'foo bar?')
 
 utf8_decode
 -----------

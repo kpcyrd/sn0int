@@ -141,7 +141,12 @@ impl Database {
                 valid: object.valid,
                 last_online: object.last_online,
                 country: object.country.as_ref(),
-                provider: object.provider.as_ref(),
+                carrier: object.carrier.as_ref(),
+                line: object.line.as_ref(),
+                is_ported: object.is_ported,
+                last_ported: object.last_ported,
+                caller_name: object.caller_name.as_ref(),
+                caller_type: object.caller_type.as_ref(),
             }),
         }
     }

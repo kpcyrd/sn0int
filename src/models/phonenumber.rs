@@ -15,7 +15,12 @@ pub struct PhoneNumber {
     pub valid: Option<bool>,
     pub last_online: Option<NaiveDateTime>,
     pub country: Option<String>,
-    pub provider: Option<String>,
+    pub carrier: Option<String>,
+    pub line: Option<String>,
+    pub is_ported: Option<bool>,
+    pub last_ported: Option<NaiveDateTime>,
+    pub caller_name: Option<String>,
+    pub caller_type: Option<String>,
 }
 
 impl Model for PhoneNumber {
@@ -70,20 +75,20 @@ impl Model for PhoneNumber {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::phonenumbers::dsl::*;
 
-        let email = phonenumbers.filter(value.eq(query))
+        let phonenumber = phonenumbers.filter(value.eq(query))
             .first::<Self>(db.db())?;
 
-        Ok(email)
+        Ok(phonenumber)
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::phonenumbers::dsl::*;
 
-        let email = phonenumbers.filter(value.eq(query))
+        let phonenumber = phonenumbers.filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
-        Ok(email)
+        Ok(phonenumber)
     }
 }
 
@@ -207,7 +212,12 @@ pub struct NewPhoneNumber<'a> {
     pub valid: Option<bool>,
     pub last_online: Option<NaiveDateTime>,
     pub country: Option<&'a String>,
-    pub provider: Option<&'a String>,
+    pub carrier: Option<&'a String>,
+    pub line: Option<&'a String>,
+    pub is_ported: Option<bool>,
+    pub last_ported: Option<NaiveDateTime>,
+    pub caller_name: Option<&'a String>,
+    pub caller_type: Option<&'a String>,
 }
 
 impl<'a> InsertableStruct<PhoneNumber> for NewPhoneNumber<'a> {
@@ -233,7 +243,12 @@ impl<'a> Upsertable<PhoneNumber> for NewPhoneNumber<'a> {
             valid: Self::upsert_opt(self.valid, &existing.valid),
             last_online: Self::upsert_opt(self.last_online, &existing.last_online),
             country: Self::upsert_str(self.country, &existing.country),
-            provider: Self::upsert_str(self.provider, &existing.provider),
+            carrier: Self::upsert_str(self.carrier, &existing.carrier),
+            line: Self::upsert_str(self.line, &existing.line),
+            is_ported: Self::upsert_opt(self.is_ported, &existing.is_ported),
+            last_ported: Self::upsert_opt(self.last_ported, &existing.last_ported),
+            caller_name: Self::upsert_str(self.caller_name, &existing.caller_name),
+            caller_type: Self::upsert_str(self.caller_type, &existing.caller_type),
         }
     }
 }
@@ -246,7 +261,12 @@ pub struct NewPhoneNumberOwned {
     pub valid: Option<bool>,
     pub last_online: Option<NaiveDateTime>,
     pub country: Option<String>,
-    pub provider: Option<String>,
+    pub carrier: Option<String>,
+    pub line: Option<String>,
+    pub is_ported: Option<bool>,
+    pub last_ported: Option<NaiveDateTime>,
+    pub caller_name: Option<String>,
+    pub caller_type: Option<String>,
 }
 
 impl Printable<PrintablePhoneNumber> for NewPhoneNumberOwned {
@@ -284,13 +304,26 @@ pub struct PhoneNumberUpdate {
     pub valid: Option<bool>,
     pub last_online: Option<NaiveDateTime>,
     pub country: Option<String>,
-    pub provider: Option<String>,
+    pub carrier: Option<String>,
+    pub line: Option<String>,
+    pub is_ported: Option<bool>,
+    pub last_ported: Option<NaiveDateTime>,
+    pub caller_name: Option<String>,
+    pub caller_type: Option<String>,
 }
 
 impl Upsert for PhoneNumberUpdate {
     fn is_dirty(&self) -> bool {
         self.name.is_some() ||
-            self.valid.is_some()
+        self.valid.is_some() ||
+        self.last_online.is_some() ||
+        self.country.is_some() ||
+        self.carrier.is_some() ||
+        self.line.is_some() ||
+        self.is_ported.is_some() ||
+        self.last_ported.is_some() ||
+        self.caller_name.is_some() ||
+        self.caller_type.is_some()
     }
 
     fn generic(self) -> Update {
@@ -306,10 +339,26 @@ impl Updateable<PhoneNumber> for PhoneNumberUpdate {
     fn changeset(&mut self, existing: &PhoneNumber) {
         Self::clear_if_equal(&mut self.name, &existing.name);
         Self::clear_if_equal(&mut self.valid, &existing.valid);
+        Self::clear_if_equal(&mut self.last_online, &existing.last_online);
+        Self::clear_if_equal(&mut self.country, &existing.country);
+        Self::clear_if_equal(&mut self.carrier, &existing.carrier);
+        Self::clear_if_equal(&mut self.line, &existing.line);
+        Self::clear_if_equal(&mut self.is_ported, &existing.is_ported);
+        Self::clear_if_equal(&mut self.last_ported, &existing.last_ported);
+        Self::clear_if_equal(&mut self.caller_name, &existing.caller_name);
+        Self::clear_if_equal(&mut self.caller_type, &existing.caller_type);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
         Self::push_value(updates, "name", &self.name);
         Self::push_value(updates, "valid", &self.valid);
+        Self::push_value(updates, "last_online", &self.last_online);
+        Self::push_value(updates, "country", &self.country);
+        Self::push_value(updates, "carrier", &self.carrier);
+        Self::push_value(updates, "line", &self.line);
+        Self::push_value(updates, "is_ported", &self.is_ported);
+        Self::push_value(updates, "last_ported", &self.last_ported);
+        Self::push_value(updates, "caller_name", &self.caller_name);
+        Self::push_value(updates, "caller_type", &self.caller_type);
     }
 }

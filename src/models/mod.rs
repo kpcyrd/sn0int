@@ -36,7 +36,7 @@ impl Insert {
             Insert::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
             Insert::Url(x) => format!("Url: {}", x.printable(db)?),
             Insert::Email(x) => format!("Email: {}", x.printable(db)?),
-            Insert::PhoneNumber(x) => format!("Email: {}", x.printable(db)?),
+            Insert::PhoneNumber(x) => format!("PhoneNumber: {}", x.printable(db)?),
         })
     }
 }

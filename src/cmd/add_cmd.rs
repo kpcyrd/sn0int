@@ -134,7 +134,12 @@ fn add_phonenumber(rl: &mut Readline, args: AddPhoneNumber) -> Result<()> {
         valid: None,
         last_online: None,
         country: None,
-        provider: None,
+        carrier: None,
+        line: None,
+        is_ported: None,
+        last_ported: None,
+        caller_name: None,
+        caller_type: None,
     })?;
 
     Ok(())

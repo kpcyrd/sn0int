@@ -6,6 +6,11 @@ CREATE TABLE phonenumbers (
     valid BOOLEAN,
     last_online DATETIME,
     country VARCHAR,
-    provider VARCHAR,
+    carrier VARCHAR,
+    line VARCHAR,
+    is_ported BOOLEAN,
+    last_ported DATETIME,
+    caller_name VARCHAR,
+    caller_type VARCHAR,
     CONSTRAINT phonenumber_unique UNIQUE (value)
 );

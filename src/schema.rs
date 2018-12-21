@@ -42,7 +42,12 @@ table! {
         valid -> Nullable<Bool>,
         last_online -> Nullable<Timestamp>,
         country -> Nullable<Text>,
-        provider -> Nullable<Text>,
+        carrier -> Nullable<Text>,
+        line -> Nullable<Text>,
+        is_ported -> Nullable<Bool>,
+        last_ported -> Nullable<Timestamp>,
+        caller_name -> Nullable<Text>,
+        caller_type -> Nullable<Text>,
     }
 }
 
