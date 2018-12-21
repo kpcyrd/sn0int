@@ -215,6 +215,8 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
         return;
     }
 
+    let keyring = rl.keyring().request_keys(&module);
+
     let mut stack = StackedSpinners::new();
 
     let (tx, rx) = channel::bounded(1);
@@ -229,6 +231,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
 
         let tx = tx.clone();
         let module = module.clone();
+        let keyring = keyring.clone();
         let signal_register = rl.signal_register().clone();
         pool.execute(move || {
             let tx = EventSender::new(name, tx);
@@ -239,7 +242,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, verbose, has_stdin) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin) {
                 Ok(_) => ExitEvent::Ok,
                 Err(err) => ExitEvent::Err(err.to_string()),
             };

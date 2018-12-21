@@ -4,6 +4,7 @@ use crate::db::Family;
 use crate::engine::{Environment, Reporter};
 use crate::geoip::{GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
+use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
 use crate::psl::Psl;
 use crate::runtime;
@@ -80,6 +81,8 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
     }
 
+    fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry>;
+
     fn dns_config(&self) -> Arc<Resolver>;
 
     fn psl(&self) -> Arc<Psl>;
@@ -101,6 +104,7 @@ pub struct LuaState {
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
     verbose: u64,
+    keyring: Arc<Vec<KeyRingEntry>>, // TODO: maybe hashmap
     dns_config: Arc<Resolver>,
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
@@ -150,6 +154,12 @@ impl State for LuaState {
 
     fn verbose(&self) -> u64 {
         self.verbose
+    }
+
+    fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry> {
+        self.keyring.iter()
+            .filter(|x| x.namespace == namespace)
+            .collect()
     }
 
     fn dns_config(&self) -> Arc<Resolver> {
@@ -205,6 +215,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
         http_sessions: Arc::new(Mutex::new(HashMap::new())),
 
         verbose: env.verbose,
+        keyring: Arc::new(env.keyring),
         dns_config: Arc::new(env.dns_config),
         psl: Arc::new(env.psl),
         geoip: Arc::new(env.geoip),
@@ -229,6 +240,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());
+    runtime::keyring(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
@@ -309,6 +321,7 @@ impl Script {
     pub fn test(&self) -> Result<()> {
         use crate::engine::tests::DummyReporter;
         use crate::geoip::Maxmind;
+        let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
         let psl = Psl::from_str(r#"
 // ===BEGIN ICANN DOMAINS===
@@ -320,6 +333,7 @@ com
 
         let env = Environment {
             verbose: 0,
+            keyring,
             dns_config,
             psl,
             geoip,

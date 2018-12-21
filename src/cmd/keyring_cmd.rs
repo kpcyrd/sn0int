@@ -61,9 +61,10 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
 }
 
 fn keyring_add(keyring: &mut KeyRing, add: KeyRingAdd) -> Result<()> {
+    // TODO: there's no non-interactive way to add a key without a secret key
     let secret = match add.secret {
-        Some(secret) => secret,
-        None => utils::question("Secretkey")?,
+        Some(secret) => Some(secret),
+        None => utils::question_opt("Secretkey")?,
     };
 
     keyring.insert(add.key, secret)
@@ -76,11 +77,15 @@ fn keyring_delete(keyring: &mut KeyRing, delete: KeyRingDelete) -> Result<()> {
 fn keyring_get(keyring: &KeyRing, get: KeyRingGet) -> Result<()> {
     if let Some(key) = keyring.get(&get.key) {
         if get.quiet {
-            println!("{}", key);
+            if let Some(secret_key) = key.secret_key {
+                println!("{}", secret_key);
+            }
         } else {
             println!("Namespace:    {:?}", get.key.namespace);
             println!("Access Key:   {:?}", get.key.name);
-            println!("Secret:       {:?}", key);
+            if let Some(secret_key) = key.secret_key {
+                println!("Secret:       {:?}", secret_key);
+            }
         }
     }
     Ok(())

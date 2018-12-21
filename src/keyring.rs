@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::engine::Module;
 use crate::paths;
 use std::collections::HashMap;
 use std::fs;
@@ -21,7 +22,7 @@ impl KeyName {
         }
     }
 
-    pub fn for_each(k: &str, v: &HashMap<String, String>) -> Vec<KeyName> {
+    pub fn for_each(k: &str, v: &HashMap<String, Option<String>>) -> Vec<KeyName> {
         v.iter()
             .map(move |(x, _)| KeyName::new(k, x.as_str()))
             .collect()
@@ -57,7 +58,7 @@ impl FromStr for KeyName {
 
 pub struct KeyRing {
     path: PathBuf,
-    keys: HashMap<String, HashMap<String, String>>,
+    keys: HashMap<String, HashMap<String, Option<String>>>,
 }
 
 impl KeyRing {
@@ -95,7 +96,7 @@ impl KeyRing {
         Ok(())
     }
 
-    pub fn insert(&mut self, key: KeyName, secret: String) -> Result<()> {
+    pub fn insert(&mut self, key: KeyName, secret: Option<String>) -> Result<()> {
         // get the namespace or create a new one
         let mut x = self.keys.remove(&key.namespace)
             .unwrap_or_else(|| HashMap::new());
@@ -137,11 +138,31 @@ impl KeyRing {
             .collect()
     }
 
-    pub fn get(&self, key: &KeyName) -> Option<String> {
+    pub fn get(&self, key: &KeyName) -> Option<KeyRingEntry> {
         let x = self.keys.get(&key.namespace)?;
-        let x = x.get(&key.name)?;
-        Some(x.to_string())
+        let secret_key = x.get(&key.name)?;
+
+        Some(KeyRingEntry {
+            namespace: key.namespace.to_owned(),
+            access_key: key.name.to_owned(),
+            secret_key: secret_key.to_owned(),
+        })
     }
+
+    pub fn request_keys(&self, module: &Module) -> Vec<KeyRingEntry> {
+        // TODO: we probably want to randomize the order
+        module.keyring_access().iter()
+            .flat_map(|namespace| self.list_for(namespace))
+            .flat_map(|x| self.get(&x))
+            .collect()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct KeyRingEntry {
+    pub namespace: String,
+    pub access_key: String,
+    pub secret_key: Option<String>,
 }
 
 #[cfg(test)]

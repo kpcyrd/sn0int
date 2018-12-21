@@ -1,6 +1,7 @@
 -- Description: Retrieve additional information about a phone number
 -- Version: 0.1.0
 -- Source: phonenumbers
+-- Keyring-Access: twilio
 -- License: GPL-3.0
 
 function run(arg)
@@ -10,9 +11,14 @@ function run(arg)
 
     --debug(url)
 
+    key = keyring('twilio')[1]
+    if not key then
+        return 'Missing required twilio access key'
+    end
+
     session = http_mksession()
     req = http_request(session, 'GET', url, {
-        basic_auth={'redacted', 'redacted'},
+        basic_auth={key['access_key'], key['secret_key']},
     })
     reply = http_send(req)
     if last_err() then return end
