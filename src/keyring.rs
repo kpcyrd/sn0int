@@ -1,6 +1,8 @@
 use crate::errors::*;
 
 use crate::engine::Module;
+use crate::hlua::AnyLuaValue;
+use crate::json::LuaJsonValue;
 use crate::paths;
 use std::collections::{HashMap, HashSet};
 use std::fs;
@@ -149,6 +151,13 @@ impl KeyRing {
         })
     }
 
+    pub fn get_all_for(&self, namespace: &str) -> Vec<KeyRingEntry> {
+        self.list_for(namespace)
+            .into_iter()
+            .flat_map(|x| self.get(&x))
+            .collect()
+    }
+
     pub fn unauthorized_namespaces<'a>(&self, module: &'a Module) -> Vec<&'a String> {
         module.keyring_access().iter()
             .filter(|namespace| !self.is_access_granted(&module, &namespace))
@@ -185,6 +194,14 @@ pub struct KeyRingEntry {
     pub namespace: String,
     pub access_key: String,
     pub secret_key: Option<String>,
+}
+
+impl KeyRingEntry {
+    pub fn to_lua(&self) -> Result<AnyLuaValue> {
+        let v = serde_json::to_value(&self)?;
+        let v = LuaJsonValue::from(v).into();
+        Ok(v)
+    }
 }
 
 #[cfg(test)]

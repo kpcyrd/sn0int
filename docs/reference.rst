@@ -261,10 +261,23 @@ Encode a datastructure into a string.
     })
     print(x)
 
+keyring
+-------
+
+Request all keys from a given namespace. See the `keyring <keyring.html>`__
+section for details.
+
+.. code-block:: lua
+
+    creds = keyring('aws')
+    print(creds[1]['accesskey'])
+    print(creds[1]['secretkey'])
+
 last_err
 --------
 
-Returns infos about the last error we've observed, if any. Returns ``nil`` otherwise.
+Returns infos about the last error we've observed, if any. Returns ``nil``
+otherwise.
 
 .. code-block:: lua
 
@@ -419,7 +432,7 @@ Read a line from stdin. The final newline is not removed.
 url_decode
 ----------
 
-Parse a query string into a map. For raw percent decoding see ``url_unescape``.
+Parse a query string into a map. For raw percent decoding see url_unescape_.
 
 .. code-block:: lua
 
@@ -430,7 +443,7 @@ Parse a query string into a map. For raw percent decoding see ``url_unescape``.
 url_encode
 ----------
 
-Encode a map into a query string. For raw percent encoding see ``url_escape``.
+Encode a map into a query string. For raw percent encoding see url_escape_.
 
 .. code-block:: lua
 

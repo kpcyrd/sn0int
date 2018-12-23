@@ -37,6 +37,11 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             Source::Urls => select::<Url>(rl)?,
             Source::Emails => select::<Email>(rl)?,
             Source::PhoneNumbers => select::<PhoneNumber>(rl)?,
+            Source::KeyRing(namespace) => {
+                for key in rl.keyring().list_for(&namespace) {
+                    println!("{}:{}", key.namespace, key.name);
+                }
+            },
         }
     } else {
         debug!("Setting filter to {:?}", args.filter);
@@ -59,6 +64,7 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
         Source::Urls => db.filter::<Url>(&filter)?.len(),
         Source::Emails => db.filter::<Email>(&filter)?.len(),
         Source::PhoneNumbers => db.filter::<PhoneNumber>(&filter)?.len(),
+        Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
     };
     Ok(num)
 }

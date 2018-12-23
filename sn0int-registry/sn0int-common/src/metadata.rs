@@ -35,20 +35,30 @@ pub enum Source {
     Urls,
     Emails,
     PhoneNumbers,
+    KeyRing(String),
 }
 
 impl FromStr for Source {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Source> {
-        match s {
-            "domains" => Ok(Source::Domains),
-            "subdomains" => Ok(Source::Subdomains),
-            "ipaddrs" => Ok(Source::IpAddrs),
-            "urls" => Ok(Source::Urls),
-            "emails" => Ok(Source::Emails),
-            "phonenumbers" => Ok(Source::PhoneNumbers),
-            x => bail!("Unknown Source: {:?}", x),
+        let (key, param) = if let Some(idx) = s.find(':') {
+            let (a, b) = s.split_at(idx);
+            (a, Some(&b[1..]))
+        } else {
+            (s, None)
+        };
+
+        match (key, param) {
+            ("domains", None) => Ok(Source::Domains),
+            ("subdomains", None) => Ok(Source::Subdomains),
+            ("ipaddrs", None) => Ok(Source::IpAddrs),
+            ("urls", None) => Ok(Source::Urls),
+            ("emails", None) => Ok(Source::Emails),
+            ("phonenumbers", None) => Ok(Source::PhoneNumbers),
+            ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
+            (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
+            (x, None) => bail!("Unknown Source: {:?}", x),
         }
     }
 }
@@ -218,5 +228,20 @@ mod tests {
 
 "#);
         assert!(metadata.is_err());
+    }
+
+    #[test]
+    fn verify_keyring_source() {
+        let x = Source::from_str("keyring:foo").unwrap();
+        assert_eq!(x, Source::KeyRing("foo".to_string()));
+
+        let x = Source::from_str("keyring:").unwrap();
+        assert_eq!(x, Source::KeyRing("".to_string()));
+    }
+
+    #[test]
+    fn verify_invalid_keyring_source() {
+        let x = Source::from_str("keyring");
+        assert!(x.is_err());
     }
 }

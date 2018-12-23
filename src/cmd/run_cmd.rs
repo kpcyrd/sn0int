@@ -103,6 +103,8 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
 
+    prepare_keyring(rl.keyring_mut(), &module, &params)?;
+
     let filter = rl.scoped_targets();
 
     let args = match module.source() {
@@ -112,10 +114,22 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
         Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
         Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
         Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl.db(), &filter),
+        Some(Source::KeyRing(namespace)) => {
+            let keyring = rl.keyring();
+            if keyring.is_access_granted(&module, &namespace) {
+                keyring.get_all_for(&namespace).into_iter()
+                    .map(|key| {
+                        let pretty = format!("{}:{}", key.namespace, key.access_key);
+                        let arg = serde_json::to_value(key)?;
+                        Ok((arg, Some(pretty)))
+                    })
+                    .collect::<Result<Vec<_>>>()
+            } else {
+                Ok(vec![])
+            }
+        },
         None => Ok(vec![(serde_json::Value::Null, None)]),
     }?;
-
-    prepare_keyring(rl.keyring_mut(), &module, &params)?;
 
     rl.signal_register().catch_ctrl();
     worker::spawn(rl, &module, args, &params);

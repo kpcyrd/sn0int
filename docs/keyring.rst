@@ -32,7 +32,8 @@ access key and the password as the secret.
 If the service uses only a secret key for the api, set the secret key as the
 access key and leave the secret blank.
 
-TODO: permission system
+A script doesn't automatically get access to requested keyring namespaces.
+Instead the user is asked to confirm those requests to limit abusive scripts.
 
 Using access keys in scripts
 ----------------------------
@@ -54,17 +55,11 @@ If the user granted us access to those keys we can read them with ``keyring``:
     print(creds[1]['accesskey'])
     print(creds[1]['secretkey'])
 
-This returns an empty list if the user doesn't have any keys in that namespace.
-
-.. note::
-   The argument for ``keyring`` is supposed to be a namespace name which
-   returns all secrets in that namespace, but you can also select a specific
-   key by specifying the full ``namespace:name`` combination.
+This returns a list of all keys in that namespace. Any empty list is returned
+if the user doesn't have any keys in that namespace.
 
 Using access keys as source argument
 ------------------------------------
-
-TODO: this is currently not supported
 
 We can also use the access keys as source argument. This is useful if each
 account has access to different things and we want to read through all of them.
