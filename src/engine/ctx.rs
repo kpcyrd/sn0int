@@ -323,11 +323,11 @@ impl Script {
         use crate::geoip::Maxmind;
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
-        let psl = Psl::from_str(r#"
+        let psl = r#"
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
-"#)?;
+"#.parse::<Psl>()?;
         let geoip = GeoIP::open_or_download()?;
         let asn = AsnDB::open_or_download()?;
 

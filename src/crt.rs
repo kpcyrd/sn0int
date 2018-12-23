@@ -45,7 +45,7 @@ named!(san_value_dns<&[u8], Result<AlternativeName>>, do_parse!(
     value:  take!(len)      >>
     ({
         String::from_utf8(value.to_vec())
-            .map(|v| AlternativeName::DnsName(v))
+            .map(AlternativeName::DnsName)
             .map_err(Error::from)
     })
 ));

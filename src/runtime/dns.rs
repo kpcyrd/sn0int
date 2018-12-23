@@ -23,7 +23,7 @@ pub struct ResolveOptions {
 }
 
 impl ResolveOptions {
-    pub fn new(record: String) -> Result<ResolveOptions> {
+    pub fn new(record: &str) -> Result<ResolveOptions> {
         let record = record.parse()?;
         Ok(ResolveOptions {
             record,
@@ -42,9 +42,9 @@ impl ResolveOptions {
         match x {
             AnyLuaValue::LuaAnyString(s) => {
                 let s = String::from_utf8(s.0)?;
-                ResolveOptions::new(s)
+                ResolveOptions::new(&s)
             },
-            AnyLuaValue::LuaString(s) => ResolveOptions::new(s),
+            AnyLuaValue::LuaString(s) => ResolveOptions::new(&s),
             x => engine::structs::from_lua(x.into()),
         }
     }

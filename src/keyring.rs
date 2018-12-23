@@ -74,7 +74,7 @@ impl KeyRing {
         let path = Self::path()?;
 
         if path.exists() {
-            Self::load(path)
+            Self::load(&path)
         } else {
             Ok(KeyRing {
                 keys: HashMap::new(),
@@ -83,7 +83,7 @@ impl KeyRing {
         }
     }
 
-    pub fn load(path: PathBuf) -> Result<KeyRing> {
+    pub fn load(path: &PathBuf) -> Result<KeyRing> {
         let buf = fs::read(&path)?;
         serde_json::from_slice(&buf)
             .map_err(Error::from)
@@ -99,7 +99,7 @@ impl KeyRing {
     pub fn insert(&mut self, key: KeyName, secret: Option<String>) -> Result<()> {
         // get the namespace or create a new one
         let mut x = self.keys.remove(&key.namespace)
-            .unwrap_or_else(|| HashMap::new());
+            .unwrap_or_else(HashMap::new);
         // insert key into namespace
         x.insert(key.name, secret);
         // add namespace backinto keyring

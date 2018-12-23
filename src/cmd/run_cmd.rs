@@ -27,48 +27,35 @@ pub struct Args {
 }
 
 #[derive(Debug, Clone)]
-pub struct Params {
+pub struct Params<'a> {
     pub threads: usize,
     pub verbose: u64,
     pub stdin: bool,
-    pub grants: Vec<String>,
+    pub grants: &'a [String],
     pub grant_full_keyring: bool,
     pub deny_keyring: bool,
 }
 
-impl From<args::Run> for Params {
-    fn from(args: args::Run) -> Params {
-        Params {
-            threads: args.threads,
-            verbose: args.verbose,
-            stdin: args.stdin,
-            grants: args.grants,
-            grant_full_keyring: args.grant_full_keyring,
-            deny_keyring: args.deny_keyring,
-        }
-    }
-}
-
-impl From<&args::Run> for Params {
+impl<'a> From<&'a args::Run> for Params<'a> {
     fn from(args: &args::Run) -> Params {
         Params {
             threads: args.threads,
             verbose: args.verbose,
             stdin: args.stdin,
-            grants: args.grants.clone(),
+            grants: &args.grants,
             grant_full_keyring: args.grant_full_keyring,
             deny_keyring: args.deny_keyring,
         }
     }
 }
 
-impl From<Args> for Params {
-    fn from(args: Args) -> Params {
+impl From<Args> for Params<'static> {
+    fn from(args: Args) -> Params<'static> {
         Params {
             threads: args.threads,
             verbose: args.verbose,
             stdin: false,
-            grants: Vec::new(),
+            grants: &[],
             grant_full_keyring: false,
             deny_keyring: false,
         }
@@ -92,9 +79,7 @@ fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> R
     for namespace in keyring.unauthorized_namespaces(&module) {
         let grant_access = if params.deny_keyring {
             false
-        } else if params.grant_full_keyring {
-            true
-        } else if params.grants.contains(namespace) {
+        } else if params.grant_full_keyring || params.grants.contains(namespace) {
             true
         } else {
             let msg = format!("Grant access to {:?} credentials?", namespace);
@@ -113,7 +98,7 @@ fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> R
     Ok(())
 }
 
-pub fn execute(rl: &mut Readline, params: Params) -> Result<()> {
+pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -133,7 +118,7 @@ pub fn execute(rl: &mut Readline, params: Params) -> Result<()> {
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
 
     rl.signal_register().catch_ctrl();
-    worker::spawn(rl, &module, args, params);
+    worker::spawn(rl, &module, args, &params);
     rl.signal_register().reset_ctrlc();
 
     term::info(&format!("Finished {}", module.canonical()));
@@ -143,5 +128,5 @@ pub fn execute(rl: &mut Readline, params: Params) -> Result<()> {
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
-    execute(rl, args.into())
+    execute(rl, &args.into())
 }

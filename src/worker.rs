@@ -179,6 +179,9 @@ impl DatabaseEvent {
                 tx.send(result).expect("Failed to send db result to channel");
             },
         }
+        // this is compiled to a nop, but stops clippy from suggesting to refactor tx to &tx
+        // that would allow reusing tx, which we don't want
+        ::std::mem::drop(tx)
     }
 }
 
@@ -210,7 +213,7 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: Params) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;

@@ -191,13 +191,13 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ke
     Ok(())
 }
 
-pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: String) -> Result<()> {
+pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 
     let geoip = GeoIP::from_buf(geoip)?;
     let asn = AsnDB::from_buf(asn)?;
-    let psl = Psl::from_str(&psl)
+    let psl = psl.parse::<Psl>()
         .context("Failed to load public suffix list")?;
 
     let environment = Environment {

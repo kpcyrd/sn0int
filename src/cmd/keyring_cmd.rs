@@ -55,7 +55,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     match args {
         Args::Add(add) => keyring_add(rl.keyring_mut(), add),
         Args::Delete(delete) => keyring_delete(rl.keyring_mut(), delete),
-        Args::Get(get) => keyring_get(rl.keyring(), get),
+        Args::Get(get) => keyring_get(rl.keyring(), &get),
         Args::List(list) => keyring_list(rl.keyring(), list),
     }
 }
@@ -74,7 +74,7 @@ fn keyring_delete(keyring: &mut KeyRing, delete: KeyRingDelete) -> Result<()> {
     keyring.delete(delete.key)
 }
 
-fn keyring_get(keyring: &KeyRing, get: KeyRingGet) -> Result<()> {
+fn keyring_get(keyring: &KeyRing, get: &KeyRingGet) -> Result<()> {
     if let Some(key) = keyring.get(&get.key) {
         if get.quiet {
             if let Some(secret_key) = key.secret_key {
