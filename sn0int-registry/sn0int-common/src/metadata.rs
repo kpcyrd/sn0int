@@ -179,6 +179,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: Some(Source::Domains),
+            keyring_access: Vec::new(),
         });
     }
 
@@ -194,6 +195,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: None,
+            keyring_access: Vec::new(),
         });
     }
 
