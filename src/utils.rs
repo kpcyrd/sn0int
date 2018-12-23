@@ -11,17 +11,14 @@ pub fn read_line() -> Result<String> {
 }
 
 pub fn question(text: &str) -> Result<String> {
-    print!("{}: ", text);
+    print!("\x1b[1m[\x1b[34m?\x1b[0;1m]\x1b[0m {}: ", text);
     io::stdout().flush()?;
 
     read_line()
 }
 
 pub fn question_opt(text: &str) -> Result<Option<String>> {
-    print!("{}: ", text);
-    io::stdout().flush()?;
-
-    let answer = read_line()?;
+    let answer = question(text)?;
 
     if !answer.is_empty() {
         Ok(Some(answer))

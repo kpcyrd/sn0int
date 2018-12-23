@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
@@ -158,16 +159,16 @@ impl DisplayableDetailed for DetailedSubdomain {
     }
 
     #[inline]
-    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        self.id(w, self.id)?;
-        self.green_debug(w, &self.value)?;
+    fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        w.id(self.id)?;
+        w.debug::<Green, _>(&self.value)?;
         Ok(())
     }
 
     #[inline]
-    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result {
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         for ipaddr in &self.ipaddrs {
-            self.child(w, ipaddr)?;
+            w.child(ipaddr)?;
         }
         Ok(())
     }

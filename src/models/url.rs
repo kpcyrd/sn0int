@@ -1,7 +1,9 @@
 use crate::errors::*;
+use crate::fmt::Write;
+use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use crate::ser;
 use crate::url;
 
@@ -165,17 +167,17 @@ impl DisplayableDetailed for DetailedUrl {
     }
 
     #[inline]
-    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        self.id(w, self.id)?;
-        self.green_debug(w, &self.value)?;
+    fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        w.id(self.id)?;
+        w.debug::<Green, _>(&self.value)?;
 
         if let Some(status) = self.status {
             write!(w, " (")?;
-            self.green_display(w, status)?;
+            w.display::<Green, _>(status)?;
 
             if let Some(ref redirect) = self.redirect {
                 write!(w, " => ")?;
-                self.green_debug(w, redirect)?;
+                w.debug::<Green, _>(redirect)?;
             }
 
             write!(w, ")")?;
@@ -189,7 +191,7 @@ impl DisplayableDetailed for DetailedUrl {
     }
 
     #[inline]
-    fn children(&self, _w: &mut fmt::Formatter) -> fmt::Result {
+    fn children(&self, _w: &mut fmt::DetailFormatter) -> fmt::Result {
         Ok(())
     }
 }

@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::fmt::colors::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
 use diesel;
@@ -140,6 +141,11 @@ pub struct DetailedPhoneNumber {
     name: Option<String>,
     unscoped: bool,
     valid: Option<bool>,
+    country: Option<String>,
+    carrier: Option<String>,
+    line: Option<String>,
+    caller_name: Option<String>,
+    caller_type: Option<String>,
 }
 
 impl DisplayableDetailed for DetailedPhoneNumber {
@@ -149,41 +155,33 @@ impl DisplayableDetailed for DetailedPhoneNumber {
     }
 
     #[inline]
-    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        self.id(w, self.id)?;
-        self.green_debug(w, &self.value)?;
+    fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        w.id(self.id)?;
+        w.debug::<Green, _>(&self.value)?;
 
-        match (&self.name, self.valid) {
-            (None, None) => (),
-            (name, valid) => {
-                write!(w, " [")?;
-                let mut need_separator = false;
+        w.start_group();
+        w.opt_debug::<Yellow, _>(&self.name)?;
 
-                if let Some(name) = name {
-                    self.yellow_debug(w, name)?;
-                    need_separator = true;
-                }
-
-                if let Some(valid) = valid {
-                    if need_separator {
-                        write!(w, ", ")?;
-                    }
-
-                    if valid {
-                        self.green_display(w, "valid")?;
-                    } else {
-                        self.red_display(w, "invalid")?;
-                    }
-                }
-                write!(w, "]")?;
-            },
+        if let Some(valid) = &self.valid {
+            if *valid {
+                w.display::<Green, _>("valid")?;
+            } else {
+                w.display::<Red, _>("invalid")?;
+            }
         }
+
+        w.opt_debug::<Yellow, _>(&self.country)?;
+        w.opt_debug::<Yellow, _>(&self.carrier)?;
+        w.opt_debug::<Yellow, _>(&self.line)?;
+        w.opt_debug::<Yellow, _>(&self.caller_name)?;
+        w.opt_debug::<Yellow, _>(&self.caller_type)?;
+        w.end_group()?;
 
         Ok(())
     }
 
     #[inline]
-    fn children(&self, _w: &mut fmt::Formatter) -> fmt::Result {
+    fn children(&self, _w: &mut fmt::DetailFormatter) -> fmt::Result {
         Ok(())
     }
 }
@@ -200,6 +198,11 @@ impl Detailed for PhoneNumber {
             name: self.name.clone(),
             unscoped: self.unscoped,
             valid: self.valid,
+            country: self.country.clone(),
+            carrier: self.carrier.clone(),
+            line: self.line.clone(),
+            caller_name: self.caller_name.clone(),
+            caller_type: self.caller_type.clone(),
         })
     }
 }

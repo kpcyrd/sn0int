@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::db::{Database, Filter};
-use std::fmt;
+use crate::fmt;
 use crate::schema::*;
 
 
@@ -214,119 +214,20 @@ pub trait Detailed: Scopable {
 pub trait DisplayableDetailed {
     fn scoped(&self) -> bool;
 
-    #[inline]
-    fn start(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.scoped() {
-            write!(w, "\x1b[90m")
-        } else {
-            Ok(())
-        }
-    }
+    fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result;
 
-    #[inline]
-    fn end(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if !self.scoped() {
-            write!(w, "\x1b[0m")
-        } else {
-            Ok(())
-        }
-    }
-
-    #[inline]
-    fn id<D: fmt::Display>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[32m#{}\x1b[0m, ", v)
-        } else {
-            write!(w, "#{}, ", v)
-        }
-    }
-
-    #[inline]
-    fn red_display<D: fmt::Display>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[31m{}\x1b[0m", v)
-        } else {
-            write!(w, "{}", v)
-        }
-    }
-
-    #[inline]
-    fn green(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[32m")
-        } else {
-            Ok(())
-        }
-    }
-
-    #[inline]
-    fn green_display<D: fmt::Display>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[32m{}\x1b[0m", v)
-        } else {
-            write!(w, "{}", v)
-        }
-    }
-
-    #[inline]
-    fn green_debug<D: fmt::Debug>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[32m{:?}\x1b[0m", v)
-        } else {
-            write!(w, "{:?}", v)
-        }
-    }
-
-    #[inline]
-    fn yellow(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[33m")
-        } else {
-            Ok(())
-        }
-    }
-
-    #[inline]
-    fn yellow_debug<D: fmt::Debug>(&self, w: &mut fmt::Formatter, v: D) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[33m{:?}\x1b[0m", v)
-        } else {
-            write!(w, "{:?}", v)
-        }
-    }
-
-    #[inline]
-    fn clear(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        if self.scoped() {
-            write!(w, "\x1b[0m")
-        } else {
-            Ok(())
-        }
-    }
-
-    #[inline]
-    fn child<D: fmt::Display>(&self, w: &mut fmt::Formatter, c: D) -> fmt::Result {
-        if self.scoped() {
-            // if child is unscoped, draw as grey as well
-            write!(w, "\n\t\x1b[33m{}\x1b[0m", c)
-        } else {
-            write!(w, "\n\t\x1b[90m{}\x1b[0m", c)
-        }
-    }
-
-    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result;
-
-    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result;
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result;
 }
 
 macro_rules! display_detailed {
     ( $name:ident ) => {
         impl fmt::Display for $name {
             fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-                self.start(w)?;
-                self.print(w)?;
-                self.end(w)?;
-                self.children(w)?;
+                let mut w = fmt::DetailFormatter::new(w, self.scoped());
+                w.start()?;
+                self.print(&mut w)?;
+                w.end()?;
+                self.children(&mut w)?;
                 Ok(())
             }
         }
