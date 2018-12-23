@@ -8,6 +8,6 @@ function run()
         if x == nil then
             break
         end
-        info(json_encode(x))
+        info(x)
     end
 end

@@ -3,10 +3,13 @@ use crate::errors::*;
 use crate::db::Database;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::workspaces::{self, Workspace};
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub struct Args {
     workspace: Option<Workspace>,
 }

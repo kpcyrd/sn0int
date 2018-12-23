@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::geoip::{GeoIP, AsnDB};
 use crate::json::LuaJsonValue;
+use crate::keyring::KeyRingEntry;
 use serde_json;
 use std::fs;
 use std::fmt::Debug;
@@ -27,6 +28,7 @@ pub mod structs;
 #[derive(Debug)]
 pub struct Environment {
   pub verbose: u64,
+  pub keyring: Vec<KeyRingEntry>,
   pub dns_config: Resolver,
   pub psl: Psl,
   pub geoip: GeoIP,
@@ -151,6 +153,7 @@ pub struct Module {
     description: String,
     version: String,
     source: Option<Source>,
+    keyring_access: Vec<String>,
     script: Script,
 }
 
@@ -171,6 +174,7 @@ impl Module {
             description: metadata.description,
             version: metadata.version,
             source: metadata.source,
+            keyring_access: metadata.keyring_access,
             script,
         })
     }
@@ -200,6 +204,10 @@ impl Module {
 
     pub fn source(&self) -> &Option<Source> {
         &self.source
+    }
+
+    pub fn keyring_access(&self) -> &[String] {
+        &self.keyring_access
     }
 
     pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {

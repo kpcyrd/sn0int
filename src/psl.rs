@@ -3,6 +3,7 @@ use crate::errors::*;
 use chrootable_https::Client;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use crate::paths;
 use publicsuffix::{self, Domain, DnsName};
 use crate::worker;
@@ -62,15 +63,6 @@ impl Psl {
         Ok(())
     }
 
-    pub fn from_str(s: &str) -> Result<Psl> {
-        let list = publicsuffix::List::from_str(s)
-            .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
-
-        Ok(Psl {
-            list,
-        })
-    }
-
     pub fn parse_domain(&self, domain: &str) -> Result<Domain> {
         self.list.parse_domain(domain)
             .map_err(|e| format_err!("Failed to parse domain: {}", e))
@@ -79,5 +71,18 @@ impl Psl {
     pub fn parse_dns_name(&self, name: &str) -> Result<DnsName> {
         self.list.parse_dns_name(name)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))
+    }
+}
+
+impl FromStr for Psl {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Psl> {
+        let list = publicsuffix::List::from_str(s)
+            .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
+
+        Ok(Psl {
+            list,
+        })
     }
 }

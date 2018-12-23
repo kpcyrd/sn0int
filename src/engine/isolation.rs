@@ -2,6 +2,7 @@ use crate::errors::*;
 use chrootable_https::dns::Resolver;
 use crate::engine::{Environment, Module, Reporter};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
+use crate::keyring::KeyRingEntry;
 use crate::psl::Psl;
 use serde_json;
 use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
@@ -16,15 +17,17 @@ use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
     verbose: u64,
+    keyring: Vec<KeyRingEntry>,
     dns_config: Resolver,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(verbose: u64, dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(verbose: u64, keyring: Vec<KeyRingEntry>, dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
         StartCommand {
             verbose,
+            keyring,
             dns_config,
             module,
             arg
@@ -157,7 +160,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, verbose: u64, has_stdin: bool) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, keyring: Vec<KeyRingEntry>, verbose: u64, has_stdin: bool) -> Result<()> {
     let dns_config = Resolver::from_system()?;
 
     let mut reader = if has_stdin {
@@ -167,7 +170,7 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ve
     };
 
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(&StartCommand::new(verbose, dns_config, module, arg))?;
+    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, module, arg))?;
 
     loop {
         match supervisor.recv()? {
@@ -188,17 +191,18 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ve
     Ok(())
 }
 
-pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: String) -> Result<()> {
+pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 
     let geoip = GeoIP::from_buf(geoip)?;
     let asn = AsnDB::from_buf(asn)?;
-    let psl = Psl::from_str(&psl)
+    let psl = psl.parse::<Psl>()
         .context("Failed to load public suffix list")?;
 
     let environment = Environment {
         verbose: start.verbose,
+        keyring: start.keyring,
         dns_config: start.dns_config,
         psl,
         geoip,

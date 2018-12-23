@@ -104,6 +104,7 @@ impl Spinner {
         self.done();
     }
 
+    #[inline]
     pub fn clear(&self) {
         print!("\r\x1b[2K");
     }
@@ -127,6 +128,7 @@ impl SpinLogger for Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
+    #[inline]
     fn status(&mut self, status: String) {
         self.status = status;
     }
@@ -160,6 +162,7 @@ pub struct Prompt {
 }
 
 impl Prompt {
+    #[inline]
     pub fn new(workspace: String) -> Prompt {
         Prompt {
             workspace,
@@ -179,17 +182,16 @@ impl fmt::Display for Prompt {
     }
 }
 
+#[derive(Default)]
 pub struct StackedSpinners {
     spinners: HashMap<String, Spinner>,
     drawn: usize,
 }
 
 impl StackedSpinners {
+    #[inline]
     pub fn new() -> StackedSpinners {
-        StackedSpinners {
-            spinners: HashMap::new(),
-            drawn: 0,
-        }
+        StackedSpinners::default()
     }
 
     pub fn add(&mut self, key: String, status: String) {
@@ -197,10 +199,12 @@ impl StackedSpinners {
         self.spinners.insert(key, s);
     }
 
-    pub fn remove(&mut self, key: &String) -> Option<Spinner> {
+    #[inline]
+    pub fn remove(&mut self, key: &str) -> Option<Spinner> {
         self.spinners.remove(key)
     }
 
+    #[inline]
     pub fn jump2start(&mut self) {
         if self.drawn > 0 {
             print!("\r\x1b[2K\x1b[{}A", self.drawn);
@@ -226,14 +230,17 @@ impl StackedSpinners {
         io::stdout().flush().unwrap();
     }
 
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.spinners.is_empty()
     }
 
+    #[inline]
     pub fn clear(&self) {
         print!("\r\x1b[2K");
     }
 
+    #[inline]
     pub fn prefixed<I: Into<String>>(&mut self, name: I) -> PrefixedLogger<StackedSpinners> {
         PrefixedLogger::new(self, name)
     }

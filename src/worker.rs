@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use crate::channel;
+use crate::cmd::run_cmd::Params;
 use crate::db::{Database, DbChange, Family};
 use crate::engine::{self, Module};
 use crate::engine::isolation::Supervisor;
@@ -178,6 +179,9 @@ impl DatabaseEvent {
                 tx.send(result).expect("Failed to send db result to channel");
             },
         }
+        // this is compiled to a nop, but stops clippy from suggesting to refactor tx to &tx
+        // that would allow reusing tx, which we don't want
+        ::std::mem::drop(tx)
     }
 }
 
@@ -209,16 +213,20 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize, verbose: u64, has_stdin: bool) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;
     }
 
+    let verbose = params.verbose;
+    let has_stdin = params.stdin;
+    let keyring = rl.keyring().request_keys(&module);
+
     let mut stack = StackedSpinners::new();
 
     let (tx, rx) = channel::bounded(1);
-    let pool = ThreadPool::new(threads);
+    let pool = ThreadPool::new(params.threads);
 
     let mut expected = 0;
     for (arg, pretty_arg) in args {
@@ -229,6 +237,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
 
         let tx = tx.clone();
         let module = module.clone();
+        let keyring = keyring.clone();
         let signal_register = rl.signal_register().clone();
         pool.execute(move || {
             let tx = EventSender::new(name, tx);
@@ -239,7 +248,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, verbose, has_stdin) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin) {
                 Ok(_) => ExitEvent::Ok,
                 Err(err) => ExitEvent::Err(err.to_string()),
             };

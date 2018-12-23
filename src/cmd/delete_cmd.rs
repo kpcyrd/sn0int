@@ -3,11 +3,14 @@ use crate::errors::*;
 use crate::db;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::models::*;
 use crate::term;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
     #[structopt(name="domains")]
     Domains(Filter),
@@ -19,6 +22,8 @@ pub enum Args {
     Urls(Filter),
     #[structopt(name="emails")]
     Emails(Filter),
+    #[structopt(name="phonenumbers")]
+    PhoneNumbers(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -40,6 +45,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::IpAddrs(filter) => delete::<IpAddr>(rl, &filter),
         Args::Urls(filter) => delete::<Url>(rl, &filter),
         Args::Emails(filter) => delete::<Email>(rl, &filter),
+        Args::PhoneNumbers(filter) => delete::<PhoneNumber>(rl, &filter),
     }?;
     term::info(&format!("Deleted {} rows", rows));
     Ok(())

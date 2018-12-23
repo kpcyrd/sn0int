@@ -29,9 +29,9 @@ function request(subdomain_id, url)
 
     db_add('url', obj)
 
-    -- info(json_encode(reply['status']))
-    -- info(json_encode(reply['headers']['location']))
-    -- info(json_encode(reply['text']))
+    -- debug(reply['status'])
+    -- debug(reply['headers']['location'])
+    -- debug(reply['text'])
 end
 
 function run(arg)

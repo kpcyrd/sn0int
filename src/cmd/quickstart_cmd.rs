@@ -2,15 +2,17 @@ use crate::errors::*;
 
 use crate::args::Install;
 use crate::api::Client;
-// use colored::Colorize;
 use crate::cmd::mod_cmd;
 use crate::registry;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use sn0int_common::ModuleID;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub struct Args {
 }
 

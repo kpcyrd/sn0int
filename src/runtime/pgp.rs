@@ -12,12 +12,9 @@ fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
     let mut uids = LuaList::new();
 
     for (tag, body) in sloppy_rfc4880::Parser::new(pubkey) {
-        match tag {
-            Tag::UserID => {
-                let body = String::from_utf8(body)?;
-                uids.push_str(body);
-            },
-            _ => (),
+        if let Tag::UserID = tag {
+            let body = String::from_utf8(body)?;
+            uids.push_str(body);
         }
     }
 

@@ -39,7 +39,7 @@ end
 function iter_axfr(zone, arg)
     local name, r, m, domain
 
-    debug(json_encode(arg))
+    debug(arg)
 
     name = arg[1]
     r = arg[2]

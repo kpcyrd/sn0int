@@ -66,7 +66,7 @@ pub fn html_select_list(html: &str, selector: &str) -> Result<Vec<Element>> {
     let doc = kuchiki::parse_html().one(html);
 
     match doc.select(selector) {
-        Ok(x) => Ok(x.into_iter().map(|x| transform_element(&x)).collect()),
+        Ok(x) => Ok(x.map(|x| transform_element(&x)).collect()),
         Err(_) => bail!("css selector failed"),
     }
 }
@@ -108,7 +108,9 @@ mod tests {
         let elems = html_select(r#"<html><div id="yey">content</div></html>"#, "#yey").unwrap();
         assert_eq!(elems,
             Element {
-                attrs: vec![(String::from("id"), String::from("yey"))].into_iter().collect(),
+                attrs: hashmap!{
+                    "id".into() => "yey".into(),
+                },
                 text: "content".into(),
                 html: r#"<div id="yey">content</div>"#.into(),
             }
@@ -120,7 +122,9 @@ mod tests {
         let elems = html_select_list(r#"<html><div id="yey">content</div></html>"#, "#yey").unwrap();
         assert_eq!(elems, vec![
             Element {
-                attrs: vec![(String::from("id"), String::from("yey"))].into_iter().collect(),
+                attrs: hashmap!{
+                    "id".into() => "yey".into(),
+                },
                 text: "content".into(),
                 html: r#"<div id="yey">content</div>"#.into(),
             }

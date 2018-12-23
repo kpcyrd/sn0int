@@ -49,6 +49,10 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
                 Insert::Email(try_into_new::<InsertEmail>(object)
                     .map_err(|e| state.set_error(e))?)
             },
+            Family::PhoneNumber => {
+                Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
         };
 
         state.db_insert(object)
@@ -104,6 +108,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::Url(u))),
             Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Email(u))),
+            Family::PhoneNumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::PhoneNumber(u))),
         };
 
         let (id, value, update) = update

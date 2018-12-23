@@ -66,6 +66,15 @@ pub struct Run {
     #[structopt(long="stdin")]
     /// Expose stdin to modules
     pub stdin: bool,
+    #[structopt(long="grant")]
+    /// Automatically grant access to a keyring namespace
+    pub grants: Vec<String>,
+    #[structopt(long="grant-full-keyring")]
+    /// Automatically grant access to all requested keys
+    pub grant_full_keyring: bool,
+    #[structopt(long="deny-keyring")]
+    /// Automatically deny access to all requested keys
+    pub deny_keyring: bool,
 }
 
 #[derive(Debug, StructOpt)]

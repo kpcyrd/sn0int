@@ -4,11 +4,14 @@ use crate::db;
 use crate::shell::Readline;
 use sn0int_common::metadata::Source;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::term;
 use crate::models::*;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub struct Args {
     // TODO: target -p # print current filter
     // TODO: target -c # clear filter
@@ -33,6 +36,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             Source::IpAddrs => select::<IpAddr>(rl)?,
             Source::Urls => select::<Url>(rl)?,
             Source::Emails => select::<Email>(rl)?,
+            Source::PhoneNumbers => select::<PhoneNumber>(rl)?,
         }
     } else {
         debug!("Setting filter to {:?}", args.filter);
@@ -54,6 +58,7 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
         Source::IpAddrs => db.filter::<IpAddr>(&filter)?.len(),
         Source::Urls => db.filter::<Url>(&filter)?.len(),
         Source::Emails => db.filter::<Email>(&filter)?.len(),
+        Source::PhoneNumbers => db.filter::<PhoneNumber>(&filter)?.len(),
     };
     Ok(num)
 }

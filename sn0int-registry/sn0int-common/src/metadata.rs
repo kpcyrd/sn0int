@@ -8,6 +8,7 @@ pub enum EntryType {
     Description,
     Version,
     Source,
+    KeyringAccess,
     License,
 }
 
@@ -19,6 +20,7 @@ impl FromStr for EntryType {
             "Description" => Ok(EntryType::Description),
             "Version" => Ok(EntryType::Version),
             "Source" => Ok(EntryType::Source),
+            "Keyring-Access" => Ok(EntryType::KeyringAccess),
             "License" => Ok(EntryType::License),
             x => bail!("Unknown EntryType: {:?}", x),
         }
@@ -32,6 +34,7 @@ pub enum Source {
     IpAddrs,
     Urls,
     Emails,
+    PhoneNumbers,
 }
 
 impl FromStr for Source {
@@ -44,6 +47,7 @@ impl FromStr for Source {
             "ipaddrs" => Ok(Source::IpAddrs),
             "urls" => Ok(Source::Urls),
             "emails" => Ok(Source::Emails),
+            "phonenumbers" => Ok(Source::PhoneNumbers),
             x => bail!("Unknown Source: {:?}", x),
         }
     }
@@ -80,6 +84,7 @@ pub struct Metadata {
     pub description: String,
     pub version: String,
     pub source: Option<Source>,
+    pub keyring_access: Vec<String>,
     pub license: License,
 }
 
@@ -97,6 +102,7 @@ impl FromStr for Metadata {
                 EntryType::Description => data.description = Some(v),
                 EntryType::Version => data.version = Some(v),
                 EntryType::Source => data.source = Some(v),
+                EntryType::KeyringAccess => data.keyring_access.push(v),
                 EntryType::License => data.license = Some(v),
             }
         }
@@ -110,6 +116,7 @@ pub struct NewMetadata<'a> {
     pub description: Option<&'a str>,
     pub version: Option<&'a str>,
     pub source: Option<&'a str>,
+    pub keyring_access: Vec<&'a str>,
     pub license: Option<&'a str>,
 }
 
@@ -121,6 +128,9 @@ impl<'a> NewMetadata<'a> {
             Some(x) => Some(x.parse()?),
             _ => None,
         };
+        let keyring_access = self.keyring_access.into_iter()
+            .map(String::from)
+            .collect();
         let license = self.license.ok_or_else(|| format_err!("License is required"))?;
         let license = license.parse()?;
 
@@ -128,6 +138,7 @@ impl<'a> NewMetadata<'a> {
             description: description.to_string(),
             version: version.to_string(),
             source,
+            keyring_access,
             license,
         })
     }
@@ -168,6 +179,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: Some(Source::Domains),
+            keyring_access: Vec::new(),
         });
     }
 
@@ -183,6 +195,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: None,
+            keyring_access: Vec::new(),
         });
     }
 

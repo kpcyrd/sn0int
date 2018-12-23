@@ -40,7 +40,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
         bail!("At least one module or file need to be provided");
     }
 
-    cmd::run_cmd::execute(&mut rl, args.threads, args.verbose, args.stdin)
+    cmd::run_cmd::execute(&mut rl, &args.into())
 }
 
 fn run_sandbox() -> Result<()> {
@@ -50,7 +50,7 @@ fn run_sandbox() -> Result<()> {
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn, psl)
+    engine::isolation::run_worker(geoip, asn, &psl)
 }
 
 fn run() -> Result<()> {

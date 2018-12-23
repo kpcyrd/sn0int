@@ -1,7 +1,9 @@
 use crate::errors::*;
 use nom;
 use nom::types::CompleteStr;
+use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
 use std::fmt;
+use std::result;
 use std::str::FromStr;
 
 
@@ -32,7 +34,7 @@ named!(module<CompleteStr, ModuleID>, do_parse!(
 
 named!(token<CompleteStr, CompleteStr>, take_while1!(valid_char));
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ModuleID {
     pub author: String,
     pub name: String,
@@ -51,6 +53,24 @@ impl FromStr for ModuleID {
         let (_, module) = module(CompleteStr(s))
             .map_err(|err| format_err!("Failed to parse module id: {:?}", err))?;
         Ok(module)
+    }
+}
+
+impl Serialize for ModuleID {
+    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for ModuleID {
+    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
+        where D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserializer)?;
+        FromStr::from_str(&s).map_err(de::Error::custom)
     }
 }
 

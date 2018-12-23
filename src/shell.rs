@@ -4,6 +4,7 @@ use crate::args::Args;
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
 use crate::config::Config;
+use crate::keyring::KeyRing;
 use colored::Colorize;
 use ctrlc;
 use crate::db::{self, Database};
@@ -26,6 +27,7 @@ pub enum Command {
     Add,
     Back,
     Delete,
+    Keyring,
     Mod,
     Noscope,
     Run,
@@ -46,6 +48,7 @@ impl Command {
             Command::Add => "add",
             Command::Back => "back",
             Command::Delete => "delete",
+            Command::Keyring => "keyring",
             Command::Mod => "mod",
             Command::Noscope => "noscope",
             Command::Run => "run",
@@ -66,6 +69,7 @@ impl Command {
                 Command::Add.as_str(),
                 Command::Back.as_str(),
                 Command::Delete.as_str(),
+                Command::Keyring.as_str(),
                 Command::Mod.as_str(),
                 Command::Noscope.as_str(),
                 Command::Run.as_str(),
@@ -91,6 +95,7 @@ impl FromStr for Command {
             "add" => Ok(Command::Add),
             "back" => Ok(Command::Back),
             "delete" => Ok(Command::Delete),
+            "keyring" => Ok(Command::Keyring),
             "mod" => Ok(Command::Mod),
             "noscope" => Ok(Command::Noscope),
             "run"  => Ok(Command::Run),
@@ -113,11 +118,12 @@ pub struct Readline {
     psl: Psl,
     config: Config,
     engine: Engine,
+    keyring: KeyRing,
     signal_register: Arc<SignalRegister>,
 }
 
 impl Readline {
-    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine) -> Readline {
+    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine, keyring: KeyRing) -> Readline {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -136,6 +142,7 @@ impl Readline {
             psl,
             config,
             engine,
+            keyring,
             signal_register: Arc::new(SignalRegister::new()),
         };
 
@@ -196,6 +203,14 @@ impl Readline {
 
     pub fn engine_mut(&mut self) -> &mut Engine {
         &mut self.engine
+    }
+
+    pub fn keyring(&self) -> &KeyRing {
+        &self.keyring
+    }
+
+    pub fn keyring_mut(&mut self) -> &mut KeyRing {
+        &mut self.keyring
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -333,6 +348,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
             return Ok(true);
         },
         Some((Command::Delete, args)) => delete_cmd::run(rl, &args)?,
+        Some((Command::Keyring, args)) => keyring_cmd::run(rl, &args)?,
         Some((Command::Mod, args)) => mod_cmd::run(rl, &args)?,
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
         Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
@@ -364,12 +380,13 @@ pub fn init(args: &Args, config: Config) -> Result<Readline> {
     let _geoip = GeoIP::open_or_download()?;
     let _asndb = AsnDB::open_or_download()?;
     let engine = Engine::new()?;
+    let keyring = KeyRing::init()?;
 
     if engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
     }
 
-    let rl = Readline::new(config, db, psl, engine);
+    let rl = Readline::new(config, db, psl, engine, keyring);
 
     Ok(rl)
 }

@@ -3,10 +3,13 @@ use crate::errors::*;
 use crate::models::*;
 use crate::shell::Readline;
 use structopt::StructOpt;
+use structopt::clap::AppSettings;
 use crate::utils;
 
 
 #[derive(Debug, StructOpt)]
+#[structopt(author = "",
+            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
     #[structopt(name="domain")]
     Domain(AddDomain),
@@ -14,6 +17,8 @@ pub enum Args {
     Subdomain(AddSubdomain),
     #[structopt(name="email")]
     Email(AddEmail),
+    #[structopt(name="phonenumber")]
+    PhoneNumber(AddPhoneNumber),
 }
 
 #[derive(Debug, StructOpt)]
@@ -31,12 +36,19 @@ pub struct AddEmail {
     email: Option<String>,
 }
 
+#[derive(Debug, StructOpt)]
+pub struct AddPhoneNumber {
+    phonenumber: Option<String>,
+    name: Option<String>,
+}
+
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
         Args::Domain(args) => add_domain(rl, args),
         Args::Subdomain(args) => add_subdomain(rl, args),
         Args::Email(args) => add_email(rl, args),
+        Args::PhoneNumber(args) => add_phonenumber(rl, args),
     }
 }
 
@@ -99,6 +111,35 @@ fn add_email(rl: &mut Readline, args: AddEmail) -> Result<()> {
     rl.db().insert_struct(NewEmail {
         value: &email,
         valid: None,
+    })?;
+
+    Ok(())
+}
+
+fn add_phonenumber(rl: &mut Readline, args: AddPhoneNumber) -> Result<()> {
+    let (phonenumber, name) = match args.phonenumber {
+        Some(phonenumber) => {
+            (phonenumber, args.name)
+        },
+        _ => {
+            let phonenumber = utils::question("Phone Number")?;
+            let name = utils::question_opt("Name")?;
+            (phonenumber, name)
+        },
+    };
+
+    rl.db().insert_struct(NewPhoneNumber {
+        value: &phonenumber,
+        name: name.as_ref(),
+        valid: None,
+        last_online: None,
+        country: None,
+        carrier: None,
+        line: None,
+        is_ported: None,
+        last_ported: None,
+        caller_name: None,
+        caller_type: None,
     })?;
 
     Ok(())

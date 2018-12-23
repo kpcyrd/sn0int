@@ -1,7 +1,9 @@
 use crate::errors::*;
+use crate::fmt::Write;
+use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use std::net;
 use std::result;
 
@@ -170,9 +172,9 @@ impl DisplayableDetailed for DetailedIpAddr {
     }
 
     #[inline]
-    fn print(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        self.id(w, self.id)?;
-        self.green_debug(w, &self.value)?;
+    fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        w.id(self.id)?;
+        w.display::<Green, _>(&self.value)?;
 
         if let Some(ref continent) = self.continent {
             write!(w, " [{}", continent)?;
@@ -202,9 +204,9 @@ impl DisplayableDetailed for DetailedIpAddr {
     }
 
     #[inline]
-    fn children(&self, w: &mut fmt::Formatter) -> fmt::Result {
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         for subdomain in &self.subdomains {
-            self.child(w, subdomain)?;
+            w.child(subdomain)?;
         }
         Ok(())
     }
