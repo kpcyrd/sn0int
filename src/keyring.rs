@@ -2,13 +2,14 @@ use crate::errors::*;
 
 use crate::engine::Module;
 use crate::paths;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::str::FromStr;
 use std::path::PathBuf;
+use sn0int_common::ModuleID;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyName {
     pub namespace: String,
     pub name: String,
@@ -56,9 +57,10 @@ impl FromStr for KeyName {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct KeyRing {
-    path: PathBuf,
     keys: HashMap<String, HashMap<String, Option<String>>>,
+    grants: HashMap<String, HashSet<ModuleID>>,
 }
 
 impl KeyRing {
@@ -75,24 +77,22 @@ impl KeyRing {
             Self::load(path)
         } else {
             Ok(KeyRing {
-                path,
                 keys: HashMap::new(),
+                grants: HashMap::new(),
             })
         }
     }
 
     pub fn load(path: PathBuf) -> Result<KeyRing> {
         let buf = fs::read(&path)?;
-        let keys = serde_json::from_slice(&buf)?;
-        Ok(KeyRing {
-            path,
-            keys,
-        })
+        serde_json::from_slice(&buf)
+            .map_err(Error::from)
     }
 
     pub fn save(&self) -> Result<()> {
-        let buf = serde_json::to_string(&self.keys)?;
-        fs::write(&self.path, buf)?;
+        let path = Self::path()?;
+        let buf = serde_json::to_string(&self)?;
+        fs::write(&path, buf)?;
         Ok(())
     }
 
@@ -149,9 +149,31 @@ impl KeyRing {
         })
     }
 
+    pub fn unauthorized_namespaces<'a>(&self, module: &'a Module) -> Vec<&'a String> {
+        module.keyring_access().iter()
+            .filter(|namespace| !self.is_access_granted(&module, &namespace))
+            .collect()
+    }
+
+    pub fn grant_access(&mut self, module: &Module, namespace: String) {
+        let mut grants = self.grants.remove(&namespace)
+            .unwrap_or_else(HashSet::new);
+        grants.insert(module.id());
+        self.grants.insert(namespace, grants);
+    }
+
+    pub fn is_access_granted(&self, module: &Module, namespace: &str) -> bool {
+        if let Some(grants) = self.grants.get(namespace) {
+            grants.contains(&module.id())
+        } else {
+            false
+        }
+    }
+
     pub fn request_keys(&self, module: &Module) -> Vec<KeyRingEntry> {
         // TODO: we probably want to randomize the order
         module.keyring_access().iter()
+            .filter(|namespace| self.is_access_granted(&module, &namespace))
             .flat_map(|namespace| self.list_for(namespace))
             .flat_map(|x| self.get(&x))
             .collect()

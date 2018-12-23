@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use crate::channel;
+use crate::cmd::run_cmd::Params;
 use crate::db::{Database, DbChange, Family};
 use crate::engine::{self, Module};
 use crate::engine::isolation::Supervisor;
@@ -209,18 +210,20 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, threads: usize, verbose: u64, has_stdin: bool) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: Params) {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return;
     }
 
+    let verbose = params.verbose;
+    let has_stdin = params.stdin;
     let keyring = rl.keyring().request_keys(&module);
 
     let mut stack = StackedSpinners::new();
 
     let (tx, rx) = channel::bounded(1);
-    let pool = ThreadPool::new(threads);
+    let pool = ThreadPool::new(params.threads);
 
     let mut expected = 0;
     for (arg, pretty_arg) in args {

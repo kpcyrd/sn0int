@@ -1,15 +1,19 @@
 use crate::errors::*;
 
+use crate::args;
 use crate::db::{Database, Filter};
-use sn0int_common::metadata::Source;
+use crate::engine::Module;
+use crate::models::*;
+use crate::shell::Readline;
+use crate::keyring::KeyRing;
+use crate::term;
+use crate::utils;
+use crate::worker;
 use serde::Serialize;
 use serde_json;
-use crate::shell::Readline;
+use sn0int_common::metadata::Source;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
-use crate::models::*;
-use crate::term;
-use crate::worker;
 
 
 #[derive(Debug, StructOpt)]
@@ -20,6 +24,55 @@ pub struct Args {
     threads: usize,
     #[structopt(short="v", long="verbose", parse(from_occurrences))]
     verbose: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct Params {
+    pub threads: usize,
+    pub verbose: u64,
+    pub stdin: bool,
+    pub grants: Vec<String>,
+    pub grant_full_keyring: bool,
+    pub deny_keyring: bool,
+}
+
+impl From<args::Run> for Params {
+    fn from(args: args::Run) -> Params {
+        Params {
+            threads: args.threads,
+            verbose: args.verbose,
+            stdin: args.stdin,
+            grants: args.grants,
+            grant_full_keyring: args.grant_full_keyring,
+            deny_keyring: args.deny_keyring,
+        }
+    }
+}
+
+impl From<&args::Run> for Params {
+    fn from(args: &args::Run) -> Params {
+        Params {
+            threads: args.threads,
+            verbose: args.verbose,
+            stdin: args.stdin,
+            grants: args.grants.clone(),
+            grant_full_keyring: args.grant_full_keyring,
+            deny_keyring: args.deny_keyring,
+        }
+    }
+}
+
+impl From<Args> for Params {
+    fn from(args: Args) -> Params {
+        Params {
+            threads: args.threads,
+            verbose: args.verbose,
+            stdin: false,
+            grants: Vec::new(),
+            grant_full_keyring: false,
+            deny_keyring: false,
+        }
+    }
 }
 
 fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
@@ -35,7 +88,32 @@ fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter)
         .collect()
 }
 
-pub fn execute(rl: &mut Readline, threads: usize, verbose: u64, has_stdin: bool) -> Result<()> {
+fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> Result<()> {
+    for namespace in keyring.unauthorized_namespaces(&module) {
+        let grant_access = if params.deny_keyring {
+            false
+        } else if params.grant_full_keyring {
+            true
+        } else if params.grants.contains(namespace) {
+            true
+        } else {
+            let msg = format!("Grant access to {:?} credentials?", namespace);
+            utils::no_else_yes(&msg)?
+        };
+
+        if grant_access {
+            keyring.grant_access(&module, namespace.to_string());
+            term::info(&format!("Granted access to {:?}", namespace));
+        }
+    }
+
+    keyring.save()
+        .context("Failed to write keyring")?;
+
+    Ok(())
+}
+
+pub fn execute(rl: &mut Readline, params: Params) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -52,8 +130,10 @@ pub fn execute(rl: &mut Readline, threads: usize, verbose: u64, has_stdin: bool)
         None => Ok(vec![(serde_json::Value::Null, None)]),
     }?;
 
+    prepare_keyring(rl.keyring_mut(), &module, &params)?;
+
     rl.signal_register().catch_ctrl();
-    worker::spawn(rl, &module, args, threads, verbose, has_stdin);
+    worker::spawn(rl, &module, args, params);
     rl.signal_register().reset_ctrlc();
 
     term::info(&format!("Finished {}", module.canonical()));
@@ -63,5 +143,5 @@ pub fn execute(rl: &mut Readline, threads: usize, verbose: u64, has_stdin: bool)
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
-    execute(rl, args.threads, args.verbose, false)
+    execute(rl, args.into())
 }
