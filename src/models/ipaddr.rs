@@ -24,6 +24,8 @@ pub struct IpAddr {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<String>,
+    pub description: Option<String>,
+    pub reverse_dns: Option<String>,
 }
 
 impl Model for IpAddr {
@@ -163,6 +165,8 @@ pub struct DetailedIpAddr {
     city: Option<String>,
     asn: Option<i32>,
     as_org: Option<String>,
+    description: Option<String>,
+    reverse_dns: Option<String>,
 }
 
 impl DisplayableDetailed for DetailedIpAddr {
@@ -175,6 +179,11 @@ impl DisplayableDetailed for DetailedIpAddr {
     fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         w.id(self.id)?;
         w.display::<Green, _>(&self.value)?;
+
+        w.start_group();
+        w.opt_debug::<Yellow, _>(&self.description)?;
+        w.opt_debug::<Yellow, _>(&self.reverse_dns)?;
+        w.end_group()?;
 
         if let Some(ref continent) = self.continent {
             write!(w, " [{}", continent)?;
@@ -232,6 +241,8 @@ impl Detailed for IpAddr {
             city: self.city.clone(),
             asn: self.asn,
             as_org: self.as_org.clone(),
+            description: self.description.clone(),
+            reverse_dns: self.reverse_dns.clone(),
         })
     }
 }
@@ -250,6 +261,8 @@ pub struct NewIpAddr<'a> {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<&'a String>,
+    pub description: Option<&'a String>,
+    pub reverse_dns: Option<&'a String>,
 }
 
 impl<'a> InsertableStruct<IpAddr> for NewIpAddr<'a> {
@@ -280,6 +293,8 @@ impl<'a> Upsertable<IpAddr> for NewIpAddr<'a> {
             longitude: Self::upsert_opt(self.longitude, &existing.longitude),
             asn: Self::upsert_opt(self.asn, &existing.asn),
             as_org: Self::upsert_str(self.as_org, &existing.as_org),
+            description: Self::upsert_str(self.description, &existing.description),
+            reverse_dns: Self::upsert_str(self.reverse_dns, &existing.reverse_dns),
         }
     }
 }
@@ -298,6 +313,8 @@ pub struct NewIpAddrOwned {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<String>,
+    pub description: Option<String>,
+    pub reverse_dns: Option<String>,
 }
 
 impl Printable<PrintableIpAddr> for NewIpAddrOwned {
@@ -331,6 +348,8 @@ pub struct IpAddrUpdate {
     pub longitude: Option<f32>,
     pub asn: Option<i32>,
     pub as_org: Option<String>,
+    pub description: Option<String>,
+    pub reverse_dns: Option<String>,
 }
 
 impl Upsert for IpAddrUpdate {
@@ -343,7 +362,9 @@ impl Upsert for IpAddrUpdate {
         self.latitude.is_some() ||
         self.longitude.is_some() ||
         self.asn.is_some() ||
-        self.as_org.is_some()
+        self.as_org.is_some() ||
+        self.description.is_some() ||
+        self.reverse_dns.is_some()
     }
 
     fn generic(self) -> Update {
@@ -366,6 +387,8 @@ impl Updateable<IpAddr> for IpAddrUpdate {
         Self::clear_if_equal(&mut self.longitude, &existing.longitude);
         Self::clear_if_equal(&mut self.asn, &existing.asn);
         Self::clear_if_equal(&mut self.as_org, &existing.as_org);
+        Self::clear_if_equal(&mut self.description, &existing.description);
+        Self::clear_if_equal(&mut self.reverse_dns, &existing.reverse_dns);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
@@ -378,5 +401,7 @@ impl Updateable<IpAddr> for IpAddrUpdate {
         Self::push_value(updates, "longitude", &self.longitude);
         Self::push_value(updates, "asn", &self.asn);
         Self::push_value(updates, "as_org", &self.as_org);
+        Self::push_value(updates, "description", &self.description);
+        Self::push_value(updates, "reverse_dns", &self.reverse_dns);
     }
 }

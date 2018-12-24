@@ -30,6 +30,8 @@ table! {
         longitude -> Nullable<Float>,
         asn -> Nullable<Integer>,
         as_org -> Nullable<Text>,
+        description -> Nullable<Text>,
+        reverse_dns -> Nullable<Text>,
     }
 }
 

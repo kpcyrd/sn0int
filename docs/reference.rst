@@ -73,10 +73,12 @@ This function accepts the following options:
 
 .. code-block:: lua
 
-    x = dns('example.com', {
-        record='A'
+    records = dns('example.com', {
+        record='A',
     })
     if last_err() then return end
+    if records['error'] ~= nil then return end
+    records = records['answers']
 
 .. note::
    DNS replies with an error code set are not causing a change to

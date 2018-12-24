@@ -116,6 +116,8 @@ impl Database {
                 latitude: object.latitude,
                 asn: object.asn,
                 as_org: object.as_org.as_ref(),
+                description: object.description.as_ref(),
+                reverse_dns: object.reverse_dns.as_ref(),
             }),
             Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
                 subdomain_id: object.subdomain_id,
