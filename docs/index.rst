@@ -15,6 +15,8 @@ Among other things, sn0int is currently able to:
 - [X] Harvest emails from pgp keyservers
 - [X] Enrich ip addresses with ASN and geoip info
 - [X] Harvest subdomains from the wayback machine
+- [X] Gather information about phonenumbers
+- [X] Bruteforce interesting urls
 
 sn0int is heavily inspired by recon-ng and maltego, but remains more flexible
 and is fully opensource.  None of the investigations listed above are hardcoded

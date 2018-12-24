@@ -1,6 +1,6 @@
 [package]
 name = "sn0int-registry"
-version = "0.4.0"
+version = "0.5.0"
 description = "sn0int registry"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
@@ -8,7 +8,7 @@ repository = "https://github.com/kpcyrd/sn0int"
 edition = "2018"
 
 [dependencies]
-sn0int-common = { version="0.3.0", path="sn0int-common" }
+sn0int-common = { version="0.4.0", path="sn0int-common" }
 rocket = "0.4"
 rocket_failure = { version = "0.1", features = ["with-rocket"] }
 rocket_contrib = { version = "0.4", features = ["handlebars_templates"] }
