@@ -1,4 +1,16 @@
 table! {
+    devices (id) {
+        id -> Integer,
+        value -> Text,
+        name -> Nullable<Text>,
+        hostname -> Nullable<Text>,
+        vendor -> Nullable<Text>,
+        unscoped -> Bool,
+        last_seen -> Nullable<Timestamp>,
+    }
+}
+
+table! {
     domains (id) {
         id -> Integer,
         value -> Text,
@@ -32,6 +44,25 @@ table! {
         as_org -> Nullable<Text>,
         description -> Nullable<Text>,
         reverse_dns -> Nullable<Text>,
+    }
+}
+
+table! {
+    network_devices (id) {
+        id -> Integer,
+        network_id -> Integer,
+        device_id -> Integer,
+        last_seen -> Nullable<Timestamp>,
+    }
+}
+
+table! {
+    networks (id) {
+        id -> Integer,
+        value -> Text,
+        unscoped -> Bool,
+        latitude -> Nullable<Float>,
+        longitude -> Nullable<Float>,
     }
 }
 
@@ -86,15 +117,20 @@ table! {
     }
 }
 
+joinable!(network_devices -> devices (device_id));
+joinable!(network_devices -> networks (network_id));
 joinable!(subdomain_ipaddrs -> ipaddrs (ip_addr_id));
 joinable!(subdomain_ipaddrs -> subdomains (subdomain_id));
 joinable!(subdomains -> domains (domain_id));
 joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
+    devices,
     domains,
     emails,
     ipaddrs,
+    network_devices,
+    networks,
     phonenumbers,
     subdomain_ipaddrs,
     subdomains,

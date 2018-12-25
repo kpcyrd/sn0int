@@ -39,6 +39,9 @@ pub enum Family {
     Url,
     Email,
     PhoneNumber,
+    Device,
+    Network,
+    NetworkDevice,
 }
 
 impl FromStr for Family {
@@ -53,6 +56,9 @@ impl FromStr for Family {
             "url" => Family::Url,
             "email" => Family::Email,
             "phonenumber" => Family::PhoneNumber,
+            "device" => Family::Device,
+            "network" => Family::Network,
+            "network-device" => Family::NetworkDevice,
             _ => bail!("Unknown object family"),
         })
     }
@@ -150,6 +156,23 @@ impl Database {
                 caller_name: object.caller_name.as_ref(),
                 caller_type: object.caller_type.as_ref(),
             }),
+            Insert::Device(object) => self.insert_struct(NewDevice {
+                value: &object.value,
+                name: object.name.as_ref(),
+                hostname: object.hostname.as_ref(),
+                vendor: object.vendor.as_ref(),
+                last_seen: object.last_seen,
+            }),
+            Insert::Network(object) => self.insert_struct(NewNetwork {
+                value: &object.value,
+                latitude: object.latitude,
+                longitude: object.longitude,
+            }),
+            Insert::NetworkDevice(object) => self.insert_network_device_struct(&NewNetworkDevice {
+                network_id: object.network_id,
+                device_id: object.device_id,
+                last_seen: object.last_seen,
+            }),
         }
     }
 
@@ -187,6 +210,18 @@ impl Database {
         }
     }
 
+    pub fn insert_network_device_struct(&self, network_device: &NewNetworkDevice) -> Result<Option<(DbChange, i32)>> {
+        if let Some(subdomain_ipaddr_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
+            Ok(Some((DbChange::None, subdomain_ipaddr_id)))
+        } else {
+            diesel::insert_into(network_devices::table)
+                .values(network_device)
+                .execute(&self.db)?;
+            let id = NetworkDevice::get_id(self, &(network_device.network_id, network_device.device_id))?;
+            Ok(Some((DbChange::Insert, id)))
+        }
+    }
+
     //
 
     pub fn update_generic(&self, object: &Update) -> Result<i32> {
@@ -196,6 +231,9 @@ impl Database {
             Update::Url(object) => self.update_url(object),
             Update::Email(object) => self.update_email(object),
             Update::PhoneNumber(object) => self.update_phonenumber(object),
+            Update::Device(object) => self.update_device(object),
+            Update::Network(object) => self.update_network(object),
+            Update::NetworkDevice(object) => self.update_network_device(object),
         }
     }
 
@@ -239,6 +277,30 @@ impl Database {
         Ok(phonenumber.id)
     }
 
+    pub fn update_device(&self, device: &DeviceUpdate) -> Result<i32> {
+        use crate::schema::devices::columns::*;
+        diesel::update(devices::table.filter(id.eq(device.id)))
+            .set(device)
+            .execute(&self.db)?;
+        Ok(device.id)
+    }
+
+    pub fn update_network(&self, network: &NetworkUpdate) -> Result<i32> {
+        use crate::schema::networks::columns::*;
+        diesel::update(networks::table.filter(id.eq(network.id)))
+            .set(network)
+            .execute(&self.db)?;
+        Ok(network.id)
+    }
+
+    pub fn update_network_device(&self, network_device: &NetworkDeviceUpdate) -> Result<i32> {
+        use crate::schema::network_devices::columns::*;
+        diesel::update(network_devices::table.filter(id.eq(network_device.id)))
+            .set(network_device)
+            .execute(&self.db)?;
+        Ok(network_device.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -255,6 +317,9 @@ impl Database {
             Family::Url => self.get_opt_typed::<Url>(&value),
             Family::Email => self.get_opt_typed::<Email>(&value),
             Family::PhoneNumber => self.get_opt_typed::<PhoneNumber>(&value),
+            Family::Device => self.get_opt_typed::<Device>(&value),
+            Family::Network => self.get_opt_typed::<Network>(&value),
+            Family::NetworkDevice => bail!("Unsupported operation"),
         }
     }
 

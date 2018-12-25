@@ -53,6 +53,18 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
                 Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object)
                     .map_err(|e| state.set_error(e))?)
             },
+            Family::Device => {
+                Insert::Device(try_into_new::<InsertDevice>(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
+            Family::Network => {
+                Insert::Network(try_into_new::<InsertNetwork>(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
+            Family::NetworkDevice => {
+                Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object)
+                    .map_err(|e| state.set_error(e))?)
+            },
         };
 
         state.db_insert(object)
@@ -110,6 +122,12 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::Email(u))),
             Family::PhoneNumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::PhoneNumber(u))),
+            Family::Device => gen_changeset::<Device, DeviceUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Device(u))),
+            Family::Network => gen_changeset::<Network, NetworkUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Network(u))),
+            Family::NetworkDevice => gen_changeset::<NetworkDevice, NetworkDeviceUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::NetworkDevice(u))),
         };
 
         let (id, value, update) = update

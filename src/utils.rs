@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use std::io::{self, Write};
+use std::str::FromStr;
 
 
 pub fn read_line() -> Result<String> {
@@ -21,6 +22,18 @@ pub fn question_opt(text: &str) -> Result<Option<String>> {
     let answer = question(text)?;
 
     if !answer.is_empty() {
+        Ok(Some(answer))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn question_typed_opt<T: FromStr>(text: &str) -> Result<Option<T>> {
+    let answer = question(text)?;
+
+    if !answer.is_empty() {
+        let answer = answer.parse()
+            .map_err(|_| format_err!("Failed to parse input"))?;
         Ok(Some(answer))
     } else {
         Ok(None)

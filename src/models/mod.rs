@@ -13,6 +13,9 @@ pub enum Insert {
     Url(NewUrlOwned),
     Email(NewEmailOwned),
     PhoneNumber(NewPhoneNumberOwned),
+    Device(NewDeviceOwned),
+    Network(NewNetworkOwned),
+    NetworkDevice(NewNetworkDevice),
 }
 
 impl Insert {
@@ -25,6 +28,9 @@ impl Insert {
             Insert::Url(x) => &x.value,
             Insert::Email(x) => &x.value,
             Insert::PhoneNumber(x) => &x.value,
+            Insert::Device(x) => &x.value,
+            Insert::Network(x) => &x.value,
+            Insert::NetworkDevice(_x) => unimplemented!("NetworkDevice doesn't have value field"),
         }
     }
 
@@ -37,6 +43,9 @@ impl Insert {
             Insert::Url(x) => format!("Url: {}", x.printable(db)?),
             Insert::Email(x) => format!("Email: {}", x.printable(db)?),
             Insert::PhoneNumber(x) => format!("PhoneNumber: {}", x.printable(db)?),
+            Insert::Device(x) => format!("Device: {}", x.printable(db)?),
+            Insert::Network(x) => format!("Network: {}", x.printable(db)?),
+            Insert::NetworkDevice(x) => x.printable(db)?.to_string(),
         })
     }
 }
@@ -48,16 +57,22 @@ pub enum Update {
     Url(UrlUpdate),
     Email(EmailUpdate),
     PhoneNumber(PhoneNumberUpdate),
+    Device(DeviceUpdate),
+    Network(NetworkUpdate),
+    NetworkDevice(NetworkDeviceUpdate),
 }
 
 impl Update {
     pub fn is_dirty(&self) -> bool {
         match self {
-            Update::Subdomain(x) => x.is_dirty(),
-            Update::IpAddr(x) => x.is_dirty(),
-            Update::Url(x) => x.is_dirty(),
-            Update::Email(x) => x.is_dirty(),
-            Update::PhoneNumber(x) => x.is_dirty(),
+            Update::Subdomain(update)     => update.is_dirty(),
+            Update::IpAddr(update)        => update.is_dirty(),
+            Update::Url(update)           => update.is_dirty(),
+            Update::Email(update)         => update.is_dirty(),
+            Update::PhoneNumber(update)   => update.is_dirty(),
+            Update::Device(update)        => update.is_dirty(),
+            Update::Network(update)       => update.is_dirty(),
+            Update::NetworkDevice(update) => update.is_dirty(),
         }
     }
 }
@@ -65,11 +80,14 @@ impl Update {
 impl fmt::Display for Update {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Update::Subdomain(update) => write!(w, "{}", update.to_string()),
-            Update::IpAddr(update) => write!(w, "{}", update.to_string()),
-            Update::Url(update) => write!(w, "{}", update.to_string()),
-            Update::Email(update) => write!(w, "{}", update.to_string()),
-            Update::PhoneNumber(update) => write!(w, "{}", update.to_string()),
+            Update::Subdomain(update)     => write!(w, "{}", update.to_string()),
+            Update::IpAddr(update)        => write!(w, "{}", update.to_string()),
+            Update::Url(update)           => write!(w, "{}", update.to_string()),
+            Update::Email(update)         => write!(w, "{}", update.to_string()),
+            Update::PhoneNumber(update)   => write!(w, "{}", update.to_string()),
+            Update::Device(update)        => write!(w, "{}", update.to_string()),
+            Update::Network(update)       => write!(w, "{}", update.to_string()),
+            Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -260,3 +278,12 @@ pub use self::email::*;
 
 mod phonenumber;
 pub use self::phonenumber::*;
+
+mod network;
+pub use self::network::*;
+
+mod device;
+pub use self::device::*;
+
+mod network_device;
+pub use self::network_device::*;
