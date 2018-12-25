@@ -15,7 +15,7 @@ pub enum Insert {
     PhoneNumber(NewPhoneNumberOwned),
     Device(NewDeviceOwned),
     Network(NewNetworkOwned),
-    NetworkDevice(NewNetworkDevice),
+    NetworkDevice(NewNetworkDeviceOwned),
 }
 
 impl Insert {

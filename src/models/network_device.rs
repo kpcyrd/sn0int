@@ -13,6 +13,7 @@ pub struct NetworkDevice {
     pub id: i32,
     pub network_id: i32,
     pub device_id: i32,
+    pub ipaddr: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
@@ -107,15 +108,37 @@ impl Printable<PrintableNetworkDevice> for NetworkDevice {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[derive(Insertable)]
 #[table_name="network_devices"]
-pub struct NewNetworkDevice {
+pub struct NewNetworkDevice<'a> {
     pub network_id: i32,
     pub device_id: i32,
+    pub ipaddr: Option<&'a String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl Printable<PrintableNetworkDevice> for NewNetworkDevice {
+impl<'a> Upsertable<NetworkDevice> for NewNetworkDevice<'a> {
+    type Update = NetworkDeviceUpdate;
+
+    fn upsert(self, existing: &NetworkDevice) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            ipaddr: Self::upsert_str(self.ipaddr, &existing.ipaddr),
+            last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
+        }
+    }
+}
+
+#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[table_name="network_devices"]
+pub struct NewNetworkDeviceOwned {
+    pub network_id: i32,
+    pub device_id: i32,
+    pub ipaddr: Option<String>,
+    pub last_seen: Option<NaiveDateTime>,
+}
+
+impl Printable<PrintableNetworkDevice> for NewNetworkDeviceOwned {
     fn printable(&self, db: &Database) -> Result<PrintableNetworkDevice> {
         let network = Network::by_id(db, self.network_id)?;
         let device = Device::by_id(db, self.device_id)?;
@@ -126,23 +149,12 @@ impl Printable<PrintableNetworkDevice> for NewNetworkDevice {
     }
 }
 
-impl Upsertable<NetworkDevice> for NewNetworkDevice {
-    type Update = NetworkDeviceUpdate;
-
-    fn upsert(self, existing: &NetworkDevice) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
-        }
-    }
-}
-
-pub type InsertNetworkDevice = NewNetworkDevice;
+pub type InsertNetworkDevice = NewNetworkDeviceOwned;
 
 impl LuaInsertToNewOwned for InsertNetworkDevice {
-    type Target = NewNetworkDevice;
+    type Target = NewNetworkDeviceOwned;
 
-    fn try_into_new(self) -> Result<NewNetworkDevice> {
+    fn try_into_new(self) -> Result<NewNetworkDeviceOwned> {
         Ok(self)
     }
 }
@@ -151,11 +163,13 @@ impl LuaInsertToNewOwned for InsertNetworkDevice {
 #[table_name="network_devices"]
 pub struct NetworkDeviceUpdate {
     pub id: i32,
+    pub ipaddr: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
 impl Upsert for NetworkDeviceUpdate {
     fn is_dirty(&self) -> bool {
+        self.ipaddr.is_some() ||
         self.last_seen.is_some()
     }
 
@@ -170,10 +184,12 @@ impl Upsert for NetworkDeviceUpdate {
 
 impl Updateable<NetworkDevice> for NetworkDeviceUpdate {
     fn changeset(&mut self, existing: &NetworkDevice) {
+        Self::clear_if_equal(&mut self.ipaddr, &existing.ipaddr);
         Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "ipaddr", &self.ipaddr);
         Self::push_value(updates, "last_seen", &self.last_seen);
     }
 }

@@ -171,6 +171,7 @@ impl Database {
             Insert::NetworkDevice(object) => self.insert_network_device_struct(&NewNetworkDevice {
                 network_id: object.network_id,
                 device_id: object.device_id,
+                ipaddr: object.ipaddr.as_ref(),
                 last_seen: object.last_seen,
             }),
         }

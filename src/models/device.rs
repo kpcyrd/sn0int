@@ -111,6 +111,20 @@ impl Scopable for Device {
     }
 }
 
+impl Device {
+    fn ipaddr(&self, db: &Database) -> Result<Option<String>> {
+        let network_device = NetworkDevice::belonging_to(self)
+            .order(network_devices::last_seen.desc())
+            .first::<NetworkDevice>(db.db())
+            .optional()?;
+
+        let ipaddr = network_device
+            .and_then(|x| x.ipaddr);
+
+        Ok(ipaddr)
+    }
+}
+
 pub struct PrintableDevice {
     value: String,
 }
@@ -135,6 +149,7 @@ pub struct DetailedDevice {
     name: Option<String>,
     hostname: Option<String>,
     vendor: Option<String>,
+    ipaddr: Option<String>,
     unscoped: bool,
     last_seen: Option<NaiveDateTime>,
 }
@@ -152,6 +167,7 @@ impl DisplayableDetailed for DetailedDevice {
 
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.name)?;
+        w.opt_debug::<Yellow, _>(&self.ipaddr)?;
         w.opt_debug::<Yellow, _>(&self.hostname)?;
         w.opt_debug::<Yellow, _>(&self.vendor)?;
         w.opt_debug::<Yellow, _>(&self.last_seen)?;
@@ -171,13 +187,16 @@ display_detailed!(DetailedDevice);
 impl Detailed for Device {
     type T = DetailedDevice;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let ipaddr = self.ipaddr(db)?;
+
         Ok(DetailedDevice {
             id: self.id,
             value: self.value.to_string(),
             name: self.name.clone(),
             hostname: self.hostname.clone(),
             vendor: self.vendor.clone(),
+            ipaddr,
             unscoped: self.unscoped,
             last_seen: self.last_seen.clone(),
         })

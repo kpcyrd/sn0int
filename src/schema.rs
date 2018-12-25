@@ -52,6 +52,7 @@ table! {
         id -> Integer,
         network_id -> Integer,
         device_id -> Integer,
+        ipaddr -> Nullable<Text>,
         last_seen -> Nullable<Timestamp>,
     }
 }

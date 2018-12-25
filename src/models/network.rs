@@ -3,6 +3,7 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::result;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -108,6 +109,22 @@ impl Scopable for Network {
     }
 }
 
+impl Network {
+    fn devices(&self, db: &Database) -> Result<Vec<Device>> {
+        let device_ids = NetworkDevice::belonging_to(self)
+            .select(network_devices::device_id)
+            .load::<i32>(db.db())?;
+
+        device_ids.into_iter()
+            .map(|device_id| devices::table
+                .filter(devices::id.eq(device_id))
+                .first::<Device>(db.db())
+            )
+            .collect::<result::Result<_, _>>()
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableNetwork {
     value: String,
 }
@@ -132,6 +149,7 @@ pub struct DetailedNetwork {
     unscoped: bool,
     latitude: Option<f32>,
     longitude: Option<f32>,
+    devices: Vec<PrintableDevice>,
 }
 
 impl DisplayableDetailed for DetailedNetwork {
@@ -154,8 +172,10 @@ impl DisplayableDetailed for DetailedNetwork {
     }
 
     #[inline]
-    fn children(&self, _w: &mut fmt::DetailFormatter) -> fmt::Result {
-        // TODO: list devices
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        for device in &self.devices {
+            w.child(device)?;
+        }
         Ok(())
     }
 }
@@ -165,13 +185,18 @@ display_detailed!(DetailedNetwork);
 impl Detailed for Network {
     type T = DetailedNetwork;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let devices = self.devices(db)?.into_iter()
+            .map(|sd| sd.printable(db))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedNetwork {
             id: self.id,
             value: self.value.to_string(),
             unscoped: self.unscoped,
             latitude: self.latitude.clone(),
             longitude: self.longitude.clone(),
+            devices,
         })
     }
 }

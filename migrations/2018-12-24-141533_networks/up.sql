@@ -22,6 +22,7 @@ CREATE TABLE network_devices (
     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     network_id INTEGER NOT NULL,
     device_id INTEGER NOT NULL,
+    ipaddr VARCHAR,
     last_seen DATETIME,
     FOREIGN KEY(network_id) REFERENCES networks(id) ON DELETE CASCADE,
     FOREIGN KEY(device_id) REFERENCES devices(id) ON DELETE CASCADE,
