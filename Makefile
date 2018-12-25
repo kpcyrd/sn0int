@@ -14,3 +14,8 @@ test:
 	(cd sn0int-registry; cargo test)
 	cargo test
 	cargo test -- --ignored
+
+update:
+	get-oui -v -u http://standards-oui.ieee.org/oui/oui.txt -f data/ieee-oui.txt
+	get-iab -v -u http://standards-oui.ieee.org/iab/iab.txt -f data/ieee-iab.txt
+	rm -f data/ieee-*.txt.bak
