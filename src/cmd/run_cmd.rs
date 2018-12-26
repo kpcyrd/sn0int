@@ -34,6 +34,7 @@ pub struct Params<'a> {
     pub grants: &'a [String],
     pub grant_full_keyring: bool,
     pub deny_keyring: bool,
+    pub exit_on_error: bool,
 }
 
 impl<'a> From<&'a args::Run> for Params<'a> {
@@ -45,6 +46,7 @@ impl<'a> From<&'a args::Run> for Params<'a> {
             grants: &args.grants,
             grant_full_keyring: args.grant_full_keyring,
             deny_keyring: args.deny_keyring,
+            exit_on_error: args.exit_on_error,
         }
     }
 }
@@ -58,6 +60,7 @@ impl From<Args> for Params<'static> {
             grants: &[],
             grant_full_keyring: false,
             deny_keyring: false,
+            exit_on_error: false,
         }
     }
 }
@@ -132,10 +135,18 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
     }?;
 
     rl.signal_register().catch_ctrl();
-    worker::spawn(rl, &module, args, &params);
+    let errors = worker::spawn(rl, &module, args, &params);
     rl.signal_register().reset_ctrlc();
 
-    term::info(&format!("Finished {}", module.canonical()));
+    if errors > 0 {
+        term::info(&format!("Finished {} ({} errors)", module.canonical(), errors));
+
+        if params.exit_on_error {
+            bail!("Some scripts failed");
+        }
+    } else {
+        term::info(&format!("Finished {}", module.canonical()));
+    }
 
     Ok(())
 }

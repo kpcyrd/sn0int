@@ -160,7 +160,7 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, keyring: Vec<KeyRingEntry>, verbose: u64, has_stdin: bool) -> Result<()> {
+pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, keyring: Vec<KeyRingEntry>, verbose: u64, has_stdin: bool) -> Result<ExitEvent> {
     let dns_config = Resolver::from_system()?;
 
     let mut reader = if has_stdin {
@@ -172,23 +172,23 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ke
     let mut supervisor = Supervisor::setup(&module)?;
     supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, module, arg))?;
 
-    loop {
+    let exit = loop {
         match supervisor.recv()? {
             Event::Log(event) => tx.send(Event2::Log(event)),
             Event::Database(object) => supervisor.send_event_callback(object, &tx),
             Event::Stdio(object) => object.apply(&mut supervisor, tx, &mut reader),
             Event::Exit(event) => {
-                if let ExitEvent::Err(err) = event {
-                    tx.send(Event2::Log(LogEvent::Error(err)));
+                if let ExitEvent::Err(err) = &event {
+                    tx.send(Event2::Log(LogEvent::Error(err.clone())));
                 }
-                break;
+                break event;
             },
         }
-    }
+    };
 
     supervisor.wait()?;
 
-    Ok(())
+    Ok(exit)
 }
 
 pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
