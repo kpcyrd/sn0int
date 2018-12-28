@@ -36,13 +36,33 @@ Join us on IRC: <ircs://irc.hackint.org/#sn0int>
 
 [![asciicast](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB.svg)](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB)
 
-## Installation
+## Getting started
 
-- Archlinux: `pacman -S sn0int`
-- Alpine: `apk add --no-cache sqlite-dev libseccomp-dev cargo` + build from source
-- Debian: `apt install libsqlite3-dev libseccomp-dev` + build from source
-- OpenBSD: `pkg_add sqlite3` + build from source
-- OSX: `brew install sqlite3` + build from source
+- [Installation](https://sn0int.readthedocs.io/en/latest/install.html)
+  - [Archlinux](https://sn0int.readthedocs.io/en/latest/install.html#archlinux)
+  - [Debian/Ubuntu/Kali](https://sn0int.readthedocs.io/en/latest/install.html#debian-ubuntu-kali)
+  - [Alpine](https://sn0int.readthedocs.io/en/latest/install.html#alpine)
+  - [OpenBSD](https://sn0int.readthedocs.io/en/latest/install.html#openbsd)
+  - [Mac OSX](https://sn0int.readthedocs.io/en/latest/install.html#mac-osx)
+  - [Windows](https://sn0int.readthedocs.io/en/latest/install.html#windows)
+- [Running your first investigation](https://sn0int.readthedocs.io/en/latest/usage.html)
+  - [Installing the default modules](https://sn0int.readthedocs.io/en/latest/usage.html#installing-the-default-modules)
+  - [Adding something to scope](https://sn0int.readthedocs.io/en/latest/usage.html#adding-something-to-scope)
+  - [Running a module](https://sn0int.readthedocs.io/en/latest/usage.html#running-a-module)
+  - [Running followup modules on the results](https://sn0int.readthedocs.io/en/latest/usage.html#running-followup-modules-on-the-results)
+  - [Unscoping entities](https://sn0int.readthedocs.io/en/latest/usage.html#unscoping-entities)
+- [Scripting](https://sn0int.readthedocs.io/en/latest/scripting.html)
+  - [Write your first module](https://sn0int.readthedocs.io/en/latest/scripting.html#write-your-first-module)
+  - [Publish your module](https://sn0int.readthedocs.io/en/latest/scripting.html#publish-your-module)
+- [Database](https://sn0int.readthedocs.io/en/latest/database.html)
+  - [db_add](https://sn0int.readthedocs.io/en/latest/database.html#db-add)
+  - [db_update](https://sn0int.readthedocs.io/en/latest/database.html#db-update)
+  - [db_select](https://sn0int.readthedocs.io/en/latest/database.html#db-select)
+- [Keyring](https://sn0int.readthedocs.io/en/latest/keyring.html)
+  - [Managing the keyring](https://sn0int.readthedocs.io/en/latest/keyring.html#managing-the-keyring)
+  - [Using access keys in scripts](https://sn0int.readthedocs.io/en/latest/keyring.html#using-access-keys-in-scripts)
+  - [Using access keys as source argument](https://sn0int.readthedocs.io/en/latest/keyring.html#using-access-keys-as-source-argument)
+- [Function reference](https://sn0int.readthedocs.io/en/latest/reference.html)
 
 ## License
 
