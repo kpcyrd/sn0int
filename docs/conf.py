@@ -138,7 +138,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('man', 'sn0int', 'OSINT framework and package manager',
+    ('man', 'sn0int', 'Semi-automatic OSINT framework and package manager',
      [author], 1)
 ]
 

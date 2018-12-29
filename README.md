@@ -7,11 +7,11 @@
 [docs-img]:     https://readthedocs.org/projects/sn0int/badge/?version=latest
 [docs]:         https://sn0int.readthedocs.io/en/latest/?badge=latest
 
-sn0int is an OSINT framework and package manager. It was built for IT security
-professionals and bug hunters to gather intelligence about a given target or
-about yourself. sn0int is enumerating attack surface by semi-automatically
-processing public information and mapping the results in a unified format for
-followup investigations.
+sn0int is a semi-automatic OSINT framework and package manager. It was built
+for IT security professionals and bug hunters to gather intelligence about a
+given target or about yourself. sn0int is enumerating attack surface by
+semi-automatically processing public information and mapping the results in a
+unified format for followup investigations.
 
 Among other things, sn0int is currently able to:
 
