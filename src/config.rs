@@ -2,12 +2,16 @@ use dirs;
 use crate::errors::*;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::net::SocketAddr;
 use toml;
 
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
+    #[serde(default)]
     pub core: CoreConfig,
+    #[serde(default)]
+    pub network: NetworkConfig,
 }
 
 impl Config {
@@ -59,4 +63,9 @@ impl Default for CoreConfig {
 #[inline]
 fn default_registry() -> String {
     String::from("https://sn0int.com")
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct NetworkConfig {
+    pub proxy: Option<SocketAddr>,
 }

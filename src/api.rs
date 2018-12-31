@@ -22,7 +22,10 @@ pub struct Client {
 
 impl Client {
     pub fn new(config: &Config) -> Result<Client> {
-        let client = chrootable_https::Client::with_system_resolver()?;
+        let client = match config.network.proxy {
+            Some(proxy) => chrootable_https::Client::with_socks5(proxy),
+            _ => chrootable_https::Client::with_system_resolver()?,
+        };
         Ok(Client {
             server: config.core.registry.clone(),
             client,

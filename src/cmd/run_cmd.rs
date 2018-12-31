@@ -135,7 +135,7 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
     }?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, args, &params);
+    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone());
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {

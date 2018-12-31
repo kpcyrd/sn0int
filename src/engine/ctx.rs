@@ -11,6 +11,7 @@ use crate::runtime;
 use serde_json;
 use std::collections::HashMap;
 use std::result;
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use chrootable_https::dns::Resolver;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
@@ -85,6 +86,8 @@ pub trait State {
 
     fn dns_config(&self) -> Arc<Resolver>;
 
+    fn proxy(&self) -> Option<&SocketAddr>;
+
     fn psl(&self) -> Arc<Psl>;
 
     fn geoip(&self) -> Arc<GeoIP>;
@@ -109,6 +112,7 @@ pub struct LuaState {
     psl: Arc<Psl>,
     geoip: Arc<GeoIP>,
     asn: Arc<AsnDB>,
+    proxy: Option<SocketAddr>,
 }
 
 impl State for LuaState {
@@ -166,6 +170,10 @@ impl State for LuaState {
         self.dns_config.clone()
     }
 
+    fn proxy(&self) -> Option<&SocketAddr> {
+        self.proxy.as_ref()
+    }
+
     fn psl(&self) -> Arc<Psl> {
         self.psl.clone()
     }
@@ -189,7 +197,7 @@ impl State for LuaState {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("invalid session reference"); // TODO
 
-        HttpRequest::new(&session, method, url, options)
+        HttpRequest::new(&session, method, url, options, self.proxy.clone())
     }
 
     fn register_in_jar(&self, session: &str, key: String, value: String) {
@@ -220,6 +228,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
         psl: Arc::new(env.psl),
         geoip: Arc::new(env.geoip),
         asn: Arc::new(env.asn),
+        proxy: env.proxy,
     });
 
     runtime::clear_err(&mut lua, state.clone());
@@ -323,6 +332,7 @@ impl Script {
         use crate::geoip::Maxmind;
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
+        let proxy = None;
         let psl = r#"
 // ===BEGIN ICANN DOMAINS===
 com
@@ -335,6 +345,7 @@ com
             verbose: 0,
             keyring,
             dns_config,
+            proxy,
             psl,
             geoip,
             asn,

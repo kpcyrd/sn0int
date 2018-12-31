@@ -35,7 +35,7 @@ chrono = { version = "0.4", features = ["serde"] }
 dirs = "1.0"
 url = "1.7"
 #chrootable-https = { path = "../chrootable-https" }
-chrootable-https = "0.6"
+chrootable-https = "0.7"
 base64 = "0.10"
 kuchiki = "0.7.2"
 serde_urlencoded = "0.5"

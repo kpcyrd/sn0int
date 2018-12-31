@@ -13,6 +13,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::thread;
 use std::io::{Stdin, BufRead, BufReader};
+use std::net::SocketAddr;
 use crate::term::{Spinner, StackedSpinners, SpinLogger};
 use threadpool::ThreadPool;
 
@@ -214,7 +215,7 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params) -> usize {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params, proxy: Option<SocketAddr>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -249,7 +250,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };

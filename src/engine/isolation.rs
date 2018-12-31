@@ -10,6 +10,7 @@ use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCa
 use std::env;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufRead, stdin, Stdin, Stdout};
+use std::net::SocketAddr;
 use std::sync::{mpsc, Arc, Mutex};
 use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
 
@@ -19,18 +20,26 @@ pub struct StartCommand {
     verbose: u64,
     keyring: Vec<KeyRingEntry>,
     dns_config: Resolver,
+    proxy: Option<SocketAddr>,
     module: Module,
     arg: serde_json::Value,
 }
 
 impl StartCommand {
-    pub fn new(verbose: u64, keyring: Vec<KeyRingEntry>, dns_config: Resolver, module: Module, arg: serde_json::Value) -> StartCommand {
+    pub fn new(verbose: u64,
+               keyring: Vec<KeyRingEntry>,
+               dns_config: Resolver,
+               proxy: Option<SocketAddr>,
+               module: Module,
+               arg: serde_json::Value,
+    ) -> StartCommand {
         StartCommand {
             verbose,
             keyring,
             dns_config,
+            proxy,
             module,
-            arg
+            arg,
         }
     }
 }
@@ -160,7 +169,14 @@ impl Reporter for StdioReporter {
     }
 }
 
-pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, keyring: Vec<KeyRingEntry>, verbose: u64, has_stdin: bool) -> Result<ExitEvent> {
+pub fn spawn_module(module: Module,
+                    tx: &EventSender,
+                    arg: serde_json::Value,
+                    keyring: Vec<KeyRingEntry>,
+                    verbose: u64,
+                    has_stdin: bool,
+                    proxy: Option<SocketAddr>
+) -> Result<ExitEvent> {
     let dns_config = Resolver::from_system()?;
 
     let mut reader = if has_stdin {
@@ -170,7 +186,7 @@ pub fn spawn_module(module: Module, tx: &EventSender, arg: serde_json::Value, ke
     };
 
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, module, arg))?;
+    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, module, arg))?;
 
     let exit = loop {
         match supervisor.recv()? {
@@ -204,6 +220,7 @@ pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
         verbose: start.verbose,
         keyring: start.keyring,
         dns_config: start.dns_config,
+        proxy: start.proxy,
         psl,
         geoip,
         asn,

@@ -84,6 +84,9 @@ This function accepts the following options:
    DNS replies with an error code set are not causing a change to
    ``last_err()``. You have to test for this explicitly.
 
+.. note::
+   This function is unavailable if a socks5 proxy is configured.
+
 error
 -----
 
