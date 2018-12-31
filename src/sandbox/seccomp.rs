@@ -10,9 +10,9 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::futex)?;
     ctx.allow_syscall(Syscall::sigaltstack)?;
     ctx.allow_syscall(Syscall::munmap)?;
-    ctx.allow_syscall(Syscall::openat)?;
-    #[cfg(not(target_arch = "aarch64"))]
-    ctx.allow_syscall(Syscall::open)?;
+    //ctx.allow_syscall(Syscall::openat)?;
+    //#[cfg(not(target_arch = "aarch64"))]
+    //ctx.allow_syscall(Syscall::open)?;
     ctx.allow_syscall(Syscall::fcntl)?;
     #[cfg(target_arch = "arm")]
     ctx.allow_syscall(Syscall::fcntl64)?;
