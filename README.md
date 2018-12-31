@@ -42,6 +42,7 @@ Join us on IRC: <ircs://irc.hackint.org/#sn0int>
   - [Archlinux](https://sn0int.readthedocs.io/en/latest/install.html#archlinux)
   - [Debian/Ubuntu/Kali](https://sn0int.readthedocs.io/en/latest/install.html#debian-ubuntu-kali)
   - [Alpine](https://sn0int.readthedocs.io/en/latest/install.html#alpine)
+  - [Docker](https://sn0int.readthedocs.io/en/latest/install.html#docker)
   - [OpenBSD](https://sn0int.readthedocs.io/en/latest/install.html#openbsd)
   - [Mac OSX](https://sn0int.readthedocs.io/en/latest/install.html#mac-osx)
   - [Windows](https://sn0int.readthedocs.io/en/latest/install.html#windows)
