@@ -75,6 +75,9 @@ pub struct Run {
     #[structopt(long="deny-keyring")]
     /// Automatically deny access to all requested keys
     pub deny_keyring: bool,
+    #[structopt(short="x", long="exit-on-error")]
+    /// Exit on first error and set exit code
+    pub exit_on_error: bool,
 }
 
 #[derive(Debug, StructOpt)]

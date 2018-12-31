@@ -75,10 +75,11 @@ pub trait EventWithCallback {
     fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2;
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum ExitEvent {
     Ok,
     Err(String),
+    SetupFailed(String),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -213,10 +214,10 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params) {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
-        return;
+        return 0;
     }
 
     let verbose = params.verbose;
@@ -249,14 +250,15 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
 
             tx.send(Event2::Start);
             let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin) {
-                Ok(_) => ExitEvent::Ok,
-                Err(err) => ExitEvent::Err(err.to_string()),
+                Ok(exit) => exit,
+                Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };
             tx.send(Event2::Exit(event));
         });
         expected += 1;
     }
 
+    let mut errors = 0;
     let mut failed = Vec::new();
     let timeout = Duration::from_millis(100);
     loop {
@@ -273,8 +275,15 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
                         Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db(), verbose),
                         Event2::Exit(event) => {
+                            debug!("Received exit: {:?} -> {:?}", name, event);
                             stack.remove(&name);
-                            if let ExitEvent::Err(error) = event {
+
+                            if ExitEvent::Ok != event {
+                                trace!("bumping error counter");
+                                errors += 1;
+                            }
+
+                            if let ExitEvent::SetupFailed(error) = event {
                                 failed.push((name, error));
                             }
 
@@ -294,11 +303,13 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
         stack.tick();
     }
 
-    for (name, fail) in failed {
+    for (name, fail) in &failed {
         stack.error(&format!("Failed {}: {}", name, fail));
     }
 
     stack.clear();
+
+    errors
 }
 
 pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
@@ -320,6 +331,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,
                     Some(Event::Exit(ExitEvent::Err(error))) => spinner.error(&error),
+                    Some(Event::Exit(ExitEvent::SetupFailed(error))) => spinner.error(&error),
                     None => break, // channel closed
                 },
                 default(timeout) => (),
