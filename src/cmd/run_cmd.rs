@@ -12,6 +12,7 @@ use crate::worker;
 use serde::Serialize;
 use serde_json;
 use sn0int_common::metadata::Source;
+use std::collections::HashMap;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -101,7 +102,7 @@ fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> R
     Ok(())
 }
 
-pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
+pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, String>) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -135,7 +136,7 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
     }?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone());
+    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {
@@ -153,5 +154,9 @@ pub fn execute(rl: &mut Readline, params: &Params) -> Result<()> {
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
-    execute(rl, &args.into())
+    let options = match rl.options_mut() {
+        Some(options) => options.clone(),
+        _ => HashMap::new(),
+    };
+    execute(rl, args.into(), options)
 }

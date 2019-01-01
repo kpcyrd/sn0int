@@ -13,6 +13,7 @@ use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use rustyline::error::ReadlineError;
 use rustyline::{self, CompletionType, EditMode, Editor};
 use shellwords;
+use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -123,6 +124,7 @@ pub struct Readline {
     config: Config,
     engine: Engine,
     keyring: KeyRing,
+    options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
 }
 
@@ -147,6 +149,7 @@ impl Readline {
             config,
             engine,
             keyring,
+            options: None,
             signal_register: Arc::new(SignalRegister::new()),
         };
 
@@ -156,10 +159,12 @@ impl Readline {
     }
 
     pub fn take_module(&mut self) -> Option<Module> {
+        self.options = None;
         self.prompt.module.take()
     }
 
     pub fn set_module(&mut self, module: Module) {
+        self.options = Some(HashMap::new());
         self.prompt.module = Some(module);
         // TODO: possibly refactor
         self.prompt.target = None;
@@ -167,6 +172,10 @@ impl Readline {
 
     pub fn module(&self) -> Option<&Module> {
         self.prompt.module.as_ref()
+    }
+
+    pub fn options_mut(&mut self) -> Option<&mut HashMap<String, String>> {
+        self.options.as_mut()
     }
 
     pub fn set_target(&mut self, target: Option<db::Filter>) {
@@ -358,10 +367,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
         Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
         Some((Command::Scope, args)) => scope_cmd::run(rl, &args)?,
-        // TODO: show global settings
-        // TODO: if module is some, show module settings
-        // TODO: set jobs 25
-        Some((Command::Set, _args)) => println!("set"),
+        Some((Command::Set, args)) => set_cmd::run(rl, &args)?,
         Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,

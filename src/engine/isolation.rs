@@ -7,6 +7,7 @@ use crate::psl::Psl;
 use serde_json;
 use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
 
+use std::collections::HashMap;
 use std::env;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufRead, stdin, Stdin, Stdout};
@@ -21,6 +22,7 @@ pub struct StartCommand {
     keyring: Vec<KeyRingEntry>,
     dns_config: Resolver,
     proxy: Option<SocketAddr>,
+    options: HashMap<String, String>,
     module: Module,
     arg: serde_json::Value,
 }
@@ -30,6 +32,7 @@ impl StartCommand {
                keyring: Vec<KeyRingEntry>,
                dns_config: Resolver,
                proxy: Option<SocketAddr>,
+               options: HashMap<String, String>,
                module: Module,
                arg: serde_json::Value,
     ) -> StartCommand {
@@ -38,6 +41,7 @@ impl StartCommand {
             keyring,
             dns_config,
             proxy,
+            options,
             module,
             arg,
         }
@@ -175,7 +179,8 @@ pub fn spawn_module(module: Module,
                     keyring: Vec<KeyRingEntry>,
                     verbose: u64,
                     has_stdin: bool,
-                    proxy: Option<SocketAddr>
+                    proxy: Option<SocketAddr>,
+                    options: HashMap<String, String>,
 ) -> Result<ExitEvent> {
     let dns_config = Resolver::from_system()?;
 
@@ -186,7 +191,7 @@ pub fn spawn_module(module: Module,
     };
 
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, module, arg))?;
+    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, options, module, arg))?;
 
     let exit = loop {
         match supervisor.recv()? {
@@ -221,6 +226,7 @@ pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
         keyring: start.keyring,
         dns_config: start.dns_config,
         proxy: start.proxy,
+        options: start.options,
         psl,
         geoip,
         asn,

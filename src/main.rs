@@ -11,6 +11,7 @@ use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
+use sn0int::options::Opt;
 use sn0int::psl::Psl;
 use sn0int::registry;
 use sn0int::sandbox;
@@ -40,7 +41,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
         bail!("At least one module or file need to be provided");
     }
 
-    cmd::run_cmd::execute(&mut rl, &args.into())
+    cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
 }
 
 fn run_sandbox() -> Result<()> {

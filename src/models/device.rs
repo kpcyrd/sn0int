@@ -112,16 +112,12 @@ impl Scopable for Device {
 }
 
 impl Device {
-    fn ipaddr(&self, db: &Database) -> Result<Option<String>> {
-        let network_device = NetworkDevice::belonging_to(self)
+    fn network_device(&self, db: &Database) -> Result<Option<NetworkDevice>> {
+        NetworkDevice::belonging_to(self)
             .order(network_devices::last_seen.desc())
             .first::<NetworkDevice>(db.db())
-            .optional()?;
-
-        let ipaddr = network_device
-            .and_then(|x| x.ipaddr);
-
-        Ok(ipaddr)
+            .optional()
+            .map_err(Error::from)
     }
 }
 
@@ -150,6 +146,7 @@ pub struct DetailedDevice {
     hostname: Option<String>,
     vendor: Option<String>,
     ipaddr: Option<String>,
+    network: Option<String>,
     unscoped: bool,
     last_seen: Option<NaiveDateTime>,
 }
@@ -167,10 +164,14 @@ impl DisplayableDetailed for DetailedDevice {
 
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.name)?;
-        w.opt_debug::<Yellow, _>(&self.ipaddr)?;
         w.opt_debug::<Yellow, _>(&self.hostname)?;
         w.opt_debug::<Yellow, _>(&self.vendor)?;
         w.opt_debug::<Yellow, _>(&self.last_seen)?;
+        w.end_group()?;
+
+        w.start_group();
+        w.opt_debug::<Yellow, _>(&self.network)?;
+        w.opt_debug::<Yellow, _>(&self.ipaddr)?;
         w.end_group()?;
 
         Ok(())
@@ -188,7 +189,15 @@ impl Detailed for Device {
     type T = DetailedDevice;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let ipaddr = self.ipaddr(db)?;
+        let network_device = self.network_device(db)?;
+
+        let (ipaddr, network) = match network_device {
+            Some(network_device) => {
+                let network = network_device.network(db)?;
+                (network_device.ipaddr, Some(network.value))
+            },
+            _ => (None, None),
+        };
 
         Ok(DetailedDevice {
             id: self.id,
@@ -197,6 +206,7 @@ impl Detailed for Device {
             hostname: self.hostname.clone(),
             vendor: self.vendor.clone(),
             ipaddr,
+            network,
             unscoped: self.unscoped,
             last_seen: self.last_seen.clone(),
         })

@@ -1,5 +1,6 @@
 use structopt::clap::{AppSettings, Shell};
 use sn0int_common::ModuleID;
+use crate::options;
 use crate::workspaces::Workspace;
 
 
@@ -78,6 +79,9 @@ pub struct Run {
     #[structopt(short="x", long="exit-on-error")]
     /// Exit on first error and set exit code
     pub exit_on_error: bool,
+    #[structopt(short="o", long="option")]
+    /// Set an option
+    pub options: Vec<options::Opt>,
 }
 
 #[derive(Debug, StructOpt)]
