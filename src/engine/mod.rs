@@ -8,6 +8,7 @@ use std::fs;
 use std::fmt::Debug;
 use std::path::PathBuf;
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use crate::engine::ctx::Script;
 use sn0int_common::ModuleID;
@@ -27,12 +28,13 @@ pub mod structs;
 /// Data that is passed to every script
 #[derive(Debug)]
 pub struct Environment {
-  pub verbose: u64,
-  pub keyring: Vec<KeyRingEntry>,
-  pub dns_config: Resolver,
-  pub psl: Psl,
-  pub geoip: GeoIP,
-  pub asn: AsnDB,
+    pub verbose: u64,
+    pub keyring: Vec<KeyRingEntry>,
+    pub dns_config: Resolver,
+    pub proxy: Option<SocketAddr>,
+    pub psl: Psl,
+    pub geoip: GeoIP,
+    pub asn: AsnDB,
 }
 
 #[derive(Debug)]
