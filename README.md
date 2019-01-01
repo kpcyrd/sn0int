@@ -63,6 +63,8 @@ Join us on IRC: <ircs://irc.hackint.org/#sn0int>
   - [Managing the keyring](https://sn0int.readthedocs.io/en/latest/keyring.html#managing-the-keyring)
   - [Using access keys in scripts](https://sn0int.readthedocs.io/en/latest/keyring.html#using-access-keys-in-scripts)
   - [Using access keys as source argument](https://sn0int.readthedocs.io/en/latest/keyring.html#using-access-keys-as-source-argument)
+- [Configuration](https://sn0int.readthedocs.io/en/latest/config.html)
+  - [Configuring a proxy](https://sn0int.readthedocs.io/en/latest/config.html#configuring-a-proxy)
 - [Function reference](https://sn0int.readthedocs.io/en/latest/reference.html)
 
 ## License

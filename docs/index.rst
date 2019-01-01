@@ -40,4 +40,5 @@ Getting Started
    scripting
    database
    keyring
+   config
    reference
