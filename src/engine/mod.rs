@@ -32,6 +32,7 @@ pub struct Environment {
     pub keyring: Vec<KeyRingEntry>,
     pub dns_config: Resolver,
     pub proxy: Option<SocketAddr>,
+    pub options: HashMap<String, String>,
     pub psl: Psl,
     pub geoip: GeoIP,
     pub asn: AsnDB,

@@ -88,6 +88,8 @@ pub trait State {
 
     fn proxy(&self) -> Option<&SocketAddr>;
 
+    fn getopt(&self, key: &str) -> Option<&String>;
+
     fn psl(&self) -> Arc<Psl>;
 
     fn geoip(&self) -> Arc<GeoIP>;
@@ -113,6 +115,7 @@ pub struct LuaState {
     geoip: Arc<GeoIP>,
     asn: Arc<AsnDB>,
     proxy: Option<SocketAddr>,
+    options: HashMap<String, String>,
 }
 
 impl State for LuaState {
@@ -174,6 +177,10 @@ impl State for LuaState {
         self.proxy.as_ref()
     }
 
+    fn getopt(&self, key: &str) -> Option<&String> {
+        self.options.get(key)
+    }
+
     fn psl(&self) -> Arc<Psl> {
         self.psl.clone()
     }
@@ -229,6 +236,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
         geoip: Arc::new(env.geoip),
         asn: Arc::new(env.asn),
         proxy: env.proxy,
+        options: env.options,
     });
 
     runtime::clear_err(&mut lua, state.clone());
@@ -240,6 +248,7 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     runtime::error(&mut lua, state.clone());
     runtime::asn_lookup(&mut lua, state.clone());
     runtime::geoip_lookup(&mut lua, state.clone());
+    runtime::getopt(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
@@ -346,6 +355,7 @@ com
             keyring,
             dns_config,
             proxy,
+            options: HashMap::new(),
             psl,
             geoip,
             asn,

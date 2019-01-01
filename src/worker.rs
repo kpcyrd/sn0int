@@ -8,6 +8,7 @@ use crate::engine::isolation::Supervisor;
 use crate::models::*;
 use serde_json;
 use crate::shell::Readline;
+use std::collections::HashMap;
 use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
@@ -215,7 +216,7 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params, proxy: Option<SocketAddr>) -> usize {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -240,6 +241,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
         let tx = tx.clone();
         let module = module.clone();
         let keyring = keyring.clone();
+        let options = options.clone();
         let signal_register = rl.signal_register().clone();
         pool.execute(move || {
             let tx = EventSender::new(name, tx);
@@ -250,7 +252,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy, options) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };

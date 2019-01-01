@@ -86,6 +86,12 @@ impl Model for NetworkDevice {
     }
 }
 
+impl NetworkDevice {
+    pub fn network(&self, db: &Database) -> Result<Network> {
+        Network::by_id(db, self.network_id)
+    }
+}
+
 pub struct PrintableNetworkDevice {
     network: String,
     device: String,

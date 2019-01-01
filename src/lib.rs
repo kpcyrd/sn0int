@@ -35,6 +35,7 @@ pub mod migrations;
 pub mod models;
 pub mod paths;
 pub mod psl;
+pub mod options;
 pub mod registry;
 pub mod runtime;
 pub mod ser;

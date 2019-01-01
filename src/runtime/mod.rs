@@ -14,6 +14,7 @@ import_fns!(html);
 import_fns!(json);
 import_fns!(keyring);
 import_fns!(logger);
+import_fns!(options);
 import_fns!(pgp);
 import_fns!(psl);
 import_fns!(regex);
