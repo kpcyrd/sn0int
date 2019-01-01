@@ -24,6 +24,10 @@ pub enum Args {
     Emails(Filter),
     #[structopt(name="phonenumbers")]
     PhoneNumbers(Filter),
+    #[structopt(name="devices")]
+    Devices(Filter),
+    #[structopt(name="networks")]
+    Networks(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -46,6 +50,8 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::Urls(filter) => delete::<Url>(rl, &filter),
         Args::Emails(filter) => delete::<Email>(rl, &filter),
         Args::PhoneNumbers(filter) => delete::<PhoneNumber>(rl, &filter),
+        Args::Devices(filter) => delete::<Device>(rl, &filter),
+        Args::Networks(filter) => delete::<Network>(rl, &filter),
     }?;
     term::info(&format!("Deleted {} rows", rows));
     Ok(())
