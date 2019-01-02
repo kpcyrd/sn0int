@@ -5,27 +5,27 @@
 -- cat /var/lib/dhcpd/dhcpd.leases
 
 function add(lease)
-    info({lease=lease})
+    if not lease['active'] then return end
 
-    device = {
+    device_id = db_add('device', {
         value=lease['mac'],
         hostname=lease['hostname'],
-    }
-    info({device=device})
+    })
+    if last_err() then return end
 
-    -- TODO: network_id
-    -- TODO: device_id
-    network_device = {
-        ipaddr=lease['ipaddr']
-    }
-    info({network_device=network_device})
+    -- TODO: add last_seen
+    db_add('network-device', {
+        network_id=network_id,
+        device_id=device_id,
+        ipaddr=lease['ipaddr'],
+    })
+    if last_err() then return end
 end
 
 function each_line(x)
     debug(x)
     m = regex_find('^lease (\\S+) \\{\n$', x)
     if m then
-        info('# reset')
         lease = {}
         debug('ipaddr=' .. m[2])
         lease['ipaddr'] = m[2]
@@ -43,6 +43,7 @@ function each_line(x)
     m = regex_find('^\\s*binding state active;\n$', x)
     if m then
         debug('active=true')
+        lease['active'] = true
     end
     m = regex_find('^\\}\n$', x)
     if m then
@@ -51,6 +52,16 @@ function each_line(x)
 end
 
 function run()
+    network = getopt('network')
+    if not network then
+        return 'network option is missing'
+    end
+
+    network_id = db_select('network', network)
+    if not network_id then
+        return 'network not found in database'
+    end
+
     while true do
         x = stdin_readline()
         if x == nil then
