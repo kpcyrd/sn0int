@@ -32,7 +32,7 @@ them with other users by publishing them to the sn0int registry. This allows
 you to ship updates for your modules on your own since you don't need to send a
 pull request.
 
-Join us on IRC: <ircs://irc.hackint.org/#sn0int>
+Join us on IRC: [irc.hackint.org:6697/#sn0int](https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int)
 
 [![asciicast](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB.svg)](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB)
 
