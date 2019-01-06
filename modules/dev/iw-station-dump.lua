@@ -7,9 +7,22 @@
 function add(client)
     if
         client['authenticated'] == 'yes' and
+        client['authorized'] == 'yes' and
         client['mac']
     then
-        info(client)
+        debug(client)
+
+        device_id = db_add('device', {
+            value=client['mac'],
+        })
+        if last_err() then return end
+
+        -- TODO: add last_seen
+        db_add('network-device', {
+            network_id=network_id,
+            device_id=device_id,
+        })
+        if last_err() then return end
     end
 
     client = nil
@@ -35,6 +48,16 @@ function each_line(x)
 end
 
 function run()
+    network = getopt('network')
+    if not network then
+        return 'network option is missing'
+    end
+
+    network_id = db_select('network', network)
+    if not network_id then
+        return 'network not found in database'
+    end
+
     client = nil
     while true do
         x = stdin_readline()
