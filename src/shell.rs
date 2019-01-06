@@ -111,7 +111,7 @@ impl FromStr for Command {
             "use"  => Ok(Command::Use),
             "quickstart"  => Ok(Command::Quickstart),
             "workspace" => Ok(Command::Workspace),
-            x => bail!("unknown command: {:?}", x),
+            x => bail!("unknown command: {:?}, try \"help\"", x),
         }
     }
 }
