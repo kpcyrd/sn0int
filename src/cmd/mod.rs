@@ -1,3 +1,16 @@
+use crate::errors::*;
+use crate::shell::Readline;
+
+pub trait Cmd: structopt::StructOpt + Sized {
+    fn run(&self, rl: &mut Readline) -> Result<()>;
+
+    #[inline]
+    fn run_str(rl: &mut Readline, args: &[String]) -> Result<()> {
+        let args = Self::from_iter_safe(args)?;
+        args.run(rl)
+    }
+}
+
 pub mod add_cmd;
 pub mod delete_cmd;
 pub mod help_cmd;

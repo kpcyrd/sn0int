@@ -54,6 +54,11 @@ fn run_sandbox() -> Result<()> {
     engine::isolation::run_worker(geoip, asn, &psl)
 }
 
+fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: Config) -> Result<()> {
+    let mut rl = shell::init(gargs, config)?;
+    args.run(&mut rl)
+}
+
 fn run() -> Result<()> {
     let args = Args::from_args();
 
@@ -71,6 +76,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish, &config),
         Some(SubCommand::Install(ref install)) => registry::run_install(install, &config),
         Some(SubCommand::Search(ref search)) => registry::run_search(search, &config),
+        Some(SubCommand::Select(ref select)) => run_cmd(&args, select, config),
         Some(SubCommand::Completions(ref completions)) => complete::run_generate(completions),
         None => shell::run(&args, config),
     }

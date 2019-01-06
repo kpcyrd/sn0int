@@ -1,5 +1,6 @@
 use structopt::clap::{AppSettings, Shell};
 use sn0int_common::ModuleID;
+use crate::cmd;
 use crate::options;
 use crate::workspaces::Workspace;
 
@@ -45,6 +46,9 @@ pub enum SubCommand {
     #[structopt(author="", name="search")]
     /// Search in the registry
     Search(Search),
+    #[structopt(author="", name="select")]
+    /// Select from the database
+    Select(cmd::select_cmd::Args),
     #[structopt(author="", name="completions")]
     /// Generate shell completions
     Completions(Completions),
