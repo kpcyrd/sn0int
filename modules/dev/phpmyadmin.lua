@@ -80,13 +80,13 @@ function run(arg)
     while i <= #paths do
         p = paths[i]
         url = url_join(arg['value'], p)
-        debug(json_encode(url))
+        debug(url)
 
         req = http_request(session, 'GET', url, {
             timeout=5000
         })
         reply = http_send(req)
-        debug(json_encode(reply))
+        debug(reply)
 
         if last_err() then
             clear_err()
