@@ -2398,7 +2398,7 @@ dependencies = [
 
 [[package]]
 name = "sn0int"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "base64 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "boxxy 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
