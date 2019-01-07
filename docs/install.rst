@@ -35,7 +35,7 @@ Docker
 
 .. code-block:: bash
 
-    $ docker run --rm --init -it -v $PWD/cache:/cache -v $PWD/data:/data kpcyrd/sn0int
+    $ docker run --rm --init -it -v $PWD/.cache:/cache -v $PWD/.data:/data kpcyrd/sn0int
 
 OpenBSD
 -------
