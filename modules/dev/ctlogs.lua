@@ -3,9 +3,52 @@
 -- Source: domains
 -- License: GPL-3.0
 
-function run(arg)
-    session = http_mksession()
+function each_name(name)
+    local domain_id, psl_domain
 
+    debug(name)
+
+    if name:find('*.') == 1 then
+        -- ignore wildcard domains
+        return
+    end
+
+    -- the cert might be valid for subdomains that do not belong to the
+    -- domain we started with
+    psl_domain = psl_domain_from_dns_name(name)
+    domain_id = domains[psl_domain]
+    if domain_id == nil then
+        if any_domain then
+            -- unknown domains should be added to database
+            domain_id = db_add('domain', {
+                value=psl_domain,
+            })
+        else
+            -- only use domains that are already in scope
+            domain_id = db_select('domain', psl_domain)
+        end
+
+        -- if we didn't get a valid id, skip
+        if domain_id == nil then
+            return
+        end
+
+        domains[psl_domain] = domain_id
+    end
+
+    db_add('subdomain', {
+        domain_id=domain_id,
+        value=name,
+    })
+end
+
+function run(arg)
+    any_domain = getopt('any-domain') ~= nil
+
+    domains = {}
+    domains[arg['value']] = arg['id']
+
+    session = http_mksession()
     req = http_request(session, 'GET', 'https://crt.sh/', {
         query={
             q='%.' .. arg['value'],
@@ -20,27 +63,31 @@ function run(arg)
     certs = json_decode_stream(resp['text'])
     if last_err() then return end
 
-    seen = {}
-
     i = 1
     while i <= #certs do
         c = certs[i]
-        -- print(c)
+        debug(c)
 
-        name = c['name_value']
-        debug(name)
+        -- fetch certificate
+        id = c['min_cert_id']
+        req = http_request(session, 'GET', 'https://crt.sh/', {
+            query={
+                d=id .. '', -- TODO: find nicer way for tostring
+            }
+        })
+        resp = http_send(req)
+        if last_err() then return end
+        if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
 
-        if name:find("*.") == 1 then
-            -- ignore wildcard domains
-            seen[name] = 1
-        end
+        -- iterate over all valid names
+        crt = x509_parse_pem(resp['text'])
+        if last_err() then return end
+        names = crt['valid_names']
 
-        if seen[name] == nil then
-            db_add('subdomain', {
-                domain_id=arg['id'],
-                value=name,
-            })
-            seen[name] = 1
+        j = 1
+        while j <= #names do
+            each_name(names[j])
+            j = j+1
         end
 
         i = i+1
