@@ -13,7 +13,6 @@ use hlua_badtouch as hlua;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 #[macro_use] extern crate crossbeam_channel as channel;
-#[macro_use] extern crate nom;
 
 pub mod api;
 pub mod archive;

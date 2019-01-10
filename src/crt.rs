@@ -1,10 +1,10 @@
 use crate::errors::*;
 
 use x509_parser;
+use der_parser::{DerObject, DerObjectContent};
 use der_parser::oid::Oid;
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use nom::be_u8;
 
 
 #[derive(Debug, PartialEq)]
@@ -13,69 +13,56 @@ pub enum AlternativeName {
     IpAddr(IpAddr),
 }
 
-named!(san_extension<&[u8], Vec<AlternativeName>>, do_parse!(
-    _tag:   tag!(b"\x30")   >>
-    len:    be_u8           >>
-    values: take!(len)      >>
-    ({
-        let mut bytes = values;
-        let mut values = Vec::new();
-        while !bytes.is_empty() {
-            let (rem, v) = san_value(bytes)?;
-            match v {
-                Ok(v) => values.push(v),
-                Err(e) => warn!("Unknown field in SAN extension: {}", e),
-            }
-            bytes = rem;
-        }
-        values
-    })
-));
+pub fn san_extension(i: &[u8]) -> Result<Vec<AlternativeName>> {
+    let (rem, seq) = der_parser::parse_der_sequence(i)
+        .map_err(|_| format_err!("Failed to parse san extension"))?;
 
-named!(san_value<&[u8], Result<AlternativeName>>,
-    switch!(be_u8,
-        0x82    => call!(san_value_dns) |
-        0x87    => call!(san_value_ipaddr) |
-        k       => call!(san_value_unknown, k)
-    )
-);
+    if !rem.is_empty() {
+        bail!("san extension has trailing garbage");
+    }
 
-named!(san_value_dns<&[u8], Result<AlternativeName>>, do_parse!(
-    len:    be_u8           >>
-    value:  take!(len)      >>
-    ({
-        String::from_utf8(value.to_vec())
-            .map(AlternativeName::DnsName)
-            .map_err(Error::from)
-    })
-));
+    debug!("Decoded sequence: {:?}", seq);
+    if let DerObjectContent::Sequence(seq) = seq.content {
+        seq.into_iter()
+            .map(san_value)
+            .collect()
+    } else {
+        bail!("Expected der sequence");
+    }
+}
 
-named!(san_value_ipaddr<&[u8], Result<AlternativeName>>, do_parse!(
-    len:    be_u8           >>
-    v:      take!(len)      >>
-    ({
-        match len {
-            4  => Ok(AlternativeName::IpAddr(Ipv4Addr::from([
-                v[0], v[1], v[2], v[3],
-            ]).into())),
-            16 => Ok(AlternativeName::IpAddr(Ipv6Addr::from([
-                v[0],  v[1],  v[2],  v[3],
-                v[4],  v[5],  v[6],  v[7],
-                v[8],  v[9],  v[10], v[11],
-                v[12], v[13], v[14], v[15],
-            ]).into())),
-            _ => Err(format_err!("Invalid ipaddr")),
-        }
-    })
-));
+pub fn san_value(o: DerObject) -> Result<AlternativeName> {
+    debug!("DER object in SAN extension: {:?}", o);
 
-named_args!(san_value_unknown(key: u8)<&[u8], Result<AlternativeName>>, do_parse!(
-    len:    be_u8           >>
-    v:      take!(len)      >>
-    ({
-        Err(format_err!("Unexpected type {:?} => {:?}", key, v))
-    })
-));
+    match (o.class, o.tag, &o.content) {
+        (2, 2, DerObjectContent::Unknown(value)) => san_value_dns(value),
+        (2, 7, DerObjectContent::Unknown(value)) => san_value_ipaddr(value),
+        _ => bail!("Unexpected object: {:?}", o),
+    }
+}
+
+pub fn san_value_dns(v: &[u8]) -> Result<AlternativeName> {
+    debug!("Reading as dns name: {:?}", v);
+    String::from_utf8(v.to_vec())
+        .map(AlternativeName::DnsName)
+        .map_err(Error::from)
+}
+
+pub fn san_value_ipaddr(v: &[u8]) -> Result<AlternativeName> {
+    debug!("Reading as ipaddr: {:?}", v);
+    match v.len() {
+        4  => Ok(AlternativeName::IpAddr(Ipv4Addr::from([
+            v[0], v[1], v[2], v[3],
+        ]).into())),
+        16 => Ok(AlternativeName::IpAddr(Ipv6Addr::from([
+            v[0],  v[1],  v[2],  v[3],
+            v[4],  v[5],  v[6],  v[7],
+            v[8],  v[9],  v[10], v[11],
+            v[12], v[13], v[14], v[15],
+        ]).into())),
+        _ => Err(format_err!("Invalid ipaddr")),
+    }
+}
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
@@ -138,15 +125,7 @@ impl Certificate {
             }
 
             debug!("Found san extension: {:?}", x.value);
-            let values = match san_extension(x.value) {
-                Ok((remaining, values)) => {
-                    if !remaining.is_empty() {
-                        bail!("san extension has trailing garbage");
-                    }
-                    values
-                },
-                Err(_) => bail!("Failed to parse san extension"),
-            };
+            let values = san_extension(x.value)?;
 
             for v in values {
                 match v {
@@ -168,6 +147,7 @@ impl Certificate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use der_parser::parse_der;
 
     #[test]
     fn test_parse_pem_github() {
@@ -265,12 +245,11 @@ ZkZZmqNn2Q8=
 
     #[test]
     fn test_san_extension() {
-        let (rem, ext) = san_extension(&[48, 28,
+        let ext = san_extension(&[48, 28,
                 130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
                 130, 14, 119, 119, 119, 46, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109
             ])
             .expect("Failed to parse extension");
-        assert!(rem.is_empty());
         assert_eq!(ext, vec![
             AlternativeName::DnsName(String::from("github.com")),
             AlternativeName::DnsName(String::from("www.github.com")),
@@ -278,20 +257,142 @@ ZkZZmqNn2Q8=
     }
 
     #[test]
+    fn test_long_san_extension() {
+        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+MIII3jCCB8agAwIBAgIQAp1dOviF3mpYKKObx4fjxjANBgkqhkiG9w0BAQsFADBe
+MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
+d3cuZGlnaWNlcnQuY29tMR0wGwYDVQQDExRHZW9UcnVzdCBSU0EgQ0EgMjAxODAe
+Fw0xOTAxMDMwMDAwMDBaFw0xOTA3MzAxMjAwMDBaMIGCMQswCQYDVQQGEwJERTEl
+MCMGA1UECBMcRnJlaWUgdW5kIEhhbnNlc3RhZHQgSGFtYnVyZzEQMA4GA1UEBxMH
+SGFtYnVyZzEXMBUGA1UEChMOQWJvdXQgWW91IEdtYkgxCzAJBgNVBAsTAklUMRQw
+EgYDVQQDEwthYm91dHlvdS5kZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
+ggEBALG6ZjY9TtJmN18p5KlJMtzdZMhw3mz6dGOYoSMTaQCDnw7RW14H8JX9Dz51
+dTM4Ig1rPka5DjujNG8BKETGknRzQMEo7x08qZirzdQIz9QCnYDQ3/6l9tDfQ16X
+pctnQRY156H8jyjhkaT+dWJIHaPwz+g6117plfv0F6iOcupNtF4rnZK7vpcyb/Fm
+F985uHdBVXJKVt7BMUjUO6fdm8865fTyL8lb1ocEgbN91KdI7Bt9wUqxgOR7BJRJ
+YQAC+Y6wqE8BwOGH11QaNGKQ8xGdBd3eC4tAuif1y+4WVPDAlhmJJR/FcnsiLVbX
+zg4sgE+4kLOayCJY6MfN2MRtchkCAwEAAaOCBXEwggVtMB8GA1UdIwQYMBaAFJBY
+/7CcdahRVHex7fKjQxY4nmzFMB0GA1UdDgQWBBTPNzAGXJdERAKW8w3kFNJ88MLO
+qjCCAuIGA1UdEQSCAtkwggLVggthYm91dHlvdS5kZYIRY2RuLnlvdWFuZGlkb2wu
+ZGWCDWNkbi5lZGl0ZWQuZGWCE2Nkbi5hYm91dHN0YXRpYy5jb22CDW0uYWJvdXR5
+b3UuZGWCE3N0YXRpYzMuYWJvdXR5b3UuZGWCFmltYWdlcy5hYm91dHN0YXRpYy5j
+b22CE3N0YXRpYzUuYWJvdXR5b3UuZGWCEGNvLXQuYWJvdXR5b3UuZGWCDXQuYWJv
+dXR5b3UuZGWCDmNvLmFib3V0eW91LmRlggllZGl0ZWQuZGWCE2NvLW1hcHAuYWJv
+dXR5b3UuZGWCE3N0YXRpYzQuYWJvdXR5b3UuZGWCEW1lZGlhLmFib3V0eW91LmRl
+giZ3aXR0LXdlaWRlbi5kYW0uc3RhZ2luZy5hYm91dHlvdS5jbG91ZIISc3RhdGlj
+LmFib3V0eW91LmRlghBjZG40LmFib3V0eW91LmRlghNzdGF0aWMyLmFib3V0eW91
+LmRlgiN3aXR0LXdlaWRlbi5kYW0uYWNtZS5hYm91dHlvdS5jbG91ZIIXY2RuLmFi
+b3V0eW91LXN0YWdpbmcuZGWCD2Nkbi5hYm91dHlvdS5kZYIQY2RuMy5hYm91dHlv
+dS5kZYIQY2RuMi5hYm91dHlvdS5kZYIQY2RuNS5hYm91dHlvdS5kZYISYXNzZXRz
+LmFib3V0eW91LmRlghBjZG4xLmFib3V0eW91LmRlghpzdGF0aWNtYWlsLWNkbi5h
+Ym91dHlvdS5kZYIPd3d3LmFib3V0eW91LmRlghNzdGF0aWMxLmFib3V0eW91LmRl
+ghRtLWFzc2V0cy5hYm91dHlvdS5kZYIQY2RuLm1hcnktcGF1bC5kZYIQY28tbS5h
+Ym91dHlvdS5kZYIVZmlsZXMuYWJvdXRzdGF0aWMuY29tghNpbWcuYWJvdXRzdGF0
+aWMuY29tgg9pbWcuYWJvdXR5b3UuZGUwDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQW
+MBQGCCsGAQUFBwMBBggrBgEFBQcDAjA+BgNVHR8ENzA1MDOgMaAvhi1odHRwOi8v
+Y2RwLmdlb3RydXN0LmNvbS9HZW9UcnVzdFJTQUNBMjAxOC5jcmwwTAYDVR0gBEUw
+QzA3BglghkgBhv1sAQEwKjAoBggrBgEFBQcCARYcaHR0cHM6Ly93d3cuZGlnaWNl
+cnQuY29tL0NQUzAIBgZngQwBAgIwdQYIKwYBBQUHAQEEaTBnMCYGCCsGAQUFBzAB
+hhpodHRwOi8vc3RhdHVzLmdlb3RydXN0LmNvbTA9BggrBgEFBQcwAoYxaHR0cDov
+L2NhY2VydHMuZ2VvdHJ1c3QuY29tL0dlb1RydXN0UlNBQ0EyMDE4LmNydDAJBgNV
+HRMEAjAAMIIBBAYKKwYBBAHWeQIEAgSB9QSB8gDwAHcAY/Lbzeg7zCzPC3KEJ1dr
+M6SNYXePvXWmOLHHaFRL2I0AAAFoE/H84wAABAMASDBGAiEAh8Q7LXUzhsbiuxCS
+VoeRmnPtLEZcjNFg3R+eBK5FkQMCIQD+Ic1QErzzP1B76BPLcaBgOxULpLQ2Ib4M
+b38fMU5GhwB1AId1v+dZfPiMQ5lfvfNu/1aNR1Y2/0q1YMG06v9eoIMPAAABaBPx
+/dQAAAQDAEYwRAIgDcWLzLdGGG7d3EV3y809H8MwEojfEXT0DS75TchCvB0CIBno
+kC5/KGjNdQdsqJX4NJbQ06RAbHLeGwX5ccmaKbQ3MA0GCSqGSIb3DQEBCwUAA4IB
+AQC81DWjm2PklQzIGSIf/tRm2GtjlL6Vi7rMGkSbiV0k1FnoptdHfQIs55tTBD7c
+TheMOk62JL6z0FKpAgPUIU+HrKJ/fAcBmQo+yqn0vRT0yhDrDGEFl6Sm2HyI0oKG
+XryhpFLQkHuDkyA4uKOLuefPBgdjVZW9LqxmZhFPaZY6BSa/neZopVNwC1c+4Xwu
+mAlnYDoB0Mj2UIPvIeftkDfF6sURmmZb0/+AMbFDCQYHvZFPI8DFgcagy8og5XJZ
+gQ+70UdJdM3RWyrd9R66aZwNGkcS6C2wtKCRhztWDMru/wNuyOsYS6JttoTYxRsh
+z/6Vy8Ga9kigYVsa8ZFMR+Ex
+-----END CERTIFICATE-----
+"#).expect("Failed to parse cert");
+        x.valid_names.sort();
+        x.valid_ipaddrs.sort();
+        assert_eq!(x, Certificate {
+            valid_names: vec![
+                "aboutyou.de".into(),
+                "assets.aboutyou.de".into(),
+                "cdn.aboutstatic.com".into(),
+                "cdn.aboutyou-staging.de".into(),
+                "cdn.aboutyou.de".into(),
+                "cdn.edited.de".into(),
+                "cdn.mary-paul.de".into(),
+                "cdn.youandidol.de".into(),
+                "cdn1.aboutyou.de".into(),
+                "cdn2.aboutyou.de".into(),
+                "cdn3.aboutyou.de".into(),
+                "cdn4.aboutyou.de".into(),
+                "cdn5.aboutyou.de".into(),
+                "co-m.aboutyou.de".into(),
+                "co-mapp.aboutyou.de".into(),
+                "co-t.aboutyou.de".into(),
+                "co.aboutyou.de".into(),
+                "edited.de".into(),
+                "files.aboutstatic.com".into(),
+                "images.aboutstatic.com".into(),
+                "img.aboutstatic.com".into(),
+                "img.aboutyou.de".into(),
+                "m-assets.aboutyou.de".into(),
+                "m.aboutyou.de".into(),
+                "media.aboutyou.de".into(),
+                "static.aboutyou.de".into(),
+                "static1.aboutyou.de".into(),
+                "static2.aboutyou.de".into(),
+                "static3.aboutyou.de".into(),
+                "static4.aboutyou.de".into(),
+                "static5.aboutyou.de".into(),
+                "staticmail-cdn.aboutyou.de".into(),
+                "t.aboutyou.de".into(),
+                "witt-weiden.dam.acme.aboutyou.cloud".into(),
+                "witt-weiden.dam.staging.aboutyou.cloud".into(),
+                "www.aboutyou.de".into(),
+            ],
+            valid_ipaddrs: vec![],
+        });
+    }
+
+    #[test]
     fn test_san_value_dns() {
-        let (rem, v) = san_value(&[130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
+        let (rem, v) = parse_der(&[130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
             .expect("Failed to parse san value");
-        let v = v.expect("Extension contains invalid data");
         assert!(rem.is_empty());
+        println!("{:?}", v);
+        assert_eq!(v, DerObject {
+            class: 2,
+            structured: 0,
+            tag: 2,
+            content: DerObjectContent::Unknown(&[103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
+        });
+        let content = match v.content {
+            DerObjectContent::Unknown(v) => v,
+            _ => panic!("Wrong DerObjectContent"),
+        };
+        let v = san_value_dns(content)
+            .expect("Failed to process san value");
         assert_eq!(v, AlternativeName::DnsName(String::from("github.com")));
     }
 
     #[test]
     fn test_san_value_ipaddr() {
-        let (rem, v) = san_value(&[135, 4, 1, 1, 1, 1])
+        let (rem, v) = parse_der(&[135, 4, 1, 1, 1, 1])
             .expect("Failed to parse san value");
-        let v = v.expect("Extension contains invalid data");
         assert!(rem.is_empty());
+        println!("{:?}", v);
+        assert_eq!(v, DerObject {
+            class: 2,
+            structured: 0,
+            tag: 7,
+            content: DerObjectContent::Unknown(&[1, 1, 1, 1])
+        });
+        let content = match v.content {
+            DerObjectContent::Unknown(v) => v,
+            _ => panic!("Wrong DerObjectContent"),
+        };
+        let v = san_value_ipaddr(content)
+            .expect("Failed to process san value");
         assert_eq!(v, AlternativeName::IpAddr("1.1.1.1".parse().unwrap()));
     }
 }
