@@ -41,4 +41,5 @@ Getting Started
    database
    keyring
    config
+   sandbox
    reference

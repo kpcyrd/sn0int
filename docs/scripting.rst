@@ -125,7 +125,7 @@ our scope and set it to resolvable if ``error`` is ``nil``.
         if last_err() then return end
 
         if records['error'] == nil then
-            db_add('subdomain', arg, {
+            db_add('subdomain', {
                 domain_id=arg['id'],
                 value=subdomain,
                 resolvable=true,
@@ -159,7 +159,7 @@ After putting everything together, our final module looks like this:
         if last_err() then return end
 
         if records['success'] ~= nil then
-            db_add('subdomain', arg, {
+            db_add('subdomain', {
                 domain_id=arg['id'],
                 value=subdomain,
                 resolvable=true,
