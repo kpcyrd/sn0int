@@ -10,7 +10,6 @@ use serde_json;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use std::fmt;
-use std::net::SocketAddr;
 use serde::Serialize;
 use crate::engine::structs::LuaMap;
 use crate::json::LuaJsonValue;
@@ -85,11 +84,10 @@ pub struct HttpRequest {
     user_agent: Option<String>,
     body: Option<ReqBody>,
     timeout: Option<Duration>,
-    proxy: Option<SocketAddr>,
 }
 
 impl HttpRequest {
-    pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions, proxy: Option<SocketAddr>) -> HttpRequest {
+    pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let cookies = session.cookies.clone();
 
         let user_agent = options.user_agent.or_else(|| Some("sn0int".to_string())); // TODO
@@ -106,7 +104,6 @@ impl HttpRequest {
             user_agent,
             body: None,
             timeout,
-            proxy,
         };
 
         if let Some(json) = options.json {
