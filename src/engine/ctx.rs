@@ -8,12 +8,12 @@ use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
 use crate::psl::Psl;
 use crate::runtime;
+use chrootable_https::{self, Resolver};
 use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use chrootable_https::dns::Resolver;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 
@@ -24,8 +24,6 @@ pub trait State {
     fn last_error(&self) -> Option<String>;
 
     fn set_error(&self, err: Error) -> Error;
-
-    fn set_logger(&self, tx: Arc<Mutex<Box<Reporter>>>);
 
     fn send(&self, msg: &Event);
 
@@ -84,17 +82,19 @@ pub trait State {
 
     fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry>;
 
-    fn dns_config(&self) -> Arc<Resolver>;
+    fn dns_config(&self) -> &Resolver;
 
     fn proxy(&self) -> Option<&SocketAddr>;
 
     fn getopt(&self, key: &str) -> Option<&String>;
 
-    fn psl(&self) -> Arc<Psl>;
+    fn psl(&self) -> &Psl;
 
-    fn geoip(&self) -> Arc<GeoIP>;
+    fn geoip(&self) -> &GeoIP;
 
-    fn asn(&self) -> Arc<AsnDB>;
+    fn asn(&self) -> &AsnDB;
+
+    fn http(&self) -> &chrootable_https::Client<Resolver>;
 
     fn http_mksession(&self) -> String;
 
@@ -103,17 +103,18 @@ pub trait State {
     fn register_in_jar(&self, session: &str, key: String, value: String);
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct LuaState {
-    error: Arc<Mutex<Option<Error>>>,
-    logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
-    http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
+    error: Mutex<Option<Error>>,
+    logger: Arc<Mutex<Box<Reporter>>>,
+    http_sessions: Mutex<HashMap<String, HttpSession>>,
+    http: chrootable_https::Client<Resolver>,
     verbose: u64,
-    keyring: Arc<Vec<KeyRingEntry>>, // TODO: maybe hashmap
-    dns_config: Arc<Resolver>,
-    psl: Arc<Psl>,
-    geoip: Arc<GeoIP>,
-    asn: Arc<AsnDB>,
+    keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
+    dns_config: Resolver,
+    psl: Psl,
+    geoip: GeoIP,
+    asn: AsnDB,
     proxy: Option<SocketAddr>,
     options: HashMap<String, String>,
 }
@@ -136,27 +137,14 @@ impl State for LuaState {
         cp
     }
 
-    fn set_logger(&self, tx: Arc<Mutex<Box<Reporter>>>) {
-        let mut mtx = self.logger.lock().unwrap();
-        *mtx = Some(tx);
-    }
-
     fn send(&self, msg: &Event) {
-        let mtx = self.logger.lock().unwrap();
-        if let Some(mtx) = &*mtx {
-            let mut tx = mtx.lock().unwrap();
-            tx.send(msg).expect("Failed to write event");
-        }
+        let mut tx = self.logger.lock().unwrap();
+        tx.send(msg).expect("Failed to write event");
     }
 
     fn recv(&self) -> Result<serde_json::Value> {
-        let mtx = self.logger.lock().unwrap();
-        if let Some(mtx) = &*mtx {
-            let mut tx = mtx.lock().unwrap();
-            tx.recv()
-        } else {
-            bail!("Failed to read from reporter, non available");
-        }
+        let mut tx = self.logger.lock().unwrap();
+        tx.recv()
     }
 
     fn verbose(&self) -> u64 {
@@ -169,8 +157,8 @@ impl State for LuaState {
             .collect()
     }
 
-    fn dns_config(&self) -> Arc<Resolver> {
-        self.dns_config.clone()
+    fn dns_config(&self) -> &Resolver {
+        &self.dns_config
     }
 
     fn proxy(&self) -> Option<&SocketAddr> {
@@ -181,16 +169,20 @@ impl State for LuaState {
         self.options.get(key)
     }
 
-    fn psl(&self) -> Arc<Psl> {
-        self.psl.clone()
+    fn psl(&self) -> &Psl {
+        &self.psl
     }
 
-    fn geoip(&self) -> Arc<GeoIP> {
-        self.geoip.clone()
+    fn geoip(&self) -> &GeoIP {
+        &self.geoip
     }
 
-    fn asn(&self) -> Arc<AsnDB> {
-        self.asn.clone()
+    fn asn(&self) -> &AsnDB {
+        &self.asn
+    }
+
+    fn http(&self) -> &chrootable_https::Client<Resolver> {
+        &self.http
     }
 
     fn http_mksession(&self) -> String {
@@ -204,7 +196,7 @@ impl State for LuaState {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("invalid session reference"); // TODO
 
-        HttpRequest::new(&session, method, url, options, self.proxy.clone())
+        HttpRequest::new(&session, method, url, options)
     }
 
     fn register_in_jar(&self, session: &str, key: String, value: String) {
@@ -220,21 +212,31 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
+fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
+
+    let http = match env.proxy {
+        Some(proxy) => chrootable_https::Client::with_socks5(proxy),
+        _ => {
+            let resolver = env.dns_config.clone();
+            chrootable_https::Client::new(resolver)
+        },
+    };
+
     let state = Arc::new(LuaState {
-        error: Arc::new(Mutex::new(None)),
-        logger: Arc::new(Mutex::new(None)),
-        http_sessions: Arc::new(Mutex::new(HashMap::new())),
+        error: Mutex::new(None),
+        logger,
+        http_sessions: Mutex::new(HashMap::new()),
+        http,
 
         verbose: env.verbose,
-        keyring: Arc::new(env.keyring),
-        dns_config: Arc::new(env.dns_config),
-        psl: Arc::new(env.psl),
-        geoip: Arc::new(env.geoip),
-        asn: Arc::new(env.asn),
+        keyring: env.keyring,
+        dns_config: env.dns_config,
+        psl: env.psl,
+        geoip: env.geoip,
+        asn: env.asn,
         proxy: env.proxy,
         options: env.options,
     });
@@ -307,12 +309,10 @@ impl Script {
                       tx: Arc<Mutex<Box<Reporter>>>,
                       arg: AnyLuaValue
     ) -> Result<()> {
-        let (mut lua, state) = ctx(env);
+        let (mut lua, state) = ctx(env, tx);
 
         debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
-
-        state.set_logger(tx);
 
         let run: Result<_> = lua.get("run")
             .ok_or_else(|| format_err!( "run undefined"));

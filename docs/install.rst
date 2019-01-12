@@ -52,7 +52,6 @@ Mac OSX
 
 .. code-block:: bash
 
-    $ brew install sqlite3
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f
