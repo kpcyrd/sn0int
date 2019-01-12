@@ -238,7 +238,7 @@ dependencies = [
 
 [[package]]
 name = "chrootable-https"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "byteorder 1.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -251,6 +251,7 @@ dependencies = [
  "hyper-rustls 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "ipconfig 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lru-cache 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "resolv-conf 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustls 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.84 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1148,6 +1149,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "linked-hash-map"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "lock_api"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1170,6 +1176,14 @@ version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "lru-cache"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "linked-hash-map 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2404,7 +2418,7 @@ dependencies = [
  "boxxy 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "caps 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "chrootable-https 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "chrootable-https 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "crossbeam-channel 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "ctrlc 3.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3304,7 +3318,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum cc 1.0.28 (registry+https://github.com/rust-lang/crates.io-index)" = "bb4a8b715cb4597106ea87c7c84b2f1d452c7492033765df7f32651e66fcf749"
 "checksum cfg-if 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "082bb9b28e00d3c9d39cc03e64ce4cea0f1bb9b3fde493f0cbc008472d22bdf4"
 "checksum chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "45912881121cb26fad7c38c17ba7daa18764771836b34fab7d3fbd93ed633878"
-"checksum chrootable-https 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "a74eba7e35190cbac180dbd142044b96acb4817608a2d8f1bca363de1e5f0e10"
+"checksum chrootable-https 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)" = "98035eb31465410425ee7cf4cb2de0b1fc7ab4a8fe9dd2fc1d3e01317c72e139"
 "checksum clap 2.32.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b957d88f4b6a63b9d70d5f454ac8011819c6efa7727858f458ab71c756ce2d3e"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum colored 1.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6e9a455e156a4271e12fd0246238c380b1e223e3736663c7a18ed8b6362028a9"
@@ -3399,9 +3413,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum libflate 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)" = "bff3ac7d6f23730d3b533c35ed75eef638167634476a499feef16c428d74b57b"
 "checksum libsqlite3-sys 0.9.3 (registry+https://github.com/rust-lang/crates.io-index)" = "d3711dfd91a1081d2458ad2d06ea30a8755256e74038be2ad927d94e1c955ca8"
 "checksum libz-sys 1.0.25 (registry+https://github.com/rust-lang/crates.io-index)" = "2eb5e43362e38e2bca2fd5f5134c4d4564a23a5c28e9b95411652021a8675ebe"
+"checksum linked-hash-map 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7860ec297f7008ff7a1e3382d7f7e1dcd69efc94751a2284bafc3d013c2aa939"
 "checksum lock_api 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "62ebf1391f6acad60e5c8b43706dde4582df75c06698ab44511d15016bc2442c"
 "checksum log 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)" = "e19e8d5c34a3e0e2223db8e060f9e8264aeeb5c5fc64a4ee9965c062211c024b"
 "checksum log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c84ec4b527950aa83a329754b01dbe3f58361d1c5efacd1f6d68c494d08a17c6"
+"checksum lru-cache 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "4d06ff7ff06f729ce5f4e227876cb88d10bc59cd4ae1e09fbb2bde15c850dc21"
 "checksum lua52-sys 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "d451db153c94e455dc817d388f9674f6232425c28db3509e90251c55b8df2f94"
 "checksum mac 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
 "checksum maplit 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "08cbb6b4fef96b6d77bfc40ec491b1690c779e77b05cd9f07f787ed376fd4c43"

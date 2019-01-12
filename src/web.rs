@@ -205,18 +205,8 @@ impl HttpRequest {
         // send request
         debug!("Sending http request: {:?}", req);
 
-        let mut http = match self.proxy {
-            Some(proxy) => Client::with_socks5(proxy),
-            _ => {
-                let resolver = state.dns_config().as_ref().clone();
-                Client::new(resolver)
-            },
-        };
-
-        if let Some(timeout) = self.timeout {
-            http.timeout(timeout);
-        }
-        let res = http.request(req)
+        let res = state.http().request(req)
+            .with_timeout(self.timeout)
             .wait_for_response()?;
 
         // map result to LuaMap

@@ -8,12 +8,12 @@ use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
 use crate::psl::Psl;
 use crate::runtime;
+use chrootable_https::{self, Resolver};
 use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use chrootable_https::dns::Resolver;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 
@@ -96,6 +96,8 @@ pub trait State {
 
     fn asn(&self) -> Arc<AsnDB>;
 
+    fn http(&self) -> &chrootable_https::Client<Resolver>;
+
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
@@ -108,6 +110,7 @@ pub struct LuaState {
     error: Arc<Mutex<Option<Error>>>,
     logger: Arc<Mutex<Option<Arc<Mutex<Box<Reporter>>>>>>,
     http_sessions: Arc<Mutex<HashMap<String, HttpSession>>>,
+    http: Arc<chrootable_https::Client<Resolver>>,
     verbose: u64,
     keyring: Arc<Vec<KeyRingEntry>>, // TODO: maybe hashmap
     dns_config: Arc<Resolver>,
@@ -193,6 +196,10 @@ impl State for LuaState {
         self.asn.clone()
     }
 
+    fn http(&self) -> &chrootable_https::Client<Resolver> {
+        self.http.as_ref()
+    }
+
     fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -224,10 +231,20 @@ fn ctx<'a>(env: Environment) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
+
+    let http = match env.proxy {
+        Some(proxy) => chrootable_https::Client::with_socks5(proxy),
+        _ => {
+            let resolver = env.dns_config.clone();
+            chrootable_https::Client::new(resolver)
+        },
+    };
+
     let state = Arc::new(LuaState {
         error: Arc::new(Mutex::new(None)),
         logger: Arc::new(Mutex::new(None)),
         http_sessions: Arc::new(Mutex::new(HashMap::new())),
+        http: Arc::new(http),
 
         verbose: env.verbose,
         keyring: Arc::new(env.keyring),

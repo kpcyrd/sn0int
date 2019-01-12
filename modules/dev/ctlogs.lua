@@ -6,6 +6,10 @@
 function each_name(name)
     local domain_id, psl_domain
 
+    if seen[name] == 1 then
+        return
+    end
+    seen[name] = 1
     debug(name)
 
     if name:find('*.') == 1 then
@@ -43,6 +47,7 @@ function each_name(name)
 end
 
 function run(arg)
+    full = getopt('full') ~= nil
     any_domain = getopt('any-domain') ~= nil
 
     domains = {}
@@ -60,34 +65,40 @@ function run(arg)
     if last_err() then return end
     if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
 
-    certs = json_decode_stream(resp['text'])
+    certs = json_decode(resp['text'])
     if last_err() then return end
+
+    seen = {}
 
     i = 1
     while i <= #certs do
         c = certs[i]
         debug(c)
 
-        -- fetch certificate
-        id = c['min_cert_id']
-        req = http_request(session, 'GET', 'https://crt.sh/', {
-            query={
-                d=id .. '', -- TODO: find nicer way for tostring
-            }
-        })
-        resp = http_send(req)
-        if last_err() then return end
-        if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
+        if full then
+            -- fetch certificate
+            id = c['min_cert_id']
+            req = http_request(session, 'GET', 'https://crt.sh/', {
+                query={
+                    d=id .. '', -- TODO: find nicer way for tostring
+                }
+            })
+            resp = http_send(req)
+            if last_err() then return end
+            if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
 
-        -- iterate over all valid names
-        crt = x509_parse_pem(resp['text'])
-        if last_err() then return end
-        names = crt['valid_names']
+            -- iterate over all valid names
+            crt = x509_parse_pem(resp['text'])
+            if last_err() then return end
+            names = crt['valid_names']
 
-        j = 1
-        while j <= #names do
-            each_name(names[j])
-            j = j+1
+            j = 1
+            while j <= #names do
+                each_name(names[j])
+                j = j+1
+            end
+        else
+            each_name(c['name_value'])
         end
 
         i = i+1
