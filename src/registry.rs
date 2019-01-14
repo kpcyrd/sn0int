@@ -39,11 +39,17 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
         let label = format!("Uploading {} {} ({:?})", name, metadata.version, path);
         match worker::spawn_fn(&label, || {
             client.publish_module(&name, code.to_string())
-        }, false) {
-            Ok(result) => term::info(&format!("Published as {}/{} {}", result.author,
-                                                                       result.name,
-                                                                       result.version)),
-            Err(err) => term::error(&format!("Failed ({:?}): {}", 1, err)),
+        }, true) {
+            Ok(result) => term::info(&format!("Published {}/{} {} ({:?})",
+                                              result.author,
+                                              result.name,
+                                              result.version,
+                                              path)),
+            Err(err) => term::error(&format!("Failed to publish {} {} ({:?}): {}",
+                                             name,
+                                             metadata.version,
+                                             path,
+                                             err)),
         }
     }
 

@@ -97,6 +97,7 @@ impl Spinner {
 
     pub fn done(&self) {
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', self.status);
+        io::stdout().flush().unwrap();
     }
 
     pub fn finish(&mut self, msg: String) {
@@ -107,6 +108,7 @@ impl Spinner {
     #[inline]
     pub fn clear(&self) {
         print!("\r\x1b[2K");
+        io::stdout().flush().unwrap();
     }
 
     pub fn fail(&mut self, err: &str) {
@@ -208,6 +210,7 @@ impl StackedSpinners {
     pub fn jump2start(&mut self) {
         if self.drawn > 0 {
             print!("\r\x1b[2K\x1b[{}A", self.drawn);
+            io::stdout().flush().unwrap();
             self.drawn = 0;
         }
     }
@@ -238,6 +241,7 @@ impl StackedSpinners {
     #[inline]
     pub fn clear(&self) {
         print!("\r\x1b[2K");
+        io::stdout().flush().unwrap();
     }
 
     #[inline]

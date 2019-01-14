@@ -344,18 +344,18 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
     });
 
     // run work in main thread
-    let result = f()?;
+    let result = f();
     tx.send(Event::Exit(ExitEvent::Ok))?;
 
     t.join().expect("thread failed");
 
     let spinner = spinner.lock().unwrap();
 
-    if clear {
+    if clear || result.is_err() {
         spinner.clear();
     } else {
         spinner.done();
     }
 
-    Ok(result)
+    result
 }
