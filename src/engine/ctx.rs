@@ -8,14 +8,17 @@ use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
 use crate::psl::Psl;
 use crate::runtime;
+use crate::sockets::Socket;
+use crate::web::{HttpSession, HttpRequest, RequestOptions};
+use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 use chrootable_https::{self, Resolver};
 use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
-use crate::web::{HttpSession, HttpRequest, RequestOptions};
-use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
+use rand::prelude::*;
+use rand::distributions::Alphanumeric;
 
 
 pub trait State {
@@ -80,6 +83,10 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
     }
 
+    fn random_id(&self) -> String {
+        thread_rng().sample_iter(&Alphanumeric).take(16).collect()
+    }
+
     fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry>;
 
     fn dns_config(&self) -> &Resolver;
@@ -94,6 +101,10 @@ pub trait State {
 
     fn asn(&self) -> &AsnDB;
 
+    fn sock_connect(&self, host: &str, port: u16) -> Result<String>;
+
+    fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>>;
+
     fn http(&self) -> &chrootable_https::Client<Resolver>;
 
     fn http_mksession(&self) -> String;
@@ -107,6 +118,7 @@ pub trait State {
 pub struct LuaState {
     error: Mutex<Option<Error>>,
     logger: Arc<Mutex<Box<Reporter>>>,
+    socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
     http: chrootable_https::Client<Resolver>,
     verbose: u64,
@@ -181,6 +193,22 @@ impl State for LuaState {
         &self.asn
     }
 
+    fn sock_connect(&self, host: &str, port: u16) -> Result<String> {
+        let mut mtx = self.socket_sessions.lock().unwrap();
+        let id = self.random_id();
+
+        let sock = Socket::connect(host, port)?;
+        mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
+
+        Ok(id)
+    }
+
+    fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>> {
+        let mtx = self.socket_sessions.lock().unwrap();
+        let sock = mtx.get(id).expect("invalid session reference"); // TODO
+        sock.clone()
+    }
+
     fn http(&self) -> &chrootable_https::Client<Resolver> {
         &self.http
     }
@@ -228,6 +256,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     let state = Arc::new(LuaState {
         error: Mutex::new(None),
         logger,
+        socket_sessions: Mutex::new(HashMap::new()),
         http_sessions: Mutex::new(HashMap::new()),
         http,
 
@@ -269,6 +298,18 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
+    runtime::sock_connect(&mut lua, state.clone());
+    runtime::sock_send(&mut lua, state.clone());
+    runtime::sock_recv(&mut lua, state.clone());
+    runtime::sock_sendline(&mut lua, state.clone());
+    runtime::sock_recvline(&mut lua, state.clone());
+    runtime::sock_recvall(&mut lua, state.clone());
+    runtime::sock_recvline_contains(&mut lua, state.clone());
+    runtime::sock_recvline_regex(&mut lua, state.clone());
+    runtime::sock_recvn(&mut lua, state.clone());
+    runtime::sock_recvuntil(&mut lua, state.clone());
+    runtime::sock_sendafter(&mut lua, state.clone());
+    runtime::sock_newline(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::stdin_readline(&mut lua, state.clone());
     runtime::url_decode(&mut lua, state.clone());

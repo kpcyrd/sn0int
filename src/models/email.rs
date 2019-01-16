@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::fmt::Write;
 use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
@@ -129,6 +130,7 @@ pub struct DetailedEmail {
     id: i32,
     value: String,
     unscoped: bool,
+    valid: Option<bool>,
 }
 
 impl DisplayableDetailed for DetailedEmail {
@@ -141,6 +143,17 @@ impl DisplayableDetailed for DetailedEmail {
     fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         w.id(self.id)?;
         w.debug::<Green, _>(&self.value)?;
+
+        if let Some(valid) = self.valid {
+            write!(w, " [")?;
+            if valid {
+                w.display::<Green, _>("valid")?;
+            } else {
+                w.display::<Red, _>("invalid")?;
+            }
+            write!(w, "]")?;
+        }
+
         Ok(())
     }
 
@@ -160,6 +173,7 @@ impl Detailed for Email {
             id: self.id,
             value: self.value.to_string(),
             unscoped: self.unscoped,
+            valid: self.valid,
         })
     }
 }
