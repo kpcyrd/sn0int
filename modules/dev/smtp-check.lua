@@ -25,28 +25,6 @@ function find_mx(domain)
     end
 end
 
-function resolve(domain)
-    local records, i, r
-
-    records = dns(domain, {
-        record='A',
-    })
-    if last_err() then return end
-    if records['error'] ~= nil then return end
-    records = records['answers']
-    -- debug(records)
-
-    i = 1
-    while i <= #records do
-        r = records[i][2]['A']
-        if r then
-            debug('a: ' .. r)
-            return r
-        end
-        i = i+1
-    end
-end
-
 function run(arg)
     -- extract domain
     domain = arg['value']:match('@(.*)')
@@ -60,13 +38,8 @@ function run(arg)
     if last_err() then return end
     if not mx then return end
 
-    -- resolve mx to addr
-    addr = resolve(mx)
-    if last_err() then return end
-    if not addr then return end
-
     -- create connection
-    c = sock_connect(addr, 25, {})
+    c = sock_connect(mx, 25, {})
     if last_err() then return end
 
     l = sock_recvline(c)

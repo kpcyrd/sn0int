@@ -1,15 +1,33 @@
 use crate::errors::*;
 
 use bufstream::BufStream;
+use chrootable_https::dns::{DnsResolver, RecordType};
+use chrootable_https::socks5::{self, ProxyDest};
 use regex::Regex;
+use tokio::runtime::Runtime;
 
 use std::str;
 use std::io;
 use std::io::prelude::*;
 use std::io::BufRead;
+use std::net::SocketAddr;
 use std::net::TcpStream;
-use std::net::ToSocketAddrs;
+use std::net::{IpAddr, Ipv4Addr};
 
+
+#[cfg(unix)]
+fn unwrap_socket(socket: tokio::net::TcpStream) -> Result<TcpStream> {
+    use std::os::unix::io::AsRawFd;
+    use std::os::unix::io::FromRawFd;
+    let socket2 = unsafe { TcpStream::from_raw_fd(socket.as_raw_fd()) };
+    let socket = socket2.try_clone()?;
+    Ok(socket)
+}
+
+#[cfg(windows)]
+fn unwrap_socket(socket: tokio::net::TcpStream) -> Result<TcpStream> {
+    bail!("Unwrapping tokio sockets into std sockets isn't supported on windows")
+}
 
 #[derive(Debug)]
 pub struct Socket {
@@ -18,22 +36,30 @@ pub struct Socket {
 }
 
 impl Socket {
-    pub fn connect(host: &str, port: u16) -> Result<Socket> {
-        let addrs = (host, port).to_socket_addrs()?;
+    pub fn new(stream: TcpStream) -> Socket {
+        let stream = BufStream::new(stream);
+        Socket {
+            stream,
+            newline: String::from("\n"),
+        }
+    }
+
+    pub fn connect<R: DnsResolver>(resolver: &R, host: &str, port: u16) -> Result<Socket> {
+        let addrs = match host.parse::<IpAddr>() {
+            Ok(addr) => vec![addr],
+            Err(_) => resolver.resolve(host, RecordType::A)
+                .wait_for_response()?
+                .success()?,
+        };
 
         let mut errors = Vec::new();
 
         for addr in addrs {
-            debug!("connecting to {:?}", addr);
-            match TcpStream::connect(&addr) {
+            debug!("connecting to {}:{}", addr, port);
+            match TcpStream::connect((addr, port)) {
                 Ok(socket) => {
                     debug!("successfully connected to {:?}", addr);
-                    let stream = BufStream::new(socket);
-
-                    return Ok(Socket {
-                        stream,
-                        newline: String::from("\n"),
-                    });
+                    return Ok(Socket::new(socket));
                 },
                 Err(err) => errors.push((addr, err)),
             }
@@ -44,6 +70,24 @@ impl Socket {
         } else {
             bail!("couldn't connect: {:?}", errors);
         }
+    }
+
+    pub fn connect_socks5(proxy: &SocketAddr, host: &str, port: u16) -> Result<Socket> {
+        debug!("connecting to {:?}:{:?} with socks5 on {:?}", host, port, proxy);
+
+        let host = match host.parse::<Ipv4Addr>() {
+            Ok(ipaddr) => ProxyDest::Ipv4Addr(ipaddr),
+            _ => ProxyDest::Domain(host.to_string()),
+        };
+
+        let fut = socks5::connect(proxy, host, port);
+
+        let mut rt = Runtime::new()?;
+        let socket = rt.block_on(fut)?;
+
+        let socket = unwrap_socket(socket)?;
+
+        return Ok(Socket::new(socket));
     }
 
     pub fn send(&mut self, data: &[u8]) -> Result<()> {

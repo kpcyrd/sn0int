@@ -197,7 +197,11 @@ impl State for LuaState {
         let mut mtx = self.socket_sessions.lock().unwrap();
         let id = self.random_id();
 
-        let sock = Socket::connect(host, port)?;
+        let sock = match &self.proxy {
+            Some(proxy) => Socket::connect_socks5(proxy, host, port)?,
+            _ => Socket::connect(&self.dns_config, host, port)?,
+        };
+
         mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
 
         Ok(id)

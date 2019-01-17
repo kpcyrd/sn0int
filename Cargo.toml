@@ -58,6 +58,7 @@ x509-parser = "0.4.0"
 der-parser = "1.1.0"
 nom = "4.1.1"
 bufstream = "0.1.4"
+tokio = "0.1.14"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
