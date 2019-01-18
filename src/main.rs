@@ -17,6 +17,8 @@ use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
 use structopt::StructOpt;
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::path::Path;
 
 
@@ -59,6 +61,25 @@ fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: Config) -> Result<()> {
     args.run(&mut rl)
 }
 
+fn run_new(_gargs: &Args, args: &args::New) -> Result<()> {
+    let boilerplate = b"-- Description: TODO your description here
+-- Version: 0.1.0
+-- License: GPL-3.0
+
+function run()
+    -- TODO your code here
+end
+";
+
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&args.path)?;
+    file.write_all(boilerplate)?;
+
+    Ok(())
+}
+
 fn run() -> Result<()> {
     let args = Args::from_args();
 
@@ -73,6 +94,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Run(ref run)) => run_run(&args, run, config),
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
         Some(SubCommand::Login(_)) => auth::run_login(&config),
+        Some(SubCommand::New(ref new)) => run_new(&args, new),
         Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish, &config),
         Some(SubCommand::Install(ref install)) => registry::run_install(install, &config),
         Some(SubCommand::Search(ref search)) => registry::run_search(search, &config),
