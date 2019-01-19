@@ -3,7 +3,6 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
-use serde_json;
 use std::sync::Arc;
 
 

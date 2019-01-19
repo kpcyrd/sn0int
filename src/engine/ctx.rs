@@ -284,6 +284,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::asn_lookup(&mut lua, state.clone());
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::getopt(&mut lua, state.clone());
+    runtime::hex(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
