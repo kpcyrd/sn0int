@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::hlua::{AnyHashableLuaValue, AnyLuaValue};
+use crate::hlua::{AnyHashableLuaValue, AnyLuaValue, AnyLuaString};
 use std::collections::{self, HashMap};
 use crate::json::LuaJsonValue;
 use serde;
@@ -150,4 +150,9 @@ pub fn byte_array(bytes: AnyLuaValue) -> Result<Vec<u8>> {
         },
         _ => Err(format_err!("invalid type: {:?}", bytes)),
     }
+}
+
+pub fn lua_bytes(bytes: &[u8]) -> AnyLuaValue {
+    let bytes = AnyLuaString(bytes.to_vec());
+    AnyLuaValue::LuaAnyString(bytes)
 }

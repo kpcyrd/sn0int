@@ -37,6 +37,9 @@ pub enum SubCommand {
     #[structopt(author="", name="login")]
     /// Login to the registry for publishing
     Login(Login),
+    #[structopt(author="", name="new")]
+    /// Create a new module
+    New(New),
     #[structopt(author="", name="publish")]
     /// Publish a script to the registry
     Publish(Publish),
@@ -96,6 +99,12 @@ pub struct Sandbox {
 
 #[derive(Debug, StructOpt)]
 pub struct Login {
+}
+
+#[derive(Debug, StructOpt)]
+pub struct New {
+    /// Path to the new file
+    pub path: String,
 }
 
 #[derive(Debug, StructOpt)]

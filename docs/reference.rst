@@ -413,6 +413,116 @@ only used for debugging.
 
     sleep(1)
 
+sock_connect
+------------
+
+Create a tcp connection.
+
+.. code-block:: lua
+
+    sock = sock_connect("127.0.0.1", 1337)
+
+sock_send
+---------
+
+Send data to the socket.
+
+.. code-block:: lua
+
+    sock_send(sock, "hello world")
+
+sock_recv
+---------
+
+Receive up to 4096 bytes from the socket.
+
+.. code-block:: lua
+
+    x = sock_recv(sock)
+
+sock_sendline
+-------------
+
+Send a string to the socket. A newline is automatically appended to the string.
+
+.. code-block:: lua
+
+    sock_sendline(sock, line)
+
+sock_recvline
+-------------
+
+Receive a line from the socket. The line includes the newline.
+
+.. code-block:: lua
+
+    x = sock_recvline(sock)
+
+sock_recvall
+------------
+
+Receive all data from the socket until EOF.
+
+.. code-block:: lua
+
+    x = sock_recvall(sock)
+
+sock_recvline_contains
+----------------------
+
+Receive lines from the server until a line contains the needle, then return
+this line.
+
+.. code-block:: lua
+
+    x = sock_recvline_contains(sock, needle)
+
+sock_recvline_regex
+-------------------
+
+Receive lines from the server until a line matches the regex, then return this
+line.
+
+.. code-block:: lua
+
+    x = sock_recvline_regex(sock, "^250 ")
+
+sock_recvn
+----------
+
+Receive exactly n bytes from the socket.
+
+.. code-block:: lua
+
+    x = sock_recvn(sock, 4)
+
+sock_recvuntil
+--------------
+
+Receive until the needle is found, then return all data including the needle.
+
+.. code-block:: lua
+
+    x = sock_recvuntil(sock, needle)
+
+sock_sendafter
+--------------
+
+Receive until the needle is found, then write data to the socket.
+
+.. code-block:: lua
+
+    sock_sendafter(sock, needle, data)
+
+sock_newline
+------------
+
+Overwrite the default ``\n`` newline.
+
+.. code-block:: lua
+
+    sock_newline(sock, "\r\n")
+
 status
 ------
 
