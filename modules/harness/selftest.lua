@@ -4,4 +4,5 @@
 
 function run()
     -- nothing to do here
+    info('ohai')
 end

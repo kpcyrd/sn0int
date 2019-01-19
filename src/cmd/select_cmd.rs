@@ -3,6 +3,8 @@ use crate::errors::*;
 use crate::cmd::Cmd;
 use crate::db;
 use crate::shell::Readline;
+use serde::Serialize;
+use serde_json;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::models::*;
@@ -11,7 +13,16 @@ use crate::models::*;
 #[derive(Debug, StructOpt)]
 #[structopt(author = "",
             raw(global_settings = "&[AppSettings::ColoredHelp]"))]
-pub enum Args {
+pub struct Args {
+    #[structopt(subcommand)]
+    subcommand: Target,
+    #[structopt(long="json")]
+    /// Json output
+    json: bool,
+}
+
+#[derive(Debug, StructOpt)]
+pub enum Target {
     #[structopt(name="domains")]
     /// Select domains
     Domains(Filter),
@@ -49,17 +60,46 @@ impl Filter {
     }
 }
 
+pub struct Printer<'a> {
+    rl: &'a mut Readline,
+    json: bool,
+}
+
+impl<'a> Printer<'a> {
+    pub fn new(rl: &'a mut Readline, json: bool) -> Printer<'a> {
+        Printer {
+            rl,
+            json,
+        }
+    }
+
+    pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
+        for obj in self.rl.db().filter::<T>(&filter.parse()?)? {
+            if self.json {
+                let v = serde_json::to_string(&obj)?;
+                println!("{}", v);
+            } else {
+                println!("{}", obj.detailed(self.rl.db())?);
+            }
+        }
+
+        Ok(())
+    }
+}
+
 impl Cmd for Args {
     fn run(&self, rl: &mut Readline) -> Result<()> {
-        match self {
-            Args::Domains(filter) => select::<Domain>(rl, &filter),
-            Args::Subdomains(filter) => select::<Subdomain>(rl, &filter),
-            Args::IpAddrs(filter) => select::<IpAddr>(rl, &filter),
-            Args::Urls(filter) => select::<Url>(rl, &filter),
-            Args::Emails(filter) => select::<Email>(rl, &filter),
-            Args::PhoneNumbers(filter) => select::<PhoneNumber>(rl, &filter),
-            Args::Devices(filter) => select::<Device>(rl, &filter),
-            Args::Networks(filter) => select::<Network>(rl, &filter),
+        let printer = Printer::new(rl, self.json);
+
+        match &self.subcommand {
+            Target::Domains(filter) => printer.select::<Domain>(&filter),
+            Target::Subdomains(filter) => printer.select::<Subdomain>(&filter),
+            Target::IpAddrs(filter) => printer.select::<IpAddr>(&filter),
+            Target::Urls(filter) => printer.select::<Url>(&filter),
+            Target::Emails(filter) => printer.select::<Email>(&filter),
+            Target::PhoneNumbers(filter) => printer.select::<PhoneNumber>(&filter),
+            Target::Devices(filter) => printer.select::<Device>(&filter),
+            Target::Networks(filter) => printer.select::<Network>(&filter),
         }
     }
 }
@@ -67,12 +107,4 @@ impl Cmd for Args {
 #[inline]
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     Args::run_str(rl, args)
-}
-
-fn select<T: Model + Detailed>(rl: &mut Readline, filter: &Filter) -> Result<()> {
-    for obj in rl.db().filter::<T>(&filter.parse()?)? {
-        println!("{}", obj.detailed(rl.db())?);
-    }
-
-    Ok(())
 }
