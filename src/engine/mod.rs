@@ -45,7 +45,7 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new() -> Result<Engine> {
+    pub fn new(verbose_init: bool) -> Result<Engine> {
         let path = paths::module_dir()?;
 
         let mut engine = Engine {
@@ -53,7 +53,11 @@ impl Engine {
             modules: HashMap::new(),
         };
 
-        engine.reload_modules()?;
+        if verbose_init {
+            engine.reload_modules()?;
+        } else {
+            engine.reload_modules_quiet()?;
+        }
 
         Ok(engine)
     }

@@ -71,19 +71,24 @@ pub struct Database {
 
 impl Database {
     pub fn establish(name: Workspace) -> Result<Database> {
+        let db = worker::spawn_fn("Connecting to database", || {
+            Database::establish_quiet(name)
+        }, false)?;
+
+        Ok(db)
+    }
+
+    pub fn establish_quiet(name: Workspace) -> Result<Database> {
         let path = paths::data_dir()?.join(name.to_string() + ".db");
         let path = path.into_os_string().into_string()
             .map_err(|_| format_err!("Failed to convert db path to utf-8"))?;
 
-        let db = worker::spawn_fn("Connecting to database", || {
-            let db = SqliteConnection::establish(&path)
-                .context("Failed to connect to database")?;
-            migrations::run(&db)
-                .context("Failed to run migrations")?;
-            db.execute("PRAGMA foreign_keys = ON")
-                .context("Failed to enforce foreign keys")?;
-            Ok(db)
-        }, false)?;
+        let db = SqliteConnection::establish(&path)
+            .context("Failed to connect to database")?;
+        migrations::run(&db)
+            .context("Failed to run migrations")?;
+        db.execute("PRAGMA foreign_keys = ON")
+            .context("Failed to enforce foreign keys")?;
 
         Ok(Database {
             name,
