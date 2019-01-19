@@ -19,7 +19,6 @@ function request(subdomain_id, url)
         value=url,
         status=reply['status'],
         body=reply['text'],
-        redirect=reply['headers']['location'],
     }
 
     redirect = reply['headers']['location']
