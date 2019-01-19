@@ -23,7 +23,7 @@ use std::path::Path;
 
 
 fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
-    let mut rl = shell::init(gargs, config)?;
+    let mut rl = shell::init(gargs, config, false)?;
 
     if let Some(module) = &args.module {
         let module = rl.engine().get(&module)?.clone();
@@ -57,7 +57,7 @@ fn run_sandbox() -> Result<()> {
 }
 
 fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: Config) -> Result<()> {
-    let mut rl = shell::init(gargs, config)?;
+    let mut rl = shell::init(gargs, config, false)?;
     args.run(&mut rl)
 }
 

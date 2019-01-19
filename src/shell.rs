@@ -380,17 +380,22 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn init(args: &Args, config: Config) -> Result<Readline> {
+pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline> {
     let workspace = match args.workspace {
         Some(ref workspace) => workspace.clone(),
         None => Workspace::from_str("default").unwrap(),
     };
 
-    let db = Database::establish(workspace)?;
+    let db = if verbose_init {
+        Database::establish(workspace)?
+    } else {
+        Database::establish_quiet(workspace)?
+    };
+
     let psl = Psl::open_or_download()?;
     let _geoip = GeoIP::open_or_download()?;
     let _asndb = AsnDB::open_or_download()?;
-    let engine = Engine::new()?;
+    let engine = Engine::new(verbose_init)?;
     let keyring = KeyRing::init()?;
 
     if engine.list().is_empty() {
@@ -405,7 +410,7 @@ pub fn init(args: &Args, config: Config) -> Result<Readline> {
 pub fn run(args: &Args, config: Config) -> Result<()> {
     print_banner();
 
-    let mut rl = init(args, config)?;
+    let mut rl = init(args, config, true)?;
     rl.load_history().ok();
 
     rl.set_signal_handler()

@@ -1,3 +1,4 @@
+use atty::{self, Stream};
 use crate::db;
 use crate::engine::Module;
 use rand::prelude::*;
@@ -49,6 +50,29 @@ pub static SPINNERS: &[&[&str]] = &[
     &[" ", "⠁", "⠉", "⠙", "⠚", "⠖", "⠦", "⠤", "⠠"],
 ];
 
+pub struct TermSettings {
+    // colors: bool,
+    indicate_progress: bool,
+}
+
+impl TermSettings {
+    pub fn from_env() -> TermSettings {
+        if atty::is(Stream::Stdout) {
+            TermSettings {
+                indicate_progress: true,
+            }
+        } else {
+            TermSettings {
+                indicate_progress: false,
+            }
+        }
+    }
+}
+
+lazy_static! {
+    pub static ref TERM_SETTINGS: TermSettings = TermSettings::from_env();
+}
+
 pub trait SpinLogger {
     fn log(&mut self, line: &str);
 
@@ -63,14 +87,17 @@ pub struct Spinner {
     indicator: &'static [&'static str],
     status: String,
     i: usize,
+    dummy: bool,
 }
 
 impl Spinner {
     pub fn new(indicator: &'static [&'static str], status: String) -> Spinner {
+        let dummy = !TERM_SETTINGS.indicate_progress;
         Spinner {
             indicator,
             status,
             i: 0,
+            dummy,
         }
     }
 
@@ -80,11 +107,12 @@ impl Spinner {
     }
 
     pub fn tick(&mut self) {
+        if self.dummy { return; }
         print!("{}", self.tick_bytes());
         io::stdout().flush().unwrap();
     }
 
-    pub fn tick_bytes(&mut self) -> String {
+    fn tick_bytes(&mut self) -> String {
         if self.i >= self.indicator.len() {
             self.i = 0;
         }
@@ -96,6 +124,7 @@ impl Spinner {
     }
 
     pub fn done(&self) {
+        if self.dummy { return; }
         println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', self.status);
         io::stdout().flush().unwrap();
     }
@@ -107,6 +136,7 @@ impl Spinner {
 
     #[inline]
     pub fn clear(&self) {
+        if self.dummy { return; }
         print!("\r\x1b[2K");
         io::stdout().flush().unwrap();
     }
@@ -119,14 +149,17 @@ impl Spinner {
 
 impl SpinLogger for Spinner {
     fn log(&mut self, line: &str) {
+        if self.dummy { return; }
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '*', line);
     }
 
     fn debug(&mut self, line: &str) {
+        if self.dummy { return; }
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
     }
 
     fn error(&mut self, line: &str) {
+        if self.dummy { return; }
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
@@ -184,16 +217,21 @@ impl fmt::Display for Prompt {
     }
 }
 
-#[derive(Default)]
 pub struct StackedSpinners {
     spinners: HashMap<String, Spinner>,
     drawn: usize,
+    dummy: bool,
 }
 
 impl StackedSpinners {
     #[inline]
     pub fn new() -> StackedSpinners {
-        StackedSpinners::default()
+        let dummy = !TERM_SETTINGS.indicate_progress;
+        StackedSpinners {
+            spinners: HashMap::new(),
+            drawn: 0,
+            dummy,
+        }
     }
 
     pub fn add(&mut self, key: String, status: String) {
@@ -216,6 +254,7 @@ impl StackedSpinners {
     }
 
     pub fn tick(&mut self) {
+        if self.dummy { return; }
         self.jump2start();
 
         if self.spinners.is_empty() {
@@ -240,6 +279,7 @@ impl StackedSpinners {
 
     #[inline]
     pub fn clear(&self) {
+        if self.dummy { return; }
         print!("\r\x1b[2K");
         io::stdout().flush().unwrap();
     }
