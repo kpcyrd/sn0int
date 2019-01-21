@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::cmd::Cmd;
 use crate::db;
+use crate::db::ttl;
 use crate::shell::Readline;
 use serde::Serialize;
 use serde_json;
@@ -106,5 +107,6 @@ impl Cmd for Args {
 
 #[inline]
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+    ttl::reap_expired(rl.db())?;
     Args::run_str(rl, args)
 }

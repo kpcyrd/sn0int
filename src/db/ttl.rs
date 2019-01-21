@@ -44,6 +44,15 @@ impl Ttl {
             .map_err(Error::from)
     }
 
+    pub fn expired(db: &Database) -> Result<Vec<Ttl>> {
+        use crate::schema::ttls::dsl::*;
+
+        ttls
+            .filter(expire.lt(Self::ttl_to_datetime(0)))
+            .load::<Self>(db.db())
+            .map_err(Error::from)
+    }
+
     fn ttl_to_datetime(ttl: i32) -> NaiveDateTime {
         // TODO: maybe create Duration from string
         let expire_at = Utc::now() + Duration::seconds(ttl as i64);
@@ -89,11 +98,6 @@ impl Ttl {
         Ok(())
     }
 
-    pub fn reap_expired(_db: &Database) -> Result<()> {
-        debug!("Reaping expired entities");
-        unimplemented!()
-    }
-
     pub fn delete(&self, db: &Database) -> Result<()> {
         match self.family.as_str() {
             "domains" => Domain::delete_id(db, self.key)?,
@@ -114,4 +118,16 @@ impl Ttl {
 
         Ok(())
     }
+}
+
+pub fn reap_expired(db: &Database) -> Result<()> {
+    debug!("Reaping expired entities");
+
+    for expired in Ttl::expired(db)? {
+        debug!("Expired: {:?}", expired);
+        expired.delete(db)?;
+    }
+
+    debug!("Finished reaping expired entities");
+    Ok(())
 }

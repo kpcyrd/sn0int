@@ -4,6 +4,7 @@ use crate::args::Args;
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
 use crate::config::Config;
+use crate::db::ttl;
 use crate::keyring::KeyRing;
 use colored::Colorize;
 use ctrlc;
@@ -391,6 +392,7 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
     } else {
         Database::establish_quiet(workspace)?
     };
+    ttl::reap_expired(&db)?;
 
     let psl = Psl::open_or_download()?;
     let _geoip = GeoIP::open_or_download()?;

@@ -18,10 +18,10 @@ function add(client)
         if last_err() then return end
 
         -- TODO: add last_seen
-        db_add('network-device', {
+        db_add_ttl('network-device', {
             network_id=network_id,
             device_id=device_id,
-        })
+        }, 180)
         if last_err() then return end
     end
 
