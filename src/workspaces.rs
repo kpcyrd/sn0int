@@ -1,9 +1,10 @@
 use crate::errors::*;
 
+use crate::paths;
+use regex::Regex;
 use std::ffi::OsStr;
 use std::fs;
 use std::str::FromStr;
-use crate::paths;
 
 
 #[derive(Debug, Clone)]
@@ -19,7 +20,10 @@ impl FromStr for Workspace {
             bail!("Workspace can't be empty")
         }
 
-        if !s.chars().all(char::is_alphanumeric) {
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"^[a-zA-Z0-9]([a-zA-Z0-9\._\-]*[a-zA-Z0-9])?$").unwrap();
+        }
+        if !RE.is_match(s) {
             bail!("Workspace contains invalid characters")
         }
 
@@ -83,13 +87,49 @@ mod tests {
         let x = Workspace::from_str("/");
         assert!(x.is_err());
 
+        let x = Workspace::from_str("abc/d");
+        assert!(x.is_err());
+
         let x = Workspace::from_str(".");
+        assert!(x.is_err());
+
+        let x = Workspace::from_str("-");
         assert!(x.is_err());
 
         let x = Workspace::from_str(" ");
         assert!(x.is_err());
 
         let x = Workspace::from_str("");
+        assert!(x.is_err());
+    }
+
+    #[test]
+    fn test_valid_singlechar() {
+        let x = Workspace::from_str("a");
+        assert!(x.is_ok());
+    }
+
+    #[test]
+    fn test_valid_middle_chars() {
+        let x = Workspace::from_str("a-b");
+        assert!(x.is_ok());
+
+        let x = Workspace::from_str("a_b");
+        assert!(x.is_ok());
+
+        let x = Workspace::from_str("example.com");
+        assert!(x.is_ok());
+    }
+
+    #[test]
+    fn test_invalid_middle_chars_at_edge() {
+        let x = Workspace::from_str("a-");
+        assert!(x.is_err());
+
+        let x = Workspace::from_str("-b");
+        assert!(x.is_err());
+
+        let x = Workspace::from_str("-");
         assert!(x.is_err());
     }
 }

@@ -60,6 +60,14 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
     }
 
+    fn db_insert_ttl(&self, object: Insert, ttl: i32) -> Result<Option<i32>> {
+        self.send(&Event::Database(DatabaseEvent::InsertTtl((object, ttl))));
+        let reply = self.recv()?;
+        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
+
+        reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+    }
+
     fn db_select(&self, family: Family, value: String) -> Result<Option<i32>> {
         self.send(&Event::Database(DatabaseEvent::Select((family, value))));
         let reply = self.recv()?;
@@ -276,6 +284,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
 
     runtime::clear_err(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
+    runtime::db_add_ttl(&mut lua, state.clone());
     runtime::db_select(&mut lua, state.clone());
     runtime::db_update(&mut lua, state.clone());
     runtime::debug(&mut lua, state.clone());

@@ -104,6 +104,15 @@ table! {
 }
 
 table! {
+    ttls (id) {
+        id -> Integer,
+        family -> Text,
+        key -> Integer,
+        expire -> Timestamp,
+    }
+}
+
+table! {
     urls (id) {
         id -> Integer,
         subdomain_id -> Integer,
@@ -135,5 +144,6 @@ allow_tables_to_appear_in_same_query!(
     phonenumbers,
     subdomain_ipaddrs,
     subdomains,
+    ttls,
     urls,
 );

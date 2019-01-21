@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::args;
 use crate::db::{Database, Filter};
+use crate::db::ttl;
 use crate::engine::Module;
 use crate::models::*;
 use crate::shell::Readline;
@@ -153,6 +154,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+    ttl::reap_expired(rl.db())?;
     let args = Args::from_iter_safe(args)?;
     let options = match rl.options_mut() {
         Some(options) => options.clone(),

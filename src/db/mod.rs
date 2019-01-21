@@ -13,6 +13,8 @@ use crate::migrations;
 use crate::worker;
 use crate::workspaces::Workspace;
 
+pub mod ttl;
+
 
 #[derive(Debug)]
 pub enum DbChange {
@@ -87,6 +89,8 @@ impl Database {
             .context("Failed to connect to database")?;
         migrations::run(&db)
             .context("Failed to run migrations")?;
+        db.execute("PRAGMA journal_mode = WAL")
+            .context("Failed to enable write ahead log")?;
         db.execute("PRAGMA foreign_keys = ON")
             .context("Failed to enforce foreign keys")?;
 

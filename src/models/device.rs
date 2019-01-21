@@ -50,6 +50,14 @@ impl Model for Device {
             .map_err(Error::from)
     }
 
+    fn delete_id(db: &Database, my_id: i32) -> Result<usize> {
+        use crate::schema::devices::dsl::*;
+
+        diesel::delete(devices.filter(id.eq(my_id)))
+            .execute(db.db())
+            .map_err(Error::from)
+    }
+
     fn id(&self) -> i32 {
         self.id
     }
