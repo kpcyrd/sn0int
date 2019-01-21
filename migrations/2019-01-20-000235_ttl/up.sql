@@ -1,0 +1,7 @@
+CREATE TABLE ttls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    family VARCHAR NOT NULL,
+    key INTEGER NOT NULL,
+    expire DATETIME NOT NULL,
+    CONSTRAINT ttl_unique UNIQUE (family, key)
+);

@@ -34,6 +34,21 @@ impl Insert {
         }
     }
 
+    pub fn table(&self) -> &str {
+        match self {
+            Insert::Domain(_) => "domains",
+            Insert::Subdomain(_) => "subdomains",
+            Insert::IpAddr(_) => "ipaddrs",
+            Insert::SubdomainIpAddr(_) => "subdomain_ipaddrs",
+            Insert::Url(_) => "urls",
+            Insert::Email(_) => "emails",
+            Insert::PhoneNumber(_) => "phonenumbers",
+            Insert::Device(_) => "devices",
+            Insert::Network(_) => "networks",
+            Insert::NetworkDevice(_) => "network_devices",
+        }
+    }
+
     pub fn printable(&self, db: &Database) -> Result<String> {
         Ok(match self {
             Insert::Domain(x) => format!("Domain: {}", x.printable(db)?),
@@ -102,6 +117,8 @@ pub trait Model: Sized {
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>>;
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize>;
+
+    fn delete_id(db: &Database, my_id: i32) -> Result<usize>;
 
     fn id(&self) -> i32;
 

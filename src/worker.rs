@@ -3,6 +3,7 @@ use crate::errors::*;
 use crate::channel;
 use crate::cmd::run_cmd::Params;
 use crate::db::{Database, DbChange, Family};
+use crate::db::ttl::Ttl;
 use crate::engine::{self, Module};
 use crate::engine::isolation::Supervisor;
 use crate::models::*;
@@ -106,6 +107,7 @@ impl LogEvent {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum DatabaseEvent {
     Insert(Insert),
+    InsertTtl((Insert, i32)),
     Select((Family, String)),
     Update((String, Update)),
 }
@@ -119,42 +121,65 @@ impl EventWithCallback for DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
-        match self {
-            DatabaseEvent::Insert(object) => {
-                if verbose >= 1 {
-                    spinner.debug(&format!("Inserting: {:?}", object));
+    pub fn insert<T: SpinLogger>(object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+        if verbose >= 1 {
+            spinner.debug(&format!("Inserting: {:?}", object));
+        }
+
+        let result = db.insert_generic(&object);
+        debug!("{:?} => {:?}", object, result);
+
+        let result = match result {
+            Ok(Some((DbChange::Insert, id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::create(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
                 }
 
-                let result = db.insert_generic(&object);
-                debug!("{:?} => {:?}", object, result);
-
-                let result = match result {
-                    Ok(Some((DbChange::Insert, id))) => {
-                        // TODO: replace id with actual object(?)
-                        if let Ok(obj) = object.printable(db) {
-                            spinner.log(&obj.to_string());
-                        } else {
-                            spinner.error(&format!("Failed to query necessary fields for {:?}", object));
-                        }
-                        Ok(Some(id))
-                    },
-                    Ok(Some((DbChange::Update(update), id))) => {
-                        // TODO: replace id with actual object(?)
-                        spinner.log(&format!("Updating {:?} ({})", object.value(), update));
-                        Ok(Some(id))
-                    },
-                    Ok(Some((DbChange::None, id))) => Ok(Some(id)),
-                    Ok(None) => Ok(None),
-                    Err(err) => {
-                        let err = err.to_string();
-                        spinner.error(&err);
-                        Err(err)
-                    },
-                };
-
-                tx.send(result).expect("Failed to send db result to channel");
+                // TODO: replace id with actual object(?)
+                if let Ok(obj) = object.printable(db) {
+                    spinner.log(&obj.to_string());
+                } else {
+                    spinner.error(&format!("Failed to query necessary fields for {:?}", object));
+                }
+                Ok(Some(id))
             },
+            Ok(Some((DbChange::Update(update), id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
+                }
+
+                // TODO: replace id with actual object(?)
+                spinner.log(&format!("Updating {:?} ({})", object.value(), update));
+                Ok(Some(id))
+            },
+            Ok(Some((DbChange::None, id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
+                }
+
+                Ok(Some(id))
+            },
+            Ok(None) => Ok(None),
+            Err(err) => {
+                let err = err.to_string();
+                spinner.error(&err);
+                Err(err)
+            },
+        };
+
+        tx.send(result).expect("Failed to send db result to channel");
+    }
+
+    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+        match self {
+            DatabaseEvent::Insert(object) => Self::insert(object, None, tx, spinner, db, verbose),
+            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(object, Some(ttl), tx, spinner, db, verbose),
             DatabaseEvent::Select((family, value)) => {
                 let result = db.get_opt(&family, &value)
                     .map_err(|e| e.to_string());
@@ -182,9 +207,6 @@ impl DatabaseEvent {
                 tx.send(result).expect("Failed to send db result to channel");
             },
         }
-        // this is compiled to a nop, but stops clippy from suggesting to refactor tx to &tx
-        // that would allow reusing tx, which we don't want
-        ::std::mem::drop(tx)
     }
 }
 

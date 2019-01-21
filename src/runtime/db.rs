@@ -18,56 +18,66 @@ pub fn try_into_new<T: LuaInsertToNewOwned>(x: LuaJsonValue) -> Result<T::Target
         .try_into_new()
 }
 
+fn into_insert(family: Family, object: LuaJsonValue) -> Result<Insert> {
+    let obj = match family {
+        Family::Domain => {
+            Insert::Domain(try_into_new::<InsertDomain>(object)?)
+        },
+        Family::Subdomain => {
+            Insert::Subdomain(try_into_new::<InsertSubdomain>(object)?)
+        },
+        Family::IpAddr => {
+            Insert::IpAddr(try_into_new::<InsertIpAddr>(object)?)
+        },
+        Family::SubdomainIpAddr => {
+            Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object)?)
+        },
+        Family::Url => {
+            Insert::Url(try_into_new::<InsertUrl>(object)?)
+        },
+        Family::Email => {
+            Insert::Email(try_into_new::<InsertEmail>(object)?)
+        },
+        Family::PhoneNumber => {
+            Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object)?)
+        },
+        Family::Device => {
+            Insert::Device(try_into_new::<InsertDevice>(object)?)
+        },
+        Family::Network => {
+            Insert::Network(try_into_new::<InsertNetwork>(object)?)
+        },
+        Family::NetworkDevice => {
+            Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object)?)
+        },
+    };
+    Ok(obj)
+}
+
 pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e))?;
         let object = LuaJsonValue::from(object);
 
-        let object = match family {
-            Family::Domain => {
-                Insert::Domain(try_into_new::<InsertDomain>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Subdomain => {
-                Insert::Subdomain(try_into_new::<InsertSubdomain>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::IpAddr => {
-                Insert::IpAddr(try_into_new::<InsertIpAddr>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::SubdomainIpAddr => {
-                Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Url => {
-                Insert::Url(try_into_new::<InsertUrl>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Email => {
-                Insert::Email(try_into_new::<InsertEmail>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::PhoneNumber => {
-                Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Device => {
-                Insert::Device(try_into_new::<InsertDevice>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::Network => {
-                Insert::Network(try_into_new::<InsertNetwork>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-            Family::NetworkDevice => {
-                Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object)
-                    .map_err(|e| state.set_error(e))?)
-            },
-        };
+        let object = into_insert(family, object)
+            .map_err(|e| state.set_error(e))?;
 
         state.db_insert(object)
+            .map_err(|e| state.set_error(e))
+    }))
+}
+
+pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("db_add_ttl", hlua::function3(move |family: String, object: AnyLuaValue, ttl: i32| -> Result<Option<i32>> {
+        let family = Family::from_str(&family)
+            .map_err(|e| state.set_error(e))?;
+        let object = LuaJsonValue::from(object);
+
+        let object = into_insert(family, object)
+            .map_err(|e| state.set_error(e))?;
+
+        state.db_insert_ttl(object, ttl)
             .map_err(|e| state.set_error(e))
     }))
 }
