@@ -13,6 +13,16 @@ Clear the last recorded error from the internal state. See also last_err_.
         clear_err()
     end
 
+datetime
+--------
+
+Return current time in UTC. This function is suitable to determine datetimes
+for ``DATETIME`` database fields.
+
+.. code-block:: lua
+
+    now = datetime()
+
 db_add
 ------
 
@@ -24,6 +34,23 @@ may fail or return ``nil``. See `db_add <database.html#db-add>`__ for details.
     domain_id = db_add('domain', {
         value='example.com',
     })
+
+db_add_ttl
+----------
+
+Add a temporary entity to the database. This is commonly used to insert
+temporary links that automatically expire over time. If the entity already
+exists and is also marked as temporary the new ttl is going to replace the old
+ttl. If the entity already exists but never expires we are not going to add a
+ttl.
+
+.. code-block:: lua
+
+    -- this link is valid for 2min
+    domain_id = db_add('network-device', {
+        network_id=1,
+        device_id=13,
+    }, 120)
 
 db_select
 ---------
