@@ -7,7 +7,8 @@ use std::sync::Arc;
 pub fn datetime(lua: &mut hlua::Lua, _: Arc<State>) {
     lua.set("datetime", hlua::function0(move || -> String {
         let now = Utc::now().naive_utc();
-        now.to_string()
+        now.format("%Y-%m-%dT%H:%M:%S")
+           .to_string()
     }))
 }
 
@@ -21,7 +22,7 @@ mod tests {
         function run()
             now = datetime()
             print(now)
-            if regex_find("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d+$", now) == nil then
+            if regex_find("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", now) == nil then
                 return 'invalid date'
             end
         end

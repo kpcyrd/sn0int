@@ -26,16 +26,19 @@ function each_frame(frame)
     local ipaddr = arp['src_addr']
     debug({src_mac=mac, src_addr=ipaddr})
 
+    local now = datetime()
+
     local device_id = db_add('device', {
         value=mac,
+        last_seen=now,
     })
     if last_err() then return end
 
-    -- TODO: add last_seen
     db_add_ttl('network-device', {
         network_id=network_id,
         device_id=device_id,
         ipaddr=ipaddr,
+        last_seen=now,
     }, 120)
     if last_err() then return end
 end
