@@ -7,17 +7,20 @@
 function add(lease)
     if not lease['active'] then return end
 
+    now = datetime()
+
     device_id = db_add('device', {
         value=lease['mac'],
         hostname=lease['hostname'],
+        last_seen=now,
     })
     if last_err() then return end
 
-    -- TODO: add last_seen
     db_add_ttl('network-device', {
         network_id=network_id,
         device_id=device_id,
         ipaddr=lease['ipaddr'],
+        last_seen=now,
     }, 180)
     if last_err() then return end
 end

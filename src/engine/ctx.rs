@@ -283,6 +283,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     });
 
     runtime::clear_err(&mut lua, state.clone());
+    runtime::datetime(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
     runtime::db_add_ttl(&mut lua, state.clone());
     runtime::db_select(&mut lua, state.clone());

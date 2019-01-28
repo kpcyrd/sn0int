@@ -90,7 +90,7 @@ impl HttpRequest {
     pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let cookies = session.cookies.clone();
 
-        let user_agent = options.user_agent.or_else(|| Some("sn0int".to_string())); // TODO
+        let user_agent = options.user_agent.or_else(|| Some(format!("sn0int/{}", env!("CARGO_PKG_VERSION")))); // TODO
         let timeout = options.timeout.map(Duration::from_millis);
 
         let mut request = HttpRequest {
