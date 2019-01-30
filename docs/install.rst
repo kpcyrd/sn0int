@@ -20,6 +20,13 @@ Debian/Ubuntu/Kali
     $ cd sn0int
     $ cargo install -f --path .
 
+Mac OSX
+-------
+
+.. code-block:: bash
+
+    $ brew install sn0int
+
 Alpine
 ------
 
@@ -43,15 +50,6 @@ OpenBSD
 .. code-block:: bash
 
     $ pkg_add sqlite3
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
-
-Mac OSX
--------
-
-.. code-block:: bash
-
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
