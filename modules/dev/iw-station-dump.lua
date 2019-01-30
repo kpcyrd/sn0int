@@ -1,5 +1,5 @@
 -- Description: Parse iw station dump
--- Version: 0.1.0
+-- Version: 0.2.0
 -- License: GPL-3.0
 
 -- iw dev wlan0 station dump
