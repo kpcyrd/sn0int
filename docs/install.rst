@@ -10,16 +10,6 @@ Archlinux
 
     $ pacman -S sn0int
 
-Debian/Ubuntu/Kali
-------------------
-
-.. code-block:: bash
-
-    $ apt install libsqlite3-dev libseccomp-dev
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
-
 Mac OSX
 -------
 
@@ -27,12 +17,27 @@ Mac OSX
 
     $ brew install sn0int
 
-Alpine
-------
+Debian testing/Debian sid/Kali
+------------------------------
 
 .. code-block:: bash
 
-    $ apk add --no-cache sqlite-dev libseccomp-dev cargo
+    $ apt install cargo libsqlite3-dev libseccomp-dev
+    $ git clone https://github.com/kpcyrd/sn0int.git
+    $ cd sn0int
+    $ cargo install -f --path .
+
+Ubuntu/Debian stable
+--------------------
+
+cargo in the repos is too old and the build is `going to fail
+<https://github.com/kpcyrd/sn0int/issues/68>`. You should either install the
+most recent rust version with `rustup <https://rustup.rs/>` or use the docker
+instructions instead.
+
+.. code-block:: bash
+
+    $ apt install libsqlite3-dev libseccomp-dev
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
@@ -43,6 +48,16 @@ Docker
 .. code-block:: bash
 
     $ docker run --rm --init -it -v $PWD/.cache:/cache -v $PWD/.data:/data kpcyrd/sn0int
+
+Alpine
+------
+
+.. code-block:: bash
+
+    $ apk add --no-cache sqlite-dev libseccomp-dev cargo
+    $ git clone https://github.com/kpcyrd/sn0int.git
+    $ cd sn0int
+    $ cargo install -f --path .
 
 OpenBSD
 -------
