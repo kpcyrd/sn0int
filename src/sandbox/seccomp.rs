@@ -7,6 +7,8 @@ pub fn init() -> Result<()> {
 
     ctx.allow_syscall(Syscall::read)?;
     ctx.allow_syscall(Syscall::write)?;
+    ctx.allow_syscall(Syscall::readv)?;
+    ctx.allow_syscall(Syscall::writev)?;
     ctx.allow_syscall(Syscall::futex)?;
     ctx.allow_syscall(Syscall::sigaltstack)?;
     ctx.allow_syscall(Syscall::munmap)?;
