@@ -31,8 +31,8 @@ Ubuntu/Debian stable
 --------------------
 
 cargo in the repos is too old and the build is `going to fail
-<https://github.com/kpcyrd/sn0int/issues/68>`. You should either install the
-most recent rust version with `rustup <https://rustup.rs/>` or use the docker
+<https://github.com/kpcyrd/sn0int/issues/68>`_. You should either install the
+most recent rust version with `rustup <https://rustup.rs/>`_ or use the docker
 instructions instead.
 
 .. code-block:: bash
