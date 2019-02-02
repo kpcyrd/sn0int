@@ -15,8 +15,10 @@ pub fn init() -> Result<()> {
     //ctx.allow_syscall(Syscall::openat)?;
     //#[cfg(not(target_arch = "aarch64"))]
     //ctx.allow_syscall(Syscall::open)?;
+    #[cfg(target_arch = "x86")]
+    ctx.allow_syscall(Syscall::open)?;
     ctx.allow_syscall(Syscall::fcntl)?;
-    #[cfg(target_arch = "arm")]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     ctx.allow_syscall(Syscall::fcntl64)?;
     ctx.allow_syscall(Syscall::uname)?;
     ctx.allow_syscall(Syscall::close)?;
@@ -26,6 +28,8 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sched_getaffinity)?;
     ctx.allow_syscall(Syscall::socket)?;
     ctx.allow_syscall(Syscall::connect)?;
+    #[cfg(target_arch = "x86")]
+    ctx.allow_syscall(Syscall::socketcall)?;
     #[cfg(not(target_arch = "aarch64"))]
     ctx.allow_syscall(Syscall::epoll_wait)?;
     ctx.allow_syscall(Syscall::epoll_pwait)?;
@@ -41,7 +45,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::getsockopt)?;
     #[cfg(not(target_arch = "arm"))]
     ctx.allow_syscall(Syscall::mmap)?;
-    #[cfg(target_arch = "arm")]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     ctx.allow_syscall(Syscall::mmap2)?;
     ctx.allow_syscall(Syscall::mprotect)?;
     ctx.allow_syscall(Syscall::clone)?;
@@ -50,6 +54,9 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sched_yield)?;
     ctx.allow_syscall(Syscall::setsockopt)?;
     ctx.allow_syscall(Syscall::madvise)?;
+    #[cfg(target_arch = "x86")]
+    ctx.allow_syscall(Syscall::time)?;
+    ctx.allow_syscall(Syscall::clock_gettime)?;
     ctx.allow_syscall(Syscall::nanosleep)?;
     ctx.allow_syscall(Syscall::exit)?;
     ctx.allow_syscall(Syscall::exit_group)?;
