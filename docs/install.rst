@@ -22,7 +22,7 @@ Debian testing/Debian sid/Kali
 
 .. code-block:: bash
 
-    $ apt install cargo libsqlite3-dev libseccomp-dev
+    $ apt install build-essential cargo libsqlite3-dev libseccomp-dev
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
@@ -37,7 +37,7 @@ instructions instead.
 
 .. code-block:: bash
 
-    $ apt install libsqlite3-dev libseccomp-dev
+    $ apt install build-essential libsqlite3-dev libseccomp-dev
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .

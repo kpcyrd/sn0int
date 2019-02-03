@@ -400,7 +400,7 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
     let engine = Engine::new(verbose_init)?;
     let keyring = KeyRing::init()?;
 
-    if engine.list().is_empty() {
+    if verbose_init && engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
     }
 

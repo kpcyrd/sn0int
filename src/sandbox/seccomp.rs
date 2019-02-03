@@ -1,5 +1,5 @@
 use crate::errors::*;
-use syscallz::{Context, Syscall};
+use syscallz::{Context, Syscall, Action};
 
 
 pub fn init() -> Result<()> {
@@ -12,11 +12,8 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::futex)?;
     ctx.allow_syscall(Syscall::sigaltstack)?;
     ctx.allow_syscall(Syscall::munmap)?;
-    //ctx.allow_syscall(Syscall::openat)?;
-    //#[cfg(not(target_arch = "aarch64"))]
-    //ctx.allow_syscall(Syscall::open)?;
     ctx.allow_syscall(Syscall::fcntl)?;
-    #[cfg(target_arch = "arm")]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     ctx.allow_syscall(Syscall::fcntl64)?;
     ctx.allow_syscall(Syscall::uname)?;
     ctx.allow_syscall(Syscall::close)?;
@@ -26,6 +23,8 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sched_getaffinity)?;
     ctx.allow_syscall(Syscall::socket)?;
     ctx.allow_syscall(Syscall::connect)?;
+    #[cfg(target_arch = "x86")]
+    ctx.allow_syscall(Syscall::socketcall)?;
     #[cfg(not(target_arch = "aarch64"))]
     ctx.allow_syscall(Syscall::epoll_wait)?;
     ctx.allow_syscall(Syscall::epoll_pwait)?;
@@ -41,7 +40,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::getsockopt)?;
     #[cfg(not(target_arch = "arm"))]
     ctx.allow_syscall(Syscall::mmap)?;
-    #[cfg(target_arch = "arm")]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     ctx.allow_syscall(Syscall::mmap2)?;
     ctx.allow_syscall(Syscall::mprotect)?;
     ctx.allow_syscall(Syscall::clone)?;
@@ -50,12 +49,19 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sched_yield)?;
     ctx.allow_syscall(Syscall::setsockopt)?;
     ctx.allow_syscall(Syscall::madvise)?;
+    #[cfg(target_arch = "x86")]
+    ctx.allow_syscall(Syscall::time)?;
+    ctx.allow_syscall(Syscall::clock_gettime)?;
     ctx.allow_syscall(Syscall::nanosleep)?;
     ctx.allow_syscall(Syscall::exit)?;
     ctx.allow_syscall(Syscall::exit_group)?;
     ctx.allow_syscall(Syscall::brk)?;
     ctx.allow_syscall(Syscall::rt_sigprocmask)?;
     ctx.allow_syscall(Syscall::getpeername)?;
+
+    ctx.set_action_for_syscall(Action::Errno(1), Syscall::openat)?;
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    ctx.set_action_for_syscall(Action::Errno(1), Syscall::open)?;
 
     ctx.load()?;
 
