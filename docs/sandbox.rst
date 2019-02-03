@@ -111,3 +111,37 @@ There are some limitations that you should be aware:
   means scripts have access to your local network, the internet and also your
   localhost loopback interface.
 - If chroot is unavailable an attacker could connect to unix domain sockets.
+
+Diagnosing a sandbox failure
+----------------------------
+
+You might experience a sandbox failure, especially on architectures that are
+less popular. This usually looks like this::
+
+    [sn0int][example][kpcyrd/ctlogs] > run
+    [-] Failed "example.com": EOF while parsing a value at line 1 column 0
+    [+] Finished kpcyrd/ctlogs (1 errors)
+
+A module that never finishes could also mean an IO thread inside the worker got
+killed by the sandbox.
+
+You can try to diagnose this yourself with strace::
+
+    strace -f sn0int run -vv ctlogs 2>&1 | tee strace.log
+
+Open ``strace.log``, look out for syscalls that didn't return by searching for
+``= ?`` and ignore calls to exit and similar. You are looking for something
+like this::
+
+    seccomp(SECCOMP_SET_MODE_FILTER, 0, {len=48, filter=0xdd59094e490}) = 0
+    write(1, "[+] activated!\n", 15[+] activated!
+    )        = 15
+    getresuid( <unfinished ...>)            = ?
+    +++ killed by SIGSYS (core dumped) +++
+
+This would indicate a call to ``getresuid`` which was not allowed by the
+seccomp filter.
+
+If you don't want to diagnose this yourself open a new bug report with as much
+information as possible, specifically which distro, which release and which
+architecture you're using.

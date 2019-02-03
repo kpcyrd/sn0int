@@ -18,8 +18,12 @@ free to change that to something else::
 Every module we're adding to ``~/repos/sn0int-modules`` is now going to be
 picked up by sn0int.
 
-Let's add our first module by opening ``~/repos/sn0int-modules/first.lua``.
-There's a bit of boilerplate that every module needs to load successfully:
+Make sure you're still in the right folder and add your first module::
+
+    sn0int new first.lua
+
+This is going to generate some boilerplate for you that every module needs to
+load successfully. Afterwards we can edit it like this:
 
 .. code-block:: lua
 
@@ -188,3 +192,40 @@ your identity.
 Afterwards publish your module with::
 
     sn0int publish ./first.lua
+
+Reading data from stdin
+-----------------------
+
+Sometimes you need to read data that can't be easily accessed from within the
+sandbox, like output of other programms or file content. In that case you can
+write a module that reads from stdin:
+
+.. code-block:: lua
+
+    -- Description: Read from stdin
+    -- Version: 0.1.0
+    -- License: GPL-3.0
+
+    function run()
+        while true do
+            x = stdin_readline()
+            if x == nil then
+                break
+            end
+            info(x)
+        end
+    end
+
+Write it to a file and run it like this::
+
+    % echo hello | sn0int run --stdin -vvf stdin.lua
+    [*] anonymous/stdin                                   : "hello\n"
+    [+] Finished anonymous/stdin
+    %
+
+This is going to read one line at a time and allows you to process it with
+regular expressions and add data to the database.
+
+.. note::
+   If you get an error like ``Failed to read stdin: "stdin is unavailable"``
+   make sure the ``--stdin`` flag is set.
