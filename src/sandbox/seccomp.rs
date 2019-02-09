@@ -42,6 +42,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::mmap)?;
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
     ctx.allow_syscall(Syscall::mmap2)?;
+    ctx.allow_syscall(Syscall::mremap)?;
     ctx.allow_syscall(Syscall::mprotect)?;
     ctx.allow_syscall(Syscall::clone)?;
     ctx.allow_syscall(Syscall::set_robust_list)?;
