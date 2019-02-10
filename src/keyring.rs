@@ -7,7 +7,7 @@ use crate::paths;
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::str::FromStr;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use sn0int_common::ModuleID;
 
 
@@ -85,7 +85,7 @@ impl KeyRing {
         }
     }
 
-    pub fn load(path: &PathBuf) -> Result<KeyRing> {
+    pub fn load(path: &Path) -> Result<KeyRing> {
         let buf = fs::read(&path)?;
         serde_json::from_slice(&buf)
             .map_err(Error::from)

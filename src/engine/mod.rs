@@ -17,6 +17,7 @@ use chrootable_https::dns::Resolver;
 use crate::psl::Psl;
 use crate::paths;
 use std::cmp::Ordering;
+use std::path::Path;
 use crate::term;
 use crate::worker::{self, Event};
 
@@ -105,20 +106,28 @@ impl Engine {
                     continue;
                 }
 
-                let path = module.path();
-                let module_name = module_name.to_string();
-                let module = Module::load(&path, &author_name, &module_name)
-                    .context(format!("Failed to parse {}/{}", author_name, module_name))?;
-
-                for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
-                    if !self.modules.contains_key(*key) {
-                        self.modules.insert(key.to_string(), Vec::new());
-                    }
-
-                    let vec = self.modules.get_mut(*key).unwrap();
-                    vec.push(module.clone());
+                if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name) {
+                    let root = err.find_root_cause();
+                    term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
                 }
             }
+        }
+
+        Ok(())
+    }
+
+    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str) -> Result<()> {
+        let module_name = module_name.to_string();
+        let module = Module::load(path, &author_name, &module_name)
+            .context(format!("Failed to parse {}/{}", author_name, module_name))?;
+
+        for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
+            if !self.modules.contains_key(*key) {
+                self.modules.insert(key.to_string(), Vec::new());
+            }
+
+            let vec = self.modules.get_mut(*key).unwrap();
+            vec.push(module.clone());
         }
 
         Ok(())
@@ -165,7 +174,7 @@ pub struct Module {
 }
 
 impl Module {
-    pub fn load(path: &PathBuf, author: &str, name: &str) -> Result<Module> {
+    pub fn load(path: &Path, author: &str, name: &str) -> Result<Module> {
         debug!("Loading lua module {}/{} from {:?}", author, name, path);
         let code = fs::read_to_string(path)
             .context("Failed to read module")?;
