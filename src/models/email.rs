@@ -116,6 +116,16 @@ impl Scopable for Email {
     }
 }
 
+impl Email {
+    fn breaches(&self, db: &Database) -> Result<Vec<Breach>> {
+        let breach_ids = BreachEmail::belonging_to(self).select(breach_emails::breach_id);
+        breaches::table
+            .filter(breaches::id.eq_any(breach_ids))
+            .load::<Breach>(db.db())
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableEmail {
     value: String,
 }
@@ -137,6 +147,7 @@ impl Printable<PrintableEmail> for Email {
 pub struct DetailedEmail {
     id: i32,
     value: String,
+    breaches: Vec<PrintableBreach>,
     unscoped: bool,
     valid: Option<bool>,
 }
@@ -166,7 +177,10 @@ impl DisplayableDetailed for DetailedEmail {
     }
 
     #[inline]
-    fn children(&self, _w: &mut fmt::DetailFormatter) -> fmt::Result {
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        for breach in &self.breaches {
+            w.child(breach)?;
+        }
         Ok(())
     }
 }
@@ -176,10 +190,15 @@ display_detailed!(DetailedEmail);
 impl Detailed for Email {
     type T = DetailedEmail;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let breaches = self.breaches(db)?.into_iter()
+            .map(|sd| sd.printable(db))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedEmail {
             id: self.id,
             value: self.value.to_string(),
+            breaches,
             unscoped: self.unscoped,
             valid: self.valid,
         })

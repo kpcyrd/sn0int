@@ -17,6 +17,8 @@ pub enum Insert {
     Network(NewNetworkOwned),
     NetworkDevice(NewNetworkDeviceOwned),
     Account(NewAccountOwned),
+    Breach(NewBreachOwned),
+    BreachEmail(NewBreachEmailOwned),
 }
 
 impl Insert {
@@ -33,6 +35,8 @@ impl Insert {
             Insert::Network(x) => &x.value,
             Insert::NetworkDevice(_x) => unimplemented!("NetworkDevice doesn't have value field"),
             Insert::Account(x) => &x.value,
+            Insert::Breach(x) => &x.value,
+            Insert::BreachEmail(_x) => unimplemented!("BreachEmail doesn't have value field"),
         }
     }
 
@@ -49,6 +53,8 @@ impl Insert {
             Insert::Network(_) => "networks",
             Insert::NetworkDevice(_) => "network_devices",
             Insert::Account(_) => "accounts",
+            Insert::Breach(_) => "breaches",
+            Insert::BreachEmail(_) => "breach_emails",
         }
     }
 
@@ -65,6 +71,8 @@ impl Insert {
             Insert::Network(x) => format!("Network: {}", x.printable(db)?),
             Insert::NetworkDevice(x) => x.printable(db)?.to_string(),
             Insert::Account(x) => format!("Account: {}", x.printable(db)?),
+            Insert::Breach(x) => format!("Breach: {}", x.printable(db)?),
+            Insert::BreachEmail(x) => x.printable(db)?.to_string(),
         })
     }
 }
@@ -80,6 +88,7 @@ pub enum Update {
     Network(NetworkUpdate),
     NetworkDevice(NetworkDeviceUpdate),
     Account(AccountUpdate),
+    BreachEmail(BreachEmailUpdate),
 }
 
 impl Update {
@@ -94,6 +103,7 @@ impl Update {
             Update::Network(update)       => update.is_dirty(),
             Update::NetworkDevice(update) => update.is_dirty(),
             Update::Account(update)       => update.is_dirty(),
+            Update::BreachEmail(update)   => update.is_dirty(),
         }
     }
 }
@@ -110,6 +120,7 @@ impl fmt::Display for Update {
             Update::Network(update)       => write!(w, "{}", update.to_string()),
             Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
             Update::Account(update)       => write!(w, "{}", update.to_string()),
+            Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -318,3 +329,9 @@ pub use self::network_device::*;
 
 mod account;
 pub use self::account::*;
+
+mod breach;
+pub use self::breach::*;
+
+mod breach_email;
+pub use self::breach_email::*;

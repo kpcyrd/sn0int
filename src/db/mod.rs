@@ -194,6 +194,14 @@ impl Database {
                 url: object.url.as_ref(),
                 last_seen: object.last_seen,
             }),
+            Insert::Breach(object) => self.insert_struct(NewBreach {
+                value: &object.value,
+            }),
+            Insert::BreachEmail(object) => self.insert_breach_email_struct(&NewBreachEmail {
+                breach_id: object.breach_id,
+                email_id: object.email_id,
+                password: object.password.as_ref(),
+            }),
         }
     }
 
@@ -232,13 +240,25 @@ impl Database {
     }
 
     pub fn insert_network_device_struct(&self, network_device: &NewNetworkDevice) -> Result<Option<(DbChange, i32)>> {
-        if let Some(subdomain_ipaddr_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
-            Ok(Some((DbChange::None, subdomain_ipaddr_id)))
+        if let Some(network_device_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
+            Ok(Some((DbChange::None, network_device_id)))
         } else {
             diesel::insert_into(network_devices::table)
                 .values(network_device)
                 .execute(&self.db)?;
             let id = NetworkDevice::get_id(self, &(network_device.network_id, network_device.device_id))?;
+            Ok(Some((DbChange::Insert, id)))
+        }
+    }
+
+    pub fn insert_breach_email_struct(&self, breach_email: &NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
+        if let Some(breach_email_id) = BreachEmail::get_id_opt(self, &(breach_email.breach_id, breach_email.email_id))? {
+            Ok(Some((DbChange::None, breach_email_id)))
+        } else {
+            diesel::insert_into(breach_emails::table)
+                .values(breach_email)
+                .execute(&self.db)?;
+            let id = BreachEmail::get_id(self, &(breach_email.breach_id, breach_email.email_id))?;
             Ok(Some((DbChange::Insert, id)))
         }
     }
@@ -256,6 +276,7 @@ impl Database {
             Update::Network(object) => self.update_network(object),
             Update::NetworkDevice(object) => self.update_network_device(object),
             Update::Account(object) => self.update_account(object),
+            Update::BreachEmail(object) => self.update_breach_email(object),
         }
     }
 
@@ -329,6 +350,14 @@ impl Database {
             .set(account)
             .execute(&self.db)?;
         Ok(account.id)
+    }
+
+    pub fn update_breach_email(&self, breach_email: &BreachEmailUpdate) -> Result<i32> {
+        use crate::schema::breach_emails::columns::*;
+        diesel::update(breach_emails::table.filter(id.eq(breach_email.id)))
+            .set(breach_email)
+            .execute(&self.db)?;
+        Ok(breach_email.id)
     }
 
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {

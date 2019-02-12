@@ -25,6 +25,8 @@ pub enum Args {
     Network(AddNetwork),
     #[structopt(name="account")]
     Account(AddAccount),
+    #[structopt(name="breach")]
+    Breach(AddBreach),
 }
 
 #[derive(Debug, StructOpt)]
@@ -67,6 +69,11 @@ pub struct AddAccount {
     username: Option<String>,
 }
 
+#[derive(Debug, StructOpt)]
+pub struct AddBreach {
+    name: Option<String>,
+}
+
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
@@ -77,6 +84,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::Device(args) => add_device(rl, args),
         Args::Network(args) => add_network(rl, args),
         Args::Account(args) => add_account(rl, args),
+        Args::Breach(args) => add_breach(rl, args),
     }
 }
 
@@ -241,6 +249,22 @@ fn add_account(rl: &mut Readline, args: AddAccount) -> Result<()> {
         email: None,
         url: None,
         last_seen: None,
+    })?;
+
+    Ok(())
+}
+
+fn add_breach(rl: &mut Readline, args: AddBreach) -> Result<()> {
+    let name = match args.name {
+        Some(name) => name,
+        _ => {
+            let name = utils::question("Name")?;
+            name
+        }
+    };
+
+    rl.db().insert_struct(NewBreach {
+        value: &name,
     })?;
 
     Ok(())
