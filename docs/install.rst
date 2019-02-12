@@ -20,9 +20,13 @@ Mac OSX
 Debian testing/Debian sid/Kali
 ------------------------------
 
+Note that debian `doesn't ship the geoip2-database
+<https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=757723>`_ so we're going to
+download them automatically during the first run.
+
 .. code-block:: bash
 
-    $ apt install build-essential cargo libsqlite3-dev libseccomp-dev
+    $ apt install build-essential cargo libsqlite3-dev libseccomp-dev publicsuffix
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
@@ -37,7 +41,7 @@ instructions instead.
 
 .. code-block:: bash
 
-    $ apt install build-essential libsqlite3-dev libseccomp-dev
+    $ apt install build-essential libsqlite3-dev libseccomp-dev publicsuffix
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
