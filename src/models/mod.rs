@@ -16,6 +16,7 @@ pub enum Insert {
     Device(NewDeviceOwned),
     Network(NewNetworkOwned),
     NetworkDevice(NewNetworkDeviceOwned),
+    Account(NewAccountOwned),
 }
 
 impl Insert {
@@ -31,6 +32,7 @@ impl Insert {
             Insert::Device(x) => &x.value,
             Insert::Network(x) => &x.value,
             Insert::NetworkDevice(_x) => unimplemented!("NetworkDevice doesn't have value field"),
+            Insert::Account(x) => &x.value,
         }
     }
 
@@ -46,6 +48,7 @@ impl Insert {
             Insert::Device(_) => "devices",
             Insert::Network(_) => "networks",
             Insert::NetworkDevice(_) => "network_devices",
+            Insert::Account(_) => "accounts",
         }
     }
 
@@ -61,6 +64,7 @@ impl Insert {
             Insert::Device(x) => format!("Device: {}", x.printable(db)?),
             Insert::Network(x) => format!("Network: {}", x.printable(db)?),
             Insert::NetworkDevice(x) => x.printable(db)?.to_string(),
+            Insert::Account(x) => format!("Account: {}", x.printable(db)?),
         })
     }
 }
@@ -75,6 +79,7 @@ pub enum Update {
     Device(DeviceUpdate),
     Network(NetworkUpdate),
     NetworkDevice(NetworkDeviceUpdate),
+    Account(AccountUpdate),
 }
 
 impl Update {
@@ -88,6 +93,7 @@ impl Update {
             Update::Device(update)        => update.is_dirty(),
             Update::Network(update)       => update.is_dirty(),
             Update::NetworkDevice(update) => update.is_dirty(),
+            Update::Account(update)       => update.is_dirty(),
         }
     }
 }
@@ -103,6 +109,7 @@ impl fmt::Display for Update {
             Update::Device(update)        => write!(w, "{}", update.to_string()),
             Update::Network(update)       => write!(w, "{}", update.to_string()),
             Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
+            Update::Account(update)       => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -115,6 +122,10 @@ pub trait Model: Sized {
     fn list(db: &Database) -> Result<Vec<Self>>;
 
     fn filter(db: &Database, filter: &Filter) -> Result<Vec<Self>>;
+
+    fn filter_with_param(_db: &Database, _filter: &Filter, _param: &str) -> Result<Vec<Self>> {
+        unimplemented!("This model doesn't support filtering with an additional parameter")
+    }
 
     fn delete(db: &Database, filter: &Filter) -> Result<usize>;
 
@@ -304,3 +315,6 @@ pub use self::device::*;
 
 mod network_device;
 pub use self::network_device::*;
+
+mod account;
+pub use self::account::*;

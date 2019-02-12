@@ -31,12 +31,15 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
 
     if args.filter.is_empty() {
         match source {
-            Source::Domains => select::<Domain>(rl)?,
-            Source::Subdomains => select::<Subdomain>(rl)?,
-            Source::IpAddrs => select::<IpAddr>(rl)?,
-            Source::Urls => select::<Url>(rl)?,
-            Source::Emails => select::<Email>(rl)?,
-            Source::PhoneNumbers => select::<PhoneNumber>(rl)?,
+            Source::Domains => select::<Domain>(rl, None)?,
+            Source::Subdomains => select::<Subdomain>(rl, None)?,
+            Source::IpAddrs => select::<IpAddr>(rl, None)?,
+            Source::Urls => select::<Url>(rl, None)?,
+            Source::Emails => select::<Email>(rl, None)?,
+            Source::PhoneNumbers => select::<PhoneNumber>(rl, None)?,
+            Source::Networks => select::<Network>(rl, None)?,
+            Source::Devices => select::<Device>(rl, None)?,
+            Source::Accounts(service) => select::<Account>(rl, service.as_ref())?,
             Source::KeyRing(namespace) => {
                 for key in rl.keyring().list_for(&namespace) {
                     println!("{}:{}", key.namespace, key.name);
@@ -64,15 +67,18 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
         Source::Urls => db.filter::<Url>(&filter)?.len(),
         Source::Emails => db.filter::<Email>(&filter)?.len(),
         Source::PhoneNumbers => db.filter::<PhoneNumber>(&filter)?.len(),
+        Source::Networks => db.filter::<Network>(&filter)?.len(),
+        Source::Devices => db.filter::<Device>(&filter)?.len(),
+        Source::Accounts(service) => db.filter_with_param::<Account>(&filter, service.as_ref())?.len(),
         Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
     };
     Ok(num)
 }
 
-fn select<T: Model + Detailed>(rl: &mut Readline) -> Result<()> {
+fn select<T: Model + Detailed>(rl: &mut Readline, param: Option<&String>) -> Result<()> {
     let filter = rl.scoped_targets();
 
-    for obj in rl.db().filter::<T>(&filter)? {
+    for obj in rl.db().filter_with_param::<T>(&filter, param)? {
         println!("{}", obj.detailed(rl.db())?);
     }
 
