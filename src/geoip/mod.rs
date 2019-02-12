@@ -77,7 +77,8 @@ pub trait Maxmind: Sized {
         debug!("Downloading {:?}...", url);
         let client = Client::with_system_resolver()?;
         let resp = client.get(url)
-            .wait_for_response()?;
+            .wait_for_response()
+            .context("http request failed")?;
         debug!("Downloaded {} bytes", resp.body.len());
         archive::extract(&mut &resp.body[..], filter, path)?;
         Ok(())

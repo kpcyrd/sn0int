@@ -58,7 +58,8 @@ impl Psl {
     pub fn download(path: &Path, url: &str) -> Result<()> {
         let client = Client::with_system_resolver()?;
         let resp = client.get(url)
-            .wait_for_response()?;
+            .wait_for_response()
+            .context("http request failed")?;
         fs::write(path, &resp.body)?;
         Ok(())
     }

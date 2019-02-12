@@ -394,9 +394,12 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
     };
     ttl::reap_expired(&db)?;
 
-    let psl = Psl::open_or_download()?;
-    let _geoip = GeoIP::open_or_download()?;
-    let _asndb = AsnDB::open_or_download()?;
+    let psl = Psl::open_or_download()
+        .context("Failed to download public suffix list")?;
+    let _geoip = GeoIP::open_or_download()
+        .context("Failed to download GeoIP database")?;
+    let _asndb = AsnDB::open_or_download()
+        .context("Failed to download ASN database")?;
     let engine = Engine::new(verbose_init)?;
     let keyring = KeyRing::init()?;
 
