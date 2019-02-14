@@ -24,9 +24,13 @@ function run(arg)
         db_add('email', {
             value=ld['email'],
         })
-        db_update('account', arg, {
-            email=ld['email'],
-            url=url,
-        })
     end
+
+    -- homepage=ld['url']
+
+    db_update('account', arg, {
+        displayname=ld['name'],
+        email=ld['email'],
+        url=url,
+    })
 end

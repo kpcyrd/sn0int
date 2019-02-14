@@ -4,6 +4,7 @@ table! {
         value -> Text,
         service -> Text,
         username -> Text,
+        displayname -> Nullable<Text>,
         email -> Nullable<Text>,
         url -> Nullable<Text>,
         last_seen -> Nullable<Timestamp>,

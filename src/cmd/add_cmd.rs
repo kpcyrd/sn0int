@@ -237,6 +237,7 @@ fn add_account(rl: &mut Readline, args: AddAccount) -> Result<()> {
         value: &value,
         service: &service,
         username: &username,
+        displayname: None,
         email: None,
         url: None,
         last_seen: None,

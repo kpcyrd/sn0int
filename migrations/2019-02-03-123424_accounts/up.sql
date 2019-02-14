@@ -3,6 +3,7 @@ CREATE TABLE accounts (
     value VARCHAR NOT NULL,
     service VARCHAR NOT NULL,
     username VARCHAR NOT NULL,
+    displayname VARCHAR,
     email VARCHAR,
     url VARCHAR,
     last_seen DATETIME,

@@ -189,6 +189,7 @@ impl Database {
                 value: &object.value,
                 service: &object.service,
                 username: &object.username,
+                displayname: object.displayname.as_ref(),
                 email: object.email.as_ref(),
                 url: object.url.as_ref(),
                 last_seen: object.last_seen,

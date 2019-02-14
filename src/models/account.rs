@@ -13,6 +13,7 @@ pub struct Account {
     pub value: String,
     pub service: String,
     pub username: String,
+    pub displayname: Option<String>,
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
@@ -152,6 +153,7 @@ impl Printable<PrintableAccount> for Account {
 pub struct DetailedAccount {
     id: i32,
     value: String,
+    displayname: Option<String>,
     email: Option<String>,
     url: Option<String>,
     last_seen: Option<NaiveDateTime>,
@@ -170,6 +172,7 @@ impl DisplayableDetailed for DetailedAccount {
         w.debug::<Green, _>(&self.value)?;
 
         w.start_group();
+        w.opt_debug::<Yellow, _>(&self.displayname)?;
         w.opt_debug::<Yellow, _>(&self.email)?;
         w.opt_debug::<Yellow, _>(&self.url)?;
         w.opt_debug::<Yellow, _>(&self.last_seen)?;
@@ -193,6 +196,7 @@ impl Detailed for Account {
         Ok(DetailedAccount {
             id: self.id,
             value: self.value.to_string(),
+            displayname: self.displayname.clone(),
             email: self.email.clone(),
             url: self.url.clone(),
             last_seen: self.last_seen.clone(),
@@ -207,6 +211,7 @@ pub struct NewAccount<'a> {
     pub value: &'a str,
     pub service: &'a str,
     pub username: &'a str,
+    pub displayname: Option<&'a String>,
     pub email: Option<&'a String>,
     pub url: Option<&'a String>,
     pub last_seen: Option<NaiveDateTime>,
@@ -231,6 +236,7 @@ impl<'a> Upsertable<Account> for NewAccount<'a> {
     fn upsert(self, existing: &Account) -> Self::Update {
         Self::Update {
             id: existing.id,
+            displayname: Self::upsert_str(self.displayname, &existing.displayname),
             email: Self::upsert_str(self.email, &existing.email),
             url: Self::upsert_str(self.url, &existing.url),
             last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
@@ -244,6 +250,7 @@ pub struct NewAccountOwned {
     pub value: String,
     pub service: String,
     pub username: String,
+    pub displayname: Option<String>,
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
@@ -261,6 +268,7 @@ impl Printable<PrintableAccount> for NewAccountOwned {
 pub struct InsertAccount {
     pub service: String,
     pub username: String,
+    pub displayname: Option<String>,
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
@@ -278,6 +286,7 @@ impl LuaInsertToNewOwned for InsertAccount {
             value,
             service: self.service,
             username: self.username,
+            displayname: self.displayname,
             email: self.email,
             url: self.url,
             last_seen: self.last_seen,
@@ -289,6 +298,7 @@ impl LuaInsertToNewOwned for InsertAccount {
 #[table_name="accounts"]
 pub struct AccountUpdate {
     pub id: i32,
+    pub displayname: Option<String>,
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
@@ -296,6 +306,7 @@ pub struct AccountUpdate {
 
 impl Upsert for AccountUpdate {
     fn is_dirty(&self) -> bool {
+        self.displayname.is_some() ||
         self.email.is_some() ||
         self.url.is_some() ||
         self.last_seen.is_some()
@@ -312,12 +323,14 @@ impl Upsert for AccountUpdate {
 
 impl Updateable<Account> for AccountUpdate {
     fn changeset(&mut self, existing: &Account) {
+        Self::clear_if_equal(&mut self.displayname, &existing.displayname);
         Self::clear_if_equal(&mut self.email, &existing.email);
         Self::clear_if_equal(&mut self.url, &existing.url);
         Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "displayname", &self.displayname);
         Self::push_value(updates, "email", &self.email);
         Self::push_value(updates, "url", &self.url);
         Self::push_value(updates, "last_seen", &self.last_seen);
