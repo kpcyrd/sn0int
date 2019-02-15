@@ -312,7 +312,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::psl_domain_from_dns_name(&mut lua, state.clone());
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
+    runtime::semver_match(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
+    runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
     runtime::sock_send(&mut lua, state.clone());
     runtime::sock_recv(&mut lua, state.clone());
