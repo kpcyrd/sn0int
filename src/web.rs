@@ -71,6 +71,10 @@ impl RequestOptions {
     }
 }
 
+pub fn default_user_agent() -> String {
+    format!("sn0int/{}", env!("CARGO_PKG_VERSION"))
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct HttpRequest {
     // reference to the HttpSession
@@ -90,7 +94,7 @@ impl HttpRequest {
     pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let cookies = session.cookies.clone();
 
-        let user_agent = options.user_agent.or_else(|| Some(format!("sn0int/{}", env!("CARGO_PKG_VERSION")))); // TODO
+        let user_agent = options.user_agent.or_else(|| Some(default_user_agent()));
         let timeout = options.timeout.map(Duration::from_millis);
 
         let mut request = HttpRequest {
