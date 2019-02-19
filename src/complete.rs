@@ -33,7 +33,8 @@ impl CmdCompleter {
                             "emails",
                             "phonenumbers",
                             "devices",
-                            "networks"];
+                            "networks",
+                            "accounts"];
 
             let results: Vec<String> = options.iter()
                 .filter(|x| x.starts_with(arg))
@@ -93,7 +94,8 @@ impl Completer for CmdCompleter {
                                         "email",
                                         "phonenumber",
                                         "device",
-                                        "network"];
+                                        "network",
+                                        "account"];
 
                         let results: Vec<String> = options.iter()
                             .filter(|x| x.starts_with(arg))

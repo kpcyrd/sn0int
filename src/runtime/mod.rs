@@ -20,6 +20,7 @@ import_fns!(options);
 import_fns!(pgp);
 import_fns!(psl);
 import_fns!(regex);
+import_fns!(semver);
 import_fns!(sleep);
 import_fns!(sock);
 import_fns!(stdio);

@@ -73,8 +73,8 @@ fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<
     Ok((arg, Some(pretty)))
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter) -> Result<Vec<(serde_json::Value, Option<String>)>> {
-    db.filter::<T>(filter)?
+fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+    db.filter_with_param::<T>(filter, param)?
         .into_iter()
         .map(prepare_arg)
         .collect()
@@ -113,12 +113,15 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
     let filter = rl.scoped_targets();
 
     let args = match module.source() {
-        Some(Source::Domains) => prepare_args::<Domain>(rl.db(), &filter),
-        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db(), &filter),
-        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db(), &filter),
-        Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter),
-        Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter),
-        Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl.db(), &filter),
+        Some(Source::Domains) => prepare_args::<Domain>(rl.db(), &filter, None),
+        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db(), &filter, None),
+        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db(), &filter, None),
+        Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter, None),
+        Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter, None),
+        Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl.db(), &filter, None),
+        Some(Source::Networks) => prepare_args::<Network>(rl.db(), &filter, None),
+        Some(Source::Devices) => prepare_args::<Device>(rl.db(), &filter, None),
+        Some(Source::Accounts(service)) => prepare_args::<Account>(rl.db(), &filter, service.as_ref()),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {

@@ -23,6 +23,8 @@ pub enum Args {
     Device(AddDevice),
     #[structopt(name="network")]
     Network(AddNetwork),
+    #[structopt(name="account")]
+    Account(AddAccount),
 }
 
 #[derive(Debug, StructOpt)]
@@ -59,6 +61,12 @@ pub struct AddNetwork {
     longitude: Option<f32>,
 }
 
+#[derive(Debug, StructOpt)]
+pub struct AddAccount {
+    service: Option<String>,
+    username: Option<String>,
+}
+
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
@@ -68,6 +76,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::PhoneNumber(args) => add_phonenumber(rl, args),
         Args::Device(args) => add_device(rl, args),
         Args::Network(args) => add_network(rl, args),
+        Args::Account(args) => add_account(rl, args),
     }
 }
 
@@ -202,6 +211,36 @@ fn add_network(rl: &mut Readline, args: AddNetwork) -> Result<()> {
         value: &network,
         latitude,
         longitude,
+    })?;
+
+    Ok(())
+}
+
+fn add_account(rl: &mut Readline, args: AddAccount) -> Result<()> {
+    let (service, username) = match (args.service, args.username) {
+        (Some(service), Some(username)) => (service, username),
+        _ => {
+            let service = utils::question("Service")?;
+            let username = utils::question("Username")?;
+
+            (service, username)
+        },
+    };
+
+    if service.contains('/') {
+        // TODO: avoid duplication
+        bail!("Service field can't contain `/`");
+    }
+
+    let value = format!("{}/{}", service, username);
+    rl.db().insert_struct(NewAccount {
+        value: &value,
+        service: &service,
+        username: &username,
+        displayname: None,
+        email: None,
+        url: None,
+        last_seen: None,
     })?;
 
     Ok(())

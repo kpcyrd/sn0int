@@ -60,6 +60,7 @@ nom = "4.1.1"
 atty = "0.2"
 bufstream = "0.1.4"
 tokio = "0.1.14"
+semver = "0.9"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"

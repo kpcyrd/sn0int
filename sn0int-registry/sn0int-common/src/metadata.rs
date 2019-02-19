@@ -35,6 +35,9 @@ pub enum Source {
     Urls,
     Emails,
     PhoneNumbers,
+    Networks,
+    Devices,
+    Accounts(Option<String>),
     KeyRing(String),
 }
 
@@ -56,6 +59,9 @@ impl FromStr for Source {
             ("urls", None) => Ok(Source::Urls),
             ("emails", None) => Ok(Source::Emails),
             ("phonenumbers", None) => Ok(Source::PhoneNumbers),
+            ("networks", None) => Ok(Source::Networks),
+            ("devices", None) => Ok(Source::Devices),
+            ("accounts", param) => Ok(Source::Accounts(param.map(String::from))),
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),
@@ -243,5 +249,14 @@ mod tests {
     fn verify_invalid_keyring_source() {
         let x = Source::from_str("keyring");
         assert!(x.is_err());
+    }
+
+    #[test]
+    fn verify_account_source() {
+        let x = Source::from_str("accounts").unwrap();
+        assert_eq!(x, Source::Accounts(None));
+
+        let x = Source::from_str("accounts:github.com").unwrap();
+        assert_eq!(x, Source::Accounts(Some("github.com".into())));
     }
 }

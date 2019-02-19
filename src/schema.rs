@@ -1,4 +1,18 @@
 table! {
+    accounts (id) {
+        id -> Integer,
+        value -> Text,
+        service -> Text,
+        username -> Text,
+        displayname -> Nullable<Text>,
+        email -> Nullable<Text>,
+        url -> Nullable<Text>,
+        last_seen -> Nullable<Timestamp>,
+        unscoped -> Bool,
+    }
+}
+
+table! {
     devices (id) {
         id -> Integer,
         value -> Text,
@@ -135,6 +149,7 @@ joinable!(subdomains -> domains (domain_id));
 joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
+    accounts,
     devices,
     domains,
     emails,

@@ -44,6 +44,7 @@ pub enum Family {
     Device,
     Network,
     NetworkDevice,
+    Account,
 }
 
 impl FromStr for Family {
@@ -61,6 +62,7 @@ impl FromStr for Family {
             "device" => Family::Device,
             "network" => Family::Network,
             "network-device" => Family::NetworkDevice,
+            "account" => Family::Account,
             _ => bail!("Unknown object family"),
         })
     }
@@ -183,6 +185,15 @@ impl Database {
                 ipaddr: object.ipaddr.as_ref(),
                 last_seen: object.last_seen,
             }),
+            Insert::Account(object) => self.insert_struct(NewAccount {
+                value: &object.value,
+                service: &object.service,
+                username: &object.username,
+                displayname: object.displayname.as_ref(),
+                email: object.email.as_ref(),
+                url: object.url.as_ref(),
+                last_seen: object.last_seen,
+            }),
         }
     }
 
@@ -244,6 +255,7 @@ impl Database {
             Update::Device(object) => self.update_device(object),
             Update::Network(object) => self.update_network(object),
             Update::NetworkDevice(object) => self.update_network_device(object),
+            Update::Account(object) => self.update_account(object),
         }
     }
 
@@ -311,6 +323,14 @@ impl Database {
         Ok(network_device.id)
     }
 
+    pub fn update_account(&self, account: &AccountUpdate) -> Result<i32> {
+        use crate::schema::accounts::columns::*;
+        diesel::update(accounts::table.filter(id.eq(account.id)))
+            .set(account)
+            .execute(&self.db)?;
+        Ok(account.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -330,6 +350,7 @@ impl Database {
             Family::Device => self.get_opt_typed::<Device>(&value),
             Family::Network => self.get_opt_typed::<Network>(&value),
             Family::NetworkDevice => bail!("Unsupported operation"),
+            Family::Account => self.get_opt_typed::<Account>(&value),
         }
     }
 
@@ -341,6 +362,13 @@ impl Database {
 
     pub fn filter<T: Model>(&self, filter: &Filter) -> Result<Vec<T>> {
         T::filter(self, filter)
+    }
+
+    pub fn filter_with_param<T: Model>(&self, filter: &Filter, param: Option<&String>) -> Result<Vec<T>> {
+        match param {
+            Some(param) => T::filter_with_param(self, filter, param),
+            _ => T::filter(self, filter),
+        }
     }
 
     pub fn scope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {

@@ -50,6 +50,9 @@ fn into_insert(family: Family, object: LuaJsonValue) -> Result<Insert> {
         Family::NetworkDevice => {
             Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object)?)
         },
+        Family::Account => {
+            Insert::Account(try_into_new::<InsertAccount>(object)?)
+        },
     };
     Ok(obj)
 }
@@ -138,6 +141,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::Network(u))),
             Family::NetworkDevice => gen_changeset::<NetworkDevice, NetworkDeviceUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::NetworkDevice(u))),
+            Family::Account => gen_changeset::<Account, AccountUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Account(u))),
         };
 
         let (id, value, update) = update

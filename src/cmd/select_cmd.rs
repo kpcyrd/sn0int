@@ -48,6 +48,9 @@ pub enum Target {
     #[structopt(name="networks")]
     /// Select networks
     Networks(Filter),
+    #[structopt(name="accounts")]
+    /// Select accounts
+    Accounts(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -101,6 +104,7 @@ impl Cmd for Args {
             Target::PhoneNumbers(filter) => printer.select::<PhoneNumber>(&filter),
             Target::Devices(filter) => printer.select::<Device>(&filter),
             Target::Networks(filter) => printer.select::<Network>(&filter),
+            Target::Accounts(filter) => printer.select::<Account>(&filter),
         }
     }
 }

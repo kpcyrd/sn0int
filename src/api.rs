@@ -46,6 +46,7 @@ impl Client {
             info!("Adding session token to request");
             request.header("Auth", session.as_str());
         }
+        request.header("User-Agent", web::default_user_agent());
 
         let request = request.body(body)?;
 
