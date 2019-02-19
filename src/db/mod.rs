@@ -426,6 +426,12 @@ impl Filter {
         let mut expect_value = false;
 
         for arg in args {
+            if ["=", "!=", "<", ">", "<=", ">=", "like"].contains(&arg.to_lowercase().as_str()) {
+                expect_value = true;
+                query += &format!(" {}", arg);
+                continue;
+            }
+
             if let Some(idx) = arg.find('=') {
                 if idx != 0 {
                     let (key, value) = arg.split_at(idx);
@@ -439,10 +445,6 @@ impl Filter {
                 query.push_str(&Self::escape(arg));
                 expect_value = false;
             } else {
-                if ["=", "!=", "like"].contains(&arg.to_lowercase().as_str()) {
-                    expect_value = true;
-                }
-
                 query += &format!(" {}", arg);
             }
         }
@@ -565,5 +567,45 @@ mod tests {
                                      "a'b".to_string(),
                                     ]).unwrap();
         assert_eq!(filter, Filter::new(" value = 'a''b'"));
+    }
+
+    #[test]
+    fn test_filter_greater() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     ">".to_string(),
+                                     "123".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value > '123'"));
+    }
+
+    #[test]
+    fn test_filter_smaller() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "<".to_string(),
+                                     "123".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value < '123'"));
+    }
+
+    #[test]
+    fn test_filter_greater_equal() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     ">=".to_string(),
+                                     "123".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value >= '123'"));
+    }
+
+    #[test]
+    fn test_filter_smaller_equal() {
+        let filter = Filter::parse(&["where".to_string(),
+                                     "value".to_string(),
+                                     "<=".to_string(),
+                                     "123".to_string(),
+                                    ]).unwrap();
+        assert_eq!(filter, Filter::new(" value <= '123'"));
     }
 }
