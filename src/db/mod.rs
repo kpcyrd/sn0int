@@ -45,6 +45,8 @@ pub enum Family {
     Network,
     NetworkDevice,
     Account,
+    Breach,
+    BreachEmail,
 }
 
 impl FromStr for Family {
@@ -63,6 +65,8 @@ impl FromStr for Family {
             "network" => Family::Network,
             "network-device" => Family::NetworkDevice,
             "account" => Family::Account,
+            "breach" => Family::Breach,
+            "breach-email" => Family::BreachEmail,
             _ => bail!("Unknown object family"),
         })
     }
@@ -197,7 +201,7 @@ impl Database {
             Insert::Breach(object) => self.insert_struct(NewBreach {
                 value: &object.value,
             }),
-            Insert::BreachEmail(object) => self.insert_breach_email_struct(&NewBreachEmail {
+            Insert::BreachEmail(object) => self.insert_breach_email_struct(NewBreachEmail {
                 breach_id: object.breach_id,
                 email_id: object.email_id,
                 password: object.password.as_ref(),
@@ -251,14 +255,24 @@ impl Database {
         }
     }
 
-    pub fn insert_breach_email_struct(&self, breach_email: &NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
-        if let Some(breach_email_id) = BreachEmail::get_id_opt(self, &(breach_email.breach_id, breach_email.email_id))? {
-            Ok(Some((DbChange::None, breach_email_id)))
+    pub fn insert_breach_email_struct(&self, obj: NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
+        let password = obj.password.map(|x| x.clone());
+        if let Some(existing) = BreachEmail::get_opt(self, &(obj.breach_id, obj.email_id, password.clone()))? {
+            let id = <BreachEmail as Model>::id(&existing);
+
+            let update = obj.upsert(&existing);
+            if update.is_dirty() {
+                update.apply(&self)?;
+                Ok(Some((DbChange::Update(update.generic()), id)))
+            } else {
+                Ok(Some((DbChange::None, id)))
+            }
         } else {
+            let value = &(obj.breach_id, obj.email_id, password);
             diesel::insert_into(breach_emails::table)
-                .values(breach_email)
+                .values(obj)
                 .execute(&self.db)?;
-            let id = BreachEmail::get_id(self, &(breach_email.breach_id, breach_email.email_id))?;
+            let id = BreachEmail::get_id(self, value)?;
             Ok(Some((DbChange::Insert, id)))
         }
     }
@@ -380,6 +394,8 @@ impl Database {
             Family::Network => self.get_opt_typed::<Network>(&value),
             Family::NetworkDevice => bail!("Unsupported operation"),
             Family::Account => self.get_opt_typed::<Account>(&value),
+            Family::Breach => self.get_opt_typed::<Breach>(&value),
+            Family::BreachEmail => bail!("Unsupported operation"),
         }
     }
 

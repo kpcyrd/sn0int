@@ -12,5 +12,5 @@ CREATE TABLE breach_emails (
     password VARCHAR,
     FOREIGN KEY(breach_id) REFERENCES breaches(id) ON DELETE CASCADE,
     FOREIGN KEY(email_id) REFERENCES emails(id) ON DELETE CASCADE,
-    CONSTRAINT breach_emails_unique UNIQUE (breach_id, email_id)
+    CONSTRAINT breach_emails_unique UNIQUE (breach_id, email_id, password)
 );

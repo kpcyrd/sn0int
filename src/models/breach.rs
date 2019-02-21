@@ -116,11 +116,21 @@ impl Scopable for Breach {
 }
 
 impl Breach {
-    fn emails(&self, db: &Database) -> Result<Vec<Email>> {
-        let email_ids = BreachEmail::belonging_to(self).select(breach_emails::email_id);
-        emails::table
-            .filter(emails::id.eq_any(email_ids))
-            .load::<Email>(db.db())
+    fn emails(&self, db: &Database) -> Result<Vec<(Email, Option<String>)>> {
+        use std::result;
+
+        let email_id_pws = BreachEmail::belonging_to(self)
+            .select((breach_emails::email_id, breach_emails::password))
+            .load::<(i32, Option<String>)>(db.db())?;
+
+        email_id_pws.into_iter()
+            .map(|(email_id, password)| {
+                emails::table
+                    .filter(emails::id.eq(email_id))
+                    .first::<Email>(db.db())
+                    .map(|email| (email, password))
+            })
+            .collect::<result::Result<Vec<_>, _>>()
             .map_err(Error::from)
     }
 }
@@ -143,10 +153,25 @@ impl Printable<PrintableBreach> for Breach {
     }
 }
 
+pub struct EmailWithPassword {
+    email: PrintableEmail,
+    password: Option<String>,
+}
+
+impl fmt::Display for EmailWithPassword {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{}", self.email)?;
+        if let Some(password) = &self.password {
+            write!(w, " ({:?})", password)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct DetailedBreach {
     id: i32,
     value: String,
-    emails: Vec<PrintableEmail>,
+    emails: Vec<EmailWithPassword>,
     unscoped: bool,
 }
 
@@ -179,7 +204,10 @@ impl Detailed for Breach {
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
         let emails = self.emails(db)?.into_iter()
-            .map(|sd| sd.printable(db))
+            .map(|(sd, password)| Ok(EmailWithPassword {
+                email: sd.printable(db)?,
+                password,
+            }))
             .collect::<Result<_>>()?;
 
         Ok(DetailedBreach {

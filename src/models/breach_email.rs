@@ -16,7 +16,7 @@ pub struct BreachEmail {
 }
 
 impl Model for BreachEmail {
-    type ID = (i32, i32);
+    type ID = (i32, i32, Option<String>);
 
     fn to_string(&self) -> String {
         unimplemented!("BreachEmail can not be printed")
@@ -71,10 +71,18 @@ impl Model for BreachEmail {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::breach_emails::dsl::*;
 
-        let (my_breach_id, my_email_id) = query;
-        let breach_email = breach_emails.filter(breach_id.eq(my_breach_id))
-                                                   .filter(email_id.eq(my_email_id))
-                                                   .first::<Self>(db.db())?;
+        let (my_breach_id, my_email_id, my_password) = query;
+
+        let query = breach_emails.filter(breach_id.eq(my_breach_id))
+                                 .filter(email_id.eq(my_email_id));
+        let breach_email = if let Some(my_password) = my_password {
+           query
+               .filter(password.is_null().or(password.eq(my_password)))
+               .first::<Self>(db.db())?
+        } else {
+           query
+               .first::<Self>(db.db())?
+        };
 
         Ok(breach_email)
     }
@@ -82,11 +90,20 @@ impl Model for BreachEmail {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::breach_emails::dsl::*;
 
-        let (my_breach_id, my_email_id) = query;
-        let breach_email = breach_emails.filter(breach_id.eq(my_breach_id))
-                                                   .filter(email_id.eq(my_email_id))
-                                                   .first::<Self>(db.db())
-                                                   .optional()?;
+        let (my_breach_id, my_email_id, my_password) = query;
+
+        let query = breach_emails.filter(breach_id.eq(my_breach_id))
+                                 .filter(email_id.eq(my_email_id));
+        let breach_email = if let Some(my_password) = my_password {
+           query
+               .filter(password.is_null().or(password.eq(my_password)))
+               .first::<Self>(db.db())
+               .optional()?
+        } else {
+           query
+               .first::<Self>(db.db())
+               .optional()?
+        };
 
         Ok(breach_email)
     }

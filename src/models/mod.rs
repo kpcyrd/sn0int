@@ -22,22 +22,35 @@ pub enum Insert {
 }
 
 impl Insert {
-    pub fn value(&self) -> &str {
-        match self {
-            Insert::Domain(x) => &x.value,
-            Insert::Subdomain(x) => &x.value,
-            Insert::IpAddr(x) => &x.value,
-            Insert::SubdomainIpAddr(_x) => unimplemented!("SubdomainIpAddr doesn't have value field"),
-            Insert::Url(x) => &x.value,
-            Insert::Email(x) => &x.value,
-            Insert::PhoneNumber(x) => &x.value,
-            Insert::Device(x) => &x.value,
-            Insert::Network(x) => &x.value,
-            Insert::NetworkDevice(_x) => unimplemented!("NetworkDevice doesn't have value field"),
-            Insert::Account(x) => &x.value,
-            Insert::Breach(x) => &x.value,
-            Insert::BreachEmail(_x) => unimplemented!("BreachEmail doesn't have value field"),
-        }
+    pub fn label(&self, db: &Database) -> Result<String> {
+        let label = match self {
+            Insert::Domain(x) => format!("{:?}", x.value),
+            Insert::Subdomain(x) => format!("{:?}", x.value),
+            Insert::IpAddr(x) => format!("{:?}", x.value),
+            Insert::SubdomainIpAddr(x) => {
+                let subdomain = Subdomain::by_id(db, x.subdomain_id)?;
+                let ipaddr = IpAddr::by_id(db, x.ip_addr_id)?;
+                format!("{:?}+{:?}", subdomain.value, ipaddr.value)
+            },
+            Insert::Url(x) => format!("{:?}", x.value),
+            Insert::Email(x) => format!("{:?}", x.value),
+            Insert::PhoneNumber(x) => format!("{:?}", x.value),
+            Insert::Device(x) => format!("{:?}", x.value),
+            Insert::Network(x) => format!("{:?}", x.value),
+            Insert::NetworkDevice(x) => {
+                let network = Network::by_id(db, x.network_id)?;
+                let device = Device::by_id(db, x.device_id)?;
+                format!("{:?}+{:?}", network.value, device.value)
+            },
+            Insert::Account(x) => format!("{:?}", x.value),
+            Insert::Breach(x) => format!("{:?}", x.value),
+            Insert::BreachEmail(x) => {
+                let breach = Breach::by_id(db, x.breach_id)?;
+                let email = Email::by_id(db, x.email_id)?;
+                format!("{:?}+{:?}", breach.value, email.value)
+            }
+        };
+        Ok(label)
     }
 
     pub fn table(&self) -> &str {

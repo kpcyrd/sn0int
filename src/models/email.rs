@@ -117,11 +117,21 @@ impl Scopable for Email {
 }
 
 impl Email {
-    fn breaches(&self, db: &Database) -> Result<Vec<Breach>> {
-        let breach_ids = BreachEmail::belonging_to(self).select(breach_emails::breach_id);
-        breaches::table
-            .filter(breaches::id.eq_any(breach_ids))
-            .load::<Breach>(db.db())
+    fn breaches(&self, db: &Database) -> Result<Vec<(Breach, Option<String>)>> {
+        use std::result;
+
+        let breach_id_pws = BreachEmail::belonging_to(self)
+            .select((breach_emails::breach_id, breach_emails::password))
+            .load::<(i32, Option<String>)>(db.db())?;
+
+        breach_id_pws.into_iter()
+            .map(|(breach_id, password)| {
+                breaches::table
+                    .filter(breaches::id.eq(breach_id))
+                    .first::<Breach>(db.db())
+                    .map(|breach| (breach, password))
+            })
+            .collect::<result::Result<Vec<_>, _>>()
             .map_err(Error::from)
     }
 }
@@ -144,10 +154,25 @@ impl Printable<PrintableEmail> for Email {
     }
 }
 
+pub struct BreachWithPassword {
+    breach: PrintableBreach,
+    password: Option<String>,
+}
+
+impl fmt::Display for BreachWithPassword {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{}", self.breach)?;
+        if let Some(password) = &self.password {
+            write!(w, " ({:?})", password)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct DetailedEmail {
     id: i32,
     value: String,
-    breaches: Vec<PrintableBreach>,
+    breaches: Vec<BreachWithPassword>,
     unscoped: bool,
     valid: Option<bool>,
 }
@@ -192,7 +217,10 @@ impl Detailed for Email {
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
         let breaches = self.breaches(db)?.into_iter()
-            .map(|sd| sd.printable(db))
+            .map(|(sd, password)| Ok(BreachWithPassword {
+                breach: sd.printable(db)?,
+                password,
+            }))
             .collect::<Result<_>>()?;
 
         Ok(DetailedEmail {

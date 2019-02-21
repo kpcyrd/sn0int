@@ -53,6 +53,12 @@ fn into_insert(family: Family, object: LuaJsonValue) -> Result<Insert> {
         Family::Account => {
             Insert::Account(try_into_new::<InsertAccount>(object)?)
         },
+        Family::Breach => {
+            Insert::Breach(try_into_new::<InsertBreach>(object)?)
+        },
+        Family::BreachEmail => {
+            Insert::BreachEmail(try_into_new::<InsertBreachEmail>(object)?)
+        },
     };
     Ok(obj)
 }
@@ -128,7 +134,7 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::Subdomain(u))),
             Family::IpAddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::IpAddr(u))),
-            Family::SubdomainIpAddr => bail!("Unsupported operation"),
+            Family::SubdomainIpAddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
             Family::Url => gen_changeset::<Url, UrlUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Url(u))),
             Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
@@ -143,6 +149,9 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::NetworkDevice(u))),
             Family::Account => gen_changeset::<Account, AccountUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Account(u))),
+            Family::Breach => bail!("Breach doesn't have mutable fields"),
+            Family::BreachEmail => gen_changeset::<BreachEmail, BreachEmailUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::BreachEmail(u))),
         };
 
         let (id, value, update) = update
