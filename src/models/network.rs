@@ -3,7 +3,6 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::result;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -119,16 +118,11 @@ impl Scopable for Network {
 
 impl Network {
     fn devices(&self, db: &Database) -> Result<Vec<Device>> {
-        let device_ids = NetworkDevice::belonging_to(self)
-            .select(network_devices::device_id)
-            .load::<i32>(db.db())?;
+        let device_ids = NetworkDevice::belonging_to(self).select(network_devices::device_id);
 
-        device_ids.into_iter()
-            .map(|device_id| devices::table
-                .filter(devices::id.eq(device_id))
-                .first::<Device>(db.db())
-            )
-            .collect::<result::Result<_, _>>()
+        devices::table
+            .filter(devices::id.eq_any(device_ids))
+            .load::<Device>(db.db())
             .map_err(Error::from)
     }
 }

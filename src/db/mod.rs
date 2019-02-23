@@ -45,6 +45,8 @@ pub enum Family {
     Network,
     NetworkDevice,
     Account,
+    Breach,
+    BreachEmail,
 }
 
 impl FromStr for Family {
@@ -63,6 +65,8 @@ impl FromStr for Family {
             "network" => Family::Network,
             "network-device" => Family::NetworkDevice,
             "account" => Family::Account,
+            "breach" => Family::Breach,
+            "breach-email" => Family::BreachEmail,
             _ => bail!("Unknown object family"),
         })
     }
@@ -194,6 +198,14 @@ impl Database {
                 url: object.url.as_ref(),
                 last_seen: object.last_seen,
             }),
+            Insert::Breach(object) => self.insert_struct(NewBreach {
+                value: &object.value,
+            }),
+            Insert::BreachEmail(object) => self.insert_breach_email_struct(NewBreachEmail {
+                breach_id: object.breach_id,
+                email_id: object.email_id,
+                password: object.password.as_ref(),
+            }),
         }
     }
 
@@ -232,13 +244,35 @@ impl Database {
     }
 
     pub fn insert_network_device_struct(&self, network_device: &NewNetworkDevice) -> Result<Option<(DbChange, i32)>> {
-        if let Some(subdomain_ipaddr_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
-            Ok(Some((DbChange::None, subdomain_ipaddr_id)))
+        if let Some(network_device_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
+            Ok(Some((DbChange::None, network_device_id)))
         } else {
             diesel::insert_into(network_devices::table)
                 .values(network_device)
                 .execute(&self.db)?;
             let id = NetworkDevice::get_id(self, &(network_device.network_id, network_device.device_id))?;
+            Ok(Some((DbChange::Insert, id)))
+        }
+    }
+
+    pub fn insert_breach_email_struct(&self, obj: NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
+        let password = obj.password.map(|x| x.clone());
+        if let Some(existing) = BreachEmail::get_opt(self, &(obj.breach_id, obj.email_id, password.clone()))? {
+            let id = <BreachEmail as Model>::id(&existing);
+
+            let update = obj.upsert(&existing);
+            if update.is_dirty() {
+                update.apply(&self)?;
+                Ok(Some((DbChange::Update(update.generic()), id)))
+            } else {
+                Ok(Some((DbChange::None, id)))
+            }
+        } else {
+            let value = &(obj.breach_id, obj.email_id, password);
+            diesel::insert_into(breach_emails::table)
+                .values(obj)
+                .execute(&self.db)?;
+            let id = BreachEmail::get_id(self, value)?;
             Ok(Some((DbChange::Insert, id)))
         }
     }
@@ -256,6 +290,7 @@ impl Database {
             Update::Network(object) => self.update_network(object),
             Update::NetworkDevice(object) => self.update_network_device(object),
             Update::Account(object) => self.update_account(object),
+            Update::BreachEmail(object) => self.update_breach_email(object),
         }
     }
 
@@ -331,6 +366,14 @@ impl Database {
         Ok(account.id)
     }
 
+    pub fn update_breach_email(&self, breach_email: &BreachEmailUpdate) -> Result<i32> {
+        use crate::schema::breach_emails::columns::*;
+        diesel::update(breach_emails::table.filter(id.eq(breach_email.id)))
+            .set(breach_email)
+            .execute(&self.db)?;
+        Ok(breach_email.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -351,6 +394,8 @@ impl Database {
             Family::Network => self.get_opt_typed::<Network>(&value),
             Family::NetworkDevice => bail!("Unsupported operation"),
             Family::Account => self.get_opt_typed::<Account>(&value),
+            Family::Breach => self.get_opt_typed::<Breach>(&value),
+            Family::BreachEmail => bail!("Unsupported operation"),
         }
     }
 

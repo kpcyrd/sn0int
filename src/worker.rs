@@ -153,7 +153,15 @@ impl DatabaseEvent {
                 }
 
                 // TODO: replace id with actual object(?)
-                spinner.log(&format!("Updating {:?} ({})", object.value(), update));
+                match object.label(&db) {
+                    Ok(label) => {
+                        spinner.log(&format!("Updating {} ({})", label, update));
+                    },
+                    Err(err) => {
+                        // TODO: this should be unreachable
+                        spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
+                    },
+                }
                 Ok(Some(id))
             },
             Ok(Some((DbChange::None, id))) => {

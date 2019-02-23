@@ -116,6 +116,26 @@ impl Scopable for Email {
     }
 }
 
+impl Email {
+    fn breaches(&self, db: &Database) -> Result<Vec<(Breach, Option<String>)>> {
+        use std::result;
+
+        let breach_id_pws = BreachEmail::belonging_to(self)
+            .select((breach_emails::breach_id, breach_emails::password))
+            .load::<(i32, Option<String>)>(db.db())?;
+
+        breach_id_pws.into_iter()
+            .map(|(breach_id, password)| {
+                breaches::table
+                    .filter(breaches::id.eq(breach_id))
+                    .first::<Breach>(db.db())
+                    .map(|breach| (breach, password))
+            })
+            .collect::<result::Result<Vec<_>, _>>()
+            .map_err(Error::from)
+    }
+}
+
 pub struct PrintableEmail {
     value: String,
 }
@@ -134,9 +154,25 @@ impl Printable<PrintableEmail> for Email {
     }
 }
 
+pub struct BreachWithPassword {
+    breach: PrintableBreach,
+    password: Option<String>,
+}
+
+impl fmt::Display for BreachWithPassword {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "{}", self.breach)?;
+        if let Some(password) = &self.password {
+            write!(w, " ({:?})", password)?;
+        }
+        Ok(())
+    }
+}
+
 pub struct DetailedEmail {
     id: i32,
     value: String,
+    breaches: Vec<BreachWithPassword>,
     unscoped: bool,
     valid: Option<bool>,
 }
@@ -166,7 +202,10 @@ impl DisplayableDetailed for DetailedEmail {
     }
 
     #[inline]
-    fn children(&self, _w: &mut fmt::DetailFormatter) -> fmt::Result {
+    fn children(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
+        for breach in &self.breaches {
+            w.child(breach)?;
+        }
         Ok(())
     }
 }
@@ -176,10 +215,18 @@ display_detailed!(DetailedEmail);
 impl Detailed for Email {
     type T = DetailedEmail;
 
-    fn detailed(&self, _db: &Database) -> Result<Self::T> {
+    fn detailed(&self, db: &Database) -> Result<Self::T> {
+        let breaches = self.breaches(db)?.into_iter()
+            .map(|(sd, password)| Ok(BreachWithPassword {
+                breach: sd.printable(db)?,
+                password,
+            }))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedEmail {
             id: self.id,
             value: self.value.to_string(),
+            breaches,
             unscoped: self.unscoped,
             valid: self.valid,
         })

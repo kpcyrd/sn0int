@@ -13,6 +13,23 @@ table! {
 }
 
 table! {
+    breach_emails (id) {
+        id -> Integer,
+        breach_id -> Integer,
+        email_id -> Integer,
+        password -> Nullable<Text>,
+    }
+}
+
+table! {
+    breaches (id) {
+        id -> Integer,
+        value -> Text,
+        unscoped -> Bool,
+    }
+}
+
+table! {
     devices (id) {
         id -> Integer,
         value -> Text,
@@ -141,6 +158,8 @@ table! {
     }
 }
 
+joinable!(breach_emails -> breaches (breach_id));
+joinable!(breach_emails -> emails (email_id));
 joinable!(network_devices -> devices (device_id));
 joinable!(network_devices -> networks (network_id));
 joinable!(subdomain_ipaddrs -> ipaddrs (ip_addr_id));
@@ -150,6 +169,8 @@ joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
     accounts,
+    breach_emails,
+    breaches,
     devices,
     domains,
     emails,
