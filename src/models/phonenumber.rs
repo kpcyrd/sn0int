@@ -215,58 +215,9 @@ impl Detailed for PhoneNumber {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="phonenumbers"]
-pub struct NewPhoneNumber<'a> {
-    pub value: &'a str,
-    pub name: Option<&'a String>,
-    pub valid: Option<bool>,
-    pub last_online: Option<NaiveDateTime>,
-    pub country: Option<&'a String>,
-    pub carrier: Option<&'a String>,
-    pub line: Option<&'a String>,
-    pub is_ported: Option<bool>,
-    pub last_ported: Option<NaiveDateTime>,
-    pub caller_name: Option<&'a String>,
-    pub caller_type: Option<&'a String>,
-}
-
-impl<'a> InsertableStruct<PhoneNumber> for NewPhoneNumber<'a> {
-    fn value(&self) -> &str {
-        self.value
-    }
-
-    fn insert(&self, db: &Database) -> Result<()> {
-        diesel::insert_into(phonenumbers::table)
-            .values(self)
-            .execute(db.db())?;
-        Ok(())
-    }
-}
-
-impl<'a> Upsertable<PhoneNumber> for NewPhoneNumber<'a> {
-    type Update = PhoneNumberUpdate;
-
-    fn upsert(self, existing: &PhoneNumber) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            name: Self::upsert_str(self.name, &existing.name),
-            valid: Self::upsert_opt(self.valid, &existing.valid),
-            last_online: Self::upsert_opt(self.last_online, &existing.last_online),
-            country: Self::upsert_str(self.country, &existing.country),
-            carrier: Self::upsert_str(self.carrier, &existing.carrier),
-            line: Self::upsert_str(self.line, &existing.line),
-            is_ported: Self::upsert_opt(self.is_ported, &existing.is_ported),
-            last_ported: Self::upsert_opt(self.last_ported, &existing.last_ported),
-            caller_name: Self::upsert_str(self.caller_name, &existing.caller_name),
-            caller_type: Self::upsert_str(self.caller_type, &existing.caller_type),
-        }
-    }
-}
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="phonenumbers"]
-pub struct NewPhoneNumberOwned {
+pub struct NewPhoneNumber {
     pub value: String,
     pub name: Option<String>,
     pub valid: Option<bool>,
@@ -280,7 +231,40 @@ pub struct NewPhoneNumberOwned {
     pub caller_type: Option<String>,
 }
 
-impl Printable<PrintablePhoneNumber> for NewPhoneNumberOwned {
+impl InsertableStruct<PhoneNumber> for NewPhoneNumber {
+    fn value(&self) -> &str {
+        &self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(phonenumbers::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl Upsertable<PhoneNumber> for NewPhoneNumber {
+    type Update = PhoneNumberUpdate;
+
+    fn upsert(self, existing: &PhoneNumber) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            name: Self::upsert_opt(self.name, &existing.name),
+            valid: Self::upsert_opt(self.valid, &existing.valid),
+            last_online: Self::upsert_opt(self.last_online, &existing.last_online),
+            country: Self::upsert_opt(self.country, &existing.country),
+            carrier: Self::upsert_opt(self.carrier, &existing.carrier),
+            line: Self::upsert_opt(self.line, &existing.line),
+            is_ported: Self::upsert_opt(self.is_ported, &existing.is_ported),
+            last_ported: Self::upsert_opt(self.last_ported, &existing.last_ported),
+            caller_name: Self::upsert_opt(self.caller_name, &existing.caller_name),
+            caller_type: Self::upsert_opt(self.caller_type, &existing.caller_type),
+        }
+    }
+}
+
+impl Printable<PrintablePhoneNumber> for NewPhoneNumber {
     fn printable(&self, _db: &Database) -> Result<PrintablePhoneNumber> {
         Ok(PrintablePhoneNumber {
             value: self.value.to_string(),
@@ -288,13 +272,13 @@ impl Printable<PrintablePhoneNumber> for NewPhoneNumberOwned {
     }
 }
 
-pub type InsertPhoneNumber = NewPhoneNumberOwned;
+pub type InsertPhoneNumber = NewPhoneNumber;
 
 // TODO: enforce valid E.164 number?
-impl LuaInsertToNewOwned for InsertPhoneNumber {
-    type Target = NewPhoneNumberOwned;
+impl LuaInsertToNew for InsertPhoneNumber {
+    type Target = NewPhoneNumber;
 
-    fn try_into_new(self) -> Result<NewPhoneNumberOwned> {
+    fn try_into_new(self) -> Result<NewPhoneNumber> {
         if self.value.starts_with('+') {
             bail!("E.164 phone number must start with '+'");
         }

@@ -122,37 +122,28 @@ impl Printable<PrintableNetworkDevice> for NetworkDevice {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="network_devices"]
-pub struct NewNetworkDevice<'a> {
-    pub network_id: i32,
-    pub device_id: i32,
-    pub ipaddr: Option<&'a String>,
-    pub last_seen: Option<NaiveDateTime>,
-}
-
-impl<'a> Upsertable<NetworkDevice> for NewNetworkDevice<'a> {
-    type Update = NetworkDeviceUpdate;
-
-    fn upsert(self, existing: &NetworkDevice) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            ipaddr: Self::upsert_str(self.ipaddr, &existing.ipaddr),
-            last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
-        }
-    }
-}
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="network_devices"]
-pub struct NewNetworkDeviceOwned {
+pub struct NewNetworkDevice {
     pub network_id: i32,
     pub device_id: i32,
     pub ipaddr: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl Printable<PrintableNetworkDevice> for NewNetworkDeviceOwned {
+impl Upsertable<NetworkDevice> for NewNetworkDevice {
+    type Update = NetworkDeviceUpdate;
+
+    fn upsert(self, existing: &NetworkDevice) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            ipaddr: Self::upsert_opt(self.ipaddr, &existing.ipaddr),
+            last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
+        }
+    }
+}
+
+impl Printable<PrintableNetworkDevice> for NewNetworkDevice {
     fn printable(&self, db: &Database) -> Result<PrintableNetworkDevice> {
         let network = Network::by_id(db, self.network_id)?;
         let device = Device::by_id(db, self.device_id)?;
@@ -163,12 +154,12 @@ impl Printable<PrintableNetworkDevice> for NewNetworkDeviceOwned {
     }
 }
 
-pub type InsertNetworkDevice = NewNetworkDeviceOwned;
+pub type InsertNetworkDevice = NewNetworkDevice;
 
-impl LuaInsertToNewOwned for InsertNetworkDevice {
-    type Target = NewNetworkDeviceOwned;
+impl LuaInsertToNew for InsertNetworkDevice {
+    type Target = NewNetworkDevice;
 
-    fn try_into_new(self) -> Result<NewNetworkDeviceOwned> {
+    fn try_into_new(self) -> Result<NewNetworkDevice> {
         Ok(self)
     }
 }

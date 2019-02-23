@@ -205,21 +205,21 @@ impl Detailed for Account {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="accounts"]
-pub struct NewAccount<'a> {
-    pub value: &'a str,
-    pub service: &'a str,
-    pub username: &'a str,
-    pub displayname: Option<&'a String>,
-    pub email: Option<&'a String>,
-    pub url: Option<&'a String>,
+pub struct NewAccount {
+    pub value: String,
+    pub service: String,
+    pub username: String,
+    pub displayname: Option<String>,
+    pub email: Option<String>,
+    pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl<'a> InsertableStruct<Account> for NewAccount<'a> {
+impl InsertableStruct<Account> for NewAccount {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -230,33 +230,21 @@ impl<'a> InsertableStruct<Account> for NewAccount<'a> {
     }
 }
 
-impl<'a> Upsertable<Account> for NewAccount<'a> {
+impl Upsertable<Account> for NewAccount {
     type Update = AccountUpdate;
 
     fn upsert(self, existing: &Account) -> Self::Update {
         Self::Update {
             id: existing.id,
-            displayname: Self::upsert_str(self.displayname, &existing.displayname),
-            email: Self::upsert_str(self.email, &existing.email),
-            url: Self::upsert_str(self.url, &existing.url),
+            displayname: Self::upsert_opt(self.displayname, &existing.displayname),
+            email: Self::upsert_opt(self.email, &existing.email),
+            url: Self::upsert_opt(self.url, &existing.url),
             last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
         }
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="accounts"]
-pub struct NewAccountOwned {
-    pub value: String,
-    pub service: String,
-    pub username: String,
-    pub displayname: Option<String>,
-    pub email: Option<String>,
-    pub url: Option<String>,
-    pub last_seen: Option<NaiveDateTime>,
-}
-
-impl Printable<PrintableAccount> for NewAccountOwned {
+impl Printable<PrintableAccount> for NewAccount {
     fn printable(&self, _db: &Database) -> Result<PrintableAccount> {
         Ok(PrintableAccount {
             value: self.value.to_string(),
@@ -274,15 +262,15 @@ pub struct InsertAccount {
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl LuaInsertToNewOwned for InsertAccount {
-    type Target = NewAccountOwned;
+impl LuaInsertToNew for InsertAccount {
+    type Target = NewAccount;
 
-    fn try_into_new(self) -> Result<NewAccountOwned> {
+    fn try_into_new(self) -> Result<NewAccount> {
         if self.service.contains('/') {
             bail!("Service field can't contain `/`");
         }
         let value = format!("{}/{}", self.service, self.username);
-        Ok(NewAccountOwned {
+        Ok(NewAccount {
             value,
             service: self.service,
             username: self.username,

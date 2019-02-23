@@ -203,17 +203,17 @@ impl Detailed for Network {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="networks"]
-pub struct NewNetwork<'a> {
-    pub value: &'a str,
+pub struct NewNetwork {
+    pub value: String,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
 }
 
-impl<'a> InsertableStruct<Network> for NewNetwork<'a> {
+impl InsertableStruct<Network> for NewNetwork {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -224,7 +224,7 @@ impl<'a> InsertableStruct<Network> for NewNetwork<'a> {
     }
 }
 
-impl<'a> Upsertable<Network> for NewNetwork<'a> {
+impl Upsertable<Network> for NewNetwork {
     type Update = NetworkUpdate;
 
     fn upsert(self, existing: &Network) -> Self::Update {
@@ -236,15 +236,7 @@ impl<'a> Upsertable<Network> for NewNetwork<'a> {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="networks"]
-pub struct NewNetworkOwned {
-    pub value: String,
-    pub latitude: Option<f32>,
-    pub longitude: Option<f32>,
-}
-
-impl Printable<PrintableNetwork> for NewNetworkOwned {
+impl Printable<PrintableNetwork> for NewNetwork {
     fn printable(&self, _db: &Database) -> Result<PrintableNetwork> {
         Ok(PrintableNetwork {
             value: self.value.to_string(),
@@ -252,12 +244,12 @@ impl Printable<PrintableNetwork> for NewNetworkOwned {
     }
 }
 
-pub type InsertNetwork = NewNetworkOwned;
+pub type InsertNetwork = NewNetwork;
 
-impl LuaInsertToNewOwned for InsertNetwork {
-    type Target = NewNetworkOwned;
+impl LuaInsertToNew for InsertNetwork {
+    type Target = NewNetwork;
 
-    fn try_into_new(self) -> Result<NewNetworkOwned> {
+    fn try_into_new(self) -> Result<NewNetwork> {
         Ok(self)
     }
 }

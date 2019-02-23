@@ -188,15 +188,15 @@ impl Detailed for Domain {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="domains"]
-pub struct NewDomain<'a> {
-    pub value: &'a str,
+pub struct NewDomain {
+    pub value: String,
 }
 
-impl<'a> InsertableStruct<Domain> for NewDomain<'a> {
+impl InsertableStruct<Domain> for NewDomain {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -207,7 +207,7 @@ impl<'a> InsertableStruct<Domain> for NewDomain<'a> {
     }
 }
 
-impl<'a> Upsertable<Domain> for NewDomain<'a> {
+impl Upsertable<Domain> for NewDomain {
     type Update = NullUpdate;
 
     fn upsert(self, existing: &Domain) -> Self::Update {
@@ -217,13 +217,7 @@ impl<'a> Upsertable<Domain> for NewDomain<'a> {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="domains"]
-pub struct NewDomainOwned {
-    pub value: String,
-}
-
-impl Printable<PrintableDomain> for NewDomainOwned {
+impl Printable<PrintableDomain> for NewDomain {
     fn printable(&self, _db: &Database) -> Result<PrintableDomain> {
         Ok(PrintableDomain {
             value: self.value.to_string(),
@@ -231,12 +225,12 @@ impl Printable<PrintableDomain> for NewDomainOwned {
     }
 }
 
-pub type InsertDomain = NewDomainOwned;
+pub type InsertDomain = NewDomain;
 
-impl LuaInsertToNewOwned for InsertDomain {
-    type Target = NewDomainOwned;
+impl LuaInsertToNew for InsertDomain {
+    type Target = NewDomain;
 
-    fn try_into_new(self) -> Result<NewDomainOwned> {
+    fn try_into_new(self) -> Result<NewDomain> {
         Ok(self)
     }
 }

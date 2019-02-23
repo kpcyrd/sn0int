@@ -221,50 +221,9 @@ impl Detailed for Url {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="urls"]
-pub struct NewUrl<'a> {
-    pub subdomain_id: i32,
-    pub value: &'a str,
-    pub path: &'a str,
-    pub status: Option<i32>,
-    pub body: Option<&'a Vec<u8>>,
-    pub online: Option<bool>,
-    pub title: Option<&'a String>,
-    pub redirect: Option<&'a String>,
-}
-
-impl<'a> InsertableStruct<Url> for NewUrl<'a> {
-    fn value(&self) -> &str {
-        self.value
-    }
-
-    fn insert(&self, db: &Database) -> Result<()> {
-        diesel::insert_into(urls::table)
-            .values(self)
-            .execute(db.db())?;
-        Ok(())
-    }
-}
-
-impl<'a> Upsertable<Url> for NewUrl<'a> {
-    type Update = UrlUpdate;
-
-    fn upsert(self, existing: &Url) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            status: Self::upsert_opt(self.status, &existing.status),
-            body: Self::upsert_bytes(self.body, &existing.body),
-            online: Self::upsert_opt(self.online, &existing.online),
-            title: Self::upsert_str(self.title, &existing.title),
-            redirect: Self::upsert_str(self.redirect, &existing.redirect),
-        }
-    }
-}
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="urls"]
-pub struct NewUrlOwned {
+pub struct NewUrl {
     pub subdomain_id: i32,
     pub value: String,
     pub path: String,
@@ -276,7 +235,35 @@ pub struct NewUrlOwned {
     pub redirect: Option<String>,
 }
 
-impl Printable<PrintableUrl> for NewUrlOwned {
+impl InsertableStruct<Url> for NewUrl {
+    fn value(&self) -> &str {
+        &self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(urls::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl Upsertable<Url> for NewUrl {
+    type Update = UrlUpdate;
+
+    fn upsert(self, existing: &Url) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            status: Self::upsert_opt(self.status, &existing.status),
+            body: Self::upsert_opt(self.body, &existing.body),
+            online: Self::upsert_opt(self.online, &existing.online),
+            title: Self::upsert_opt(self.title, &existing.title),
+            redirect: Self::upsert_opt(self.redirect, &existing.redirect),
+        }
+    }
+}
+
+impl Printable<PrintableUrl> for NewUrl {
     fn printable(&self, _db: &Database) -> Result<PrintableUrl> {
         Ok(PrintableUrl {
             value: self.value.to_string(),
@@ -298,14 +285,14 @@ pub struct InsertUrl {
     pub redirect: Option<String>,
 }
 
-impl LuaInsertToNewOwned for InsertUrl {
-    type Target = NewUrlOwned;
+impl LuaInsertToNew for InsertUrl {
+    type Target = NewUrl;
 
-    fn try_into_new(self) -> Result<NewUrlOwned> {
+    fn try_into_new(self) -> Result<NewUrl> {
         let url = url::Url::parse(&self.value)?;
         let path = url.path().to_string();
 
-        Ok(NewUrlOwned {
+        Ok(NewUrl {
             subdomain_id: self.subdomain_id,
             value: self.value,
             path,

@@ -219,15 +219,15 @@ impl Detailed for Breach {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="breaches"]
-pub struct NewBreach<'a> {
-    pub value: &'a str,
+pub struct NewBreach {
+    pub value: String,
 }
 
-impl<'a> InsertableStruct<Breach> for NewBreach<'a> {
+impl InsertableStruct<Breach> for NewBreach {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -238,7 +238,7 @@ impl<'a> InsertableStruct<Breach> for NewBreach<'a> {
     }
 }
 
-impl<'a> Upsertable<Breach> for NewBreach<'a> {
+impl Upsertable<Breach> for NewBreach {
     type Update = NullUpdate;
 
     fn upsert(self, existing: &Breach) -> Self::Update {
@@ -248,13 +248,7 @@ impl<'a> Upsertable<Breach> for NewBreach<'a> {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="breaches"]
-pub struct NewBreachOwned {
-    pub value: String,
-}
-
-impl Printable<PrintableBreach> for NewBreachOwned {
+impl Printable<PrintableBreach> for NewBreach {
     fn printable(&self, _db: &Database) -> Result<PrintableBreach> {
         Ok(PrintableBreach {
             value: self.value.to_string(),
@@ -262,12 +256,12 @@ impl Printable<PrintableBreach> for NewBreachOwned {
     }
 }
 
-pub type InsertBreach = NewBreachOwned;
+pub type InsertBreach = NewBreach;
 
-impl LuaInsertToNewOwned for InsertBreach {
-    type Target = NewBreachOwned;
+impl LuaInsertToNew for InsertBreach {
+    type Target = NewBreach;
 
-    fn try_into_new(self) -> Result<NewBreachOwned> {
+    fn try_into_new(self) -> Result<NewBreach> {
         Ok(self)
     }
 }

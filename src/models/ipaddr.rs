@@ -255,61 +255,9 @@ impl Detailed for IpAddr {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="ipaddrs"]
-pub struct NewIpAddr<'a> {
-    pub family: &'a str,
-    pub value: &'a str,
-    pub continent: Option<&'a String>,
-    pub continent_code: Option<&'a String>,
-    pub country: Option<&'a String>,
-    pub country_code: Option<&'a String>,
-    pub city: Option<&'a String>,
-    pub latitude: Option<f32>,
-    pub longitude: Option<f32>,
-    pub asn: Option<i32>,
-    pub as_org: Option<&'a String>,
-    pub description: Option<&'a String>,
-    pub reverse_dns: Option<&'a String>,
-}
-
-impl<'a> InsertableStruct<IpAddr> for NewIpAddr<'a> {
-    fn value(&self) -> &str {
-        self.value
-    }
-
-    fn insert(&self, db: &Database) -> Result<()> {
-        diesel::insert_into(ipaddrs::table)
-            .values(self)
-            .execute(db.db())?;
-        Ok(())
-    }
-}
-
-impl<'a> Upsertable<IpAddr> for NewIpAddr<'a> {
-    type Update = IpAddrUpdate;
-
-    fn upsert(self, existing: &IpAddr) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            continent: Self::upsert_str(self.continent, &existing.continent),
-            continent_code: Self::upsert_str(self.continent_code, &existing.continent_code),
-            country: Self::upsert_str(self.country, &existing.country),
-            country_code: Self::upsert_str(self.country_code, &existing.country_code),
-            city: Self::upsert_str(self.city, &existing.city),
-            latitude: Self::upsert_opt(self.latitude, &existing.latitude),
-            longitude: Self::upsert_opt(self.longitude, &existing.longitude),
-            asn: Self::upsert_opt(self.asn, &existing.asn),
-            as_org: Self::upsert_str(self.as_org, &existing.as_org),
-            description: Self::upsert_str(self.description, &existing.description),
-            reverse_dns: Self::upsert_str(self.reverse_dns, &existing.reverse_dns),
-        }
-    }
-}
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="ipaddrs"]
-pub struct NewIpAddrOwned {
+pub struct NewIpAddr {
     pub family: String,
     pub value: String,
     pub continent: Option<String>,
@@ -325,7 +273,41 @@ pub struct NewIpAddrOwned {
     pub reverse_dns: Option<String>,
 }
 
-impl Printable<PrintableIpAddr> for NewIpAddrOwned {
+impl InsertableStruct<IpAddr> for NewIpAddr {
+    fn value(&self) -> &str {
+        &self.value
+    }
+
+    fn insert(&self, db: &Database) -> Result<()> {
+        diesel::insert_into(ipaddrs::table)
+            .values(self)
+            .execute(db.db())?;
+        Ok(())
+    }
+}
+
+impl Upsertable<IpAddr> for NewIpAddr {
+    type Update = IpAddrUpdate;
+
+    fn upsert(self, existing: &IpAddr) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            continent: Self::upsert_opt(self.continent, &existing.continent),
+            continent_code: Self::upsert_opt(self.continent_code, &existing.continent_code),
+            country: Self::upsert_opt(self.country, &existing.country),
+            country_code: Self::upsert_opt(self.country_code, &existing.country_code),
+            city: Self::upsert_opt(self.city, &existing.city),
+            latitude: Self::upsert_opt(self.latitude, &existing.latitude),
+            longitude: Self::upsert_opt(self.longitude, &existing.longitude),
+            asn: Self::upsert_opt(self.asn, &existing.asn),
+            as_org: Self::upsert_opt(self.as_org, &existing.as_org),
+            description: Self::upsert_opt(self.description, &existing.description),
+            reverse_dns: Self::upsert_opt(self.reverse_dns, &existing.reverse_dns),
+        }
+    }
+}
+
+impl Printable<PrintableIpAddr> for NewIpAddr {
     fn printable(&self, _db: &Database) -> Result<PrintableIpAddr> {
         Ok(PrintableIpAddr {
             value: self.value.parse()?,
@@ -333,12 +315,12 @@ impl Printable<PrintableIpAddr> for NewIpAddrOwned {
     }
 }
 
-pub type InsertIpAddr = NewIpAddrOwned;
+pub type InsertIpAddr = NewIpAddr;
 
-impl LuaInsertToNewOwned for InsertIpAddr {
-    type Target = NewIpAddrOwned;
+impl LuaInsertToNew for InsertIpAddr {
+    type Target = NewIpAddr;
 
-    fn try_into_new(self) -> Result<NewIpAddrOwned> {
+    fn try_into_new(self) -> Result<NewIpAddr> {
         Ok(self)
     }
 }

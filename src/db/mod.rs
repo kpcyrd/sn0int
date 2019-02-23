@@ -115,97 +115,21 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_generic(&self, object: &Insert) -> Result<Option<(DbChange, i32)>> {
+    pub fn insert_generic(&self, object: Insert) -> Result<Option<(DbChange, i32)>> {
         match object {
-            Insert::Domain(object) => self.insert_struct(NewDomain {
-                value: &object.value,
-            }),
-            Insert::Subdomain(object) => self.insert_struct(NewSubdomain {
-                domain_id: object.domain_id,
-                value: &object.value,
-                resolvable: object.resolvable,
-            }),
-            Insert::IpAddr(object) => self.insert_struct(NewIpAddr {
-                family: &object.family,
-                value: &object.value,
-                continent: object.continent.as_ref(),
-                continent_code: object.continent_code.as_ref(),
-                country: object.country.as_ref(),
-                country_code: object.country_code.as_ref(),
-                city: object.city.as_ref(),
-                longitude: object.longitude,
-                latitude: object.latitude,
-                asn: object.asn,
-                as_org: object.as_org.as_ref(),
-                description: object.description.as_ref(),
-                reverse_dns: object.reverse_dns.as_ref(),
-            }),
-            Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&NewSubdomainIpAddr {
-                subdomain_id: object.subdomain_id,
-                ip_addr_id: object.ip_addr_id,
-            }),
-            Insert::Url(object) => self.insert_struct(NewUrl {
-                subdomain_id: object.subdomain_id,
-                value: &object.value,
-                path: &object.path,
-                status: object.status,
-                body: object.body.as_ref(),
-                online: object.online,
-                title: object.title.as_ref(),
-                redirect: object.redirect.as_ref(),
-            }),
-            Insert::Email(object) => self.insert_struct(NewEmail {
-                value: &object.value,
-                valid: object.valid,
-            }),
-            Insert::PhoneNumber(object) => self.insert_struct(NewPhoneNumber {
-                value: &object.value,
-                name: object.name.as_ref(),
-                valid: object.valid,
-                last_online: object.last_online,
-                country: object.country.as_ref(),
-                carrier: object.carrier.as_ref(),
-                line: object.line.as_ref(),
-                is_ported: object.is_ported,
-                last_ported: object.last_ported,
-                caller_name: object.caller_name.as_ref(),
-                caller_type: object.caller_type.as_ref(),
-            }),
-            Insert::Device(object) => self.insert_struct(NewDevice {
-                value: &object.value,
-                name: object.name.as_ref(),
-                hostname: object.hostname.as_ref(),
-                vendor: object.vendor.as_ref(),
-                last_seen: object.last_seen,
-            }),
-            Insert::Network(object) => self.insert_struct(NewNetwork {
-                value: &object.value,
-                latitude: object.latitude,
-                longitude: object.longitude,
-            }),
-            Insert::NetworkDevice(object) => self.insert_network_device_struct(&NewNetworkDevice {
-                network_id: object.network_id,
-                device_id: object.device_id,
-                ipaddr: object.ipaddr.as_ref(),
-                last_seen: object.last_seen,
-            }),
-            Insert::Account(object) => self.insert_struct(NewAccount {
-                value: &object.value,
-                service: &object.service,
-                username: &object.username,
-                displayname: object.displayname.as_ref(),
-                email: object.email.as_ref(),
-                url: object.url.as_ref(),
-                last_seen: object.last_seen,
-            }),
-            Insert::Breach(object) => self.insert_struct(NewBreach {
-                value: &object.value,
-            }),
-            Insert::BreachEmail(object) => self.insert_breach_email_struct(NewBreachEmail {
-                breach_id: object.breach_id,
-                email_id: object.email_id,
-                password: object.password.as_ref(),
-            }),
+            Insert::Domain(object) => self.insert_struct(object),
+            Insert::Subdomain(object) => self.insert_struct(object),
+            Insert::IpAddr(object) => self.insert_struct(object),
+            Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&object),
+            Insert::Url(object) => self.insert_struct(object),
+            Insert::Email(object) => self.insert_struct(object),
+            Insert::PhoneNumber(object) => self.insert_struct(object),
+            Insert::Device(object) => self.insert_struct(object),
+            Insert::Network(object) => self.insert_struct(object),
+            Insert::NetworkDevice(object) => self.insert_network_device_struct(&object),
+            Insert::Account(object) => self.insert_struct(object),
+            Insert::Breach(object) => self.insert_struct(object),
+            Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
         }
     }
 
@@ -256,8 +180,9 @@ impl Database {
     }
 
     pub fn insert_breach_email_struct(&self, obj: NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
-        let password = obj.password.map(|x| x.clone());
-        if let Some(existing) = BreachEmail::get_opt(self, &(obj.breach_id, obj.email_id, password.clone()))? {
+        let value = &(obj.breach_id, obj.email_id, obj.password.clone());
+
+        if let Some(existing) = BreachEmail::get_opt(self, value)? {
             let id = <BreachEmail as Model>::id(&existing);
 
             let update = obj.upsert(&existing);
@@ -268,7 +193,6 @@ impl Database {
                 Ok(Some((DbChange::None, id)))
             }
         } else {
-            let value = &(obj.breach_id, obj.email_id, password);
             diesel::insert_into(breach_emails::table)
                 .values(obj)
                 .execute(&self.db)?;
