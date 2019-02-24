@@ -390,12 +390,12 @@ psl_domain_from_dns_name
 ------------------------
 
 Returns the parent domain according to the public suffix list. For
-``www.a.b.c.d.example.com`` this is going to be ``example.com``.
+``www.a.b.c.d.example.co.uk`` this is going to be ``example.co.uk``.
 
 .. code-block:: lua
 
-    domain = psl_domain_from_dns_name('www.a.b.c.d.example.com')
-    print(domain == 'example.com')
+    domain = psl_domain_from_dns_name('www.a.b.c.d.example.co.uk')
+    print(domain == 'example.co.uk')
 
 regex_find
 ----------
