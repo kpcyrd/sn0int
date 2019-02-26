@@ -17,11 +17,10 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=boxxy
-  # exceeds max travis build time
-  #- os: linux
-  #  rust: stable
-  #  env:
-  #  - BUILD_MODE=docker
+  - os: linux
+    rust: stable
+    env:
+    - BUILD_MODE=docker
   - os: linux
     rust: stable
     env:
