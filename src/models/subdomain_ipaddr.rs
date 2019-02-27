@@ -114,7 +114,7 @@ impl Printable<PrintableSubdomainIpAddr> for SubdomainIpAddr {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="subdomain_ipaddrs"]
 pub struct NewSubdomainIpAddr {
     pub subdomain_id: i32,
@@ -134,7 +134,7 @@ impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {
 
 pub type InsertSubdomainIpAddr = NewSubdomainIpAddr;
 
-impl LuaInsertToNewOwned for InsertSubdomainIpAddr {
+impl LuaInsertToNew for InsertSubdomainIpAddr {
     type Target = NewSubdomainIpAddr;
 
     fn try_into_new(self) -> Result<NewSubdomainIpAddr> {

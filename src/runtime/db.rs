@@ -11,7 +11,7 @@ use crate::models::*;
 use crate::json::LuaJsonValue;
 
 
-pub fn try_into_new<T: LuaInsertToNewOwned>(x: LuaJsonValue) -> Result<T::Target>
+pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue) -> Result<T::Target>
     where for<'de> T: serde::Deserialize<'de>
 {
     structs::from_lua::<T>(x)?

@@ -233,16 +233,16 @@ impl Detailed for Email {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="emails"]
-pub struct NewEmail<'a> {
-    pub value: &'a str,
+pub struct NewEmail {
+    pub value: String,
     pub valid: Option<bool>,
 }
 
-impl<'a> InsertableStruct<Email> for NewEmail<'a> {
+impl InsertableStruct<Email> for NewEmail {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -253,7 +253,7 @@ impl<'a> InsertableStruct<Email> for NewEmail<'a> {
     }
 }
 
-impl<'a> Upsertable<Email> for NewEmail<'a> {
+impl Upsertable<Email> for NewEmail {
     type Update = EmailUpdate;
 
     fn upsert(self, existing: &Email) -> Self::Update {
@@ -264,14 +264,7 @@ impl<'a> Upsertable<Email> for NewEmail<'a> {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="emails"]
-pub struct NewEmailOwned {
-    pub value: String,
-    pub valid: Option<bool>,
-}
-
-impl Printable<PrintableEmail> for NewEmailOwned {
+impl Printable<PrintableEmail> for NewEmail {
     fn printable(&self, _db: &Database) -> Result<PrintableEmail> {
         Ok(PrintableEmail {
             value: self.value.to_string(),
@@ -279,12 +272,12 @@ impl Printable<PrintableEmail> for NewEmailOwned {
     }
 }
 
-pub type InsertEmail = NewEmailOwned;
+pub type InsertEmail = NewEmail;
 
-impl LuaInsertToNewOwned for InsertEmail {
-    type Target = NewEmailOwned;
+impl LuaInsertToNew for InsertEmail {
+    type Target = NewEmail;
 
-    fn try_into_new(self) -> Result<NewEmailOwned> {
+    fn try_into_new(self) -> Result<NewEmail> {
         Ok(self)
     }
 }

@@ -201,17 +201,17 @@ impl Detailed for Subdomain {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="subdomains"]
-pub struct NewSubdomain<'a> {
+pub struct NewSubdomain {
     pub domain_id: i32,
-    pub value: &'a str,
+    pub value: String,
     pub resolvable: Option<bool>,
 }
 
-impl<'a> InsertableStruct<Subdomain> for NewSubdomain<'a> {
+impl InsertableStruct<Subdomain> for NewSubdomain {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -222,7 +222,7 @@ impl<'a> InsertableStruct<Subdomain> for NewSubdomain<'a> {
     }
 }
 
-impl<'a> Upsertable<Subdomain> for NewSubdomain<'a> {
+impl Upsertable<Subdomain> for NewSubdomain {
     type Update = SubdomainUpdate;
 
     fn upsert(self, existing: &Subdomain) -> Self::Update {
@@ -233,15 +233,7 @@ impl<'a> Upsertable<Subdomain> for NewSubdomain<'a> {
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="subdomains"]
-pub struct NewSubdomainOwned {
-    pub domain_id: i32,
-    pub value: String,
-    pub resolvable: Option<bool>,
-}
-
-impl Printable<PrintableSubdomain> for NewSubdomainOwned {
+impl Printable<PrintableSubdomain> for NewSubdomain {
     fn printable(&self, _db: &Database) -> Result<PrintableSubdomain> {
         Ok(PrintableSubdomain {
             value: self.value.to_string(),
@@ -249,12 +241,12 @@ impl Printable<PrintableSubdomain> for NewSubdomainOwned {
     }
 }
 
-pub type InsertSubdomain = NewSubdomainOwned;
+pub type InsertSubdomain = NewSubdomain;
 
-impl LuaInsertToNewOwned for InsertSubdomain {
-    type Target = NewSubdomainOwned;
+impl LuaInsertToNew for InsertSubdomain {
+    type Target = NewSubdomain;
 
-    fn try_into_new(self) -> Result<NewSubdomainOwned> {
+    fn try_into_new(self) -> Result<NewSubdomain> {
         Ok(self)
     }
 }

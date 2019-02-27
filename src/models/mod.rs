@@ -4,21 +4,21 @@ use crate::fmt;
 use crate::schema::*;
 
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Insert {
-    Domain(NewDomainOwned),
-    Subdomain(NewSubdomainOwned),
-    IpAddr(NewIpAddrOwned),
+    Domain(NewDomain),
+    Subdomain(NewSubdomain),
+    IpAddr(NewIpAddr),
     SubdomainIpAddr(NewSubdomainIpAddr),
-    Url(NewUrlOwned),
-    Email(NewEmailOwned),
-    PhoneNumber(NewPhoneNumberOwned),
-    Device(NewDeviceOwned),
-    Network(NewNetworkOwned),
-    NetworkDevice(NewNetworkDeviceOwned),
-    Account(NewAccountOwned),
-    Breach(NewBreachOwned),
-    BreachEmail(NewBreachEmailOwned),
+    Url(NewUrl),
+    Email(NewEmail),
+    PhoneNumber(NewPhoneNumber),
+    Device(NewDevice),
+    Network(NewNetwork),
+    NetworkDevice(NewNetworkDevice),
+    Account(NewAccount),
+    Breach(NewBreach),
+    BreachEmail(NewBreachEmail),
 }
 
 impl Insert {
@@ -197,16 +197,6 @@ pub trait Upsertable<M> {
     type Update: Upsert;
 
     #[inline]
-    fn upsert_str(insert: Option<&String>, existing: &Option<String>) -> Option<String> {
-        if insert != existing.as_ref() { insert.map(|x| x.to_owned()) } else { None }
-    }
-
-    #[inline]
-    fn upsert_bytes(insert: Option<&Vec<u8>>, existing: &Option<Vec<u8>>) -> Option<Vec<u8>> {
-        if insert != existing.as_ref() { insert.map(|x| x.to_owned()) } else { None }
-    }
-
-    #[inline]
     fn upsert_opt<T: PartialEq>(insert: Option<T>, existing: &Option<T>) -> Option<T> {
         if insert != *existing { insert } else { None }
     }
@@ -304,7 +294,7 @@ macro_rules! display_detailed {
     };
 }
 
-pub trait LuaInsertToNewOwned {
+pub trait LuaInsertToNew {
     type Target;
 
     fn try_into_new(self) -> Result<Self::Target>;

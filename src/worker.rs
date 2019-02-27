@@ -126,7 +126,7 @@ impl DatabaseEvent {
             spinner.debug(&format!("Inserting: {:?}", object));
         }
 
-        let result = db.insert_generic(&object);
+        let result = db.insert_generic(object.clone());
         debug!("{:?} => {:?}", object, result);
 
         let result = match result {

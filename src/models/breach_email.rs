@@ -137,34 +137,26 @@ impl Printable<PrintableBreachEmail> for BreachEmail {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="breach_emails"]
-pub struct NewBreachEmail<'a> {
-    pub breach_id: i32,
-    pub email_id: i32,
-    pub password: Option<&'a String>,
-}
-
-impl<'a> Upsertable<BreachEmail> for NewBreachEmail<'a> {
-    type Update = BreachEmailUpdate;
-
-    fn upsert(self, existing: &BreachEmail) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-            password: Self::upsert_str(self.password, &existing.password),
-        }
-    }
-}
-
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="breach_emails"]
-pub struct NewBreachEmailOwned {
+pub struct NewBreachEmail {
     pub breach_id: i32,
     pub email_id: i32,
     pub password: Option<String>,
 }
 
-impl Printable<PrintableBreachEmail> for NewBreachEmailOwned {
+impl Upsertable<BreachEmail> for NewBreachEmail {
+    type Update = BreachEmailUpdate;
+
+    fn upsert(self, existing: &BreachEmail) -> Self::Update {
+        Self::Update {
+            id: existing.id,
+            password: Self::upsert_opt(self.password, &existing.password),
+        }
+    }
+}
+
+impl Printable<PrintableBreachEmail> for NewBreachEmail {
     fn printable(&self, db: &Database) -> Result<PrintableBreachEmail> {
         let breach = Breach::by_id(db, self.breach_id)?;
         let email = Email::by_id(db, self.email_id)?;
@@ -175,12 +167,12 @@ impl Printable<PrintableBreachEmail> for NewBreachEmailOwned {
     }
 }
 
-pub type InsertBreachEmail = NewBreachEmailOwned;
+pub type InsertBreachEmail = NewBreachEmail;
 
-impl LuaInsertToNewOwned for InsertBreachEmail {
-    type Target = NewBreachEmailOwned;
+impl LuaInsertToNew for InsertBreachEmail {
+    type Target = NewBreachEmail;
 
-    fn try_into_new(self) -> Result<NewBreachEmailOwned> {
+    fn try_into_new(self) -> Result<NewBreachEmail> {
         Ok(self)
     }
 }

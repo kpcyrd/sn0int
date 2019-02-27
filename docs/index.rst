@@ -39,6 +39,7 @@ Getting Started
    usage
    scripting
    database
+   structs
    keyring
    config
    sandbox

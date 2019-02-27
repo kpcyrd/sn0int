@@ -221,19 +221,19 @@ impl Detailed for Device {
     }
 }
 
-#[derive(Insertable)]
+#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
 #[table_name="devices"]
-pub struct NewDevice<'a> {
-    pub value: &'a str,
-    pub name: Option<&'a String>,
-    pub hostname: Option<&'a String>,
-    pub vendor: Option<&'a String>,
+pub struct NewDevice {
+    pub value: String,
+    pub name: Option<String>,
+    pub hostname: Option<String>,
+    pub vendor: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl<'a> InsertableStruct<Device> for NewDevice<'a> {
+impl InsertableStruct<Device> for NewDevice {
     fn value(&self) -> &str {
-        self.value
+        &self.value
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -244,31 +244,21 @@ impl<'a> InsertableStruct<Device> for NewDevice<'a> {
     }
 }
 
-impl<'a> Upsertable<Device> for NewDevice<'a> {
+impl Upsertable<Device> for NewDevice {
     type Update = DeviceUpdate;
 
     fn upsert(self, existing: &Device) -> Self::Update {
         Self::Update {
             id: existing.id,
-            name: Self::upsert_str(self.name, &existing.name),
-            hostname: Self::upsert_str(self.hostname, &existing.hostname),
-            vendor: Self::upsert_str(self.vendor, &existing.vendor),
+            name: Self::upsert_opt(self.name, &existing.name),
+            hostname: Self::upsert_opt(self.hostname, &existing.hostname),
+            vendor: Self::upsert_opt(self.vendor, &existing.vendor),
             last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
         }
     }
 }
 
-#[derive(Debug, Insertable, Serialize, Deserialize)]
-#[table_name="devices"]
-pub struct NewDeviceOwned {
-    pub value: String,
-    pub name: Option<String>,
-    pub hostname: Option<String>,
-    pub vendor: Option<String>,
-    pub last_seen: Option<NaiveDateTime>,
-}
-
-impl Printable<PrintableDevice> for NewDeviceOwned {
+impl Printable<PrintableDevice> for NewDevice {
     fn printable(&self, _db: &Database) -> Result<PrintableDevice> {
         Ok(PrintableDevice {
             value: self.value.to_string(),
@@ -276,12 +266,12 @@ impl Printable<PrintableDevice> for NewDeviceOwned {
     }
 }
 
-pub type InsertDevice = NewDeviceOwned;
+pub type InsertDevice = NewDevice;
 
-impl LuaInsertToNewOwned for InsertDevice {
-    type Target = NewDeviceOwned;
+impl LuaInsertToNew for InsertDevice {
+    type Target = NewDevice;
 
-    fn try_into_new(self) -> Result<NewDeviceOwned> {
+    fn try_into_new(self) -> Result<NewDevice> {
         Ok(self)
     }
 }
