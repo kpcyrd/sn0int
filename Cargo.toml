@@ -42,7 +42,7 @@ chrono = { version = "0.4", features = ["serde"] }
 dirs = "1.0"
 url = "1.7"
 #chrootable-https = { path = "../chrootable-https" }
-chrootable-https = "0.8"
+chrootable-https = "0.9"
 base64 = "0.10"
 kuchiki = "0.7.2"
 serde_urlencoded = "0.5"
@@ -81,4 +81,8 @@ unveil = "0.2.0"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
-boxxy = "0.8"
+boxxy = "0.9"
+
+[patch.crates-io]
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
