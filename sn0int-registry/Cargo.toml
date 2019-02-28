@@ -8,7 +8,7 @@ repository = "https://github.com/kpcyrd/sn0int"
 edition = "2018"
 
 [dependencies]
-sn0int-common = { version="0.4.0", path="sn0int-common" }
+sn0int-common = { version="0.5.0", path="sn0int-common" }
 rocket = { version = "0.4", default-features=false }
 rocket_failure = { version = "0.1.2", features = ["with-rocket"] }
 rocket_contrib = { version = "0.4", features = ["handlebars_templates"] }
@@ -33,3 +33,7 @@ serde_derive = "1.0"
 serde_json = "1.0"
 
 dotenv = "0.13"
+
+[patch.crates-io]
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
