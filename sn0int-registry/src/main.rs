@@ -93,6 +93,7 @@ fn run() -> Result<()> {
             routes::assets::index,
             routes::assets::favicon,
             routes::assets::style,
+            routes::health::health,
         ])
         .register(catchers![
             bad_request,

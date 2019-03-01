@@ -20,10 +20,8 @@ lto = false
 travis-ci = { repository = "kpcyrd/sn0int" }
 
 [workspace]
-# rocket is broken and blocks the whole workspace, removing
-#members = ["sn0int-registry/sn0int-common",
-#           "sn0int-registry"]
-members = ["sn0int-registry/sn0int-common"]
+members = ["sn0int-registry/sn0int-common",
+           "sn0int-registry"]
 
 [dependencies]
 sn0int-common = { version="0.5.0", path="sn0int-registry/sn0int-common" }
@@ -85,6 +83,6 @@ unveil = "0.2.0"
 #boxxy = { path = "../boxxy-rs" }
 boxxy = "0.9"
 
-#[patch.crates-io]
-#rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
-#rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+[patch.crates-io]
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
