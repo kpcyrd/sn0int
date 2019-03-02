@@ -132,4 +132,10 @@ impl Client {
         let reply = self.get::<Vec<ModuleInfoResponse>>(&url)?;
         Ok(reply)
     }
+
+    pub fn latest_release(&self) -> Result<LatestResponse> {
+        let url = format!("{}/api/v0/latest", self.server);
+        let reply = self.get::<LatestResponse>(&url)?;
+        Ok(reply)
+    }
 }

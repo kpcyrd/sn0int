@@ -11,6 +11,7 @@ use ctrlc;
 use crate::db::{self, Database};
 use crate::engine::{Engine, Module};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
+use crate::update::AutoUpdater;
 use rustyline::error::ReadlineError;
 use rustyline::{self, CompletionType, EditMode, Editor};
 use shellwords;
@@ -406,6 +407,12 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
     if verbose_init && engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
     }
+
+    let autoupdate = AutoUpdater::load()?;
+    if autoupdate.outdated() > 0 {
+        term::warn(&format!("{} modules are outdated, run: mod update", autoupdate.outdated()));
+    }
+    autoupdate.check_background(&config, engine.list());
 
     let rl = Readline::new(config, db, psl, engine, keyring);
 

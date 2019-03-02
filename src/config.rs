@@ -50,12 +50,15 @@ impl Config {
 pub struct CoreConfig {
     #[serde(default="default_registry")]
     pub registry: String,
+    #[serde(default, rename="no-autoupdate")]
+    pub no_autoupdate: bool,
 }
 
 impl Default for CoreConfig {
     fn default() -> CoreConfig {
         CoreConfig {
             registry: default_registry(),
+            no_autoupdate: false,
         }
     }
 }

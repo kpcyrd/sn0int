@@ -1,8 +1,8 @@
 #![warn(unused_extern_crates)]
-use env_logger;
 #[macro_use] extern crate failure;
+#[macro_use] extern crate log;
 
-use env_logger::Env;
+use env_logger::{self, Env};
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
@@ -89,6 +89,8 @@ fn run() -> Result<()> {
 
     let config = Config::load_or_default()
         .context("Failed to load config")?;
+
+    debug!("Loaded config: {:?}", config);
 
     match args.subcommand {
         Some(SubCommand::Run(ref run)) => run_run(&args, run, config),

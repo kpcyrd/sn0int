@@ -43,6 +43,7 @@ pub mod ser;
 pub mod shell;
 pub mod sockets;
 pub mod term;
+pub mod update;
 pub mod utils;
 pub mod web;
 pub mod worker;
