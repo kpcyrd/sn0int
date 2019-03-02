@@ -73,15 +73,33 @@ impl Engine {
         Ok(modules)
     }
 
+    pub fn private_modules(path: &Path) -> Result<bool> {
+        let metadata = fs::symlink_metadata(&path)?.file_type();
+        if metadata.is_symlink() {
+            debug!("Folder is a symlink, flagging modules as private");
+            return Ok(true);
+        }
+
+        if path.join(".git").exists() {
+            debug!("Folder is a git repo, flagging modules as private");
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
     pub fn reload_modules_quiet(&mut self) -> Result<()> {
         self.modules = HashMap::new();
 
         for author in fs::read_dir(&self.path)? {
             let author = author?;
+            let path = author.path();
 
-            if !author.path().is_dir() {
+            if !path.is_dir() {
                 continue;
             }
+
+            let private_modules = Self::private_modules(&path)?;
 
             let author_name = author.file_name()
                                     .into_string()
@@ -106,7 +124,7 @@ impl Engine {
                     continue;
                 }
 
-                if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name) {
+                if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
                     let root = err.find_root_cause();
                     term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
                 }
@@ -116,9 +134,9 @@ impl Engine {
         Ok(())
     }
 
-    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str) -> Result<()> {
+    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str, private_module: bool) -> Result<()> {
         let module_name = module_name.to_string();
-        let module = Module::load(path, &author_name, &module_name)
+        let module = Module::load(path, &author_name, &module_name, private_module)
             .context(format!("Failed to parse {}/{}", author_name, module_name))?;
 
         for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
@@ -170,11 +188,12 @@ pub struct Module {
     version: String,
     source: Option<Source>,
     keyring_access: Vec<String>,
+    private_module: bool,
     script: Script,
 }
 
 impl Module {
-    pub fn load(path: &Path, author: &str, name: &str) -> Result<Module> {
+    pub fn load(path: &Path, author: &str, name: &str, private_module: bool) -> Result<Module> {
         debug!("Loading lua module {}/{} from {:?}", author, name, path);
         let code = fs::read_to_string(path)
             .context("Failed to read module")?;
@@ -191,10 +210,12 @@ impl Module {
             version: metadata.version,
             source: metadata.source,
             keyring_access: metadata.keyring_access,
+            private_module,
             script,
         })
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -203,6 +224,7 @@ impl Module {
         format!("{}/{}", self.author, self.name)
     }
 
+    #[inline]
     pub fn id(&self) -> ModuleID {
         ModuleID {
             author: self.author.to_string(),
@@ -210,20 +232,29 @@ impl Module {
         }
     }
 
+    #[inline]
     pub fn description(&self) -> &str {
         &self.description
     }
 
+    #[inline]
     pub fn version(&self) -> &str {
         &self.version
     }
 
+    #[inline]
     pub fn source(&self) -> &Option<Source> {
         &self.source
     }
 
+    #[inline]
     pub fn keyring_access(&self) -> &[String] {
         &self.keyring_access
+    }
+
+    #[inline]
+    pub fn is_private(&self) -> bool {
+        self.private_module
     }
 
     pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
@@ -231,6 +262,7 @@ impl Module {
         self.script.run(env, reporter, arg.into())
     }
 
+    #[inline]
     fn cmp_canonical(&self, other: &Module) -> Ordering {
         if self.author == other.author {
             self.name.cmp(&other.name)

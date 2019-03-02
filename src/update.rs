@@ -93,6 +93,11 @@ impl AutoUpdater {
             let mut outdated = 0;
 
             for module in modules {
+                if module.is_private() {
+                    debug!("{} is a private module, skipping", module.canonical());
+                    continue;
+                }
+
                 let installed = module.version();
                 if let Ok(infos) = client.query_module(&module.id()) {
                     debug!("Latest version: {:?}", infos);

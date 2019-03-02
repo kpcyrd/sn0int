@@ -106,6 +106,11 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             let client = Client::new(&config)?;
 
             for module in rl.engine().list() {
+                if module.is_private() {
+                    debug!("{} is a private module, skipping", module.canonical());
+                    continue;
+                }
+
                 let name = module.canonical();
                 let label = format!("Searching for updates {}", name);
 
