@@ -46,3 +46,8 @@ impl SearchResponse {
         format!("{}/{}", self.author, self.name)
     }
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct LatestResponse {
+    pub time: Option<u64>,
+}

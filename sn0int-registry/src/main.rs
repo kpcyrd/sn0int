@@ -83,6 +83,7 @@ fn run() -> Result<()> {
             routes::api::download,
             routes::api::publish,
             routes::api::whoami,
+            routes::api::latest,
         ])
         .mount("/auth", routes![
             routes::auth::get,

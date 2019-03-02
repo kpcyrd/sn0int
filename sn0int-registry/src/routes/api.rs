@@ -9,12 +9,27 @@ use semver::Version;
 use sn0int_common::api::*;
 use sn0int_common::id;
 use sn0int_common::metadata::Metadata;
+use std::time::UNIX_EPOCH;
 
 
 #[get("/quickstart")]
 pub fn quickstart(connection: db::Connection) -> ApiResult<ApiResponse<Vec<Module>>> {
     let modules = Module::quickstart(&connection)?;
     Ok(ApiResponse::Success(modules))
+}
+
+#[get("/latest")]
+pub fn latest(connection: db::Connection) -> ApiResult<ApiResponse<LatestResponse>> {
+    let time = Release::latest(&connection)?
+        .map(|x| {
+            x.published.duration_since(UNIX_EPOCH)
+                .expect("Time went backwards")
+                .as_secs()
+        });
+    let latest = LatestResponse {
+        time,
+    };
+    Ok(ApiResponse::Success(latest))
 }
 
 #[derive(Debug, FromForm)]

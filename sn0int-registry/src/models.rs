@@ -4,6 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::sql_types::BigInt;
 use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
 use crate::schema::*;
+use std::time::SystemTime;
 
 
 #[derive(AsChangeset, Serialize, Deserialize, Queryable, Insertable)]
@@ -214,6 +215,7 @@ pub struct Release {
     pub version: String,
     pub downloads: i32,
     pub code: String,
+    pub published: SystemTime,
 }
 
 impl Release {
@@ -270,6 +272,14 @@ impl Release {
             .set(releases::downloads.eq(releases::downloads + 1))
             .execute(connection)?;
         Ok(())
+    }
+
+    pub fn latest(connection: &PgConnection) -> Result<Option<Release>> {
+        releases::table
+            .order_by(releases::published.desc())
+            .first::<Release>(connection)
+            .optional()
+            .map_err(Error::from)
     }
 }
 
