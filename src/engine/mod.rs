@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::config::Config;
 use crate::geoip::{GeoIP, AsnDB};
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
@@ -40,18 +41,20 @@ pub struct Environment {
 }
 
 #[derive(Debug)]
-pub struct Engine {
+pub struct Engine<'a> {
     path: PathBuf,
     modules: HashMap<String, Vec<Module>>,
+    config: &'a Config
 }
 
-impl Engine {
-    pub fn new(verbose_init: bool) -> Result<Engine> {
+impl<'a> Engine<'a> {
+    pub fn new(verbose_init: bool, config: &'a Config) -> Result<Engine> {
         let path = paths::module_dir()?;
 
         let mut engine = Engine {
             path,
             modules: HashMap::new(),
+            config,
         };
 
         if verbose_init {
@@ -104,30 +107,54 @@ impl Engine {
             let author_name = author.file_name()
                                     .into_string()
                                     .map_err(|_| format_err!("Failed to decode filename"))?;
-            for module in fs::read_dir(&author.path())? {
-                let module = module?;
-                let module_name = module.file_name()
-                                        .into_string()
-                                        .map_err(|_| format_err!("Failed to decode filename"))?;
 
-                // find last instance of .lua in filename, if any
-                let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
-                    module_name.split_at(idx)
-                } else {
-                    // TODO: show warning
-                    continue;
-                };
+            self.load_module_folder(&path, &author_name, private_modules)?;
+        }
 
-                // if .lua is not at the end, skip
-                if ext != ".lua" {
-                    // TODO: show warning
-                    continue;
-                }
+        for (author, folder) in &self.config.namespaces {
+            let folder = if folder.is_absolute() {
+                folder.to_owned()
+            } else {
+                let folder = folder.strip_prefix("~/")
+                    .unwrap_or(&folder);
 
-                if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
-                    let root = err.find_root_cause();
-                    term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
-                }
+                dirs::home_dir()
+                    .ok_or_else(|| format_err!("Failed to find home folder"))?
+                    .join(folder)
+            };
+
+            self.load_module_folder(&folder, &author, true)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn load_module_folder(&mut self, folder: &Path, author_name: &str, private_modules: bool) -> Result<()> {
+        debug!("Loading modules from {:?}", folder);
+
+        for module in fs::read_dir(folder)? {
+            let module = module?;
+            let module_name = module.file_name()
+                                    .into_string()
+                                    .map_err(|_| format_err!("Failed to decode filename"))?;
+
+            // find last instance of .lua in filename, if any
+            let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
+                module_name.split_at(idx)
+            } else {
+                // TODO: show warning
+                continue;
+            };
+
+            // if .lua is not at the end, skip
+            if ext != ".lua" {
+                // TODO: show warning
+                continue;
+            }
+
+            if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
+                let root = err.find_root_cause();
+                term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
             }
         }
 

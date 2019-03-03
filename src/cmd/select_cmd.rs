@@ -67,13 +67,13 @@ impl Filter {
     }
 }
 
-pub struct Printer<'a> {
-    rl: &'a mut Readline,
+pub struct Printer<'a, 'b> {
+    rl: &'a mut Readline<'b>,
     json: bool,
 }
 
-impl<'a> Printer<'a> {
-    pub fn new(rl: &'a mut Readline, json: bool) -> Printer<'a> {
+impl<'a, 'b> Printer<'a, 'b> {
+    pub fn new(rl: &'a mut Readline<'b>, json: bool) -> Printer<'a, 'b> {
         Printer {
             rl,
             json,

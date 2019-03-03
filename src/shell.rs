@@ -118,20 +118,20 @@ impl FromStr for Command {
     }
 }
 
-pub struct Readline {
+pub struct Readline<'a> {
     rl: Editor<CmdCompleter>,
     prompt: Prompt,
     db: Database,
     psl: Psl,
-    config: Config,
-    engine: Engine,
+    config: &'a Config,
+    engine: Engine<'a>,
     keyring: KeyRing,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
 }
 
-impl Readline {
-    pub fn new(config: Config, db: Database, psl: Psl, engine: Engine, keyring: KeyRing) -> Readline {
+impl<'a> Readline<'a> {
+    pub fn new(config: &'a Config, db: Database, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -216,7 +216,7 @@ impl Readline {
         &self.engine
     }
 
-    pub fn engine_mut(&mut self) -> &mut Engine {
+    pub fn engine_mut(&mut self) -> &mut Engine<'a> {
         &mut self.engine
     }
 
@@ -382,7 +382,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline> {
+pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<Readline<'a>> {
     let workspace = match args.workspace {
         Some(ref workspace) => workspace.clone(),
         None => Workspace::from_str("default").unwrap(),
@@ -401,7 +401,7 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
         .context("Failed to download GeoIP database")?;
     let _asndb = AsnDB::open_or_download()
         .context("Failed to download ASN database")?;
-    let engine = Engine::new(verbose_init)?;
+    let engine = Engine::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
 
     if verbose_init && engine.list().is_empty() {
@@ -414,12 +414,12 @@ pub fn init(args: &Args, config: Config, verbose_init: bool) -> Result<Readline>
     }
     autoupdate.check_background(&config, engine.list());
 
-    let rl = Readline::new(config, db, psl, engine, keyring);
+    let rl = Readline::new(&config, db, psl, engine, keyring);
 
     Ok(rl)
 }
 
-pub fn run(args: &Args, config: Config) -> Result<()> {
+pub fn run(args: &Args, config: &Config) -> Result<()> {
     print_banner();
 
     let mut rl = init(args, config, true)?;

@@ -22,7 +22,7 @@ use std::io::Write;
 use std::path::Path;
 
 
-fn run_run(gargs: &Args, args: &args::Run, config: Config) -> Result<()> {
+fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
 
     if let Some(module) = &args.module {
@@ -56,7 +56,7 @@ fn run_sandbox() -> Result<()> {
     engine::isolation::run_worker(geoip, asn, &psl)
 }
 
-fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: Config) -> Result<()> {
+fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
     args.run(&mut rl)
 }
@@ -93,16 +93,16 @@ fn run() -> Result<()> {
     debug!("Loaded config: {:?}", config);
 
     match args.subcommand {
-        Some(SubCommand::Run(ref run)) => run_run(&args, run, config),
+        Some(SubCommand::Run(ref run)) => run_run(&args, run, &config),
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
         Some(SubCommand::Login(_)) => auth::run_login(&config),
         Some(SubCommand::New(ref new)) => run_new(&args, new),
         Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish, &config),
         Some(SubCommand::Install(ref install)) => registry::run_install(install, &config),
         Some(SubCommand::Search(ref search)) => registry::run_search(search, &config),
-        Some(SubCommand::Select(ref select)) => run_cmd(&args, select, config),
+        Some(SubCommand::Select(ref select)) => run_cmd(&args, select, &config),
         Some(SubCommand::Completions(ref completions)) => complete::run_generate(completions),
-        None => shell::run(&args, config),
+        None => shell::run(&args, &config),
     }
 }
 

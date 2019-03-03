@@ -1,5 +1,6 @@
 use dirs;
 use crate::errors::*;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
@@ -10,6 +11,8 @@ use toml;
 pub struct Config {
     #[serde(default)]
     pub core: CoreConfig,
+    #[serde(default)]
+    pub namespaces: HashMap<String, PathBuf>,
     #[serde(default)]
     pub network: NetworkConfig,
 }
