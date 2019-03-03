@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::config::Config;
 use crate::geoip::{GeoIP, AsnDB};
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
@@ -40,18 +41,20 @@ pub struct Environment {
 }
 
 #[derive(Debug)]
-pub struct Engine {
+pub struct Engine<'a> {
     path: PathBuf,
     modules: HashMap<String, Vec<Module>>,
+    config: &'a Config
 }
 
-impl Engine {
-    pub fn new(verbose_init: bool) -> Result<Engine> {
+impl<'a> Engine<'a> {
+    pub fn new(verbose_init: bool, config: &'a Config) -> Result<Engine> {
         let path = paths::module_dir()?;
 
         let mut engine = Engine {
             path,
             modules: HashMap::new(),
+            config,
         };
 
         if verbose_init {
@@ -73,52 +76,94 @@ impl Engine {
         Ok(modules)
     }
 
+    pub fn private_modules(path: &Path) -> Result<bool> {
+        let metadata = fs::symlink_metadata(&path)?.file_type();
+        if metadata.is_symlink() {
+            debug!("Folder is a symlink, flagging modules as private");
+            return Ok(true);
+        }
+
+        if path.join(".git").exists() {
+            debug!("Folder is a git repo, flagging modules as private");
+            return Ok(true);
+        }
+
+        Ok(false)
+    }
+
     pub fn reload_modules_quiet(&mut self) -> Result<()> {
         self.modules = HashMap::new();
 
         for author in fs::read_dir(&self.path)? {
             let author = author?;
+            let path = author.path();
 
-            if !author.path().is_dir() {
+            if !path.is_dir() {
                 continue;
             }
+
+            let private_modules = Self::private_modules(&path)?;
 
             let author_name = author.file_name()
                                     .into_string()
                                     .map_err(|_| format_err!("Failed to decode filename"))?;
-            for module in fs::read_dir(&author.path())? {
-                let module = module?;
-                let module_name = module.file_name()
-                                        .into_string()
-                                        .map_err(|_| format_err!("Failed to decode filename"))?;
 
-                // find last instance of .lua in filename, if any
-                let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
-                    module_name.split_at(idx)
-                } else {
-                    // TODO: show warning
-                    continue;
-                };
+            self.load_module_folder(&path, &author_name, private_modules)?;
+        }
 
-                // if .lua is not at the end, skip
-                if ext != ".lua" {
-                    // TODO: show warning
-                    continue;
-                }
+        for (author, folder) in &self.config.namespaces {
+            let folder = if folder.is_absolute() {
+                folder.to_owned()
+            } else {
+                let folder = folder.strip_prefix("~/")
+                    .unwrap_or(&folder);
 
-                if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name) {
-                    let root = err.find_root_cause();
-                    term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
-                }
+                dirs::home_dir()
+                    .ok_or_else(|| format_err!("Failed to find home folder"))?
+                    .join(folder)
+            };
+
+            self.load_module_folder(&folder, &author, true)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn load_module_folder(&mut self, folder: &Path, author_name: &str, private_modules: bool) -> Result<()> {
+        debug!("Loading modules from {:?}", folder);
+
+        for module in fs::read_dir(folder)? {
+            let module = module?;
+            let module_name = module.file_name()
+                                    .into_string()
+                                    .map_err(|_| format_err!("Failed to decode filename"))?;
+
+            // find last instance of .lua in filename, if any
+            let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
+                module_name.split_at(idx)
+            } else {
+                // TODO: show warning
+                continue;
+            };
+
+            // if .lua is not at the end, skip
+            if ext != ".lua" {
+                // TODO: show warning
+                continue;
+            }
+
+            if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
+                let root = err.find_root_cause();
+                term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
             }
         }
 
         Ok(())
     }
 
-    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str) -> Result<()> {
+    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str, private_module: bool) -> Result<()> {
         let module_name = module_name.to_string();
-        let module = Module::load(path, &author_name, &module_name)
+        let module = Module::load(path, &author_name, &module_name, private_module)
             .context(format!("Failed to parse {}/{}", author_name, module_name))?;
 
         for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
@@ -170,11 +215,12 @@ pub struct Module {
     version: String,
     source: Option<Source>,
     keyring_access: Vec<String>,
+    private_module: bool,
     script: Script,
 }
 
 impl Module {
-    pub fn load(path: &Path, author: &str, name: &str) -> Result<Module> {
+    pub fn load(path: &Path, author: &str, name: &str, private_module: bool) -> Result<Module> {
         debug!("Loading lua module {}/{} from {:?}", author, name, path);
         let code = fs::read_to_string(path)
             .context("Failed to read module")?;
@@ -191,10 +237,12 @@ impl Module {
             version: metadata.version,
             source: metadata.source,
             keyring_access: metadata.keyring_access,
+            private_module,
             script,
         })
     }
 
+    #[inline]
     pub fn name(&self) -> &str {
         &self.name
     }
@@ -203,6 +251,7 @@ impl Module {
         format!("{}/{}", self.author, self.name)
     }
 
+    #[inline]
     pub fn id(&self) -> ModuleID {
         ModuleID {
             author: self.author.to_string(),
@@ -210,20 +259,29 @@ impl Module {
         }
     }
 
+    #[inline]
     pub fn description(&self) -> &str {
         &self.description
     }
 
+    #[inline]
     pub fn version(&self) -> &str {
         &self.version
     }
 
+    #[inline]
     pub fn source(&self) -> &Option<Source> {
         &self.source
     }
 
+    #[inline]
     pub fn keyring_access(&self) -> &[String] {
         &self.keyring_access
+    }
+
+    #[inline]
+    pub fn is_private(&self) -> bool {
+        self.private_module
     }
 
     pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
@@ -231,6 +289,7 @@ impl Module {
         self.script.run(env, reporter, arg.into())
     }
 
+    #[inline]
     fn cmp_canonical(&self, other: &Module) -> Ordering {
         if self.author == other.author {
             self.name.cmp(&other.name)

@@ -1,5 +1,6 @@
 use dirs;
 use crate::errors::*;
+use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
@@ -10,6 +11,8 @@ use toml;
 pub struct Config {
     #[serde(default)]
     pub core: CoreConfig,
+    #[serde(default)]
+    pub namespaces: HashMap<String, PathBuf>,
     #[serde(default)]
     pub network: NetworkConfig,
 }
@@ -50,12 +53,15 @@ impl Config {
 pub struct CoreConfig {
     #[serde(default="default_registry")]
     pub registry: String,
+    #[serde(default, rename="no-autoupdate")]
+    pub no_autoupdate: bool,
 }
 
 impl Default for CoreConfig {
     fn default() -> CoreConfig {
         CoreConfig {
             registry: default_registry(),
+            no_autoupdate: false,
         }
     }
 }

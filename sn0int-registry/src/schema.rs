@@ -34,6 +34,7 @@ table! {
         version -> Varchar,
         downloads -> Int4,
         code -> Text,
+        published -> Timestamp,
     }
 }
 

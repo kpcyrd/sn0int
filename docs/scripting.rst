@@ -13,7 +13,17 @@ free to change that to something else::
 
     $ git init ~/repos/sn0int-modules
     $ cd ~/repos/sn0int-modules
-    $ ln -s "$PWD" ~/.local/share/sn0int/modules/$YOUR_GITHUB_NAME
+
+We need to add this folder to the sn0int config file so it's correctly detected
+when starting sn0int. Open the config file in your prefered editor, note that
+the file does not exist by default::
+
+    $ vim ~/.config/sn0int.toml
+
+Add the follwing::
+
+    [namespaces]
+    your_github_name = "~/repos/sn0int-modules"
 
 Every module we're adding to ``~/repos/sn0int-modules`` is now going to be
 picked up by sn0int.

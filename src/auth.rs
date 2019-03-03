@@ -1,6 +1,7 @@
 use crate::errors::*;
 use opener;
 use std::fs;
+use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
 use crate::api::Client;
@@ -9,17 +10,18 @@ use crate::paths;
 use crate::term;
 
 
-pub fn load_token() -> Result<String> {
+fn path() -> Result<PathBuf> {
     let path = paths::data_dir()?;
-    let path = path.join("auth");
-    let session = fs::read_to_string(path)?;
+    Ok(path.join("auth"))
+}
+
+pub fn load_token() -> Result<String> {
+    let session = fs::read_to_string(path()?)?;
     Ok(session.trim().to_string())
 }
 
 pub fn save_token(session: &str) -> Result<()> {
-    let path = paths::data_dir()?;
-    let path = path.join("auth");
-    fs::write(path, format!("{}\n", session))?;
+    fs::write(path()?, format!("{}\n", session))?;
     Ok(())
 }
 
