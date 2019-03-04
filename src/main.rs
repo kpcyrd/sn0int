@@ -25,24 +25,22 @@ use std::path::Path;
 fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
 
-    if let Some(module) = &args.module {
-        let module = rl.engine().get(&module)?.clone();
-        rl.set_module(module);
-    } else if let Some(file) = &args.file {
-        let path = Path::new(file);
+    let module = if args.file {
+        let path = Path::new(&args.module);
 
         let filename = path.file_stem()
             .ok_or(format_err!("Failed to decode filename"))?
             .to_str()
             .ok_or(format_err!("Failed to decode filename"))?;
 
-        let module = Module::load(&path.to_path_buf(), "anonymous", &filename, true)
-            .context(format!("Failed to parse {:?}", file))?;
-        rl.set_module(module);
+        Module::load(&path.to_path_buf(), "anonymous", &filename, true)
+            .context(format!("Failed to parse {:?}", path))?
     } else {
-        bail!("At least one module or file need to be provided");
-    }
+        rl.engine().get(&args.module)?
+            .clone()
+    };
 
+    rl.set_module(module);
     cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
 }
 

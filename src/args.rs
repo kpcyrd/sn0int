@@ -60,10 +60,10 @@ pub enum SubCommand {
 #[derive(Debug, StructOpt)]
 pub struct Run {
     /// Execute a module that has been installed
-    pub module: Option<String>,
-    #[structopt(short="f", long="file", conflicts_with="module")]
+    pub module: String,
+    #[structopt(short="f", long="file")]
     /// Run a module from a path
-    pub file: Option<String>,
+    pub file: bool,
     #[structopt(short="j", long="threads", default_value="1")]
     /// Run modules concurrently
     pub threads: usize,
