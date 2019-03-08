@@ -1,8 +1,17 @@
 Configuration
 =============
 
-This file documents the config file at ``~/.config/sn0int.toml``. By default
-this file does not exist and a default configuration is used instead.
+This section documents the config file. By default this file does not exist and
+a default configuration is used instead.
+
+Linux/BSD
+    ``~/.config/sn0int.toml``
+
+OSX
+    ``~/Library/Preferences/sn0int.toml``
+
+Windows
+    ``%APPDATA%/sn0int.toml``
 
 [core]
 ------

@@ -15,8 +15,10 @@ free to change that to something else::
     $ cd ~/repos/sn0int-modules
 
 We need to add this folder to the sn0int config file so it's correctly detected
-when starting sn0int. Open the config file in your prefered editor, note that
-the file does not exist by default::
+when starting sn0int. Open the `config file <config.html>`_ in your prefered
+editor. Note that the file does not exist by default and the path is different
+depending on your operating system. On linux you would open the config file
+with::
 
     $ vim ~/.config/sn0int.toml
 
