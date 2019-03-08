@@ -19,6 +19,7 @@ pub enum Insert {
     Account(NewAccount),
     Breach(NewBreach),
     BreachEmail(NewBreachEmail),
+    Image(NewImage),
 }
 
 impl Insert {
@@ -49,6 +50,7 @@ impl Insert {
                 let email = Email::by_id(db, x.email_id)?;
                 format!("{:?}+{:?}", breach.value, email.value)
             }
+            Insert::Image(x) => format!("{:?}", x.value),
         };
         Ok(label)
     }
@@ -68,6 +70,7 @@ impl Insert {
             Insert::Account(_) => "accounts",
             Insert::Breach(_) => "breaches",
             Insert::BreachEmail(_) => "breach_emails",
+            Insert::Image(_) => "images",
         }
     }
 
@@ -86,6 +89,7 @@ impl Insert {
             Insert::Account(x) => format!("Account: {}", x.printable(db)?),
             Insert::Breach(x) => format!("Breach: {}", x.printable(db)?),
             Insert::BreachEmail(x) => x.printable(db)?.to_string(),
+            Insert::Image(x) => format!("Image: {}", x.printable(db)?),
         })
     }
 }
@@ -102,6 +106,7 @@ pub enum Update {
     NetworkDevice(NetworkDeviceUpdate),
     Account(AccountUpdate),
     BreachEmail(BreachEmailUpdate),
+    Image(ImageUpdate),
 }
 
 impl Update {
@@ -117,6 +122,7 @@ impl Update {
             Update::NetworkDevice(update) => update.is_dirty(),
             Update::Account(update)       => update.is_dirty(),
             Update::BreachEmail(update)   => update.is_dirty(),
+            Update::Image(update)         => update.is_dirty(),
         }
     }
 }
@@ -134,6 +140,7 @@ impl fmt::Display for Update {
             Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
             Update::Account(update)       => write!(w, "{}", update.to_string()),
             Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
+            Update::Image(update)         => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -338,3 +345,6 @@ pub use self::breach::*;
 
 mod breach_email;
 pub use self::breach_email::*;
+
+mod image;
+pub use self::image::*;

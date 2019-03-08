@@ -27,6 +27,7 @@ pub mod errors;
 pub mod engine;
 pub mod fmt;
 pub mod geoip;
+pub mod gfx;
 pub mod html;
 pub mod json;
 pub mod keyring;

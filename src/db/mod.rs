@@ -130,6 +130,7 @@ impl Database {
             Insert::Account(object) => self.insert_struct(object),
             Insert::Breach(object) => self.insert_struct(object),
             Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
+            Insert::Image(object) => self.insert_struct(object),
         }
     }
 
@@ -215,6 +216,7 @@ impl Database {
             Update::NetworkDevice(object) => self.update_network_device(object),
             Update::Account(object) => self.update_account(object),
             Update::BreachEmail(object) => self.update_breach_email(object),
+            Update::Image(object) => self.update_image(object),
         }
     }
 
@@ -296,6 +298,14 @@ impl Database {
             .set(breach_email)
             .execute(&self.db)?;
         Ok(breach_email.id)
+    }
+
+    pub fn update_image(&self, image: &ImageUpdate) -> Result<i32> {
+        use crate::schema::images::columns::*;
+        diesel::update(images::table.filter(id.eq(image.id)))
+            .set(image)
+            .execute(&self.db)?;
+        Ok(image.id)
     }
 
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
