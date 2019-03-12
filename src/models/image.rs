@@ -4,6 +4,8 @@ use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -337,7 +339,7 @@ impl Printable<PrintableImage> for NewImage {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InsertImage {
-    pub data: Vec<u8>, // TODO: find a way to store this
+    pub value: String,
 
     pub filename: Option<String>,
     pub mime: Option<String>,
@@ -357,10 +359,18 @@ pub struct InsertImage {
 impl LuaInsertToNew for InsertImage {
     type Target = NewImage;
 
-    fn try_into_new(self) -> Result<NewImage> {
-        let value = "TODO".to_string();
+    fn try_into_new(self, state: &Arc<State>) -> Result<NewImage> {
+        // TODO: enforce this rule for updates as well
+        if let Some(filename) = &self.filename {
+            if filename.contains('/') {
+                bail!("filename can't contains slashes"); // TODO: automatically extract filename
+            }
+        }
+
+        state.persist_blob(&self.value)?;
+
         Ok(NewImage {
-            value,
+            value: self.value,
 
             filename: self.filename,
             mime: self.mime,

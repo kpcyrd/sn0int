@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::workspaces::Workspace;
 
 use dirs;
 use std::fs;
@@ -23,6 +24,16 @@ pub fn history_path() -> Result<PathBuf> {
 pub fn module_dir() -> Result<PathBuf> {
     let path = data_dir()?;
     let path = path.join("modules");
+    fs::create_dir_all(&path)
+        .context("Failed to create module directory")?;
+    Ok(path)
+}
+
+pub fn blobs_dir(workspace: &Workspace) -> Result<PathBuf> {
+    let path = data_dir()?;
+    let path = path
+        .join("blobs")
+        .join(workspace.to_string());
     fs::create_dir_all(&path)
         .context("Failed to create module directory")?;
     Ok(path)

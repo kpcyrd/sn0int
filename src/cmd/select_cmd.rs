@@ -54,6 +54,9 @@ pub enum Target {
     #[structopt(name="breaches")]
     /// Select breaches
     Breaches(Filter),
+    #[structopt(name="images")]
+    /// Select images
+    Images(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -109,6 +112,7 @@ impl Cmd for Args {
             Target::Networks(filter) => printer.select::<Network>(&filter),
             Target::Accounts(filter) => printer.select::<Account>(&filter),
             Target::Breaches(filter) => printer.select::<Breach>(&filter),
+            Target::Images(filter) => printer.select::<Image>(&filter),
         }
     }
 }

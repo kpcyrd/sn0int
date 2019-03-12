@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::blobs::Blob;
 use crate::channel;
 use crate::cmd::run_cmd::Params;
 use crate::db::{Database, DbChange, Family};
@@ -21,12 +22,14 @@ use threadpool::ThreadPool;
 
 
 type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
+pub type VoidSender = mpsc::Sender<result::Result<(), String>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Log(LogEvent),
     Database(DatabaseEvent),
     Stdio(StdioEvent),
+    Blob(Blob),
     Exit(ExitEvent),
 }
 
@@ -35,6 +38,7 @@ pub enum Event2 {
     Start,
     Log(LogEvent),
     Database((DatabaseEvent, DbSender)),
+    Blob((Blob, VoidSender)),
     Exit(ExitEvent),
 }
 
@@ -246,7 +250,7 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
+pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -262,7 +266,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
     let pool = ThreadPool::new(params.threads);
 
     let mut expected = 0;
-    for (arg, pretty_arg) in args {
+    for (arg, pretty_arg, blobs) in args {
         let name = match pretty_arg {
             Some(pretty_arg) => format!("{:?}", pretty_arg),
             None => module.canonical(),
@@ -282,7 +286,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy, options) {
+            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };
@@ -307,6 +311,7 @@ pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, O
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
                         Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db(), verbose),
+                        Event2::Blob((blob, tx)) => rl.store_blob(tx, &blob),
                         Event2::Exit(event) => {
                             debug!("Received exit: {:?} -> {:?}", name, event);
                             stack.remove(&name);
@@ -361,6 +366,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     Some(Event::Log(log)) => log.apply(&mut *spinner),
                     Some(Event::Database(_)) => (),
                     Some(Event::Stdio(_)) => (),
+                    Some(Event::Blob(_)) => (),
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,
                     Some(Event::Exit(ExitEvent::Err(error))) => spinner.error(&error),

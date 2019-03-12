@@ -1,5 +1,6 @@
 use crate::errors::*;
 use chrootable_https::dns::Resolver;
+use crate::blobs::Blob;
 use crate::engine::{Environment, Module, Reporter};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::keyring::KeyRingEntry;
@@ -25,6 +26,7 @@ pub struct StartCommand {
     options: HashMap<String, String>,
     module: Module,
     arg: serde_json::Value,
+    blobs: Vec<Blob>,
 }
 
 impl StartCommand {
@@ -35,6 +37,7 @@ impl StartCommand {
                options: HashMap<String, String>,
                module: Module,
                arg: serde_json::Value,
+               blobs: Vec<Blob>,
     ) -> StartCommand {
         StartCommand {
             verbose,
@@ -44,6 +47,7 @@ impl StartCommand {
             options,
             module,
             arg,
+            blobs,
         }
     }
 }
@@ -181,6 +185,7 @@ pub fn spawn_module(module: Module,
                     has_stdin: bool,
                     proxy: Option<SocketAddr>,
                     options: HashMap<String, String>,
+                    blobs: Vec<Blob>,
 ) -> Result<ExitEvent> {
     let dns_config = Resolver::from_system()?;
 
@@ -191,13 +196,14 @@ pub fn spawn_module(module: Module,
     };
 
     let mut supervisor = Supervisor::setup(&module)?;
-    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, options, module, arg))?;
+    supervisor.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, options, module, arg, blobs))?;
 
     let exit = loop {
         match supervisor.recv()? {
             Event::Log(event) => tx.send(Event2::Log(event)),
             Event::Database(object) => supervisor.send_event_callback(object, &tx),
             Event::Stdio(object) => object.apply(&mut supervisor, tx, &mut reader),
+            Event::Blob(blob) => supervisor.send_event_callback(blob, &tx),
             Event::Exit(event) => {
                 if let ExitEvent::Err(err) = &event {
                     tx.send(Event2::Log(LogEvent::Error(err.clone())));

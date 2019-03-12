@@ -18,6 +18,7 @@ pub mod api;
 pub mod archive;
 pub mod args;
 pub mod auth;
+pub mod blobs;
 pub mod cmd;
 pub mod complete;
 pub mod config;

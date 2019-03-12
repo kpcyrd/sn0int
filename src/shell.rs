@@ -1,11 +1,13 @@
 use crate::errors::*;
 
 use crate::args::Args;
+use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
 use crate::config::Config;
 use crate::db::ttl;
 use crate::keyring::KeyRing;
+use crate::worker::VoidSender;
 use colored::Colorize;
 use ctrlc;
 use crate::db::{self, Database};
@@ -122,6 +124,7 @@ pub struct Readline<'a> {
     rl: Editor<CmdCompleter>,
     prompt: Prompt,
     db: Database,
+    blobs: BlobStorage,
     psl: Psl,
     config: &'a Config,
     engine: Engine<'a>,
@@ -131,7 +134,7 @@ pub struct Readline<'a> {
 }
 
 impl<'a> Readline<'a> {
-    pub fn new(config: &'a Config, db: Database, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -147,6 +150,7 @@ impl<'a> Readline<'a> {
             rl,
             prompt,
             db,
+            blobs,
             psl,
             config,
             engine,
@@ -202,6 +206,10 @@ impl<'a> Readline<'a> {
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
+    }
+
+    pub fn set_blobstorage(&mut self, blobs: BlobStorage) {
+        self.blobs = blobs;
     }
 
     pub fn psl(&self) -> &Psl {
@@ -313,6 +321,12 @@ impl<'a> Readline<'a> {
     pub fn signal_register(&self) -> &Arc<SignalRegister> {
         &self.signal_register
     }
+
+    pub fn store_blob(&self, tx: VoidSender, blob: &Blob) {
+        let result = self.blobs.save(blob)
+            .map_err(|err| err.to_string());
+        tx.send(result).unwrap();
+    }
 }
 
 pub struct SignalRegister(AtomicUsize);
@@ -388,6 +402,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
         None => Workspace::from_str("default").unwrap(),
     };
 
+    let blobs = BlobStorage::workspace(&workspace)?;
     let db = if verbose_init {
         Database::establish(workspace)?
     } else {
@@ -414,7 +429,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
     }
     autoupdate.check_background(&config, engine.list());
 
-    let rl = Readline::new(&config, db, psl, engine, keyring);
+    let rl = Readline::new(&config, db, blobs, psl, engine, keyring);
 
     Ok(rl)
 }

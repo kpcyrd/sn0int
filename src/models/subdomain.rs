@@ -4,6 +4,8 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::result;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -246,7 +248,7 @@ pub type InsertSubdomain = NewSubdomain;
 impl LuaInsertToNew for InsertSubdomain {
     type Target = NewSubdomain;
 
-    fn try_into_new(self) -> Result<NewSubdomain> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomain> {
         Ok(self)
     }
 }

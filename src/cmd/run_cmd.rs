@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use crate::args;
+use crate::blobs::Blob;
 use crate::db::{Database, Filter};
 use crate::db::ttl;
 use crate::engine::Module;
@@ -67,13 +68,13 @@ impl From<Args> for Params<'static> {
     }
 }
 
-fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
+fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let pretty = x.to_string();
     let arg = serde_json::to_value(x)?;
-    Ok((arg, Some(pretty)))
+    Ok((arg, Some(pretty), vec![])) // TODO
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
     db.filter_with_param::<T>(filter, param)?
         .into_iter()
         .map(prepare_arg)
@@ -122,6 +123,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
         Some(Source::Networks) => prepare_args::<Network>(rl.db(), &filter, None),
         Some(Source::Devices) => prepare_args::<Device>(rl.db(), &filter, None),
         Some(Source::Accounts(service)) => prepare_args::<Account>(rl.db(), &filter, service.as_ref()),
+        Some(Source::Images) => prepare_args::<Image>(rl.db(), &filter, None),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {
@@ -129,14 +131,14 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
                     .map(|key| {
                         let pretty = format!("{}:{}", key.namespace, key.access_key);
                         let arg = serde_json::to_value(key)?;
-                        Ok((arg, Some(pretty)))
+                        Ok((arg, Some(pretty), vec![]))
                     })
                     .collect::<Result<Vec<_>>>()
             } else {
                 Ok(vec![])
             }
         },
-        None => Ok(vec![(serde_json::Value::Null, None)]),
+        None => Ok(vec![(serde_json::Value::Null, None, vec![])]),
     }?;
 
     rl.signal_register().catch_ctrl();

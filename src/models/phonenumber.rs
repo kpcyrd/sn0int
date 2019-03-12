@@ -4,6 +4,8 @@ use crate::models::*;
 use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -278,7 +280,7 @@ pub type InsertPhoneNumber = NewPhoneNumber;
 impl LuaInsertToNew for InsertPhoneNumber {
     type Target = NewPhoneNumber;
 
-    fn try_into_new(self) -> Result<NewPhoneNumber> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewPhoneNumber> {
         if self.value.starts_with('+') {
             bail!("E.164 phone number must start with '+'");
         }

@@ -68,6 +68,10 @@ atty = "0.2"
 bufstream = "0.1.4"
 tokio = "0.1.14"
 semver = "0.9"
+bytes = "0.4"
+blake2 = "0.8.0"
+digest = "0.8.0"
+hex = "0.3.1"
 
 image = "0.21"
 img_hash = "2.1"
@@ -85,6 +89,7 @@ unveil = "0.2.0"
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
 boxxy = "0.9"
+tempfile = "3.0"
 
 [patch.crates-io]
 rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }

@@ -2,6 +2,8 @@ use crate::errors::*;
 use crate::db::{Database, Filter};
 use crate::fmt;
 use crate::schema::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -304,7 +306,7 @@ macro_rules! display_detailed {
 pub trait LuaInsertToNew {
     type Target;
 
-    fn try_into_new(self) -> Result<Self::Target>;
+    fn try_into_new(self, state: &Arc<State>) -> Result<Self::Target>;
 }
 
 mod domain;

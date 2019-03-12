@@ -3,6 +3,8 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
@@ -159,7 +161,7 @@ pub type InsertNetworkDevice = NewNetworkDevice;
 impl LuaInsertToNew for InsertNetworkDevice {
     type Target = NewNetworkDevice;
 
-    fn try_into_new(self) -> Result<NewNetworkDevice> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetworkDevice> {
         Ok(self)
     }
 }

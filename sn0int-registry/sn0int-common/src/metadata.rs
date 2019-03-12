@@ -38,6 +38,7 @@ pub enum Source {
     Networks,
     Devices,
     Accounts(Option<String>),
+    Images,
     KeyRing(String),
 }
 
@@ -62,6 +63,7 @@ impl FromStr for Source {
             ("networks", None) => Ok(Source::Networks),
             ("devices", None) => Ok(Source::Devices),
             ("accounts", param) => Ok(Source::Accounts(param.map(String::from))),
+            ("images", None) => Ok(Source::Images),
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),

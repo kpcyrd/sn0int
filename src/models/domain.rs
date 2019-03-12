@@ -3,6 +3,8 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -230,7 +232,7 @@ pub type InsertDomain = NewDomain;
 impl LuaInsertToNew for InsertDomain {
     type Target = NewDomain;
 
-    fn try_into_new(self) -> Result<NewDomain> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewDomain> {
         Ok(self)
     }
 }

@@ -47,6 +47,7 @@ pub enum Family {
     Account,
     Breach,
     BreachEmail,
+    Image,
 }
 
 impl FromStr for Family {
@@ -67,6 +68,7 @@ impl FromStr for Family {
             "account" => Family::Account,
             "breach" => Family::Breach,
             "breach-email" => Family::BreachEmail,
+            "image" => Family::Image,
             _ => bail!("Unknown object family"),
         })
     }
@@ -330,6 +332,7 @@ impl Database {
             Family::Account => self.get_opt_typed::<Account>(&value),
             Family::Breach => self.get_opt_typed::<Breach>(&value),
             Family::BreachEmail => bail!("Unsupported operation"),
+            Family::Image => self.get_opt_typed::<Image>(&value),
         }
     }
 

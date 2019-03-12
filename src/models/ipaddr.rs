@@ -6,6 +6,8 @@ use diesel;
 use diesel::prelude::*;
 use std::net;
 use std::result;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -320,7 +322,7 @@ pub type InsertIpAddr = NewIpAddr;
 impl LuaInsertToNew for InsertIpAddr {
     type Target = NewIpAddr;
 
-    fn try_into_new(self) -> Result<NewIpAddr> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewIpAddr> {
         Ok(self)
     }
 }

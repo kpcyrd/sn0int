@@ -4,6 +4,8 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -277,7 +279,7 @@ pub type InsertEmail = NewEmail;
 impl LuaInsertToNew for InsertEmail {
     type Target = NewEmail;
 
-    fn try_into_new(self) -> Result<NewEmail> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewEmail> {
         Ok(self)
     }
 }
