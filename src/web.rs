@@ -62,6 +62,7 @@ pub struct RequestOptions {
     form: Option<serde_json::Value>,
     body: Option<String>,
     timeout: Option<u64>,
+    #[serde(default)]
     into_blob: bool,
 }
 

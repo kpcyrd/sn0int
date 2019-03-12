@@ -202,6 +202,17 @@ impl KeyRingEntry {
         let v = LuaJsonValue::from(v).into();
         Ok(v)
     }
+
+    pub fn matches(&self, query: &str) -> bool {
+        if let Some(idx) = query.find(':') {
+            let (namespace, access_key) = query.split_at(idx);
+            let access_key = &access_key[1..];
+
+            self.namespace == namespace && self.access_key == access_key
+        } else {
+            self.namespace == query
+        }
+    }
 }
 
 #[cfg(test)]

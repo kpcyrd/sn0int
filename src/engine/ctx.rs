@@ -186,9 +186,9 @@ impl State for LuaState {
         self.verbose
     }
 
-    fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry> {
+    fn keyring(&self, query: &str) -> Vec<&KeyRingEntry> {
         self.keyring.iter()
-            .filter(|x| x.namespace == namespace)
+            .filter(|x| x.matches(query))
             .collect()
     }
 
