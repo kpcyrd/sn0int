@@ -1,4 +1,5 @@
 use crate::errors::*;
+use crate::blobs::{Blob, BlobStorage};
 use crate::db::{Database, Filter};
 use crate::fmt;
 use crate::schema::*;
@@ -186,6 +187,10 @@ pub trait Model: Sized {
     fn get(db: &Database, query: &Self::ID) -> Result<Self>;
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>>;
+
+    fn select_blobs(&self, _bs: &BlobStorage) -> Result<Vec<Blob>> {
+        Ok(Vec::new())
+    }
 }
 
 pub trait Scopable: Model {

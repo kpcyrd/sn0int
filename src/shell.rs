@@ -208,6 +208,10 @@ impl<'a> Readline<'a> {
         self.db = db;
     }
 
+    pub fn blobs(&self) -> &BlobStorage {
+        &self.blobs
+    }
+
     pub fn set_blobstorage(&mut self, blobs: BlobStorage) {
         self.blobs = blobs;
     }

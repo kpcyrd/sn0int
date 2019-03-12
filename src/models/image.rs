@@ -106,6 +106,11 @@ impl Model for Image {
 
         Ok(email)
     }
+
+    fn select_blobs(&self, bs: &BlobStorage) -> Result<Vec<Blob>> {
+        let blob = bs.load(&self.value)?;
+        Ok(vec![blob])
+    }
 }
 
 impl Scopable for Image {
