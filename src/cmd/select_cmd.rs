@@ -17,8 +17,8 @@ use crate::models::*;
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
-    #[structopt(long="json")]
     /// Json output
+    #[structopt(long="json")]
     json: bool,
 }
 

@@ -1,17 +1,31 @@
 use crate::errors::*;
 
+use crate::blobs::Blob;
 use crate::cmd::Cmd;
 use crate::models::*;
 use crate::shell::Readline;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::utils;
+use crate::term;
+use std::fs;
+use std::path::Path;
+use walkdir::WalkDir;
 
 
 #[derive(Debug, StructOpt)]
 #[structopt(author = "",
             raw(global_settings = "&[AppSettings::ColoredHelp]"))]
-pub enum Args {
+pub struct Args {
+    #[structopt(subcommand)]
+    subcommand: Target,
+    /// Do not actually insert into database
+    #[structopt(short="n", long="dry-run")]
+    dry_run: bool,
+}
+
+#[derive(Debug, StructOpt)]
+pub enum Target {
     /// Insert domain into the database
     #[structopt(name="domain")]
     Domain(AddDomain),
@@ -36,22 +50,24 @@ pub enum Args {
     /// Insert breach into the database
     #[structopt(name="breach")]
     Breach(AddBreach),
+    /// Insert images into the database
+    #[structopt(name="image")]
+    Image(AddImage),
 }
 
 impl Cmd for Args {
     fn run(self, rl: &mut Readline) -> Result<()> {
-        let insert = match self {
-            Args::Domain(args) => args.into_insert(rl),
-            Args::Subdomain(args) => args.into_insert(rl),
-            Args::Email(args) => args.into_insert(rl),
-            Args::PhoneNumber(args) => args.into_insert(rl),
-            Args::Device(args) => args.into_insert(rl),
-            Args::Network(args) => args.into_insert(rl),
-            Args::Account(args) => args.into_insert(rl),
-            Args::Breach(args) => args.into_insert(rl),
-        }?;
-        rl.db().insert_generic(insert)?;
-        Ok(())
+        match self.subcommand {
+            Target::Domain(args) => args.insert(rl, self.dry_run),
+            Target::Subdomain(args) => args.insert(rl, self.dry_run),
+            Target::Email(args) => args.insert(rl, self.dry_run),
+            Target::PhoneNumber(args) => args.insert(rl, self.dry_run),
+            Target::Device(args) => args.insert(rl, self.dry_run),
+            Target::Network(args) => args.insert(rl, self.dry_run),
+            Target::Account(args) => args.insert(rl, self.dry_run),
+            Target::Breach(args) => args.insert(rl, self.dry_run),
+            Target::Image(args) => args.insert(rl, self.dry_run),
+        }
     }
 }
 
@@ -60,8 +76,16 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     Args::run_str(rl, args)
 }
 
-trait IntoInsert {
+trait IntoInsert: Sized {
     fn into_insert(self, rl: &Readline) -> Result<Insert>;
+
+    fn insert(self, rl: &Readline, dry_run: bool) -> Result<()> {
+        let insert = self.into_insert(rl)?;
+        if !dry_run {
+            rl.db().insert_generic(insert)?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, StructOpt)]
@@ -287,5 +311,98 @@ impl IntoInsert for AddBreach {
         Ok(Insert::Breach(NewBreach {
             value: name,
         }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddImage {
+    paths: Vec<String>,
+}
+
+impl IntoInsert for AddImage {
+    fn into_insert(self, _rl: &Readline) -> Result<Insert> {
+        unreachable!()
+    }
+
+    fn insert(self, rl: &Readline, dry_run: bool) -> Result<()> {
+        let paths = if self.paths.is_empty() {
+            let path = utils::question("Path")?;
+            vec![path]
+        } else {
+            self.paths
+        };
+
+        for path in paths {
+            for path in WalkDir::new(path) {
+                let path = match path {
+                    Ok(path) => path,
+                    Err(err) => {
+                        let path = err.path().unwrap_or(Path::new("")).display();
+
+                        let err = err.io_error()
+                            .map(|err| err.to_string())
+                            .unwrap_or_else(|| String::from("walkdir failed"));
+                        term::error(&format!("Failed to access entry {:?}: {}", path, err));
+
+                        continue;
+                    },
+                };
+
+                if path.file_type().is_dir() {
+                    debug!("Traversing into directory: {:?}", path);
+                    continue;
+                }
+
+                debug!("Testing: {:?}", path.path());
+
+                let data = match fs::read(path.path()) {
+                    Ok(data) => data,
+                    Err(err) => {
+                        term::error(&format!("Failed to read {:?}: {}", path, err));
+                        continue;
+                    },
+                };
+
+                // check if image
+                if let Ok(format) = image::guess_format(&data) {
+                    debug!("Detected image format: {:?}", format);
+                } else {
+                    debug!("Probably not an image, skipping");
+                    continue;
+                }
+
+                let blob = Blob::create(data.into());
+                rl.blobs().save(&blob)?;
+                let value = blob.id;
+
+                let filename = path.file_name()
+                    .to_string_lossy()
+                    .to_string();
+
+                term::info(&format!("{} {:?}", value, path.path()));
+
+                if !dry_run {
+                    rl.db().insert_generic(Insert::Image(NewImage {
+                        value,
+
+                        filename: Some(filename),
+                        mime: None,
+                        width: None,
+                        height: None,
+                        created: None,
+
+                        latitude: None,
+                        longitude: None,
+
+                        nudity: None,
+                        ahash: None,
+                        dhash: None,
+                        phash: None,
+                    }))?;
+                }
+            }
+        }
+
+        Ok(())
     }
 }
