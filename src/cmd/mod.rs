@@ -2,7 +2,7 @@ use crate::errors::*;
 use crate::shell::Readline;
 
 pub trait Cmd: structopt::StructOpt + Sized {
-    fn run(&self, rl: &mut Readline) -> Result<()>;
+    fn run(self, rl: &mut Readline) -> Result<()>;
 
     #[inline]
     fn run_str(rl: &mut Readline, args: &[String]) -> Result<()> {

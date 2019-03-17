@@ -50,7 +50,7 @@ impl<'a, 'b> Printer<'a, 'b> {
 }
 
 impl Cmd for Args {
-    fn run(&self, rl: &mut Readline) -> Result<()> {
+    fn run(self, rl: &mut Readline) -> Result<()> {
         let printer = Printer::new(rl, self.json);
 
         match &self.subcommand {

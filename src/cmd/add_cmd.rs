@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::cmd::Cmd;
 use crate::models::*;
 use crate::shell::Readline;
 use structopt::StructOpt;
@@ -11,22 +12,52 @@ use crate::utils;
 #[structopt(author = "",
             raw(global_settings = "&[AppSettings::ColoredHelp]"))]
 pub enum Args {
+    /// Insert domain into the database
     #[structopt(name="domain")]
     Domain(AddDomain),
+    /// Insert subdomain into the database
     #[structopt(name="subdomain")]
     Subdomain(AddSubdomain),
+    /// Insert email into the database
     #[structopt(name="email")]
     Email(AddEmail),
+    /// Insert phonenumber into the database
     #[structopt(name="phonenumber")]
     PhoneNumber(AddPhoneNumber),
+    /// Insert device into the database
     #[structopt(name="device")]
     Device(AddDevice),
+    /// Insert network into the database
     #[structopt(name="network")]
     Network(AddNetwork),
+    /// Insert account into the database
     #[structopt(name="account")]
     Account(AddAccount),
+    /// Insert breach into the database
     #[structopt(name="breach")]
     Breach(AddBreach),
+}
+
+impl Cmd for Args {
+    fn run(self, rl: &mut Readline) -> Result<()> {
+        let insert = match self {
+            Args::Domain(args) => args.into_insert(rl),
+            Args::Subdomain(args) => args.into_insert(rl),
+            Args::Email(args) => args.into_insert(rl),
+            Args::PhoneNumber(args) => args.into_insert(rl),
+            Args::Device(args) => args.into_insert(rl),
+            Args::Network(args) => args.into_insert(rl),
+            Args::Account(args) => args.into_insert(rl),
+            Args::Breach(args) => args.into_insert(rl),
+        }?;
+        rl.db().insert_generic(insert)?;
+        Ok(())
+    }
+}
+
+#[inline]
+pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+    Args::run_str(rl, args)
 }
 
 trait IntoInsert {
@@ -257,20 +288,4 @@ impl IntoInsert for AddBreach {
             value: name,
         }))
     }
-}
-
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
-    let insert = match args {
-        Args::Domain(args) => args.into_insert(rl),
-        Args::Subdomain(args) => args.into_insert(rl),
-        Args::Email(args) => args.into_insert(rl),
-        Args::PhoneNumber(args) => args.into_insert(rl),
-        Args::Device(args) => args.into_insert(rl),
-        Args::Network(args) => args.into_insert(rl),
-        Args::Account(args) => args.into_insert(rl),
-        Args::Breach(args) => args.into_insert(rl),
-    }?;
-    rl.db().insert_generic(insert)?;
-    Ok(())
 }
