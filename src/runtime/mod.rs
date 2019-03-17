@@ -11,6 +11,7 @@ import_fns!(db);
 import_fns!(dns);
 import_fns!(error);
 import_fns!(geoip);
+import_fns!(gfx);
 import_fns!(hex);
 import_fns!(http);
 import_fns!(html);

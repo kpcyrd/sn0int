@@ -51,6 +51,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     Ok(())
 }
 
+#[inline]
 fn noscope<T: Model + Detailed>(rl: &mut Readline, filter: &Filter) -> Result<usize> {
-    rl.db().noscope::<T>(&filter.parse()?)
+    T::noscope(rl.db(), &filter.parse()?)
 }

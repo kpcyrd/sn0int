@@ -50,3 +50,10 @@ pub mod utils;
 pub mod web;
 pub mod worker;
 pub mod workspaces;
+
+
+#[cfg(test)]
+fn test_init() {
+    use env_logger;
+    let _ = env_logger::builder().is_test(true).try_init();
+}

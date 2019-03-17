@@ -233,6 +233,7 @@ pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
         dns_config: start.dns_config,
         proxy: start.proxy,
         options: start.options,
+        blobs: start.blobs,
         psl,
         geoip,
         asn,

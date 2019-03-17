@@ -28,6 +28,12 @@ pub enum Args {
     Devices(Filter),
     #[structopt(name="networks")]
     Networks(Filter),
+    #[structopt(name="accounts")]
+    Accounts(Filter),
+    #[structopt(name="breaches")]
+    Breaches(Filter),
+    #[structopt(name="images")]
+    Images(Filter),
 }
 
 #[derive(Debug, StructOpt)]
@@ -52,11 +58,15 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Args::PhoneNumbers(filter) => delete::<PhoneNumber>(rl, &filter),
         Args::Devices(filter) => delete::<Device>(rl, &filter),
         Args::Networks(filter) => delete::<Network>(rl, &filter),
+        Args::Accounts(filter) => delete::<Account>(rl, &filter),
+        Args::Breaches(filter) => delete::<Breach>(rl, &filter),
+        Args::Images(filter) => delete::<Image>(rl, &filter),
     }?;
     term::info(&format!("Deleted {} rows", rows));
     Ok(())
 }
 
+#[inline]
 fn delete<T: Model + Detailed>(rl: &mut Readline, filter: &Filter) -> Result<usize> {
-    rl.db().delete::<T>(&filter.parse()?)
+    T::delete(rl.db(), &filter.parse()?)
 }

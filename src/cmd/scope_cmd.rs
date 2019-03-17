@@ -51,6 +51,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     Ok(())
 }
 
+#[inline]
 fn scope<T: Model + Detailed>(rl: &mut Readline, filter: &Filter) -> Result<usize> {
-    rl.db().scope::<T>(&filter.parse()?)
+    T::scope(rl.db(), &filter.parse()?)
 }

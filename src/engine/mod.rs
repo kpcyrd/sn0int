@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::blobs::Blob;
 use crate::config::Config;
 use crate::geoip::{GeoIP, AsnDB};
 use crate::json::LuaJsonValue;
@@ -35,6 +36,7 @@ pub struct Environment {
     pub dns_config: Resolver,
     pub proxy: Option<SocketAddr>,
     pub options: HashMap<String, String>,
+    pub blobs: Vec<Blob>,
     pub psl: Psl,
     pub geoip: GeoIP,
     pub asn: AsnDB,
