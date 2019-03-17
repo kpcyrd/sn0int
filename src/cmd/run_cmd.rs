@@ -125,6 +125,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
         Some(Source::Networks) => prepare_args::<Network>(rl, &filter, None),
         Some(Source::Devices) => prepare_args::<Device>(rl, &filter, None),
         Some(Source::Accounts(service)) => prepare_args::<Account>(rl, &filter, service.as_ref()),
+        Some(Source::Breaches) => prepare_args::<Breach>(rl, &filter, None),
         Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();

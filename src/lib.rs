@@ -26,6 +26,7 @@ pub mod crt;
 pub mod db;
 pub mod errors;
 pub mod engine;
+pub mod filters;
 pub mod fmt;
 pub mod geoip;
 pub mod gfx;

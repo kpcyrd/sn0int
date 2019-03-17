@@ -1,8 +1,8 @@
 use crate::errors::*;
 
 use crate::cmd::Cmd;
-use crate::db;
 use crate::db::ttl;
+use crate::filters::{Target, Filter};
 use crate::shell::Readline;
 use serde::Serialize;
 use serde_json;
@@ -22,54 +22,6 @@ pub struct Args {
     json: bool,
 }
 
-#[derive(Debug, StructOpt)]
-pub enum Target {
-    #[structopt(name="domains")]
-    /// Select domains
-    Domains(Filter),
-    #[structopt(name="subdomains")]
-    /// Select subdomains
-    Subdomains(Filter),
-    #[structopt(name="ipaddrs")]
-    /// Select ipaddrs
-    IpAddrs(Filter),
-    #[structopt(name="urls")]
-    /// Select urls
-    Urls(Filter),
-    #[structopt(name="emails")]
-    /// Select emails
-    Emails(Filter),
-    #[structopt(name="phonenumbers")]
-    /// Select phone numbers
-    PhoneNumbers(Filter),
-    #[structopt(name="devices")]
-    /// Select devices
-    Devices(Filter),
-    #[structopt(name="networks")]
-    /// Select networks
-    Networks(Filter),
-    #[structopt(name="accounts")]
-    /// Select accounts
-    Accounts(Filter),
-    #[structopt(name="breaches")]
-    /// Select breaches
-    Breaches(Filter),
-    #[structopt(name="images")]
-    /// Select images
-    Images(Filter),
-}
-
-#[derive(Debug, StructOpt)]
-pub struct Filter {
-    args: Vec<String>,
-}
-
-impl Filter {
-    pub fn parse(&self) -> Result<db::Filter> {
-        db::Filter::parse_optional(&self.args)
-    }
-}
-
 pub struct Printer<'a, 'b> {
     rl: &'a mut Readline<'b>,
     json: bool,
@@ -84,7 +36,7 @@ impl<'a, 'b> Printer<'a, 'b> {
     }
 
     pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
-        for obj in self.rl.db().filter::<T>(&filter.parse()?)? {
+        for obj in self.rl.db().filter::<T>(&filter.parse_optional()?)? {
             if self.json {
                 let v = serde_json::to_string(&obj)?;
                 println!("{}", v);
