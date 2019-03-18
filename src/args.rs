@@ -58,6 +58,9 @@ pub enum SubCommand {
     /// Delete from the database
     #[structopt(author="", name="delete")]
     Delete(cmd::delete_cmd::Args),
+    /// Verify blob storage for corrupt and dangling blobs
+    #[structopt(author="", name="fsck")]
+    Fsck(cmd::fsck_cmd::Args),
     /// Generate shell completions
     #[structopt(author="", name="completions")]
     Completions(Completions),

@@ -22,14 +22,17 @@ pub struct Blob {
 
 impl Blob {
     pub fn create(bytes: Bytes) -> Blob {
-        let mut h = VarBlake2b::new(16).unwrap();
-        h.input(&bytes);
-        let id = hex::encode(h.vec_result());
-
+        let id = Self::hash(&bytes);
         Blob {
             id,
             bytes,
         }
+    }
+
+    pub fn hash(bytes: &[u8]) -> String {
+        let mut h = VarBlake2b::new(16).unwrap();
+        h.input(bytes);
+        hex::encode(h.vec_result())
     }
 }
 
@@ -108,6 +111,26 @@ impl BlobStorage {
             .context("Failed to write blob")?;
 
         Ok(())
+    }
+
+    pub fn delete(&self, id: &str) -> Result<()> {
+        let path = self.join(id)?;
+        debug!("Deleting blob: {:?}", path);
+        fs::remove_file(path)
+            .context("Failed to delete blob")?;
+        Ok(())
+    }
+
+    pub fn list(&self) -> Result<Vec<String>> {
+        let mut blobs = Vec::new();
+        for entry in fs::read_dir(&self.path)? {
+            let blob = entry?
+                .file_name()
+                .into_string()
+                .map_err(|_| format_err!("Invalid filename"))?;
+            blobs.push(blob);
+        }
+        Ok(blobs)
     }
 }
 
