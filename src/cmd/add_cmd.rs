@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
+use crate::gfx;
 use crate::models::*;
 use crate::shell::Readline;
 use structopt::StructOpt;
@@ -364,15 +365,19 @@ impl IntoInsert for AddImage {
                 };
 
                 // check if image
-                if let Ok(format) = image::guess_format(&data) {
-                    debug!("Detected image format: {:?}", format);
-                } else {
-                    debug!("Probably not an image, skipping");
-                    continue;
-                }
+                let format = match gfx::guess_format(&data) {
+                    Ok(format) => format.mime().to_string(),
+                    _ => {
+                        debug!("Probably not an image, skipping");
+                        continue;
+                    },
+                };
+                debug!("Detected image format: {:?}", format);
 
                 let blob = Blob::create(data.into());
-                rl.blobs().save(&blob)?;
+                if !dry_run {
+                    rl.blobs().save(&blob)?;
+                }
                 let value = blob.id;
 
                 let filename = path.file_name()
@@ -386,7 +391,7 @@ impl IntoInsert for AddImage {
                         value,
 
                         filename: Some(filename),
-                        mime: None,
+                        mime: Some(format),
                         width: None,
                         height: None,
                         created: None,
