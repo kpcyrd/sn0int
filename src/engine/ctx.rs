@@ -346,6 +346,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::json_encode(&mut lua, state.clone());
     runtime::keyring(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
+    runtime::md5(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
@@ -353,6 +354,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::semver_match(&mut lua, state.clone());
+    runtime::sha1(&mut lua, state.clone());
+    runtime::sha2_256(&mut lua, state.clone());
+    runtime::sha2_512(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
