@@ -22,8 +22,7 @@ function run(arg)
 
     records = records['answers']
 
-    i = 1
-    while records[i] ~= nil do
+    for i=1, #records do
         r = records[i][2]
         if r['A'] ~= nil then
             ipaddr_id = db_add('ipaddr', {
@@ -38,6 +37,5 @@ function run(arg)
             })
             if last_err() then return end
         end
-        i = i+1
     end
 end

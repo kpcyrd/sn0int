@@ -27,8 +27,7 @@ function run(arg)
 
     m = regex_find_all('<hostname>([^<]+)</hostname>', resp['text'])
 
-    i = 1
-    while i <= #m do
+    for i=1, #m do
         subdomain = m[i][2]
 
         domain = psl_domain_from_dns_name(subdomain)
@@ -42,7 +41,5 @@ function run(arg)
             value=subdomain,
         })
         if last_err() then return end
-
-        i = i+1
     end
 end

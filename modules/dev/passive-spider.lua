@@ -52,12 +52,9 @@ function run(arg)
     end
 
     -- process html links
-    i = 1
-    while i <= #links do
+    for i=1, #links do
         href = links[i]['attrs']['href']
 
         entry(arg['value'], href)
-
-        i = i+1
     end
 end

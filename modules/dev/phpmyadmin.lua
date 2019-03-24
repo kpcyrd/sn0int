@@ -76,8 +76,7 @@ function run(arg)
 
     session = http_mksession()
 
-    i = 1
-    while i <= #paths do
+    for i=1, #paths do
         p = paths[i]
         url = url_join(arg['value'], p)
         debug(url)
@@ -100,7 +99,5 @@ function run(arg)
                 })
             end
         end
-
-        i = i+1
     end
 end

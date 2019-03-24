@@ -19,15 +19,15 @@ function scan4email(username)
     local repos = api_get(url)
     if last_err() then return end
 
-    i = 1
-    while i <= #repos do
+    -- XXX: 'https://api.github.com/users/' .. username .. '/events/public?page=0&per_page=100' is faster but less accurate
+
+    for i=1, #repos do
         local repo = repos[i]
         debug(repo)
         local commits = api_get(repo['url'] .. '/commits')
         if last_err() then return end
 
-        j = 1
-        while j <= #commits do
+        for j=1, #commits do
             local commit = commits[j]
             debug(commit)
 
@@ -42,11 +42,7 @@ function scan4email(username)
                 local email = commit['commit']['committer']['email']
                 return email
             end
-
-            j = j+1
         end
-
-        i = i+1
     end
 end
 

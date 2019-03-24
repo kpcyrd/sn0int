@@ -53,8 +53,7 @@ function run()
     now = datetime()
 
     -- add devices to database
-    local i = 1
-    while i <= #leases do
+    for i=1, #leases do
         local hostname = leases[i][2]
         local ipaddr = leases[i][3]
         local macaddr = leases[i][4]
@@ -85,7 +84,5 @@ function run()
                 last_seen=now,
             }, 120)
         end
-
-        i = i+1
     end
 end
