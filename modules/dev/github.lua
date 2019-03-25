@@ -32,14 +32,22 @@ function scan4email(username)
             debug(commit)
 
             if commit['author']['login'] == username then
-                -- name = commit['commit']['author']['name']
+                local name = commit['commit']['author']['name']
                 local email = commit['commit']['author']['email']
+                db_add('email', {
+                    value=email,
+                    displayname=name,
+                })
                 return email
             end
 
             if commit['committer']['login'] == username then
-                -- name = commit['commit']['committer']['name']
+                local name = commit['commit']['committer']['name']
                 local email = commit['commit']['committer']['email']
+                db_add('email', {
+                    value=email,
+                    displayname=name,
+                })
                 return email
             end
         end

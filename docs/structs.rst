@@ -86,6 +86,8 @@ Emails
 
 ``value``
     The email address.
+``displayname``
+    The display name of a given email address: ``this is the name <foo@example.com>``.
 ``valid``
     Whether that email address is valid or has been disabled.
 

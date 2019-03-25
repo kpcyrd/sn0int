@@ -55,6 +55,7 @@ table! {
         value -> Text,
         unscoped -> Bool,
         valid -> Nullable<Bool>,
+        displayname -> Nullable<Text>,
     }
 }
 

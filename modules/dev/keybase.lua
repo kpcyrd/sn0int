@@ -5,10 +5,11 @@
 
 function extract_mails(pubkey)
     for j=1, #pubkey['uids'] do
-        local m = regex_find("<([^< ]+@[^< ]+)>$", pubkey['uids'][j])
+        local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
         if m then
             db_add('email', {
-                value=m[2],
+                value=m[3],
+                displayname=m[2],
             })
         end
     end

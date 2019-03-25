@@ -163,6 +163,7 @@ impl IntoInsert for AddEmail {
 
         Ok(Insert::Email(NewEmail {
             value: email,
+            displayname: None,
             valid: None,
         }))
     }

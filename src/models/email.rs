@@ -1,5 +1,4 @@
 use crate::errors::*;
-use crate::fmt::Write;
 use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
@@ -15,6 +14,7 @@ pub struct Email {
     pub value: String,
     pub unscoped: bool,
     pub valid: Option<bool>,
+    pub displayname: Option<String>,
 }
 
 impl Model for Email {
@@ -174,6 +174,7 @@ impl fmt::Display for BreachWithPassword {
 pub struct DetailedEmail {
     id: i32,
     value: String,
+    displayname: Option<String>,
     breaches: Vec<BreachWithPassword>,
     unscoped: bool,
     valid: Option<bool>,
@@ -190,15 +191,18 @@ impl DisplayableDetailed for DetailedEmail {
         w.id(self.id)?;
         w.debug::<Green, _>(&self.value)?;
 
+        w.start_group();
+        w.opt_debug::<Yellow, _>(&self.displayname)?;
+
         if let Some(valid) = self.valid {
-            write!(w, " [")?;
             if valid {
                 w.display::<Green, _>("valid")?;
             } else {
                 w.display::<Red, _>("invalid")?;
             }
-            write!(w, "]")?;
         }
+
+        w.end_group()?;
 
         Ok(())
     }
@@ -228,6 +232,7 @@ impl Detailed for Email {
         Ok(DetailedEmail {
             id: self.id,
             value: self.value.to_string(),
+            displayname: self.displayname.clone(),
             breaches,
             unscoped: self.unscoped,
             valid: self.valid,
@@ -239,6 +244,7 @@ impl Detailed for Email {
 #[table_name="emails"]
 pub struct NewEmail {
     pub value: String,
+    pub displayname: Option<String>,
     pub valid: Option<bool>,
 }
 
@@ -261,6 +267,7 @@ impl Upsertable<Email> for NewEmail {
     fn upsert(self, existing: &Email) -> Self::Update {
         Self::Update {
             id: existing.id,
+            displayname: Self::upsert_opt(self.displayname, &existing.displayname),
             valid: Self::upsert_opt(self.valid, &existing.valid),
         }
     }
@@ -288,12 +295,14 @@ impl LuaInsertToNew for InsertEmail {
 #[table_name="emails"]
 pub struct EmailUpdate {
     pub id: i32,
+    pub displayname: Option<String>,
     pub valid: Option<bool>,
 }
 
 impl Upsert for EmailUpdate {
     fn is_dirty(&self) -> bool {
-        self.valid.is_some()
+        self.displayname.is_some() ||
+            self.valid.is_some()
     }
 
     fn generic(self) -> Update {
@@ -307,10 +316,12 @@ impl Upsert for EmailUpdate {
 
 impl Updateable<Email> for EmailUpdate {
     fn changeset(&mut self, existing: &Email) {
+        Self::clear_if_equal(&mut self.displayname, &existing.displayname);
         Self::clear_if_equal(&mut self.valid, &existing.valid);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
+        Self::push_value(updates, "displayname", &self.displayname);
         Self::push_value(updates, "valid", &self.valid);
     }
 }
