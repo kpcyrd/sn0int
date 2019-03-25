@@ -78,12 +78,16 @@ fn run() -> Result<()> {
         }))
         .mount("/api/v0", routes![
             routes::api::quickstart,
+            routes::api::latest,
             routes::api::search,
             routes::api::info,
             routes::api::download,
             routes::api::publish,
             routes::api::whoami,
-            routes::api::latest,
+        ])
+        .mount("/api/v0/badges", routes![
+            routes::badges::modules,
+            routes::badges::downloads,
         ])
         .mount("/auth", routes![
             routes::auth::get,

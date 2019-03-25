@@ -160,7 +160,7 @@ impl Module {
                 modules::description,
                 modules::latest,
                 modules::featured,
-                diesel::dsl::sql::<BigInt>("sum(releases.downloads) AS sum"),
+                diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"),
             ))
             .left_join(releases::table)
             .group_by(modules::id)
@@ -193,6 +193,15 @@ impl Module {
                 modules::name.asc(),
             ))
             .load(connection)
+            .map_err(Error::from)
+    }
+
+    pub fn count(connection: &PgConnection) -> Result<i64> {
+        use diesel::dsl::*;
+
+        modules::table
+            .select(count(modules::id))
+            .first(connection)
             .map_err(Error::from)
     }
 }
@@ -279,6 +288,13 @@ impl Release {
             .order_by(releases::published.desc())
             .first::<Release>(connection)
             .optional()
+            .map_err(Error::from)
+    }
+
+    pub fn downloads(connection: &PgConnection) -> Result<i64> {
+        releases::table
+            .select(diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"))
+            .first(connection)
             .map_err(Error::from)
     }
 }
