@@ -8,6 +8,7 @@ use colored::Colorize;
 use crate::engine::Module;
 use crate::registry;
 use crate::shell::Readline;
+use crate::update::AutoUpdater;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::term;
@@ -105,6 +106,8 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         SubCommand::Update(_) => {
             let client = Client::new(&config)?;
 
+            let mut success = true;
+
             for module in rl.engine().list() {
                 if module.is_private() {
                     debug!("{} is a private module, skipping", module.canonical());
@@ -120,7 +123,15 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
 
                 if let Err(err) = result {
                     term::error(&format!("Failed to update {}: {:?}", name, err));
+                    success = false;
                 }
+            }
+
+            // TODO: keep a list of outdated packages and remove them after they've been updated
+            if success {
+                let mut autoupdate = AutoUpdater::load()?;
+                autoupdate.all_updated();
+                autoupdate.save()?;
             }
 
             // trigger reload
