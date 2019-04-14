@@ -78,9 +78,9 @@ sha-1 = "0.8.1"
 sha2 = "0.8.0"
 
 image = "0.21"
-img_hash = "2.1"
 kamadak-exif = "0.3.1"
 walkdir = "2.2"
+nude = { path="../nude-rs" }
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"

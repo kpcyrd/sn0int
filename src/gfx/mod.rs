@@ -82,6 +82,12 @@ impl Image {
     }
 }
 
+impl AsRef<DynamicImage> for Image {
+    fn as_ref(&self) -> &DynamicImage {
+        &self.image
+    }
+}
+
 #[inline]
 pub fn guess_format(buf: &[u8]) -> Result<ImageFormat> {
     let format = image::guess_format(buf)?;
