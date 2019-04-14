@@ -30,9 +30,9 @@ impl Blob {
     }
 
     pub fn hash(bytes: &[u8]) -> String {
-        let mut h = VarBlake2b::new(16).unwrap();
+        let mut h = VarBlake2b::new(32).unwrap();
         h.input(bytes);
-        hex::encode(h.vec_result())
+        bs58::encode(h.vec_result()).into_string()
     }
 }
 
@@ -151,7 +151,7 @@ mod tests {
     fn verify_create_blob() {
         let (bytes, blob) = blob();
         assert_eq!(blob, Blob {
-            id: String::from("3430b567c4ca76dc5381ae8d07cae024"),
+            id: String::from("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz"),
             bytes,
         });
     }
@@ -164,7 +164,7 @@ mod tests {
         let (_, blob1) = blob();
         s.save(&blob1).expect("save failed");
 
-        let blob2 = s.load("3430b567c4ca76dc5381ae8d07cae024").expect("load failed");
+        let blob2 = s.load("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz").expect("load failed");
 
         assert_eq!(blob1, blob2);
     }
@@ -174,7 +174,7 @@ mod tests {
         let dir = tempfile::tempdir().expect("tempdir");
         let s = BlobStorage::new(dir.path());
 
-        let result = s.load("3430b567c4ca76dc5381ae8d07cae024");
+        let result = s.load("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz");
 
         assert!(result.is_err());
     }

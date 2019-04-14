@@ -27,7 +27,7 @@ mod tests {
         let script = Script::load_unchecked(r#"
         function run()
             blob = create_blob("asdf")
-            if blob ~= "3430b567c4ca76dc5381ae8d07cae024" then
+            if blob ~= "DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz" then
                 return 'unexpected blob: ' .. blob
             end
         end
