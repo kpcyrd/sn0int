@@ -32,7 +32,13 @@ impl Blob {
     pub fn hash(bytes: &[u8]) -> String {
         let mut h = VarBlake2b::new(32).unwrap();
         h.input(bytes);
-        bs58::encode(h.vec_result()).into_string()
+        Self::encode_hash(&h.vec_result())
+    }
+
+    #[inline]
+    fn encode_hash(bytes: &[u8]) -> String {
+        let x = bs58::encode(bytes).into_string();
+        format!("{:0>44}", x)
     }
 }
 
@@ -201,5 +207,25 @@ mod tests {
         let (_, blob1) = blob();
         let blob2: Blob = serde_json::from_str("\"YXNkZg==\"").unwrap();
         assert_eq!(blob1, blob2);
+    }
+
+    #[test]
+    fn test_hash_encoding() {
+        let x = bs58::decode("22es54J4FbFtpb5D1MtBazVuum4TcqCQ7M9JkmYdmJ8W")
+            .into_vec()
+            .unwrap();
+        let x = Blob::encode_hash(&x);
+        assert_eq!(x.len(), 44);
+        assert_eq!(x, "22es54J4FbFtpb5D1MtBazVuum4TcqCQ7M9JkmYdmJ8W");
+    }
+
+    #[test]
+    fn test_hash_encoding_padding() {
+        let x = bs58::decode("r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei")
+            .into_vec()
+            .unwrap();
+        let x = Blob::encode_hash(&x);
+        assert_eq!(x.len(), 44);
+        assert_eq!(x, "0r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei");
     }
 }
