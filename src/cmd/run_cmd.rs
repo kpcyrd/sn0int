@@ -69,7 +69,14 @@ impl From<Args> for Params<'static> {
 
 fn prepare_arg<T: Serialize + Model>(bs: &BlobStorage, x: T) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let pretty = x.to_string();
-    let blobs = x.select_blobs(bs)?;
+
+    let blobs = if let Some(blob) = x.blob() {
+        let blob = bs.load(blob)?;
+        vec![blob]
+    } else {
+        Vec::new()
+    };
+
     let arg = serde_json::to_value(x)?;
     Ok((arg, Some(pretty), blobs))
 }

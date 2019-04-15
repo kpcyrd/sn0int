@@ -17,31 +17,61 @@ use crate::models::*;
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
-    /// Json output
-    #[structopt(long="json")]
+    /// Print json output
+    #[structopt(long="json", group="output")]
     json: bool,
+    /// Print paths to blobs
+    #[structopt(long="paths", group="output")]
+    paths: bool,
 }
 
-pub struct Printer<'a, 'b> {
+enum Output {
+    Normal,
+    Json,
+    Paths,
+}
+
+struct Printer<'a, 'b> {
     rl: &'a mut Readline<'b>,
-    json: bool,
+    output: Output,
 }
 
 impl<'a, 'b> Printer<'a, 'b> {
-    pub fn new(rl: &'a mut Readline<'b>, json: bool) -> Printer<'a, 'b> {
+    pub fn new(rl: &'a mut Readline<'b>, args: &Args) -> Printer<'a, 'b> {
+        let output = if args.json {
+            Output::Json
+        } else if args.paths {
+            Output::Paths
+        } else {
+            Output::Normal
+        };
+
         Printer {
             rl,
-            json,
+            output,
         }
     }
 
     pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
         for obj in self.rl.db().filter::<T>(&filter.parse_optional()?)? {
-            if self.json {
-                let v = serde_json::to_string(&obj)?;
-                println!("{}", v);
-            } else {
-                println!("{}", obj.detailed(self.rl.db())?);
+            match self.output {
+                Output::Normal => println!("{}", obj.detailed(self.rl.db())?),
+                Output::Json => {
+                    let v = serde_json::to_string(&obj)?;
+                    println!("{}", v);
+                },
+                Output::Paths => {
+                    let blob = obj.blob()
+                        .ok_or_else(|| format_err!("This model isn't linked to blob storage"))?;
+
+                    let path = self.rl.blobs()
+                        .join(blob)?;
+
+                    let path = path.to_str()
+                        .ok_or_else(|| format_err!("Path is invalid utf-8"))?;
+
+                    println!("{}", path);
+                },
             }
         }
 
@@ -51,7 +81,7 @@ impl<'a, 'b> Printer<'a, 'b> {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Readline) -> Result<()> {
-        let printer = Printer::new(rl, self.json);
+        let printer = Printer::new(rl, &self);
 
         match &self.subcommand {
             Target::Domains(filter) => printer.select::<Domain>(&filter),

@@ -107,9 +107,8 @@ impl Model for Image {
         Ok(email)
     }
 
-    fn select_blobs(&self, bs: &BlobStorage) -> Result<Vec<Blob>> {
-        let blob = bs.load(&self.value)?;
-        Ok(vec![blob])
+    fn blob(&self) -> Option<&str> {
+        Some(&self.value)
     }
 }
 

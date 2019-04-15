@@ -89,7 +89,7 @@ impl BlobStorage {
         Ok(BlobStorage::new(path))
     }
 
-    fn join(&self, id: &str) -> Result<PathBuf> {
+    pub fn join(&self, id: &str) -> Result<PathBuf> {
         if !id.chars().all(char::is_alphanumeric) {
             bail!("blob id contains invalid characters");
         }
