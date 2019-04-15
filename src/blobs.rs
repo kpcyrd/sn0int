@@ -38,7 +38,7 @@ impl Blob {
     #[inline]
     fn encode_hash(bytes: &[u8]) -> String {
         let x = bs58::encode(bytes).into_string();
-        format!("{:0>44}", x)
+        format!("{:0<44}", x)
     }
 }
 
@@ -226,6 +226,6 @@ mod tests {
             .unwrap();
         let x = Blob::encode_hash(&x);
         assert_eq!(x.len(), 44);
-        assert_eq!(x, "0r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei");
+        assert_eq!(x, "r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei0");
     }
 }
