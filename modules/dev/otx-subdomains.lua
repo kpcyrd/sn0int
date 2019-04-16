@@ -18,15 +18,12 @@ function run(arg)
     if last_err() then return end
     o = o['passive_dns']
 
-    i = 1
-    while o[i] do
+    for i=1, #o do
         x = o[i]
 
         db_add('subdomain', {
             domain_id=arg['id'],
             value=x['hostname'],
         })
-
-        i = i+1
     end
 end

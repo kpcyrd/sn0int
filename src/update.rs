@@ -56,6 +56,10 @@ impl AutoUpdater {
         Ok(())
     }
 
+    pub fn all_updated(&mut self) {
+        self.outdated = 0;
+    }
+
     pub fn check_background(mut self, config: &Config, modules: Vec<&engine::Module>) {
         if config.core.no_autoupdate {
             debug!("Auto update has been disabled, skipping");

@@ -3,6 +3,8 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::net;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations)]
@@ -137,7 +139,7 @@ pub type InsertSubdomainIpAddr = NewSubdomainIpAddr;
 impl LuaInsertToNew for InsertSubdomainIpAddr {
     type Target = NewSubdomainIpAddr;
 
-    fn try_into_new(self) -> Result<NewSubdomainIpAddr> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomainIpAddr> {
         Ok(self)
     }
 }

@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::blobs::BlobStorage;
 use crate::db::Database;
 use crate::shell::Readline;
 use structopt::StructOpt;
@@ -18,7 +19,9 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
 
     if let Some(workspace) = args.workspace {
+        let blobs = BlobStorage::workspace(&workspace)?;
         let db = Database::establish(workspace)?;
+        rl.set_blobstorage(blobs);
         rl.set_db(db);
     } else {
         for x in workspaces::list()? {

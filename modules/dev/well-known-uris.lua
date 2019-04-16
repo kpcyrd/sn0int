@@ -24,8 +24,7 @@ function run(arg)
 
     session = http_mksession()
 
-    i = 1
-    while i <= #locations do
+    for i=1, #locations do
         path = locations[i]['path']
         expect_redirect = locations[i]['redirect']
 
@@ -58,7 +57,5 @@ function run(arg)
                 db_add('url', obj)
             end
         end
-
-        i = i+1
     end
 end

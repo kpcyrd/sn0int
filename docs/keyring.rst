@@ -52,8 +52,8 @@ If the user granted us access to those keys we can read them with ``keyring``:
 .. code-block:: lua
 
     creds = keyring('aws')
-    print(creds[1]['accesskey'])
-    print(creds[1]['secretkey'])
+    debug(creds[1]['access_key'])
+    debug(creds[1]['secret_key'])
 
 This returns a list of all keys in that namespace. Any empty list is returned
 if the user doesn't have any keys in that namespace.

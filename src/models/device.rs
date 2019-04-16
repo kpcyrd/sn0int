@@ -4,6 +4,8 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -271,7 +273,7 @@ pub type InsertDevice = NewDevice;
 impl LuaInsertToNew for InsertDevice {
     type Target = NewDevice;
 
-    fn try_into_new(self) -> Result<NewDevice> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewDevice> {
         Ok(self)
     }
 }

@@ -47,6 +47,7 @@ pub enum Family {
     Account,
     Breach,
     BreachEmail,
+    Image,
 }
 
 impl FromStr for Family {
@@ -67,6 +68,7 @@ impl FromStr for Family {
             "account" => Family::Account,
             "breach" => Family::Breach,
             "breach-email" => Family::BreachEmail,
+            "image" => Family::Image,
             _ => bail!("Unknown object family"),
         })
     }
@@ -130,6 +132,7 @@ impl Database {
             Insert::Account(object) => self.insert_struct(object),
             Insert::Breach(object) => self.insert_struct(object),
             Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
+            Insert::Image(object) => self.insert_struct(object),
         }
     }
 
@@ -215,6 +218,7 @@ impl Database {
             Update::NetworkDevice(object) => self.update_network_device(object),
             Update::Account(object) => self.update_account(object),
             Update::BreachEmail(object) => self.update_breach_email(object),
+            Update::Image(object) => self.update_image(object),
         }
     }
 
@@ -298,6 +302,14 @@ impl Database {
         Ok(breach_email.id)
     }
 
+    pub fn update_image(&self, image: &ImageUpdate) -> Result<i32> {
+        use crate::schema::images::columns::*;
+        diesel::update(images::table.filter(id.eq(image.id)))
+            .set(image)
+            .execute(&self.db)?;
+        Ok(image.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -320,6 +332,7 @@ impl Database {
             Family::Account => self.get_opt_typed::<Account>(&value),
             Family::Breach => self.get_opt_typed::<Breach>(&value),
             Family::BreachEmail => bail!("Unsupported operation"),
+            Family::Image => self.get_opt_typed::<Image>(&value),
         }
     }
 
@@ -338,18 +351,6 @@ impl Database {
             Some(param) => T::filter_with_param(self, filter, param),
             _ => T::filter(self, filter),
         }
-    }
-
-    pub fn scope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {
-        T::scope(self, filter)
-    }
-
-    pub fn noscope<T: Scopable>(&self, filter: &Filter) -> Result<usize> {
-        T::noscope(self, filter)
-    }
-
-    pub fn delete<T: Model>(&self, filter: &Filter) -> Result<usize> {
-        T::delete(self, filter)
     }
 }
 

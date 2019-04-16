@@ -29,8 +29,7 @@ function run(arg)
 
     seen = {}
 
-    i = 2
-    while o[i] do
+    for i=2, #o do
         url = o[i][3]
         debug(url)
         parts = url_parse(url)
@@ -51,7 +50,5 @@ function run(arg)
                 seen[subdomain] = 1
             end
         end
-
-        i = i+1
     end
 end

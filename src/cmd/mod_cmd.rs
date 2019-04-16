@@ -8,6 +8,7 @@ use colored::Colorize;
 use crate::engine::Module;
 use crate::registry;
 use crate::shell::Readline;
+use crate::update::AutoUpdater;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::term;
@@ -24,20 +25,20 @@ pub struct Args {
 
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
-    #[structopt(author="", name="list")]
     /// List installed modules
+    #[structopt(author="", name="list")]
     List(List),
-    #[structopt(author="", name="install")]
     /// Install module from registry
+    #[structopt(author="", name="install")]
     Install(args::Install),
-    #[structopt(author="", name="search")]
     /// Search modules in registry
+    #[structopt(author="", name="search")]
     Search(args::Search),
-    #[structopt(author="", name="reload")]
     /// Reload modules
+    #[structopt(author="", name="reload")]
     Reload(Reload),
-    #[structopt(author="", name="update")]
     /// Update modules
+    #[structopt(author="", name="update")]
     Update(Update),
 }
 
@@ -54,18 +55,27 @@ pub struct Update {
 }
 
 fn update(client: &Client, config: &Config, module: &Module) -> Result<()> {
+    let name = module.canonical();
     let installed = module.version();
-    let infos = client.query_module(&module.id())?;
+
+    let label = format!("Searching for updates {}", name);
+    let infos = worker::spawn_fn(&label, || {
+        client.query_module(&module.id())
+    }, true)?;
     debug!("Latest version: {:?}", infos);
 
     let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
 
     if installed != latest {
-        term::info(&format!("Updating {}: {:?} -> {:?}", module.canonical(), installed, latest));
-        registry::run_install(&Install {
-            module: module.id(),
-            version: None,
-        }, &config)?;
+        let label = format!("Updating {}: {:?} -> {:?}", &name, installed, latest);
+        worker::spawn_fn(&label, || {
+            registry::run_install(&Install {
+                module: module.id(),
+                version: None,
+            }, &config)
+        }, true)?;
+
+        term::success(&format!("Updated {}: {:?} -> {:?}", &name, installed, latest));
     }
 
     Ok(())
@@ -105,22 +115,25 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         SubCommand::Update(_) => {
             let client = Client::new(&config)?;
 
+            let mut success = true;
+
             for module in rl.engine().list() {
                 if module.is_private() {
                     debug!("{} is a private module, skipping", module.canonical());
                     continue;
                 }
 
-                let name = module.canonical();
-                let label = format!("Searching for updates {}", name);
-
-                let result = worker::spawn_fn(&label, || {
-                    update(&client, &config, &module)
-                }, true);
-
-                if let Err(err) = result {
-                    term::error(&format!("Failed to update {}: {:?}", name, err));
+                if let Err(err) = update(&client, &config, &module) {
+                    term::error(&format!("Failed to update {}: {}", module.canonical(), err));
+                    success = false;
                 }
+            }
+
+            // TODO: keep a list of outdated packages and remove them after they've been updated
+            if success {
+                let mut autoupdate = AutoUpdater::load()?;
+                autoupdate.all_updated();
+                autoupdate.save()?;
             }
 
             // trigger reload

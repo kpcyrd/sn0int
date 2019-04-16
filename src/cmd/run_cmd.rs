@@ -1,8 +1,8 @@
 use crate::errors::*;
 
 use crate::args;
-use crate::db::{Database, Filter};
-use crate::db::ttl;
+use crate::blobs::{Blob, BlobStorage};
+use crate::db::{ttl, Filter};
 use crate::engine::Module;
 use crate::models::*;
 use crate::shell::Readline;
@@ -67,16 +67,26 @@ impl From<Args> for Params<'static> {
     }
 }
 
-fn prepare_arg<T: Serialize + Model>(x: T) -> Result<(serde_json::Value, Option<String>)> {
+fn prepare_arg<T: Serialize + Model>(bs: &BlobStorage, x: T) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let pretty = x.to_string();
+
+    let blobs = if let Some(blob) = x.blob() {
+        let blob = bs.load(blob)?;
+        vec![blob]
+    } else {
+        Vec::new()
+    };
+
     let arg = serde_json::to_value(x)?;
-    Ok((arg, Some(pretty)))
+    Ok((arg, Some(pretty), blobs))
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(db: &Database, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>)>> {
+fn prepare_args<T: Scopable + Serialize + Model>(rl: &Readline, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
+    let db = rl.db();
+    let bs = rl.blobs();
     db.filter_with_param::<T>(filter, param)?
         .into_iter()
-        .map(prepare_arg)
+        .map(|x| prepare_arg(bs, x))
         .collect()
 }
 
@@ -113,15 +123,17 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
     let filter = rl.scoped_targets();
 
     let args = match module.source() {
-        Some(Source::Domains) => prepare_args::<Domain>(rl.db(), &filter, None),
-        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl.db(), &filter, None),
-        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl.db(), &filter, None),
-        Some(Source::Urls) => prepare_args::<Url>(rl.db(), &filter, None),
-        Some(Source::Emails) => prepare_args::<Email>(rl.db(), &filter, None),
-        Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl.db(), &filter, None),
-        Some(Source::Networks) => prepare_args::<Network>(rl.db(), &filter, None),
-        Some(Source::Devices) => prepare_args::<Device>(rl.db(), &filter, None),
-        Some(Source::Accounts(service)) => prepare_args::<Account>(rl.db(), &filter, service.as_ref()),
+        Some(Source::Domains) => prepare_args::<Domain>(rl, &filter, None),
+        Some(Source::Subdomains) => prepare_args::<Subdomain>(rl, &filter, None),
+        Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl, &filter, None),
+        Some(Source::Urls) => prepare_args::<Url>(rl, &filter, None),
+        Some(Source::Emails) => prepare_args::<Email>(rl, &filter, None),
+        Some(Source::PhoneNumbers) => prepare_args::<PhoneNumber>(rl, &filter, None),
+        Some(Source::Networks) => prepare_args::<Network>(rl, &filter, None),
+        Some(Source::Devices) => prepare_args::<Device>(rl, &filter, None),
+        Some(Source::Accounts(service)) => prepare_args::<Account>(rl, &filter, service.as_ref()),
+        Some(Source::Breaches) => prepare_args::<Breach>(rl, &filter, None),
+        Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {
@@ -129,14 +141,14 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
                     .map(|key| {
                         let pretty = format!("{}:{}", key.namespace, key.access_key);
                         let arg = serde_json::to_value(key)?;
-                        Ok((arg, Some(pretty)))
+                        Ok((arg, Some(pretty), vec![]))
                     })
                     .collect::<Result<Vec<_>>>()
             } else {
                 Ok(vec![])
             }
         },
-        None => Ok(vec![(serde_json::Value::Null, None)]),
+        None => Ok(vec![(serde_json::Value::Null, None, vec![])]),
     }?;
 
     rl.signal_register().catch_ctrl();

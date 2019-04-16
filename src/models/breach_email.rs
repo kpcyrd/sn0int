@@ -2,6 +2,8 @@ use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
@@ -172,7 +174,7 @@ pub type InsertBreachEmail = NewBreachEmail;
 impl LuaInsertToNew for InsertBreachEmail {
     type Target = NewBreachEmail;
 
-    fn try_into_new(self) -> Result<NewBreachEmail> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreachEmail> {
         Ok(self)
     }
 }

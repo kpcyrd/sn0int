@@ -4,15 +4,14 @@
 -- Source: accounts:keybase.io
 
 function extract_mails(pubkey)
-    local j = 1
-    while j <= #pubkey['uids'] do
-        local m = regex_find("<([^< ]+@[^< ]+)>$", pubkey['uids'][j])
+    for j=1, #pubkey['uids'] do
+        local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
         if m then
             db_add('email', {
-                value=m[2],
+                value=m[3],
+                displayname=m[2],
             })
         end
-        j = j+1
     end
 end
 
@@ -66,8 +65,7 @@ function run(arg)
     -- collect profiles
     profiles = them['proofs_summary']['all']
 
-    local i = 1
-    while i <= #profiles do
+    for i=1, #profiles do
         profile = profiles[i]
         debug(profile)
 
@@ -83,7 +81,5 @@ function run(arg)
                 url=profile['service_url'],
             })
         end
-
-        i=i+1
     end
 end

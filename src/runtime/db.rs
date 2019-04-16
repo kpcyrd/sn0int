@@ -11,53 +11,56 @@ use crate::models::*;
 use crate::json::LuaJsonValue;
 
 
-pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue) -> Result<T::Target>
+pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue, state: &Arc<State>) -> Result<T::Target>
     where for<'de> T: serde::Deserialize<'de>
 {
     structs::from_lua::<T>(x)?
-        .try_into_new()
+        .try_into_new(state)
 }
 
-fn into_insert(family: Family, object: LuaJsonValue) -> Result<Insert> {
+fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Result<Insert> {
     let obj = match family {
         Family::Domain => {
-            Insert::Domain(try_into_new::<InsertDomain>(object)?)
+            Insert::Domain(try_into_new::<InsertDomain>(object, state)?)
         },
         Family::Subdomain => {
-            Insert::Subdomain(try_into_new::<InsertSubdomain>(object)?)
+            Insert::Subdomain(try_into_new::<InsertSubdomain>(object, state)?)
         },
         Family::IpAddr => {
-            Insert::IpAddr(try_into_new::<InsertIpAddr>(object)?)
+            Insert::IpAddr(try_into_new::<InsertIpAddr>(object, state)?)
         },
         Family::SubdomainIpAddr => {
-            Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object)?)
+            Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object, state)?)
         },
         Family::Url => {
-            Insert::Url(try_into_new::<InsertUrl>(object)?)
+            Insert::Url(try_into_new::<InsertUrl>(object, state)?)
         },
         Family::Email => {
-            Insert::Email(try_into_new::<InsertEmail>(object)?)
+            Insert::Email(try_into_new::<InsertEmail>(object, state)?)
         },
         Family::PhoneNumber => {
-            Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object)?)
+            Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object, state)?)
         },
         Family::Device => {
-            Insert::Device(try_into_new::<InsertDevice>(object)?)
+            Insert::Device(try_into_new::<InsertDevice>(object, state)?)
         },
         Family::Network => {
-            Insert::Network(try_into_new::<InsertNetwork>(object)?)
+            Insert::Network(try_into_new::<InsertNetwork>(object, state)?)
         },
         Family::NetworkDevice => {
-            Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object)?)
+            Insert::NetworkDevice(try_into_new::<InsertNetworkDevice>(object, state)?)
         },
         Family::Account => {
-            Insert::Account(try_into_new::<InsertAccount>(object)?)
+            Insert::Account(try_into_new::<InsertAccount>(object, state)?)
         },
         Family::Breach => {
-            Insert::Breach(try_into_new::<InsertBreach>(object)?)
+            Insert::Breach(try_into_new::<InsertBreach>(object, state)?)
         },
         Family::BreachEmail => {
-            Insert::BreachEmail(try_into_new::<InsertBreachEmail>(object)?)
+            Insert::BreachEmail(try_into_new::<InsertBreachEmail>(object, state)?)
+        },
+        Family::Image => {
+            Insert::Image(try_into_new::<InsertImage>(object, state)?)
         },
     };
     Ok(obj)
@@ -69,7 +72,7 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
             .map_err(|e| state.set_error(e))?;
         let object = LuaJsonValue::from(object);
 
-        let object = into_insert(family, object)
+        let object = into_insert(family, object, &state)
             .map_err(|e| state.set_error(e))?;
 
         state.db_insert(object)
@@ -83,7 +86,7 @@ pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
             .map_err(|e| state.set_error(e))?;
         let object = LuaJsonValue::from(object);
 
-        let object = into_insert(family, object)
+        let object = into_insert(family, object, &state)
             .map_err(|e| state.set_error(e))?;
 
         state.db_insert_ttl(object, ttl)
@@ -152,6 +155,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
             Family::Breach => bail!("Breach doesn't have mutable fields"),
             Family::BreachEmail => gen_changeset::<BreachEmail, BreachEmailUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::BreachEmail(u))),
+            Family::Image => gen_changeset::<Image, ImageUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Image(u))),
         };
 
         let (id, value, update) = update

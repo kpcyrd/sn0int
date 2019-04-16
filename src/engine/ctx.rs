@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::blobs::Blob;
 use crate::db::Family;
 use crate::engine::{Environment, Reporter};
 use crate::geoip::{GeoIP, AsnDB};
@@ -120,6 +121,18 @@ pub trait State {
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
 
     fn register_in_jar(&self, session: &str, key: String, value: String);
+
+    fn register_blob(&self, blob: Blob) -> String;
+
+    fn get_blob(&self, id: &str) -> Result<Arc<Blob>>;
+
+    fn persist_blob(&self, id: &str) -> Result<()> {
+        let blob = self.get_blob(id)?;
+        self.send(&Event::Blob(blob.as_ref().clone()));
+        let reply = self.recv()?;
+        let reply: result::Result<(), String> = serde_json::from_value(reply)?;
+        reply.map_err(|err| format_err!("Failed to store blob: {:?}", err))
+    }
 }
 
 #[derive(Debug)]
@@ -127,8 +140,10 @@ pub struct LuaState {
     error: Mutex<Option<Error>>,
     logger: Arc<Mutex<Box<Reporter>>>,
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
+    blobs: Mutex<HashMap<String, Arc<Blob>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
     http: chrootable_https::Client<Resolver>,
+
     verbose: u64,
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
     dns_config: Resolver,
@@ -171,9 +186,9 @@ impl State for LuaState {
         self.verbose
     }
 
-    fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry> {
+    fn keyring(&self, query: &str) -> Vec<&KeyRingEntry> {
         self.keyring.iter()
-            .filter(|x| x.namespace == namespace)
+            .filter(|x| x.matches(query))
             .collect()
     }
 
@@ -245,6 +260,23 @@ impl State for LuaState {
             session.cookies.register_in_jar(key, value);
         }
     }
+
+    fn register_blob(&self, blob: Blob) -> String {
+        let id = blob.id.clone();
+
+        let mut mtx = self.blobs.lock().unwrap();
+        mtx.insert(id.clone(), Arc::new(blob));
+        debug!("Registered blob: {:?}", id);
+
+        id
+    }
+
+    fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {
+        let mtx = self.blobs.lock().unwrap();
+        let blob = mtx.get(id)
+            .ok_or_else(|| format_err!("Invalid blob reference"))?;
+        Ok(blob.clone())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -269,6 +301,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         error: Mutex::new(None),
         logger,
         socket_sessions: Mutex::new(HashMap::new()),
+        blobs: Mutex::new(HashMap::new()),
         http_sessions: Mutex::new(HashMap::new()),
         http,
 
@@ -282,7 +315,13 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         options: env.options,
     });
 
+    debug!("Adding all blobs from StartCommand");
+    for blob in env.blobs {
+        state.register_blob(blob);
+    }
+
     runtime::clear_err(&mut lua, state.clone());
+    runtime::create_blob(&mut lua, state.clone());
     runtime::datetime(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
     runtime::db_add_ttl(&mut lua, state.clone());
@@ -300,12 +339,16 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::http_mksession(&mut lua, state.clone());
     runtime::http_request(&mut lua, state.clone());
     runtime::http_send(&mut lua, state.clone());
+    runtime::img_exif(&mut lua, state.clone());
+    runtime::img_load(&mut lua, state.clone());
+    runtime::img_nudity(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());
     runtime::keyring(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
+    runtime::md5(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
@@ -313,6 +356,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::semver_match(&mut lua, state.clone());
+    runtime::sha1(&mut lua, state.clone());
+    runtime::sha2_256(&mut lua, state.clone());
+    runtime::sha2_512(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
@@ -414,6 +460,7 @@ com
             dns_config,
             proxy,
             options: HashMap::new(),
+            blobs: Vec::new(),
             psl,
             geoip,
             asn,

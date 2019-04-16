@@ -40,11 +40,9 @@ function run(arg)
     if records['error'] ~= nil then return end
     records = records['answers']
 
-    i = 1
-    while records[i] ~= nil do
+    for i=1, #records do
         r = records[i][2]
         iter(r['CNAME'])
         if last_err() then return end
-        i = i+1
     end
 end

@@ -23,8 +23,7 @@ function run(arg)
     if last_err() then return end
     o = o['results']
 
-    i = 1
-    while o[i] do
+    for i=1, #o do
         x = o[i]
 
         domain = psl_domain_from_dns_name(x['domain'])
@@ -46,7 +45,5 @@ function run(arg)
                 ip_addr_id=arg['id'],
             })
         end
-
-        i = i+1
     end
 end

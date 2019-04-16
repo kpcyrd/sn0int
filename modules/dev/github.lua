@@ -7,6 +7,8 @@ function api_get(url)
     local req = http_request(session, 'GET', url, {})
     local resp = http_send(req)
     if last_err() then return end
+    -- TODO: set_error(?)
+    if resp['status'] == 403 then return 'ratelimit exceeded' end
     if resp['status'] ~= 200 then return 'invalid status code' end
 
     local data = json_decode(resp['text'])
@@ -14,39 +16,64 @@ function api_get(url)
     return data
 end
 
+function import_gpg(url)
+    local req = http_request(session, 'GET', url, {})
+    local resp = http_send(req)
+    if last_err() then return end
+
+    local key = pgp_pubkey_armored(resp['text'])
+    if not key['uids'] then return end
+
+    for i=1, #key['uids'] do
+        local k = key['uids'][i]
+        debug(k)
+        local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", k)
+        if m then
+            db_add('email', {
+                value=m[3],
+                displayname=m[2],
+            })
+        end
+    end
+end
+
 function scan4email(username)
     local url = 'https://api.github.com/users/' .. username .. '/repos'
     local repos = api_get(url)
     if last_err() then return end
 
-    i = 1
-    while i <= #repos do
+    -- XXX: 'https://api.github.com/users/' .. username .. '/events/public?page=0&per_page=100' is faster but less accurate
+
+    for i=1, #repos do
         local repo = repos[i]
         debug(repo)
         local commits = api_get(repo['url'] .. '/commits')
         if last_err() then return end
 
-        j = 1
-        while j <= #commits do
+        for j=1, #commits do
             local commit = commits[j]
             debug(commit)
 
-            if commit['author']['login'] == username then
-                -- name = commit['commit']['author']['name']
+            if commit['author'] and commit['author']['login'] == username then
+                local name = commit['commit']['author']['name']
                 local email = commit['commit']['author']['email']
+                db_add('email', {
+                    value=email,
+                    displayname=name,
+                })
                 return email
             end
 
-            if commit['committer']['login'] == username then
-                -- name = commit['commit']['committer']['name']
+            if commit['committer'] and commit['committer']['login'] == username then
+                local name = commit['commit']['committer']['name']
                 local email = commit['commit']['committer']['email']
+                db_add('email', {
+                    value=email,
+                    displayname=name,
+                })
                 return email
             end
-
-            j = j+1
         end
-
-        i = i+1
     end
 end
 
@@ -61,6 +88,10 @@ function run(arg)
     -- company = data['company']
     -- location = data['location']
     -- homepage = data['blog']
+
+    url = 'https://github.com/' .. arg['username'] .. '.gpg'
+    import_gpg(url)
+    if last_err() then return end
 
     local email = data['email']
     if not email and not arg['email'] then

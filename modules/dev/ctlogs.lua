@@ -70,8 +70,7 @@ function run(arg)
 
     seen = {}
 
-    i = 1
-    while i <= #certs do
+    for i=1, #certs do
         c = certs[i]
         debug(c)
 
@@ -92,15 +91,11 @@ function run(arg)
             if last_err() then return end
             names = crt['valid_names']
 
-            j = 1
-            while j <= #names do
+            for j=1, #names do
                 each_name(names[j])
-                j = j+1
             end
         else
             each_name(c['name_value'])
         end
-
-        i = i+1
     end
 end

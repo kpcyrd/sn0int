@@ -9,10 +9,8 @@ function get_services(html)
 
     local services = {}
 
-    local i = 1
-    while i <= #divs do
+    for i=1, #divs do
         services[i] = divs[i]['attrs']['data-name']
-        i = i+1
     end
 
     return services
@@ -56,8 +54,7 @@ function run(arg)
     local scan_token = scan['valid']
 
     -- get results
-    local i = 1
-    while i <= #services do
+    for i=1, #services do
         debug(services[i])
 
         local req = http_request(session, 'POST', 'https://namechk.com/services/check', {
@@ -84,7 +81,5 @@ function run(arg)
                 })
             end
         end
-
-        i = i+1
     end
 end

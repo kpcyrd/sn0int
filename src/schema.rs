@@ -55,6 +55,26 @@ table! {
         value -> Text,
         unscoped -> Bool,
         valid -> Nullable<Bool>,
+        displayname -> Nullable<Text>,
+    }
+}
+
+table! {
+    images (id) {
+        id -> Integer,
+        value -> Text,
+        filename -> Nullable<Text>,
+        mime -> Nullable<Text>,
+        width -> Nullable<Integer>,
+        height -> Nullable<Integer>,
+        created -> Nullable<Timestamp>,
+        latitude -> Nullable<Float>,
+        longitude -> Nullable<Float>,
+        nudity -> Nullable<Float>,
+        ahash -> Nullable<Text>,
+        dhash -> Nullable<Text>,
+        phash -> Nullable<Text>,
+        unscoped -> Bool,
     }
 }
 
@@ -174,6 +194,7 @@ allow_tables_to_appear_in_same_query!(
     devices,
     domains,
     emails,
+    images,
     ipaddrs,
     network_devices,
     networks,

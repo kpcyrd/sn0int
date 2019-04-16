@@ -1,8 +1,8 @@
 use crate::errors::*;
 
 use crate::cmd::Cmd;
-use crate::db;
 use crate::db::ttl;
+use crate::filters::{Target, Filter};
 use crate::shell::Readline;
 use serde::Serialize;
 use serde_json;
@@ -17,76 +17,61 @@ use crate::models::*;
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
-    #[structopt(long="json")]
-    /// Json output
+    /// Print json output
+    #[structopt(long="json", group="output")]
     json: bool,
+    /// Print paths to blobs
+    #[structopt(long="paths", group="output")]
+    paths: bool,
 }
 
-#[derive(Debug, StructOpt)]
-pub enum Target {
-    #[structopt(name="domains")]
-    /// Select domains
-    Domains(Filter),
-    #[structopt(name="subdomains")]
-    /// Select subdomains
-    Subdomains(Filter),
-    #[structopt(name="ipaddrs")]
-    /// Select ipaddrs
-    IpAddrs(Filter),
-    #[structopt(name="urls")]
-    /// Select urls
-    Urls(Filter),
-    #[structopt(name="emails")]
-    /// Select emails
-    Emails(Filter),
-    #[structopt(name="phonenumbers")]
-    /// Select phone numbers
-    PhoneNumbers(Filter),
-    #[structopt(name="devices")]
-    /// Select devices
-    Devices(Filter),
-    #[structopt(name="networks")]
-    /// Select networks
-    Networks(Filter),
-    #[structopt(name="accounts")]
-    /// Select accounts
-    Accounts(Filter),
-    #[structopt(name="breaches")]
-    /// Select breaches
-    Breaches(Filter),
+enum Output {
+    Normal,
+    Json,
+    Paths,
 }
 
-#[derive(Debug, StructOpt)]
-pub struct Filter {
-    args: Vec<String>,
-}
-
-impl Filter {
-    pub fn parse(&self) -> Result<db::Filter> {
-        db::Filter::parse_optional(&self.args)
-    }
-}
-
-pub struct Printer<'a, 'b> {
+struct Printer<'a, 'b> {
     rl: &'a mut Readline<'b>,
-    json: bool,
+    output: Output,
 }
 
 impl<'a, 'b> Printer<'a, 'b> {
-    pub fn new(rl: &'a mut Readline<'b>, json: bool) -> Printer<'a, 'b> {
+    pub fn new(rl: &'a mut Readline<'b>, args: &Args) -> Printer<'a, 'b> {
+        let output = if args.json {
+            Output::Json
+        } else if args.paths {
+            Output::Paths
+        } else {
+            Output::Normal
+        };
+
         Printer {
             rl,
-            json,
+            output,
         }
     }
 
     pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
-        for obj in self.rl.db().filter::<T>(&filter.parse()?)? {
-            if self.json {
-                let v = serde_json::to_string(&obj)?;
-                println!("{}", v);
-            } else {
-                println!("{}", obj.detailed(self.rl.db())?);
+        for obj in self.rl.db().filter::<T>(&filter.parse_optional()?)? {
+            match self.output {
+                Output::Normal => println!("{}", obj.detailed(self.rl.db())?),
+                Output::Json => {
+                    let v = serde_json::to_string(&obj)?;
+                    println!("{}", v);
+                },
+                Output::Paths => {
+                    let blob = obj.blob()
+                        .ok_or_else(|| format_err!("This model isn't linked to blob storage"))?;
+
+                    let path = self.rl.blobs()
+                        .join(blob)?;
+
+                    let path = path.to_str()
+                        .ok_or_else(|| format_err!("Path is invalid utf-8"))?;
+
+                    println!("{}", path);
+                },
             }
         }
 
@@ -95,8 +80,8 @@ impl<'a, 'b> Printer<'a, 'b> {
 }
 
 impl Cmd for Args {
-    fn run(&self, rl: &mut Readline) -> Result<()> {
-        let printer = Printer::new(rl, self.json);
+    fn run(self, rl: &mut Readline) -> Result<()> {
+        let printer = Printer::new(rl, &self);
 
         match &self.subcommand {
             Target::Domains(filter) => printer.select::<Domain>(&filter),
@@ -109,6 +94,7 @@ impl Cmd for Args {
             Target::Networks(filter) => printer.select::<Network>(&filter),
             Target::Accounts(filter) => printer.select::<Account>(&filter),
             Target::Breaches(filter) => printer.select::<Breach>(&filter),
+            Target::Images(filter) => printer.select::<Image>(&filter),
         }
     }
 }

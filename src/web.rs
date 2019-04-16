@@ -1,5 +1,6 @@
 pub use chrootable_https::{Client, HttpClient, Resolver};
 
+use crate::blobs::Blob;
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use std::ops::Deref;
@@ -61,6 +62,8 @@ pub struct RequestOptions {
     form: Option<serde_json::Value>,
     body: Option<String>,
     timeout: Option<u64>,
+    #[serde(default)]
+    into_blob: bool,
 }
 
 impl RequestOptions {
@@ -88,6 +91,7 @@ pub struct HttpRequest {
     user_agent: Option<String>,
     body: Option<ReqBody>,
     timeout: Option<Duration>,
+    into_blob: bool,
 }
 
 impl HttpRequest {
@@ -108,6 +112,7 @@ impl HttpRequest {
             user_agent,
             body: None,
             timeout,
+            into_blob: options.into_blob,
         };
 
         if let Some(json) = options.json {
@@ -224,7 +229,14 @@ impl HttpRequest {
         }
         resp.insert("headers", headers);
 
-        resp.insert_str("text", String::from_utf8_lossy(&res.body));
+
+        if self.into_blob {
+            let blob = Blob::create(res.body);
+            let id = state.register_blob(blob);
+            resp.insert_str("blob", id);
+        } else {
+            resp.insert_str("text", String::from_utf8_lossy(&res.body));
+        }
 
         Ok(resp)
     }

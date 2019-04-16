@@ -18,13 +18,10 @@ function run(arg)
 
     m = regex_find_all("([^,]+),.+\\n?", resp['text'])
 
-    i = 1
-    while i <= #m do
+    for i=1, #m do
         db_add('subdomain', {
             domain_id=arg['id'],
             value=m[i][2]
         })
-
-        i = i+1
     end
 end

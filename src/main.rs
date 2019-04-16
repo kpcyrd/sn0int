@@ -54,7 +54,7 @@ fn run_sandbox() -> Result<()> {
     engine::isolation::run_worker(geoip, asn, &psl)
 }
 
-fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: &T, config: &Config) -> Result<()> {
+fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
     args.run(&mut rl)
 }
@@ -79,7 +79,7 @@ end
 }
 
 fn run() -> Result<()> {
-    let args = Args::from_args();
+    let mut args = Args::from_args();
 
     if !args.is_sandbox() {
         sandbox::fasten_seatbelt()?;
@@ -90,16 +90,19 @@ fn run() -> Result<()> {
 
     debug!("Loaded config: {:?}", config);
 
-    match args.subcommand {
-        Some(SubCommand::Run(ref run)) => run_run(&args, run, &config),
+    match args.subcommand.take() {
+        Some(SubCommand::Run(run)) => run_run(&args, &run, &config),
         Some(SubCommand::Sandbox(_)) => run_sandbox(),
         Some(SubCommand::Login(_)) => auth::run_login(&config),
-        Some(SubCommand::New(ref new)) => run_new(&args, new),
-        Some(SubCommand::Publish(ref publish)) => registry::run_publish(&args, publish, &config),
-        Some(SubCommand::Install(ref install)) => registry::run_install(install, &config),
-        Some(SubCommand::Search(ref search)) => registry::run_search(search, &config),
-        Some(SubCommand::Select(ref select)) => run_cmd(&args, select, &config),
-        Some(SubCommand::Completions(ref completions)) => complete::run_generate(completions),
+        Some(SubCommand::New(new)) => run_new(&args, &new),
+        Some(SubCommand::Publish(publish)) => registry::run_publish(&args, &publish, &config),
+        Some(SubCommand::Install(install)) => registry::run_install(&install, &config),
+        Some(SubCommand::Search(search)) => registry::run_search(&search, &config),
+        Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
+        Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
+        Some(SubCommand::Delete(delete)) => run_cmd(&args, delete, &config),
+        Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
+        Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),
         None => shell::run(&args, &config),
     }
 }

@@ -4,6 +4,8 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
+use std::sync::Arc;
+use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -261,7 +263,7 @@ pub type InsertBreach = NewBreach;
 impl LuaInsertToNew for InsertBreach {
     type Target = NewBreach;
 
-    fn try_into_new(self) -> Result<NewBreach> {
+    fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreach> {
         Ok(self)
     }
 }

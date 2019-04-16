@@ -14,14 +14,12 @@ function find_mx(domain)
     records = records['answers']
     -- debug(records)
 
-    i = 1
-    while i <= #records do
+    for i=1, #records do
         r = records[i][2]['MX']
         if r then
             debug('mx: ' .. r[2])
             return r[2]
         end
-        i = i+1
     end
 end
 

@@ -20,8 +20,7 @@ function run(arg)
     if resp['status'] ~= 200 then return 'http error: ' .. resp['status'] end
 
     links = html_select_list(resp['text'], 'a')
-    i = 1
-    while i <= #links do
+    for i=1, #links do
         href = links[i]['attrs']['href']
 
         if href:find('/pks/lookup%?op=get&search=') == 1 then
@@ -40,19 +39,16 @@ function run(arg)
 
             -- TODO: ensure at least one email matches our target domain
             if pubkey['uids'] then
-                j = 1
-                while j <= #pubkey['uids'] do
-                    m = regex_find("<([^< ]+@[^< ]+)>$", pubkey['uids'][j])
+                for j=1, #pubkey['uids'] do
+                    local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
                     if m then
                         db_add('email', {
-                            value=m[2],
+                            value=m[3],
+                            displayname=m[2],
                         })
                     end
-                    j = j+1
                 end
             end
         end
-
-        i = i+1
     end
 end
