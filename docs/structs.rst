@@ -176,6 +176,37 @@ notification service.
 ``value``
     The name of the breach, breach compilation or notification service.
 
+Images
+------
+
+``value``
+    The id that identifies the blob. This id is deterministic based on file
+    content.
+``filename``
+    This field is used if we have a well known filename for the content.
+``mime``
+    The image mimetype, like ``image/png`` or ``image/jpeg``.
+``width``
+    The width of the image.
+``height``
+    The height of the image.
+``created``
+    The date and time this image has been taken.
+``latitude``
+    Latitude this picture has been taken.
+``longitude``
+    Longitude this picture has been taken.
+``nudity``
+    A score that classifies nudity in this picture. The score goes from 0 to 2
+    and is commonly calculated with ``img_nudity``. A score above 1 means
+    nudity has been detected.
+``ahash``
+    The Mean (aHash) perceptual hash.
+``dhash``
+    The Gradient (dHash) perceptual hash.
+``phash``
+    The DCT (pHash) perceptual hash.
+
 Relations
 ---------
 
