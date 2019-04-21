@@ -13,6 +13,18 @@ Clear the last recorded error from the internal state. See also last_err_.
         clear_err()
     end
 
+create_blob
+-----------
+
+Push a byte array into persistent blob storage. This allows passing those bytes
+to functions operating on blob storage. Returns a blob identifier that is
+deterministic based on the blob content. Blobs are immutable.
+
+.. code-block:: lua
+
+    blob = create_blob("some bytes")
+    debug(blob)
+
 datetime
 --------
 
@@ -250,6 +262,41 @@ the following keys:
     if last_err() then return end
     if resp["status"] ~= 200 then return "invalid status code" end
 
+img_load
+--------
+
+Attempt to decode a blob as an image and return some basic metadata like the
+mime type, height and width.
+
+.. code-block:: lua
+
+    img = img_load(blob)
+    if last_err() then return end
+    debug(img)
+
+img_exif
+--------
+
+Extract exif metadata from an image.
+
+.. code-block:: lua
+
+    exif = img_exif(blob)
+    if last_err() then return end
+    debug(exif)
+
+img_nudity
+----------
+
+Classify an image for nudity. The score goes from 0 to 2. A score above 1 means
+nudity has been detected.
+
+.. code-block:: lua
+
+    nudity = img_nudity(blob)
+    if last_err() then return end
+    debug(nudity)
+
 info
 ----
 
@@ -317,6 +364,15 @@ otherwise.
         -- Something went wrong, abort
         return
     end
+
+md5
+---
+
+Hash a byte array with md5 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(md5("\x00\xff"))
 
 pgp_pubkey
 ----------
@@ -429,6 +485,33 @@ Same as regex_find_, but returns all matches.
     print(m[2][2] == 'd')
     print(m[3][1] == 'ef')
     print(m[3][2] == 'f')
+
+sha1
+----
+
+Hash a byte array with sha1 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha1("\x00\xff"))
+
+sha2_256
+--------
+
+Hash a byte array with sha2_256 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha2_256("\x00\xff"))
+
+sha2_512
+--------
+
+Hash a byte array with sha2_512 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha2_512("\x00\xff"))
 
 sleep
 -----
