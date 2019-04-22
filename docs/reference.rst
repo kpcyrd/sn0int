@@ -222,6 +222,9 @@ options are set. The following options are available:
   The request body that should be form encoded.
 ``body``
   The raw request body as string.
+``into_blob``
+  If true, the response body is stored in blob storage and a blob reference is
+  returned as ``blob`` instead of the full body.
 
 This function may fail.
 
@@ -249,6 +252,9 @@ the following keys:
   A table of headers
 ``text``
   The response body as string
+``blob``
+  If ``into_blob`` was enabled for the request the body is downloaded into blob
+  storage with a reference to the body in this field.
 
 .. code-block:: lua
 
