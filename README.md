@@ -21,26 +21,41 @@ unified format for followup investigations.
 
 Among other things, sn0int is currently able to:
 
-- Harvest subdomains from certificate transparency logs
-- Harvest subdomains from various passive dns logs
-- Sift through subdomain results for publicly accessible websites
-- Harvest emails from pgp keyservers
-- Enrich ip addresses with ASN and geoip info
-- Harvest subdomains from the wayback machine
+- Harvest subdomains from certificate transparency logs and passive dns
+- Enrich ip addresses with asn and geoip info
+- Harvest emails from pgp keyservers and whois
+- Discover compromised logins in breaches
+- Find somebody's profiles across the internet
+- Enumerate local networks with unique techniques like passive arp
 - Gather information about phonenumbers
-- Bruteforce interesting urls
+- Harvest data and images from instagram profiles
+- Scan images for nudity
 
 sn0int is heavily inspired by recon-ng and maltego, but remains more flexible
-and is fully opensource.  None of the investigations listed above are hardcoded
+and is fully opensource. None of the investigations listed above are hardcoded
 in the source, instead those are provided by modules that are executed in a
 sandbox. You can easily extend sn0int by writing your own modules and share
 them with other users by publishing them to the sn0int registry. This allows
 you to ship updates for your modules on your own since you don't need to send a
 pull request.
 
-Join us on IRC: [irc.hackint.org:6697/#sn0int](https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int)
+For questions and support join us on IRC: [irc.hackint.org:6697/#sn0int](https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int)
 
 [![asciicast](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB.svg)](https://asciinema.org/a/shZ3TVY1o0opGFln3Oi2DAMCB)
+
+## Installation
+
+Archlinux
+
+    pacman -S sn0int
+
+Mac OSX
+
+    brew install sn0int
+
+For everything else please have a look at the [detailed list][1].
+
+[1]: https://sn0int.readthedocs.io/en/latest/install.html
 
 ## Getting started
 
@@ -156,6 +171,23 @@ Join us on IRC: [irc.hackint.org:6697/#sn0int](https://webirc.hackint.org/#irc:/
   - [url_unescape](https://sn0int.readthedocs.io/en/latest/reference.html#url-unescape)
   - [utf8_decode](https://sn0int.readthedocs.io/en/latest/reference.html#utf8-decode)
   - [x509_parse_pem](https://sn0int.readthedocs.io/en/latest/reference.html#x509-parse-pem)
+
+## Rationale
+
+This tool was written for companies to help them understand their attack
+surface from a blackbox point of view. It's often difficult to understand that
+something is easier to discover than some people assume, putting them at risk
+of false security.
+
+It's also designed to be useful for red team assessments and bug bounties,
+which also help companies to identify weaknesses that could result in a
+compromise.
+
+Some functionality was written to do the same thing for individuals to raise
+awareness about personal attack surface, privacy and how much data is publicly
+available. These issues are often out of scope in bug bounties and sometimes by
+design. We believe that blaming the user is the wrong approach and these issues
+should be addressed at the root cause by the people designing those systems.
 
 ## License
 
