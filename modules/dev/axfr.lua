@@ -1,5 +1,5 @@
 -- Description: Try a zone transfer for subdomains
--- Version: 0.2.0
+-- Version: 0.3.0
 -- Source: domains
 -- License: GPL-3.0
 

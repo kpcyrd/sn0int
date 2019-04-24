@@ -1,5 +1,5 @@
 -- Description: Scan for known /.well-known/ locations
--- Version: 0.1.0
+-- Version: 0.2.0
 -- Source: urls
 -- License: GPL-3.0
 

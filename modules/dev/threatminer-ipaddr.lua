@@ -1,5 +1,5 @@
 -- Description: Query ThreatMiner passive dns for subdomains of an ip address
--- Version: 0.2.0
+-- Version: 0.3.0
 -- Source: ipaddrs
 -- License: GPL-3.0
 

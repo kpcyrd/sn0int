@@ -1,5 +1,5 @@
 -- Description: Run reverse dns lookups
--- Version: 0.1.0
+-- Version: 0.2.0
 -- Source: ipaddrs
 -- License: GPL-3.0
 

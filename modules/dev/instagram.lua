@@ -1,5 +1,5 @@
 -- Description: Collect data from instagram profiles
--- Version: 0.1.0
+-- Version: 0.2.0
 -- Source: accounts:instagram.com
 -- License: GPL-3.0
 
