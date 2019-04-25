@@ -34,6 +34,6 @@ serde_json = "1.0"
 
 dotenv = "0.13"
 
-#[patch.crates-io]
-#rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
-#rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+[patch.crates-io]
+rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }

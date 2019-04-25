@@ -1,6 +1,6 @@
 [package]
 name = "sn0int"
-version = "0.11.0"
+version = "0.11.1"
 description = "Semi-automatic OSINT framework and package manager"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
@@ -21,9 +21,10 @@ travis-ci = { repository = "kpcyrd/sn0int" }
 
 [workspace]
 # rocket is broken and blocks the whole workspace, removing
-members = ["sn0int-registry/sn0int-common",
-           "sn0int-registry"]
-#members = ["sn0int-registry/sn0int-common"]
+#members = ["sn0int-registry/sn0int-common",
+#           "sn0int-registry"]
+members = ["sn0int-registry/sn0int-common"]
+exclude = ["sn0int-registry"]
 
 [dependencies]
 sn0int-common = { version="0.6.0", path="sn0int-registry/sn0int-common" }
@@ -100,6 +101,6 @@ unveil = "0.2.0"
 boxxy = "0.10"
 tempfile = "3.0"
 
-[patch.crates-io]
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+#[patch.crates-io]
+#rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
+#rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
