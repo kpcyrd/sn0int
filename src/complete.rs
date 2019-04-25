@@ -1,6 +1,6 @@
 use crate::args::{Args, Completions};
 use crate::errors::*;
-use rustyline;
+use rustyline::{self, Context};
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
@@ -50,7 +50,7 @@ impl CmdCompleter {
 impl Completer for CmdCompleter {
     type Candidate = String;
 
-    fn complete(&self, line: &str, pos: usize) -> rustyline::Result<(usize, Vec<String>)> {
+    fn complete(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<String>)> {
         if line.len() != pos {
             return Ok((0, vec![]));
         }
@@ -193,9 +193,9 @@ impl Completer for CmdCompleter {
 // TODO: suggest rest of the line if only one possible completion
 impl Hinter for CmdCompleter {
     #[inline]
-    fn hint(&self, _line: &str, _pos: usize) -> Option<String> {
+    fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         // None
-        match self.complete(_line, _pos) {
+        match self.complete(_line, _pos, _ctx) {
             Ok((_, mut cmds)) => if cmds.len() == 1 {
                 // TODO: this fails if we complete a 2nd argument
                 let hint = cmds.remove(0);

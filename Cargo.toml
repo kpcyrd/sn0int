@@ -27,7 +27,7 @@ members = ["sn0int-registry/sn0int-common",
 
 [dependencies]
 sn0int-common = { version="0.6.0", path="sn0int-registry/sn0int-common" }
-rustyline = "3"
+rustyline = "4.0"
 log = "0.4"
 env_logger = "0.6"
 hlua-badtouch = "0.4"
@@ -97,7 +97,7 @@ unveil = "0.2.0"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
-boxxy = "0.9"
+boxxy = "0.10"
 tempfile = "3.0"
 
 [patch.crates-io]
