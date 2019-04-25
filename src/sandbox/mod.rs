@@ -65,6 +65,9 @@ pub fn init_openbsd() -> Result<()> {
     unveil("/etc/resolv.conf", "r")
         .map_err(|_| format_err!("Failed to call unveil"))?;
 
+    unveil("/dev/urandom", "r")
+        .map_err(|_| format_err!("Failed to call unveil"))?;
+
     // disable further unveil calls
     unveil("", "")
         .map_err(|_| format_err!("Failed to call unveil"))?;
