@@ -68,7 +68,7 @@ OpenBSD
 
 .. code-block:: bash
 
-    $ pkg_add sqlite3
+    $ pkg_add git cargo sqlite3 geolite2-city geolite2-asn
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .
