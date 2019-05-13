@@ -10,6 +10,7 @@ use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCa
 
 use std::collections::HashMap;
 use std::env;
+use std::ffi::OsString;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufRead, stdin, Stdin, Stdout};
 use std::net::SocketAddr;
@@ -60,8 +61,10 @@ pub struct Supervisor {
 
 impl Supervisor {
     pub fn setup(module: &Module) -> Result<Supervisor> {
-        let exe = env::current_exe()
-            .context("Failed to find current executable")?;
+        let exe = match env::current_exe() {
+            Ok(exe) => exe.into_os_string(),
+            _ => OsString::from("sn0int"),
+        };
 
         let mut child = Command::new(exe)
             .arg("sandbox")
