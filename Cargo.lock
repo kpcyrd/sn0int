@@ -1612,7 +1612,7 @@ dependencies = [
 
 [[package]]
 name = "nude"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2633,7 +2633,7 @@ dependencies = [
  "md-5 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "nude 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nude 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "opener 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pledge 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "publicsuffix 1.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3721,7 +3721,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
 "checksum nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2ad2a91a8e869eeb30b9cb3119ae87773a8f4ae617f41b1eb9c154b2905f7bd6"
 "checksum notify 4.0.11 (registry+https://github.com/rust-lang/crates.io-index)" = "ceb1a496a81dd6125f68ce772b41b83efe89a54d21768ed6d0c33c95832604e6"
-"checksum nude 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)" = "402832ef329af4b2ef29b9e7ac6ce5ee550e8ca32b4ff981dd50cb2a17176ce5"
+"checksum nude 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0ad1635d042fcf8c8702f309c47c3b4b66414c6718c37d054441a1610ff38e20"
 "checksum num-bigint 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "57450397855d951f1a41305e54851b1a7b8f5d2e349543a02a2effe25459f718"
 "checksum num-derive 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "eafd0b45c5537c3ba526f79d3e75120036502bebacbb3f3220914067ce39dbf2"
 "checksum num-integer 0.1.39 (registry+https://github.com/rust-lang/crates.io-index)" = "e83d528d2677f0518c570baf2b7abdcf0cd2d248860b68507bdcb3e91d4c0cea"
