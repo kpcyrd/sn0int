@@ -11,14 +11,14 @@ edition = "2018"
 sn0int-common = { version="0.6.0", path="sn0int-common" }
 rocket = { version = "0.4", default-features=false }
 rocket_failure = { version = "0.1.2", features = ["with-rocket"] }
-rocket_contrib = { version = "0.4", features = ["handlebars_templates"] }
+rocket_contrib = { version = "0.4.1", features = ["handlebars_templates"] }
 
 diesel = { version = "1.3", features = ["postgres", "r2d2"] }
 diesel_migrations = { version = "1.3.0", features = ["postgres"] }
 diesel_full_text_search = "1.0.1"
 
 reqwest = "0.9.2"
-oauth2 = "2.0.0-alpha.2"
+oauth2 = "2.0.0-beta.2"
 failure = "0.1"
 url = "1.0"
 log = "0.4"
@@ -33,7 +33,3 @@ serde_derive = "1.0"
 serde_json = "1.0"
 
 dotenv = "0.13"
-
-[patch.crates-io]
-rocket = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
-rocket_contrib = { git = "https://github.com/SergioBenitez/Rocket.git", rev="c86f4312fb273c0380fb76a97bfb7fc227800542" }
