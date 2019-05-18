@@ -38,7 +38,7 @@ function run(arg)
 
     -- trigger the scan
     local req = http_request(session, 'POST', 'https://namechk.com/', {
-            headers=headers,
+        headers=headers,
         form={
             authenticity_token=auth_token,
             q=arg['username'],
