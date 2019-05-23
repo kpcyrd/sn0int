@@ -9,13 +9,6 @@ categories = ["command-line-utilities"]
 readme = "README.md"
 edition = "2018"
 
-[profile.release]
-# skip lto to avoid compiler bug:
-# https://github.com/kpcyrd/sn0int/issues/77
-# https://github.com/rust-lang/rust/issues/58674
-opt-level = 1
-lto = false
-
 [badges]
 travis-ci = { repository = "kpcyrd/sn0int" }
 
