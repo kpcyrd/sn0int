@@ -898,3 +898,14 @@ Parse a pem encoded certificate. This function might fail.
     ]])
     if last_err() then return end
     print(x)
+
+xml_decode
+----------
+
+Decode a lua value from an xml document.
+
+.. code-block:: lua
+
+    x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
+    print(x['foo']['fizz'])
+    print(x['foo']['$value'])
