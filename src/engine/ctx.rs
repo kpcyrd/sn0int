@@ -383,6 +383,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::sock_newline(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::stdin_readline(&mut lua, state.clone());
+    runtime::strftime(&mut lua, state.clone());
+    runtime::strptime(&mut lua, state.clone());
+    runtime::time_unix(&mut lua, state.clone());
     runtime::url_decode(&mut lua, state.clone());
     runtime::url_encode(&mut lua, state.clone());
     runtime::url_escape(&mut lua, state.clone());

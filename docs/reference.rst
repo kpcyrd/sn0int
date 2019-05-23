@@ -46,6 +46,10 @@ for ``DATETIME`` database fields.
 
     now = datetime()
 
+.. note::
+    This format is sn0int specific, to get the current time for scripting use
+    time_unix_ instead.
+
 db_add
 ------
 
@@ -740,6 +744,36 @@ Read a line from stdin. The final newline is not removed.
 
 .. note::
    This only works with `sn0int run --stdin`.
+
+strftime
+--------
+
+Format a timestamp generated with time_unix_ into a date, see `strftime rules`_.
+
+.. code-block:: lua
+
+    t = strftime('%d/%m/%Y %H:%M', 1558584994)
+
+strptime
+--------
+
+Parse a date into a unix timestamp, see `strftime rules`_.
+
+.. code-block:: lua
+
+    t = strptime('%d/%m/%Y %H:%M', '23/05/2019 04:16')
+
+.. _strftime rules: https://docs.rs/chrono/0.4.6/chrono/format/strftime/index.html
+
+time_unix
+---------
+
+Get the current time as seconds since ``January 1, 1970 0:00:00 UTC``, also
+known as UNIX timestamp. This timestamp can be formated using strftime_.
+
+.. code-block:: lua
+
+    now = time_unix()
 
 url_decode
 ----------
