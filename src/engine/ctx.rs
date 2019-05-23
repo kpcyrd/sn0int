@@ -334,6 +334,12 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::getopt(&mut lua, state.clone());
     runtime::hex(&mut lua, state.clone());
+    runtime::hmac_md5(&mut lua, state.clone());
+    runtime::hmac_sha1(&mut lua, state.clone());
+    runtime::hmac_sha2_256(&mut lua, state.clone());
+    runtime::hmac_sha2_512(&mut lua, state.clone());
+    runtime::hmac_sha3_256(&mut lua, state.clone());
+    runtime::hmac_sha3_512(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
@@ -359,6 +365,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::sha1(&mut lua, state.clone());
     runtime::sha2_256(&mut lua, state.clone());
     runtime::sha2_512(&mut lua, state.clone());
+    runtime::sha3_256(&mut lua, state.clone());
+    runtime::sha3_512(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());

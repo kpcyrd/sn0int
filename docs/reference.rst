@@ -1,6 +1,17 @@
 Function reference
 ==================
 
+asn_lookup
+----------
+
+Run an ASN lookup for a given ip address. The function returns ``asn`` and
+``as_org``. This function may fail.
+
+.. code-block:: lua
+
+    lookup = asn_lookup('1.1.1.1')
+    if last_err() then return end
+
 clear_err
 ---------
 
@@ -135,17 +146,6 @@ Log an error to the terminal.
 
     error('ohai')
 
-asn_lookup
-----------
-
-Run an ASN lookup for a given ip address. The function returns ``asn`` and
-``as_org``. This function may fail.
-
-.. code-block:: lua
-
-    lookup = asn_lookup('1.1.1.1')
-    if last_err() then return end
-
 geoip_lookup
 ------------
 
@@ -165,6 +165,69 @@ This function may fail.
 
     lookup = geoip_lookup('1.1.1.1')
     if last_err() then return end
+
+hex
+---
+
+Hex encode a list of bytes.
+
+.. code-block:: lua
+
+    hex("\x6F\x68\x61\x69\x0A\x00")
+
+hmac_md5
+--------
+
+Calculate an hmac with md5. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_md5("secret", "my authenticated message")
+
+hmac_sha1
+---------
+
+Calculate an hmac with sha1. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha1("secret", "my authenticated message")
+
+hmac_sha2_256
+-------------
+
+Calculate an hmac with sha2_256. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha2_256("secret", "my authenticated message")
+
+hmac_sha2_512
+-------------
+
+Calculate an hmac with sha2_512. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha2_512("secret", "my authenticated message")
+
+hmac_sha3_256
+-------------
+
+Calculate an hmac with sha3_256. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha3_256("secret", "my authenticated message")
+
+hmac_sha3_512
+-------------
+
+Calculate an hmac with sha3_512. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha3_512("secret", "my authenticated message")
 
 html_select
 -----------
@@ -518,6 +581,24 @@ Hash a byte array with sha2_512 and return the results as bytes.
 .. code-block:: lua
 
     hex(sha2_512("\x00\xff"))
+
+sha3_256
+--------
+
+Hash a byte array with sha3_256 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha3_256("\x00\xff"))
+
+sha3_512
+--------
+
+Hash a byte array with sha3_512 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha3_512("\x00\xff"))
 
 sleep
 -----
