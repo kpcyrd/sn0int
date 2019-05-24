@@ -1,17 +1,14 @@
 use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::hlua::{self, AnyLuaValue};
-use crate::json::LuaJsonValue;
-use serde_json::Value;
+use crate::xml;
 use std::sync::Arc;
 
 
 pub fn xml_decode(lua: &mut hlua::Lua, state: Arc<State>) {
-    lua.set("xml_decode", hlua::function1(move |xml: String| -> Result<AnyLuaValue> {
-        let v: Value = serde_xml_rs::from_str(&xml)
-            .map_err(|err| state.set_error(format_err!("{}", err)))?;
-        let v: LuaJsonValue = v.into();
-        Ok(v.into())
+    lua.set("xml_decode", hlua::function1(move |x: String| -> Result<AnyLuaValue> {
+        xml::decode(&x)
+            .map_err(|err| state.set_error(err))
     }))
 }
 
@@ -24,12 +21,26 @@ mod tests {
         let script = Script::load_unchecked(r#"
         function run()
             x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
+            if last_err() then return end
             print(x)
-            if x['foo']['fizz'] ~= 'buzz' then
-                return 'wrong xml value for <foo fizz="???">'
+
+            body = x['children'][1]
+            if body['name'] ~= 'body' then
+                return 'wrong body tag name'
             end
-            if x['foo']['$value'] ~= 'bar' then
-                return 'wrong xml value for <foo>???</foo>'
+
+            foo = body['named']['foo']
+            if foo['name'] ~= 'foo' then
+                return 'foo has wrong tag name'
+            end
+            if foo['attrs']['fizz'] ~= 'buzz' then
+                return 'foo has wrong fizz attribute'
+            end
+            if foo['text'] ~= 'bar' then
+                return 'foo has wrong inner text'
+            end
+            if foo['children'][1] then
+                return 'foo has unexpected children'
             end
         end
         "#).expect("Failed to load script");

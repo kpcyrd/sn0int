@@ -69,7 +69,7 @@ bufstream = "0.1.4"
 tokio = "0.1.14"
 semver = "0.9"
 bytes = "0.4"
-serde-xml-rs = "0.3"
+xml-rs = "0.8"
 
 digest = "0.8.0"
 hex = "0.3.1"

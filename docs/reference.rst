@@ -907,5 +907,10 @@ Decode a lua value from an xml document.
 .. code-block:: lua
 
     x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
-    print(x['foo']['fizz'])
-    print(x['foo']['$value'])
+    if last_err() then return end
+
+    body = x['children'][1]
+    foo = body['children'][1]
+
+    print(foo['attrs']['fizz'])
+    print(foo['text'])
