@@ -184,6 +184,7 @@ For everything else please have a look at the [detailed list][1].
   - [utf8_decode](https://sn0int.readthedocs.io/en/latest/reference.html#utf8-decode)
   - [x509_parse_pem](https://sn0int.readthedocs.io/en/latest/reference.html#x509-parse-pem)
   - [xml_decode](https://sn0int.readthedocs.io/en/latest/reference.html#xml-decode)
+  - [xml_named](https://sn0int.readthedocs.io/en/latest/reference.html#xml-named)
 
 ## Rationale
 

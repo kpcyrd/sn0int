@@ -28,7 +28,6 @@ pub struct XmlElement {
     pub attrs: HashMap<String, String>,
     pub text: Option<String>,
     pub children: Vec<XmlElement>,
-    pub named: HashMap<String, XmlElement>,
 }
 
 impl XmlElement {
@@ -43,7 +42,6 @@ impl XmlElement {
             attrs,
             text: None,
             children: Vec::new(),
-            named: HashMap::new(),
         }
     }
 }
@@ -100,12 +98,11 @@ fn decode_raw(x: &str) -> Result<XmlDocument> {
 
                 let name = name.local_name;
                 if child.name != name {
-                    bail!("todo")
+                    bail!("end element name doesn't match start element name")
                 }
 
                 if let Some(tail) = stack.last_mut() {
-                    tail.children.push(child.clone());
-                    tail.named.insert(name, child);
+                    tail.children.push(child);
                 } else {
                     doc.children.push(child);
                 }
@@ -118,7 +115,7 @@ fn decode_raw(x: &str) -> Result<XmlDocument> {
 
     // TODO: consider ignoring this?
     if !stack.is_empty() {
-        bail!("todo")
+        bail!("end of document but still open elements remaining")
     }
 
     Ok(doc)
@@ -144,7 +141,6 @@ mod tests {
                     attrs: HashMap::new(),
                     text: None,
                     children: vec![],
-                    named: hashmap!{},
                 }
             ]
         });
@@ -167,20 +163,8 @@ mod tests {
                             },
                             text: None,
                             children: vec![],
-                            named: hashmap!{},
                         }
                     ],
-                    named: hashmap!{
-                        String::from("foo") => XmlElement {
-                            name: String::from("foo"),
-                            attrs: hashmap!{
-                                String::from("x") => String::from("1"),
-                            },
-                            text: None,
-                            children: vec![],
-                            named: hashmap!{},
-                        }
-                    },
                 }
             ]
         });
@@ -203,20 +187,8 @@ mod tests {
                             },
                             text: Some(String::from("hello world")),
                             children: vec![],
-                            named: hashmap!{},
                         }
                     ],
-                    named: hashmap!{
-                        String::from("foo") => XmlElement {
-                            name: String::from("foo"),
-                            attrs: hashmap!{
-                                String::from("x") => String::from("1"),
-                            },
-                            text: Some(String::from("hello world")),
-                            children: vec![],
-                            named: hashmap!{},
-                        }
-                    },
                 }
             ]
         });

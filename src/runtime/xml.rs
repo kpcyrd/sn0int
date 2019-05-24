@@ -12,6 +12,70 @@ pub fn xml_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
+#[inline]
+fn key_is(key: &AnyLuaValue, expected: &str) -> bool {
+    match key {
+        AnyLuaValue::LuaString(key) => key.as_str() == expected,
+        _ => false,
+    }
+}
+
+#[inline]
+fn get_children(xml: AnyLuaValue) -> Option<AnyLuaValue> {
+    match xml {
+        AnyLuaValue::LuaArray(arr) => {
+            for (key, value) in arr {
+                if key_is(&key, "children") {
+                    return Some(value);
+                }
+            }
+
+            None
+        }
+        _ => None,
+    }
+}
+
+#[inline]
+fn match_element_name(xml: &AnyLuaValue, name: &str) -> bool {
+    match xml {
+        AnyLuaValue::LuaArray(arr) => {
+            for (key, value) in arr {
+                if key_is(key, "name") {
+                    match value {
+                        AnyLuaValue::LuaString(key) => {
+                            return key.as_str() == name
+                        },
+                        _ => return false,
+                    }
+                }
+            }
+
+            false
+        },
+        _ => false,
+    }
+}
+
+pub fn xml_named(lua: &mut hlua::Lua, _state: Arc<State>) {
+    lua.set("xml_named", hlua::function2(move |xml: AnyLuaValue, name: String| -> AnyLuaValue {
+        if let Some(value) = get_children(xml) {
+            match value {
+                AnyLuaValue::LuaArray(arr) => {
+                    for (_, value) in arr {
+                        if match_element_name(&value, &name) {
+                            return value;
+                        }
+                    }
+                },
+                _ => (),
+            }
+        }
+
+        AnyLuaValue::LuaNil
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use crate::engine::ctx::Script;
@@ -29,7 +93,7 @@ mod tests {
                 return 'wrong body tag name'
             end
 
-            foo = body['named']['foo']
+            foo = xml_named(body, 'foo')
             if foo['name'] ~= 'foo' then
                 return 'foo has wrong tag name'
             end

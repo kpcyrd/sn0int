@@ -914,3 +914,19 @@ Decode a lua value from an xml document.
 
     print(foo['attrs']['fizz'])
     print(foo['text'])
+
+xml_named
+---------
+
+Get a named child element from a parent element.
+
+.. code-block:: lua
+
+    x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
+    if last_err() then return end
+
+    body = x['children'][1]
+    foo = xml_named(body, 'foo')
+    if foo ~= nil then
+        print(foo)
+    end

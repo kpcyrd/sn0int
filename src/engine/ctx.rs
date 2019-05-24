@@ -395,6 +395,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::utf8_decode(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
     runtime::xml_decode(&mut lua, state.clone());
+    runtime::xml_named(&mut lua, state.clone());
 
     debug!("Created lua context");
 
