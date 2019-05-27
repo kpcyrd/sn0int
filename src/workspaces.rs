@@ -1,15 +1,48 @@
 use crate::errors::*;
 
+use crate::blobs::BlobStorage;
 use crate::paths;
 use regex::Regex;
 use std::ffi::OsStr;
 use std::fs;
+use std::path::PathBuf;
 use std::str::FromStr;
 
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Workspace {
     s: String,
+}
+
+impl Workspace {
+    #[inline]
+    pub fn db_path(&self) -> Result<PathBuf> {
+        Ok(paths::data_dir()?.join(self.s.to_string() + ".db"))
+    }
+
+    #[inline]
+    pub fn usage_human(&self) -> Result<String> {
+        let usage = self.usage()?;
+        Ok(bytesize::to_string(usage, false))
+    }
+
+    pub fn usage(&self) -> Result<u64> {
+        let blobs = BlobStorage::workspace(self)?;
+
+        let mut sum = fs::metadata(self.db_path()?)?.len();
+        for entry in fs::read_dir(blobs.path())? {
+            sum += fs::metadata(entry?.path())?.len();
+        }
+
+        Ok(sum)
+    }
+
+    pub fn delete(&self) -> Result<()> {
+        let blobs = BlobStorage::workspace(self)?;
+        fs::remove_dir_all(blobs.path())?;
+        fs::remove_file(self.db_path()?)?;
+        Ok(())
+    }
 }
 
 impl FromStr for Workspace {

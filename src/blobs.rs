@@ -9,7 +9,7 @@ use bytes::Bytes;
 use serde::ser::{Serialize, Serializer};
 use serde::de::{self, Deserialize, Deserializer};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::result;
 use std::sync::mpsc;
 
@@ -45,12 +45,14 @@ impl Blob {
 impl EventWithCallback for Blob {
     type Payload = ();
 
+    #[inline(always)]
     fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
         Event2::Blob((self, tx))
     }
 }
 
 impl Serialize for Blob {
+    #[inline]
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -61,6 +63,7 @@ impl Serialize for Blob {
 }
 
 impl<'de> Deserialize<'de> for Blob {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -84,16 +87,23 @@ impl BlobStorage {
         }
     }
 
+    #[inline]
     pub fn workspace(workspace: &Workspace) -> Result<BlobStorage> {
         let path = paths::blobs_dir(workspace)?;
         Ok(BlobStorage::new(path))
     }
 
+    #[inline]
     pub fn join(&self, id: &str) -> Result<PathBuf> {
         if !id.chars().all(char::is_alphanumeric) {
             bail!("blob id contains invalid characters");
         }
         Ok(self.path.join(id))
+    }
+
+    #[inline(always)]
+    pub fn path(&self) -> &Path {
+        self.path.as_ref()
     }
 
     pub fn load(&self, id: &str) -> Result<Blob> {

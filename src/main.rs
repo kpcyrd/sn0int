@@ -101,6 +101,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
         Some(SubCommand::Delete(delete)) => run_cmd(&args, delete, &config),
+        Some(SubCommand::Workspace(workspace)) => run_cmd(&args, workspace, &config),
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
         Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),
         None => shell::run(&args, &config),
