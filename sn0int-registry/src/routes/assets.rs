@@ -1,15 +1,20 @@
 use crate::assets::{ASSET_REV, FAVICON, STYLE_SHEET};
-use rocket::http::ContentType;
-use rocket::http::Status;
+use crate::db;
+use crate::errors::ApiResult;
+use crate::models::*;
+use rocket::http::{ContentType, Status};
 use rocket::http::hyper::header::{CacheControl, CacheDirective};
 use rocket_contrib::templates::Template;
 
 
 #[get("/")]
-pub fn index() -> Template {
-    Template::render("index", hashmap!{
-        "ASSET_REV" => ASSET_REV.as_str(),
-    })
+pub fn index(connection: db::Connection) -> ApiResult<Template> {
+    let modules = Module::start_page(&connection)?;
+    let asset_rev = ASSET_REV.as_str();
+    Ok(Template::render("index", json!({
+        "ASSET_REV": asset_rev,
+        "modules": modules,
+    })))
 }
 
 #[derive(Responder)]

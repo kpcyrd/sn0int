@@ -118,7 +118,7 @@ pub fn publish(name: String, upload: Json<PublishRequest>, session: AuthHeader, 
         .public_context("Version is invalid")?;
 
     connection.transaction::<_, WebError, _>(|| {
-        let module = Module::update_or_create(&user, &name, &metadata.description, &connection)
+        let module = Module::update_or_create(&user, &name, &metadata, &connection)
             .private_context("Failed to write module metadata")?;
 
         match Release::try_find(module.id, &version, &connection)? {

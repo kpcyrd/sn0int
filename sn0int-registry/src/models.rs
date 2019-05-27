@@ -4,7 +4,9 @@ use diesel::pg::PgConnection;
 use diesel::sql_types::BigInt;
 use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
 use crate::schema::*;
+use std::collections::HashMap;
 use std::time::SystemTime;
+use sn0int_common::metadata::Metadata;
 
 
 #[derive(AsChangeset, Serialize, Deserialize, Queryable, Insertable)]
@@ -51,6 +53,7 @@ type AllModuleColumns = (
     modules::description,
     modules::latest,
     modules::featured,
+    modules::source,
 );
 
 pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
@@ -60,6 +63,7 @@ pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
     modules::description,
     modules::latest,
     modules::featured,
+    modules::source,
 );
 
 #[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
@@ -71,6 +75,7 @@ pub struct Module {
     pub description: String,
     pub latest: Option<String>,
     pub featured: bool,
+    pub source: Option<String>,
 }
 
 impl Module {
@@ -99,7 +104,10 @@ impl Module {
                         .map_err(Error::from)
     }
 
-    pub fn update_or_create(author: &str, name: &str, description: &str, connection: &PgConnection) -> Result<Module> {
+    pub fn update_or_create(author: &str, name: &str, metadata: &Metadata, connection: &PgConnection) -> Result<Module> {
+        let description = metadata.description.as_str();
+        let source = metadata.source.as_ref().map(|x| x.group_as_str());
+
         match Self::find_opt(author, name, connection)? {
             Some(module) => diesel::update(modules::table.filter(modules::columns::id.eq(module.id)))
                             .set(modules::columns::description.eq(description))
@@ -111,6 +119,7 @@ impl Module {
                 name,
                 description,
                 latest: None,
+                source,
             }, connection),
         }
     }
@@ -153,13 +162,14 @@ impl Module {
     pub fn search(query: &str, connection: &PgConnection) -> Result<Vec<(Module, i64)>> {
         let q = plainto_tsquery(query);
 
-        let x: Vec<(i32, String, String, String, Option<String>, bool, i64)> = modules::table.select((
+        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, i64)> = modules::table.select((
                 modules::id,
                 modules::author,
                 modules::name,
                 modules::description,
                 modules::latest,
                 modules::featured,
+                modules::source,
                 diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"),
             ))
             .left_join(releases::table)
@@ -171,7 +181,7 @@ impl Module {
             ))
             .load(connection)?;
 
-        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, downloads)| (
+        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, source, downloads)| (
             Module {
                 id,
                 author,
@@ -179,6 +189,7 @@ impl Module {
                 description,
                 latest,
                 featured,
+                source,
             },
             downloads,
         )).collect())
@@ -194,6 +205,51 @@ impl Module {
             ))
             .load(connection)
             .map_err(Error::from)
+    }
+
+    pub fn start_page(connection: &PgConnection) -> Result<HashMap<String, Vec<Module>>> {
+        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, i64)> = modules::table.select((
+                modules::id,
+                modules::author,
+                modules::name,
+                modules::description,
+                modules::latest,
+                modules::featured,
+                modules::source,
+                diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"),
+            ))
+            .left_join(releases::table)
+            .group_by(modules::id)
+            //.filter(q.matches(modules::search_vector))
+            .filter(modules::source.is_not_null())
+            .order((
+                modules::featured.desc(),
+                diesel::dsl::sql::<BigInt>("sum").desc(),
+            ))
+            .load(connection)?;
+
+        let mut categories: HashMap<_, Vec<_>> = HashMap::new();
+
+        for (id, author, name, description, latest, featured, source, _downloads) in x {
+            let module = Module {
+                id,
+                author,
+                name,
+                description,
+                latest,
+                featured,
+                source,
+            };
+            if let Some(source) = &module.source {
+                if let Some(cat) = categories.get_mut(source) {
+                    cat.push(module);
+                } else {
+                    categories.insert(source.clone(), vec![module]);
+                }
+            }
+        }
+
+        Ok(categories)
     }
 
     pub fn count(connection: &PgConnection) -> Result<i64> {
@@ -213,6 +269,7 @@ pub struct NewModule<'a> {
     name: &'a str,
     description: &'a str,
     latest: Option<&'a str>,
+    source: Option<&'a str>,
 }
 
 #[derive(AsChangeset, Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
