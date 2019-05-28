@@ -1,6 +1,17 @@
 Function reference
 ==================
 
+asn_lookup
+----------
+
+Run an ASN lookup for a given ip address. The function returns ``asn`` and
+``as_org``. This function may fail.
+
+.. code-block:: lua
+
+    lookup = asn_lookup('1.1.1.1')
+    if last_err() then return end
+
 clear_err
 ---------
 
@@ -34,6 +45,10 @@ for ``DATETIME`` database fields.
 .. code-block:: lua
 
     now = datetime()
+
+.. note::
+    This format is sn0int specific, to get the current time for scripting use
+    time_unix_ instead.
 
 db_add
 ------
@@ -135,17 +150,6 @@ Log an error to the terminal.
 
     error('ohai')
 
-asn_lookup
-----------
-
-Run an ASN lookup for a given ip address. The function returns ``asn`` and
-``as_org``. This function may fail.
-
-.. code-block:: lua
-
-    lookup = asn_lookup('1.1.1.1')
-    if last_err() then return end
-
 geoip_lookup
 ------------
 
@@ -165,6 +169,69 @@ This function may fail.
 
     lookup = geoip_lookup('1.1.1.1')
     if last_err() then return end
+
+hex
+---
+
+Hex encode a list of bytes.
+
+.. code-block:: lua
+
+    hex("\x6F\x68\x61\x69\x0A\x00")
+
+hmac_md5
+--------
+
+Calculate an hmac with md5. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_md5("secret", "my authenticated message")
+
+hmac_sha1
+---------
+
+Calculate an hmac with sha1. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha1("secret", "my authenticated message")
+
+hmac_sha2_256
+-------------
+
+Calculate an hmac with sha2_256. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha2_256("secret", "my authenticated message")
+
+hmac_sha2_512
+-------------
+
+Calculate an hmac with sha2_512. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha2_512("secret", "my authenticated message")
+
+hmac_sha3_256
+-------------
+
+Calculate an hmac with sha3_256. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha3_256("secret", "my authenticated message")
+
+hmac_sha3_512
+-------------
+
+Calculate an hmac with sha3_512. Returns a binary array.
+
+.. code-block:: lua
+
+    hmac_sha3_512("secret", "my authenticated message")
 
 html_select
 -----------
@@ -519,6 +586,24 @@ Hash a byte array with sha2_512 and return the results as bytes.
 
     hex(sha2_512("\x00\xff"))
 
+sha3_256
+--------
+
+Hash a byte array with sha3_256 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha3_256("\x00\xff"))
+
+sha3_512
+--------
+
+Hash a byte array with sha3_512 and return the results as bytes.
+
+.. code-block:: lua
+
+    hex(sha3_512("\x00\xff"))
+
 sleep
 -----
 
@@ -660,6 +745,36 @@ Read a line from stdin. The final newline is not removed.
 .. note::
    This only works with `sn0int run --stdin`.
 
+strftime
+--------
+
+Format a timestamp generated with time_unix_ into a date, see `strftime rules`_.
+
+.. code-block:: lua
+
+    t = strftime('%d/%m/%Y %H:%M', 1558584994)
+
+strptime
+--------
+
+Parse a date into a unix timestamp, see `strftime rules`_.
+
+.. code-block:: lua
+
+    t = strptime('%d/%m/%Y %H:%M', '23/05/2019 04:16')
+
+.. _strftime rules: https://docs.rs/chrono/0.4.6/chrono/format/strftime/index.html
+
+time_unix
+---------
+
+Get the current time as seconds since ``January 1, 1970 0:00:00 UTC``, also
+known as UNIX timestamp. This timestamp can be formated using strftime_.
+
+.. code-block:: lua
+
+    now = time_unix()
+
 url_decode
 ----------
 
@@ -783,3 +898,35 @@ Parse a pem encoded certificate. This function might fail.
     ]])
     if last_err() then return end
     print(x)
+
+xml_decode
+----------
+
+Decode a lua value from an xml document.
+
+.. code-block:: lua
+
+    x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
+    if last_err() then return end
+
+    body = x['children'][1]
+    foo = body['children'][1]
+
+    print(foo['attrs']['fizz'])
+    print(foo['text'])
+
+xml_named
+---------
+
+Get a named child element from a parent element.
+
+.. code-block:: lua
+
+    x = xml_decode('<body><foo fizz="buzz">bar</foo></body>')
+    if last_err() then return end
+
+    body = x['children'][1]
+    foo = xml_named(body, 'foo')
+    if foo ~= nil then
+        print(foo)
+    end

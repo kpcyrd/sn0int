@@ -8,7 +8,6 @@ use diesel::prelude::*;
 use crate::models::*;
 use crate::schema::*;
 use std::str::FromStr;
-use crate::paths;
 use crate::migrations;
 use crate::worker;
 use crate::workspaces::Workspace;
@@ -75,21 +74,21 @@ impl FromStr for Family {
 }
 
 pub struct Database {
-    name: Workspace,
+    workspace: Workspace,
     db: SqliteConnection,
 }
 
 impl Database {
-    pub fn establish(name: Workspace) -> Result<Database> {
+    pub fn establish(workspace: Workspace) -> Result<Database> {
         let db = worker::spawn_fn("Connecting to database", || {
-            Database::establish_quiet(name)
+            Database::establish_quiet(workspace)
         }, false)?;
 
         Ok(db)
     }
 
-    pub fn establish_quiet(name: Workspace) -> Result<Database> {
-        let path = paths::data_dir()?.join(name.to_string() + ".db");
+    pub fn establish_quiet(workspace: Workspace) -> Result<Database> {
+        let path = workspace.db_path()?;
         let path = path.into_os_string().into_string()
             .map_err(|_| format_err!("Failed to convert db path to utf-8"))?;
 
@@ -103,17 +102,24 @@ impl Database {
             .context("Failed to enforce foreign keys")?;
 
         Ok(Database {
-            name,
+            workspace,
             db,
         })
     }
 
+    #[inline(always)]
     pub fn name(&self) -> &str {
-        &self.name
+        &self.workspace
     }
 
+    #[inline(always)]
     pub fn db(&self) -> &SqliteConnection {
         &self.db
+    }
+
+    #[inline(always)]
+    pub fn workspace(&self) -> &Workspace {
+        &self.workspace
     }
 
     /// Returns true if we didn't have this value yet

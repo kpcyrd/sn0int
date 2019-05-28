@@ -334,6 +334,12 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::getopt(&mut lua, state.clone());
     runtime::hex(&mut lua, state.clone());
+    runtime::hmac_md5(&mut lua, state.clone());
+    runtime::hmac_sha1(&mut lua, state.clone());
+    runtime::hmac_sha2_256(&mut lua, state.clone());
+    runtime::hmac_sha2_512(&mut lua, state.clone());
+    runtime::hmac_sha3_256(&mut lua, state.clone());
+    runtime::hmac_sha3_512(&mut lua, state.clone());
     runtime::html_select(&mut lua, state.clone());
     runtime::html_select_list(&mut lua, state.clone());
     runtime::http_mksession(&mut lua, state.clone());
@@ -359,6 +365,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::sha1(&mut lua, state.clone());
     runtime::sha2_256(&mut lua, state.clone());
     runtime::sha2_512(&mut lua, state.clone());
+    runtime::sha3_256(&mut lua, state.clone());
+    runtime::sha3_512(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
@@ -375,6 +383,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::sock_newline(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::stdin_readline(&mut lua, state.clone());
+    runtime::strftime(&mut lua, state.clone());
+    runtime::strptime(&mut lua, state.clone());
+    runtime::time_unix(&mut lua, state.clone());
     runtime::url_decode(&mut lua, state.clone());
     runtime::url_encode(&mut lua, state.clone());
     runtime::url_escape(&mut lua, state.clone());
@@ -383,6 +394,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::url_unescape(&mut lua, state.clone());
     runtime::utf8_decode(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
+    runtime::xml_decode(&mut lua, state.clone());
+    runtime::xml_named(&mut lua, state.clone());
 
     debug!("Created lua context");
 

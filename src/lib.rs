@@ -1,4 +1,3 @@
-#![allow(proc_macro_derive_resolution_fallback)]
 #![warn(unused_extern_crates)]
 #[macro_use] extern crate failure;
 #[macro_use] extern crate maplit;
@@ -49,10 +48,9 @@ pub mod utils;
 pub mod web;
 pub mod worker;
 pub mod workspaces;
-
+pub mod xml;
 
 #[cfg(test)]
 fn test_init() {
-    use env_logger;
     let _ = env_logger::builder().is_test(true).try_init();
 }
