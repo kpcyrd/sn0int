@@ -2,8 +2,10 @@ body {
     background-color: black;
     color: #00aa00;
     font-family: monospace;
-    max-width: 700px;
-    margin: 0 auto;
+    max-width: 900px;
+    margin: 20px auto;
+    font-size: 14px;
+    line-height: 18px;
 }
 
 input {
@@ -29,7 +31,41 @@ a {
     padding: 10px;
 }
 
-.list-unstyled {
+.center {
+    text-align: center;
+}
+
+.modules {
     list-style: none;
-    padding: 0 0 0 20px;
+    padding: 0;
+    word-break: break-word;
+}
+
+.modules li {
+    padding: 2px 5px;
+    margin: 1px 0;
+    background-color: #222;
+}
+
+.mod-cell {
+    display: inline-block;
+    vertical-align: top;
+}
+
+.mod-name {
+    width: 35%;
+}
+
+.mod-name a {
+    text-decoration: none;
+    color: #00cc00;
+    font-weight: bold;
+}
+
+.mod-version {
+    width: 15%;
+}
+
+.mod-descr {
+    width: 50%;
 }

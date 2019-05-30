@@ -43,6 +43,25 @@ pub enum Source {
     KeyRing(String),
 }
 
+impl Source {
+    pub fn group_as_str(&self) -> &'static str {
+        match self {
+            Source::Domains => "domains",
+            Source::Subdomains => "subdomains",
+            Source::IpAddrs => "ipaddrs",
+            Source::Urls => "urls",
+            Source::Emails => "emails",
+            Source::PhoneNumbers => "phonenumbers",
+            Source::Networks => "networks",
+            Source::Devices => "devices",
+            Source::Accounts(_) => "accounts",
+            Source::Breaches => "breaches",
+            Source::Images => "images",
+            Source::KeyRing(_) => "keyring",
+        }
+    }
+}
+
 impl FromStr for Source {
     type Err = Error;
 

@@ -21,6 +21,7 @@ table! {
         latest -> Nullable<Varchar>,
         search_vector -> Tsvector,
         featured -> Bool,
+        source -> Nullable<Varchar>,
     }
 }
 
