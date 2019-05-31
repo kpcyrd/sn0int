@@ -2,10 +2,11 @@ use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;
 use crate::models::*;
+use crate::models::ipaddr::IpAddr;
 use diesel;
 use diesel::prelude::*;
 use std::sync::Arc;
-use std::net::{IpAddr, SocketAddr};
+use std::net::{self, SocketAddr};
 use crate::engine::ctx::State;
 
 
@@ -255,7 +256,7 @@ impl Printable<PrintablePort> for NewPort {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct InsertPort {
     pub ip_addr_id: i32,
-    pub ip_addr: IpAddr,
+    pub ip_addr: net::IpAddr,
     pub port: i32,
     pub status: String,
 
