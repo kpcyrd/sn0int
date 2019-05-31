@@ -22,6 +22,7 @@ pub enum Insert {
     Breach(NewBreach),
     BreachEmail(NewBreachEmail),
     Image(NewImage),
+    Port(NewPort),
 }
 
 impl Insert {
@@ -53,6 +54,7 @@ impl Insert {
                 format!("{:?}+{:?}", breach.value, email.value)
             }
             Insert::Image(x) => format!("{:?}", x.value),
+            Insert::Port(x) => format!("{:?}", x.value),
         };
         Ok(label)
     }
@@ -73,6 +75,7 @@ impl Insert {
             Insert::Breach(_) => "breaches",
             Insert::BreachEmail(_) => "breach_emails",
             Insert::Image(_) => "images",
+            Insert::Port(_) => "ports",
         }
     }
 
@@ -92,6 +95,7 @@ impl Insert {
             Insert::Breach(x) => format!("Breach: {}", x.printable(db)?),
             Insert::BreachEmail(x) => x.printable(db)?.to_string(),
             Insert::Image(x) => format!("Image: {}", x.printable(db)?),
+            Insert::Port(x) => format!("Port: {}", x.printable(db)?),
         })
     }
 }
@@ -109,6 +113,7 @@ pub enum Update {
     Account(AccountUpdate),
     BreachEmail(BreachEmailUpdate),
     Image(ImageUpdate),
+    Port(PortUpdate),
 }
 
 impl Update {
@@ -125,6 +130,7 @@ impl Update {
             Update::Account(update)       => update.is_dirty(),
             Update::BreachEmail(update)   => update.is_dirty(),
             Update::Image(update)         => update.is_dirty(),
+            Update::Port(update)          => update.is_dirty(),
         }
     }
 }
@@ -143,6 +149,7 @@ impl fmt::Display for Update {
             Update::Account(update)       => write!(w, "{}", update.to_string()),
             Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
             Update::Image(update)         => write!(w, "{}", update.to_string()),
+            Update::Port(update)          => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -354,3 +361,6 @@ pub use self::breach_email::*;
 
 mod image;
 pub use self::image::*;
+
+mod port;
+pub use self::port::*;

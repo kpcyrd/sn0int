@@ -62,6 +62,9 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
         Family::Image => {
             Insert::Image(try_into_new::<InsertImage>(object, state)?)
         },
+        Family::Port => {
+            Insert::Port(try_into_new::<InsertPort>(object, state)?)
+        },
     };
     Ok(obj)
 }
@@ -157,6 +160,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::BreachEmail(u))),
             Family::Image => gen_changeset::<Image, ImageUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Image(u))),
+            Family::Port => gen_changeset::<Port, PortUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Port(u))),
         };
 
         let (id, value, update) = update

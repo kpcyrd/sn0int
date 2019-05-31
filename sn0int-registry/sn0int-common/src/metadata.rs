@@ -40,6 +40,7 @@ pub enum Source {
     Accounts(Option<String>),
     Breaches,
     Images,
+    Ports,
     KeyRing(String),
 }
 
@@ -57,6 +58,7 @@ impl Source {
             Source::Accounts(_) => "accounts",
             Source::Breaches => "breaches",
             Source::Images => "images",
+            Source::Ports => "ports",
             Source::KeyRing(_) => "keyring",
         }
     }
@@ -85,6 +87,7 @@ impl FromStr for Source {
             ("accounts", param) => Ok(Source::Accounts(param.map(String::from))),
             ("breaches", None) => Ok(Source::Breaches),
             ("images", None) => Ok(Source::Images),
+            ("ports", None) => Ok(Source::Ports),
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),

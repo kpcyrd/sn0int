@@ -30,6 +30,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         Target::Accounts(filter) => scope::<Account>(rl, &filter),
         Target::Breaches(filter) => scope::<Breach>(rl, &filter),
         Target::Images(filter) => scope::<Image>(rl, &filter),
+        Target::Ports(filter) => scope::<Port>(rl, &filter),
     }?;
     term::info(&format!("Updated {} rows", rows));
     Ok(())

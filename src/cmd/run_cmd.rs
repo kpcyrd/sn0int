@@ -134,6 +134,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
         Some(Source::Accounts(service)) => prepare_args::<Account>(rl, &filter, service.as_ref()),
         Some(Source::Breaches) => prepare_args::<Breach>(rl, &filter, None),
         Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
+        Some(Source::Ports) => prepare_args::<Port>(rl, &filter, None),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {
