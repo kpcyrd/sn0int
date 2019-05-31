@@ -2,7 +2,6 @@ use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;
 use crate::models::*;
-use crate::models::ipaddr::IpAddr;
 use diesel;
 use diesel::prelude::*;
 use std::sync::Arc;
@@ -166,7 +165,7 @@ impl DisplayableDetailed for DetailedPort {
     #[inline]
     fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         w.id(self.id)?;
-        w.debug::<Green, _>(&self.value)?;
+        w.display::<Green, _>(&self.value)?;
         write!(w, ", ")?;
         w.debug::<Yellow, _>(&self.status)?;
 
