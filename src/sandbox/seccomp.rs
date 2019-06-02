@@ -60,6 +60,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::rt_sigprocmask)?;
     ctx.allow_syscall(Syscall::getpeername)?;
     ctx.allow_syscall(Syscall::gettimeofday)?;
+    ctx.allow_syscall(Syscall::membarrier)?;
 
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::openat)?;
     #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
