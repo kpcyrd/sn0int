@@ -18,6 +18,7 @@ pub struct Port {
     pub value: String,
     pub ip_addr: String,
     pub port: i32,
+    pub protocol: String,
     pub status: String,
     pub unscoped: bool,
 
@@ -210,6 +211,7 @@ pub struct NewPort {
     pub value: String,
     pub ip_addr: String,
     pub port: i32,
+    pub protocol: String,
     pub status: String,
 
     pub banner: Option<String>,
@@ -257,6 +259,7 @@ pub struct InsertPort {
     pub ip_addr_id: i32,
     pub ip_addr: net::IpAddr,
     pub port: i32,
+    pub protocol: String,
     pub status: String,
 
     pub banner: Option<String>,
@@ -269,7 +272,7 @@ impl LuaInsertToNew for InsertPort {
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewPort> {
         let addr = SocketAddr::new(self.ip_addr, self.port as u16);
-        let value = addr.to_string();
+        let value = format!("{}/{}", self.protocol, addr);
 
         match self.status.as_str() {
             "open" => (),
@@ -282,6 +285,7 @@ impl LuaInsertToNew for InsertPort {
             value,
             ip_addr: self.ip_addr.to_string(),
             port: self.port,
+            protocol: self.protocol,
             status: self.status,
 
             banner: self.banner,

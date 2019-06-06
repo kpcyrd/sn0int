@@ -143,6 +143,7 @@ table! {
         value -> Text,
         ip_addr -> Text,
         port -> Integer,
+        protocol -> Text,
         status -> Text,
         unscoped -> Bool,
         banner -> Nullable<Text>,

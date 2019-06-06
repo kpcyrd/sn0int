@@ -6,11 +6,11 @@ function run()
     ip_addr = '192.168.1.2'
     ip_addr_id = db_add('ipaddr', {
         value=ip_addr,
-        family='4',
     })
     db_add('port', {
         ip_addr_id=ip_addr_id,
         ip_addr=ip_addr,
+        protocol='tcp',
         port=4444,
         status='open',
     })
