@@ -22,7 +22,7 @@ with::
 
     $ vim ~/.config/sn0int.toml
 
-Add the follwing::
+Add the following::
 
     [namespaces]
     your_github_name = "~/repos/sn0int-modules"
