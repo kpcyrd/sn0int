@@ -864,6 +864,27 @@ Decodes a list of bytes/numbers into a string. This function might fail.
     if last_err() then return end
     print(x == 'AAAA')
 
+warn
+----
+
+Log a warning to the terminal.
+
+.. code-block:: lua
+
+    warn('ohai')
+
+warn_once
+---------
+
+Log a warning to the terminal once. This can be used to print a warning to the
+user without printing the same warning for each struct we're processing during
+a ``run`` execution.
+
+.. code-block:: lua
+
+    warn_once('ohai')
+    warn_once('ohai')
+
 x509_parse_pem
 --------------
 
