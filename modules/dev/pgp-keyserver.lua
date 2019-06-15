@@ -3,6 +3,9 @@
 -- Source: domains
 -- License: GPL-3.0
 
+-- TODO: rename to pgp-pks-keyserver
+-- TODO: create pgp-vks-keyserver (?)
+
 function run(arg)
     local domain = arg['value']
 
@@ -48,7 +51,7 @@ function run(arg)
                     for j=1, #pubkey['uids'] do
                         local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
                         if m then
-                            local email = m[3]
+                            local email = m[3]:lower()
                             emails[#emails+1] = {
                                 value=email,
                                 displayname=m[2],
