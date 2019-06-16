@@ -31,6 +31,7 @@ impl Cmd for Args {
             Target::Accounts(filter) => delete::<Account>(rl, &filter),
             Target::Breaches(filter) => delete::<Breach>(rl, &filter),
             Target::Images(filter) => delete::<Image>(rl, &filter),
+            Target::Ports(filter) => delete::<Port>(rl, &filter),
         }?;
         term::info(&format!("Deleted {} rows", rows));
         Ok(())

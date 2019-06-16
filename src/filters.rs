@@ -39,6 +39,9 @@ pub enum Target {
     /// On images
     #[structopt(name="images")]
     Images(Filter),
+    /// On ports
+    #[structopt(name="ports")]
+    Ports(Filter),
 }
 
 #[derive(Debug, StructOpt)]

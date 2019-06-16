@@ -2,7 +2,7 @@ use atty::{self, Stream};
 use crate::db;
 use crate::engine::Module;
 use rand::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::io;
 use std::io::prelude::*;
@@ -80,6 +80,10 @@ pub trait SpinLogger {
 
     fn error(&mut self, line: &str);
 
+    fn warn(&mut self, line: &str);
+
+    fn warn_once(&mut self, line: &str);
+
     fn status(&mut self, status: String);
 }
 
@@ -88,6 +92,7 @@ pub struct Spinner {
     status: String,
     i: usize,
     dummy: bool,
+    warnings: HashSet<String>,
 }
 
 impl Spinner {
@@ -98,6 +103,7 @@ impl Spinner {
             status,
             i: 0,
             dummy,
+            warnings: HashSet::new(),
         }
     }
 
@@ -163,6 +169,18 @@ impl SpinLogger for Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
+    fn warn(&mut self, line: &str) {
+        if self.dummy { return; }
+        println!("\r\x1b[2K\x1b[1m[\x1b[33m{}\x1b[0;1m]\x1b[0m {}", '!', line);
+    }
+
+    fn warn_once(&mut self, line: &str) {
+        if !self.warnings.contains(line) {
+            self.warnings.insert(line.into());
+            self.warn(line);
+        }
+    }
+
     #[inline]
     fn status(&mut self, status: String) {
         self.status = status;
@@ -221,6 +239,7 @@ pub struct StackedSpinners {
     spinners: HashMap<String, Spinner>,
     drawn: usize,
     dummy: bool,
+    warnings: HashSet<String>,
 }
 
 impl StackedSpinners {
@@ -231,6 +250,7 @@ impl StackedSpinners {
             spinners: HashMap::new(),
             drawn: 0,
             dummy,
+            warnings: HashSet::new(),
         }
     }
 
@@ -306,6 +326,19 @@ impl SpinLogger for StackedSpinners {
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
     }
 
+    fn warn(&mut self, line: &str) {
+        self.jump2start();
+        println!("\r\x1b[2K\x1b[1m[\x1b[33m{}\x1b[0;1m]\x1b[0m {}", '!', line);
+    }
+
+    #[inline]
+    fn warn_once(&mut self, line: &str) {
+        if !self.warnings.contains(line) {
+            self.warnings.insert(line.into());
+            self.warn(line);
+        }
+    }
+
     fn status(&mut self, status: String) {
         self.error(&format!("TODO: set status: {:?}", status));
     }
@@ -317,6 +350,7 @@ pub struct PrefixedLogger<'a, T: 'a + SpinLogger> {
 }
 
 impl<'a, T: SpinLogger> PrefixedLogger<'a, T> {
+    #[inline]
     pub fn new<I: Into<String>>(s: &'a mut T, prefix: I) -> PrefixedLogger<T> {
         PrefixedLogger {
             s,
@@ -326,18 +360,32 @@ impl<'a, T: SpinLogger> PrefixedLogger<'a, T> {
 }
 
 impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
+    #[inline]
     fn log(&mut self, line: &str) {
         self.s.log(&format!("{:50}: {}", self.prefix, line))
     }
 
+    #[inline]
     fn debug(&mut self, line: &str) {
         self.s.debug(&format!("{:50}: {}", self.prefix, line))
     }
 
+    #[inline]
     fn error(&mut self, line: &str) {
         self.s.error(&format!("{:50}: {}", self.prefix, line))
     }
 
+    #[inline]
+    fn warn(&mut self, line: &str) {
+        self.s.warn(&format!("{:50}: {}", self.prefix, line))
+    }
+
+    #[inline]
+    fn warn_once(&mut self, line: &str) {
+        self.s.warn_once(line)
+    }
+
+    #[inline]
     fn status(&mut self, status: String) {
         self.s.status(format!("{:50}: {}", self.prefix, status))
     }

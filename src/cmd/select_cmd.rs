@@ -95,6 +95,7 @@ impl Cmd for Args {
             Target::Accounts(filter) => printer.select::<Account>(&filter),
             Target::Breaches(filter) => printer.select::<Breach>(&filter),
             Target::Images(filter) => printer.select::<Image>(&filter),
+            Target::Ports(filter) => printer.select::<Port>(&filter),
         }
     }
 }

@@ -94,6 +94,7 @@ For everything else please have a look at the [detailed list][1].
   - [Accounts](https://sn0int.readthedocs.io/en/latest/structs.html#accounts)
   - [Breaches](https://sn0int.readthedocs.io/en/latest/structs.html#breaches)
   - [Images](https://sn0int.readthedocs.io/en/latest/structs.html#images)
+  - [Ports](https://sn0int.readthedocs.io/en/latest/structs.html#ports)
   - [Relations](https://sn0int.readthedocs.io/en/latest/structs.html#relations)
 - [subdomain_ipaddr](https://sn0int.readthedocs.io/en/latest/structs.html#subdomain-ipaddr)
 - [network_device](https://sn0int.readthedocs.io/en/latest/structs.html#network-device)

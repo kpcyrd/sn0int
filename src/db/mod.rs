@@ -47,6 +47,7 @@ pub enum Family {
     Breach,
     BreachEmail,
     Image,
+    Port,
 }
 
 impl FromStr for Family {
@@ -68,6 +69,7 @@ impl FromStr for Family {
             "breach" => Family::Breach,
             "breach-email" => Family::BreachEmail,
             "image" => Family::Image,
+            "port" => Family::Port,
             _ => bail!("Unknown object family"),
         })
     }
@@ -139,6 +141,7 @@ impl Database {
             Insert::Breach(object) => self.insert_struct(object),
             Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
             Insert::Image(object) => self.insert_struct(object),
+            Insert::Port(object) => self.insert_struct(object),
         }
     }
 
@@ -212,108 +215,117 @@ impl Database {
 
     //
 
-    pub fn update_generic(&self, object: &Update) -> Result<i32> {
-        match object {
-            Update::Subdomain(object) => self.update_subdomain(object),
-            Update::IpAddr(object) => self.update_ipaddr(object),
-            Update::Url(object) => self.update_url(object),
-            Update::Email(object) => self.update_email(object),
-            Update::PhoneNumber(object) => self.update_phonenumber(object),
-            Update::Device(object) => self.update_device(object),
-            Update::Network(object) => self.update_network(object),
-            Update::NetworkDevice(object) => self.update_network_device(object),
-            Update::Account(object) => self.update_account(object),
-            Update::BreachEmail(object) => self.update_breach_email(object),
-            Update::Image(object) => self.update_image(object),
+    pub fn update_generic(&self, update: &Update) -> Result<i32> {
+        match update {
+            Update::Subdomain(update) => self.update_subdomain(update),
+            Update::IpAddr(update) => self.update_ipaddr(update),
+            Update::Url(update) => self.update_url(update),
+            Update::Email(update) => self.update_email(update),
+            Update::PhoneNumber(update) => self.update_phonenumber(update),
+            Update::Device(update) => self.update_device(update),
+            Update::Network(update) => self.update_network(update),
+            Update::NetworkDevice(update) => self.update_network_device(update),
+            Update::Account(update) => self.update_account(update),
+            Update::BreachEmail(update) => self.update_breach_email(update),
+            Update::Image(update) => self.update_image(update),
+            Update::Port(update) => self.update_port(update),
         }
     }
 
-    pub fn update_subdomain(&self, subdomain: &SubdomainUpdate) -> Result<i32> {
+    pub fn update_subdomain(&self, subdomain_update: &SubdomainUpdate) -> Result<i32> {
         use crate::schema::subdomains::columns::*;
-        diesel::update(subdomains::table.filter(id.eq(subdomain.id)))
-            .set(subdomain)
+        diesel::update(subdomains::table.filter(id.eq(subdomain_update.id)))
+            .set(subdomain_update)
             .execute(&self.db)?;
-        Ok(subdomain.id)
+        Ok(subdomain_update.id)
     }
 
-    pub fn update_ipaddr(&self, ipaddr: &IpAddrUpdate) -> Result<i32> {
+    pub fn update_ipaddr(&self, ipaddr_update: &IpAddrUpdate) -> Result<i32> {
         use crate::schema::ipaddrs::columns::*;
-        diesel::update(ipaddrs::table.filter(id.eq(ipaddr.id)))
-            .set(ipaddr)
+        diesel::update(ipaddrs::table.filter(id.eq(ipaddr_update.id)))
+            .set(ipaddr_update)
             .execute(&self.db)?;
-        Ok(ipaddr.id)
+        Ok(ipaddr_update.id)
     }
 
-    pub fn update_url(&self, url: &UrlUpdate) -> Result<i32> {
+    pub fn update_url(&self, url_update: &UrlUpdate) -> Result<i32> {
         use crate::schema::urls::columns::*;
-        diesel::update(urls::table.filter(id.eq(url.id)))
-            .set(url)
+        diesel::update(urls::table.filter(id.eq(url_update.id)))
+            .set(url_update)
             .execute(&self.db)?;
-        Ok(url.id)
+        Ok(url_update.id)
     }
 
-    pub fn update_email(&self, email: &EmailUpdate) -> Result<i32> {
+    pub fn update_email(&self, email_update: &EmailUpdate) -> Result<i32> {
         use crate::schema::emails::columns::*;
-        diesel::update(emails::table.filter(id.eq(email.id)))
-            .set(email)
+        diesel::update(emails::table.filter(id.eq(email_update.id)))
+            .set(email_update)
             .execute(&self.db)?;
-        Ok(email.id)
+        Ok(email_update.id)
     }
 
-    pub fn update_phonenumber(&self, phonenumber: &PhoneNumberUpdate) -> Result<i32> {
+    pub fn update_phonenumber(&self, phonenumber_update: &PhoneNumberUpdate) -> Result<i32> {
         use crate::schema::phonenumbers::columns::*;
-        diesel::update(phonenumbers::table.filter(id.eq(phonenumber.id)))
-            .set(phonenumber)
+        diesel::update(phonenumbers::table.filter(id.eq(phonenumber_update.id)))
+            .set(phonenumber_update)
             .execute(&self.db)?;
-        Ok(phonenumber.id)
+        Ok(phonenumber_update.id)
     }
 
-    pub fn update_device(&self, device: &DeviceUpdate) -> Result<i32> {
+    pub fn update_device(&self, device_update: &DeviceUpdate) -> Result<i32> {
         use crate::schema::devices::columns::*;
-        diesel::update(devices::table.filter(id.eq(device.id)))
-            .set(device)
+        diesel::update(devices::table.filter(id.eq(device_update.id)))
+            .set(device_update)
             .execute(&self.db)?;
-        Ok(device.id)
+        Ok(device_update.id)
     }
 
-    pub fn update_network(&self, network: &NetworkUpdate) -> Result<i32> {
+    pub fn update_network(&self, network_update: &NetworkUpdate) -> Result<i32> {
         use crate::schema::networks::columns::*;
-        diesel::update(networks::table.filter(id.eq(network.id)))
-            .set(network)
+        diesel::update(networks::table.filter(id.eq(network_update.id)))
+            .set(network_update)
             .execute(&self.db)?;
-        Ok(network.id)
+        Ok(network_update.id)
     }
 
-    pub fn update_network_device(&self, network_device: &NetworkDeviceUpdate) -> Result<i32> {
+    pub fn update_network_device(&self, network_device_update: &NetworkDeviceUpdate) -> Result<i32> {
         use crate::schema::network_devices::columns::*;
-        diesel::update(network_devices::table.filter(id.eq(network_device.id)))
-            .set(network_device)
+        diesel::update(network_devices::table.filter(id.eq(network_device_update.id)))
+            .set(network_device_update)
             .execute(&self.db)?;
-        Ok(network_device.id)
+        Ok(network_device_update.id)
     }
 
-    pub fn update_account(&self, account: &AccountUpdate) -> Result<i32> {
+    pub fn update_account(&self, account_update: &AccountUpdate) -> Result<i32> {
         use crate::schema::accounts::columns::*;
-        diesel::update(accounts::table.filter(id.eq(account.id)))
-            .set(account)
+        diesel::update(accounts::table.filter(id.eq(account_update.id)))
+            .set(account_update)
             .execute(&self.db)?;
-        Ok(account.id)
+        Ok(account_update.id)
     }
 
-    pub fn update_breach_email(&self, breach_email: &BreachEmailUpdate) -> Result<i32> {
+    pub fn update_breach_email(&self, breach_email_update: &BreachEmailUpdate) -> Result<i32> {
         use crate::schema::breach_emails::columns::*;
-        diesel::update(breach_emails::table.filter(id.eq(breach_email.id)))
-            .set(breach_email)
+        diesel::update(breach_emails::table.filter(id.eq(breach_email_update.id)))
+            .set(breach_email_update)
             .execute(&self.db)?;
-        Ok(breach_email.id)
+        Ok(breach_email_update.id)
     }
 
-    pub fn update_image(&self, image: &ImageUpdate) -> Result<i32> {
+    pub fn update_image(&self, image_update: &ImageUpdate) -> Result<i32> {
         use crate::schema::images::columns::*;
-        diesel::update(images::table.filter(id.eq(image.id)))
-            .set(image)
+        diesel::update(images::table.filter(id.eq(image_update.id)))
+            .set(image_update)
             .execute(&self.db)?;
-        Ok(image.id)
+        Ok(image_update.id)
+    }
+
+    pub fn update_port(&self, port_update: &PortUpdate) -> Result<i32> {
+        use crate::schema::ports::columns::*;
+        diesel::update(ports::table.filter(id.eq(port_update.id)))
+            .set(port_update)
+            .execute(&self.db)?;
+        Ok(port_update.id)
     }
 
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
@@ -339,6 +351,7 @@ impl Database {
             Family::Breach => self.get_opt_typed::<Breach>(&value),
             Family::BreachEmail => bail!("Unsupported operation"),
             Family::Image => self.get_opt_typed::<Image>(&value),
+            Family::Port => self.get_opt_typed::<Port>(&value),
         }
     }
 

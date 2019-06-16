@@ -10,6 +10,7 @@ use structopt::clap::AppSettings;
 use crate::utils;
 use crate::term;
 use std::fs;
+use std::net;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -33,6 +34,9 @@ pub enum Target {
     /// Insert subdomain into the database
     #[structopt(name="subdomain")]
     Subdomain(AddSubdomain),
+    /// Insert ip address into the database
+    #[structopt(name="ipaddr")]
+    IpAddr(AddIpAddr),
     /// Insert email into the database
     #[structopt(name="email")]
     Email(AddEmail),
@@ -61,6 +65,7 @@ impl Cmd for Args {
         match self.subcommand {
             Target::Domain(args) => args.insert(rl, self.dry_run),
             Target::Subdomain(args) => args.insert(rl, self.dry_run),
+            Target::IpAddr(args) => args.insert(rl, self.dry_run),
             Target::Email(args) => args.insert(rl, self.dry_run),
             Target::PhoneNumber(args) => args.insert(rl, self.dry_run),
             Target::Device(args) => args.insert(rl, self.dry_run),
@@ -145,6 +150,44 @@ impl IntoInsert for AddSubdomain {
             domain_id,
             value: subdomain,
             resolvable: None,
+        }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddIpAddr {
+    ipaddr: Option<net::IpAddr>,
+}
+
+impl IntoInsert for AddIpAddr {
+    fn into_insert(self, _rl: &Readline) -> Result<Insert> {
+        let ipaddr = match self.ipaddr {
+            Some(ipaddr) => ipaddr,
+            _ => {
+                let ipaddr = utils::question("IP address")?;
+                ipaddr.parse()?
+            },
+        };
+
+        let family = match ipaddr {
+            net::IpAddr::V4(_) => "4",
+            net::IpAddr::V6(_) => "6",
+        };
+
+        Ok(Insert::IpAddr(NewIpAddr {
+            family: family.to_string(),
+            value: ipaddr.to_string(),
+            continent: None,
+            continent_code: None,
+            country: None,
+            country_code: None,
+            city: None,
+            latitude: None,
+            longitude: None,
+            asn: None,
+            as_org: None,
+            description: None,
+            reverse_dns: None,
         }))
     }
 }

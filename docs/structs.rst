@@ -207,6 +207,26 @@ Images
 ``phash``
     The DCT (pHash) perceptual hash.
 
+Ports
+-----
+
+The status of a port on an ip address.
+
+``ip_addr_id``
+    The numeric id of an ipaddr struct.
+``ip_addr``
+    The actual ipaddr.
+``port``
+    The port number.
+``status``
+    The status of the port, either ``open`` or ``closed``.
+``banner``
+    The service banner we discovered on this port.
+``service``
+    The service that is running on this port.
+``version``
+    The version of the service running on this port.
+
 Relations
 ---------
 

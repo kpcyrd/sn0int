@@ -145,6 +145,12 @@ impl IpAddr {
             .collect::<result::Result<_, _>>()
             .map_err(Error::from)
     }
+
+    fn ports(&self, db: &Database) -> Result<Vec<Port>> {
+        Port::belonging_to(self)
+            .load(db.db())
+            .map_err(Error::from)
+    }
 }
 
 pub struct PrintableIpAddr {
@@ -169,6 +175,7 @@ pub struct DetailedIpAddr {
     id: i32,
     value: net::IpAddr,
     subdomains: Vec<PrintableSubdomain>,
+    ports: Vec<PrintablePort>,
     unscoped: bool,
     continent: Option<String>,
     country: Option<String>,
@@ -227,6 +234,9 @@ impl DisplayableDetailed for DetailedIpAddr {
         for subdomain in &self.subdomains {
             w.child(subdomain)?;
         }
+        for port in &self.ports {
+            w.child(port)?;
+        }
         Ok(())
     }
 }
@@ -241,10 +251,15 @@ impl Detailed for IpAddr {
             .map(|x| x.printable(db))
             .collect::<Result<_>>()?;
 
+        let ports = self.ports(db)?.into_iter()
+            .map(|x| x.printable(db))
+            .collect::<Result<_>>()?;
+
         Ok(DetailedIpAddr {
             id: self.id,
             value: self.value.parse()?,
             subdomains,
+            ports,
             unscoped: self.unscoped,
             continent: self.continent.clone(),
             country: self.country.clone(),
@@ -317,13 +332,51 @@ impl Printable<PrintableIpAddr> for NewIpAddr {
     }
 }
 
-pub type InsertIpAddr = NewIpAddr;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertIpAddr {
+    // TODO: deprecate family field
+    pub family: Option<String>,
+    pub value: String,
+    pub continent: Option<String>,
+    pub continent_code: Option<String>,
+    pub country: Option<String>,
+    pub country_code: Option<String>,
+    pub city: Option<String>,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+    pub asn: Option<i32>,
+    pub as_org: Option<String>,
+    pub description: Option<String>,
+    pub reverse_dns: Option<String>,
+}
 
 impl LuaInsertToNew for InsertIpAddr {
     type Target = NewIpAddr;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewIpAddr> {
-        Ok(self)
+        let ipaddr = self.value.parse::<net::IpAddr>()
+            .context("Failed to parse ip address")?;
+
+        let family = match ipaddr {
+            net::IpAddr::V4(_) => "4",
+            net::IpAddr::V6(_) => "6",
+        };
+
+        Ok(NewIpAddr {
+            family: family.to_string(),
+            value: ipaddr.to_string(),
+            continent: self.continent,
+            continent_code: self.continent_code,
+            country: self.country,
+            country_code: self.country_code,
+            city: self.city,
+            latitude: self.latitude,
+            longitude: self.longitude,
+            asn: self.asn,
+            as_org: self.as_org,
+            description: self.description,
+            reverse_dns: self.reverse_dns,
+        })
     }
 }
 

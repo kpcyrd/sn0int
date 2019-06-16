@@ -137,6 +137,22 @@ table! {
 }
 
 table! {
+    ports (id) {
+        id -> Integer,
+        ip_addr_id -> Integer,
+        value -> Text,
+        ip_addr -> Text,
+        port -> Integer,
+        protocol -> Text,
+        status -> Text,
+        unscoped -> Bool,
+        banner -> Nullable<Text>,
+        service -> Nullable<Text>,
+        version -> Nullable<Text>,
+    }
+}
+
+table! {
     subdomain_ipaddrs (id) {
         id -> Integer,
         subdomain_id -> Integer,
@@ -182,6 +198,7 @@ joinable!(breach_emails -> breaches (breach_id));
 joinable!(breach_emails -> emails (email_id));
 joinable!(network_devices -> devices (device_id));
 joinable!(network_devices -> networks (network_id));
+joinable!(ports -> ipaddrs (ip_addr_id));
 joinable!(subdomain_ipaddrs -> ipaddrs (ip_addr_id));
 joinable!(subdomain_ipaddrs -> subdomains (subdomain_id));
 joinable!(subdomains -> domains (domain_id));
@@ -199,6 +216,7 @@ allow_tables_to_appear_in_same_query!(
     network_devices,
     networks,
     phonenumbers,
+    ports,
     subdomain_ipaddrs,
     subdomains,
     ttls,

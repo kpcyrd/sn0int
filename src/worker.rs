@@ -94,6 +94,8 @@ pub enum LogEvent {
     Info(String),
     Debug(String),
     Error(String),
+    Warn(String),
+    WarnOnce(String),
     Status(String),
 }
 
@@ -103,6 +105,8 @@ impl LogEvent {
             LogEvent::Info(info) => spinner.log(&info),
             LogEvent::Debug(debug) => spinner.debug(&debug),
             LogEvent::Error(error) => spinner.error(&error),
+            LogEvent::Warn(warn) => spinner.warn(&warn),
+            LogEvent::WarnOnce(warn) => spinner.warn_once(&warn),
             LogEvent::Status(status) => spinner.status(status),
         }
     }

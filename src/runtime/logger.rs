@@ -57,6 +57,18 @@ pub fn error(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
+pub fn warn(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("warn", hlua::function1(move |msg: String| {
+        state.warn(msg);
+    }))
+}
+
+pub fn warn_once(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("warn_once", hlua::function1(move |msg: String| {
+        state.warn_once(msg);
+    }))
+}
+
 pub fn status(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("status", hlua::function1(move |msg: String| {
         state.status(msg);

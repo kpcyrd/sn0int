@@ -35,20 +35,34 @@ pub trait State {
 
     fn verbose(&self) -> u64;
 
+    #[inline]
     fn info(&self, msg: String) {
         self.send(&Event::Log(LogEvent::Info(msg)))
     }
 
+    #[inline]
     fn debug(&self, msg: String) {
         if self.verbose() >= 2 {
             self.send(&Event::Log(LogEvent::Debug(msg)))
         }
     }
 
+    #[inline]
     fn error(&self, msg: String) {
         self.send(&Event::Log(LogEvent::Error(msg)))
     }
 
+    #[inline]
+    fn warn(&self, msg: String) {
+        self.send(&Event::Log(LogEvent::Warn(msg)))
+    }
+
+    #[inline]
+    fn warn_once(&self, msg: String) {
+        self.send(&Event::Log(LogEvent::WarnOnce(msg)))
+    }
+
+    #[inline]
     fn status(&self, msg: String) {
         self.send(&Event::Log(LogEvent::Status(msg)))
     }
@@ -92,6 +106,7 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
     }
 
+    #[inline]
     fn random_id(&self) -> String {
         thread_rng().sample_iter(&Alphanumeric).take(16).collect()
     }
@@ -393,6 +408,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::url_parse(&mut lua, state.clone());
     runtime::url_unescape(&mut lua, state.clone());
     runtime::utf8_decode(&mut lua, state.clone());
+    runtime::warn(&mut lua, state.clone());
+    runtime::warn_once(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
     runtime::xml_decode(&mut lua, state.clone());
     runtime::xml_named(&mut lua, state.clone());
