@@ -17,27 +17,16 @@ Mac OSX
 
     $ brew install sn0int
 
-Debian testing/Debian sid/Kali
-------------------------------
+Debian/Ubuntu/Kali
+------------------
 
 Note that debian `doesn't ship the geoip2-database
 <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=757723>`_ so we're going to
 download them automatically during the first run.
 
-.. code-block:: bash
-
-    $ apt install build-essential cargo libsqlite3-dev libseccomp-dev publicsuffix
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
-
-Ubuntu/Debian stable
---------------------
-
-cargo in the repos is too old and the build is `going to fail
-<https://github.com/kpcyrd/sn0int/issues/68>`_. You should either install the
-most recent rust version with `rustup <https://rustup.rs/>`_ or use the docker
-instructions instead.
+Using rust+cargo from the repos might work for you, but we only officially
+support rust+cargo installed with `rustup <https://rustup.rs/>`_. Have a look
+at the docker image as an alternative.
 
 .. code-block:: bash
 
