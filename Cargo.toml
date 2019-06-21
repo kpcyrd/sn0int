@@ -16,6 +16,9 @@ travis-ci = { repository = "kpcyrd/sn0int" }
 members = ["sn0int-registry/sn0int-common",
            "sn0int-registry"]
 
+[features]
+sqlite-bundled = ["libsqlite3-sys/bundled"]
+
 [dependencies]
 sn0int-common = { version="0.7.0", path="sn0int-registry/sn0int-common" }
 rustyline = "4.0"
@@ -31,6 +34,7 @@ shellwords = "1.0"
 publicsuffix = { version="1.5", default-features=false }
 diesel = { version = "1.0.0", features = ["sqlite", "chrono"] }
 diesel_migrations = { version = "1.3.0", features = ["sqlite"] }
+libsqlite3-sys = "0.12.0"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "2.0"
 url = "1.7"
