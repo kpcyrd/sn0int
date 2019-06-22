@@ -19,8 +19,8 @@ case "$1" in
         cargo test --verbose
         ;;
     windows)
-        export SQLITE3_LIB_DIR="$TRAVIS_BUILD_DIR"
-        ci/run.sh "$2"
+        cargo build --verbose --features=sqlite-bundled
+        cargo build --verbose --examples --features=sqlite-bundled
         ;;
     boxxy)
         cargo build --verbose --examples
