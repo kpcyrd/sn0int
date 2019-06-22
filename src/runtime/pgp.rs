@@ -10,17 +10,29 @@ use std::io::BufReader;
 
 fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
     let mut uids = LuaList::new();
+    let mut sigs = LuaList::new();
 
     for (tag, body) in sloppy_rfc4880::Parser::new(pubkey) {
-        if let Tag::UserID = tag {
-            let body = String::from_utf8(body)?;
-            uids.push_str(body);
+        match tag {
+            Tag::UserID => {
+                let body = String::from_utf8(body)?;
+                uids.push_str(body);
+            },
+            Tag::Signature => {
+                if let Ok(sig) = sloppy_rfc4880::signature::parse(&body) {
+                    sigs.push_serde(sig)?;
+                }
+            },
+            _ => (),
         }
     }
 
     let mut map = LuaMap::new();
     if !uids.is_empty() {
         map.insert("uids", uids);
+    }
+    if !sigs.is_empty() {
+        map.insert("sigs", sigs);
     }
     Ok(map.into())
 }

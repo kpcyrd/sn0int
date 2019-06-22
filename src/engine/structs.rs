@@ -122,6 +122,12 @@ impl LuaList {
         self.push(AnyLuaValue::LuaString(v.into()))
     }
 
+    pub fn push_serde<S: serde::Serialize>(&mut self, v: S) -> Result<()> {
+        let v = serde_json::to_value(v)?;
+        self.push(LuaJsonValue::from(v));
+        Ok(())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
