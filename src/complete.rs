@@ -5,7 +5,7 @@ use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use shellwords;
-use std::borrow::Cow::{self, Borrowed, Owned};
+use std::borrow::Cow::{self, Owned};
 use std::str::FromStr;
 use std::io::stdout;
 use structopt::StructOpt;
@@ -211,11 +211,6 @@ impl Hinter for CmdCompleter {
 }
 
 impl Highlighter for CmdCompleter {
-    #[inline]
-    fn highlight_prompt<'p>(&self, prompt: &'p str) -> Cow<'p, str> {
-        Borrowed(prompt)
-    }
-
     #[inline]
     fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
         Owned("\x1b[90m".to_owned() + hint + "\x1b[m")

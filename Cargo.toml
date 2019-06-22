@@ -21,7 +21,7 @@ sqlite-bundled = ["libsqlite3-sys/bundled"]
 
 [dependencies]
 sn0int-common = { version="0.7.0", path="sn0int-registry/sn0int-common" }
-rustyline = "4.0"
+rustyline = "5.0"
 log = "0.4"
 env_logger = "0.6"
 hlua-badtouch = "0.4"
