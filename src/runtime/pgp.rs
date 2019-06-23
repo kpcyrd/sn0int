@@ -1,26 +1,68 @@
 use crate::errors::*;
 
-use sloppy_rfc4880::{self, Tag};
+use sloppy_rfc4880::{self, Tag, Signature};
 use crate::engine::ctx::State;
 use crate::engine::structs::{LuaMap, LuaList, byte_array};
 use crate::hlua::{self, AnyLuaValue};
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::io::BufReader;
 
 
+fn is_new_signing_key(seen: &mut HashSet<String>, sig: &Signature) -> bool {
+    let key = if let Some(fp) = &sig.fingerprint {
+        fp
+    } else if let Some(keyid) = &sig.keyid {
+        keyid
+    } else {
+        return false;
+    };
+
+    if seen.contains(key) {
+        return false;
+    }
+
+    seen.insert(key.to_string());
+    return true;
+}
+
 fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
+    let mut fingerprint = None;
     let mut uids = LuaList::new();
+    let mut sigs = LuaList::new();
+
+    let mut signing_keys_seen = HashSet::new();
 
     for (tag, body) in sloppy_rfc4880::Parser::new(pubkey) {
-        if let Tag::UserID = tag {
-            let body = String::from_utf8(body)?;
-            uids.push_str(body);
+        match tag {
+            Tag::PublicKey => {
+                let fp = sloppy_rfc4880::pubkey::fingerprint(&body);
+                fingerprint = Some(fp);
+            },
+            Tag::UserID => {
+                let body = String::from_utf8(body)?;
+                uids.push_str(body);
+            },
+            Tag::Signature => {
+                if let Ok(sig) = sloppy_rfc4880::signature::parse(&body) {
+                    if is_new_signing_key(&mut signing_keys_seen, &sig) {
+                        sigs.push_serde(sig)?;
+                    }
+                }
+            },
+            _ => (),
         }
     }
 
     let mut map = LuaMap::new();
+    if let Some(fp) = fingerprint {
+        map.insert_str("fingerprint", fp);
+    }
     if !uids.is_empty() {
         map.insert("uids", uids);
+    }
+    if !sigs.is_empty() {
+        map.insert("sigs", sigs);
     }
     Ok(map.into())
 }
@@ -93,8 +135,23 @@ vA==
 
             print(key)
 
-            if key['uids'][1] ~= "Hans Acker (example comment) <hans.acker@example.com>" then
-                return "Unexpected uid: " .. key['uid']
+            fingerprint = key['fingerprint']
+            if fingerprint ~= 'CB378ED5E1306C1D3785CA81334D08A1D19D963F' then
+                return 'Unexpected fingerprint: ' .. fingerprint
+            end
+
+            if key['uids'][1] ~= 'Hans Acker (example comment) <hans.acker@example.com>' then
+                return 'Unexpected uid: ' .. key['uid']
+            end
+
+            keyid = key['sigs'][1]['keyid']
+            if keyid ~= '334D08A1D19D963F' then
+                return 'Unexpected keyid: ' .. keyid
+            end
+
+            sigfp = key['sigs'][1]['fingerprint']
+            if sigfp ~= 'CB378ED5E1306C1D3785CA81334D08A1D19D963F' then
+                return 'Unexpected sigfp: ' .. sigfp
             end
         end
         "#).expect("Failed to load script");

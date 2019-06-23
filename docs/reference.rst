@@ -455,7 +455,8 @@ Same as pgp_pubkey_armored_, but without the unarmor step.
 pgp_pubkey_armored
 ------------------
 
-Extract uids out of a rfc 4880 pgp public key. This function may fail.
+Extract ``uids``, ``sigs`` and the ``fingerprint`` out of an rfc 4880 pgp
+public key. This function may fail.
 
 .. code-block:: lua
 
