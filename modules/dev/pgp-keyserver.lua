@@ -1,10 +1,9 @@
 -- Description: Query pgp keyserver for email addresses
--- Version: 0.2.0
+-- Version: 0.3.0
 -- Source: domains
 -- License: GPL-3.0
 
--- TODO: rename to pgp-pks-keyserver
--- TODO: create pgp-vks-keyserver (?)
+-- TODO: rename to pgp-pks-domains
 
 function run(arg)
     local domain = arg['value']
