@@ -27,6 +27,7 @@ fn is_new_signing_key(seen: &mut HashSet<String>, sig: &Signature) -> bool {
 }
 
 fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
+    let mut fingerprint = None;
     let mut uids = LuaList::new();
     let mut sigs = LuaList::new();
 
@@ -34,6 +35,10 @@ fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
 
     for (tag, body) in sloppy_rfc4880::Parser::new(pubkey) {
         match tag {
+            Tag::PublicKey => {
+                let fp = sloppy_rfc4880::pubkey::fingerprint(&body);
+                fingerprint = Some(fp);
+            },
             Tag::UserID => {
                 let body = String::from_utf8(body)?;
                 uids.push_str(body);
@@ -50,6 +55,9 @@ fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
     }
 
     let mut map = LuaMap::new();
+    if let Some(fp) = fingerprint {
+        map.insert_str("fingerprint", fp);
+    }
     if !uids.is_empty() {
         map.insert("uids", uids);
     }
@@ -127,6 +135,11 @@ vA==
 
             print(key)
 
+            fingerprint = key['fingerprint']
+            if fingerprint ~= 'CB378ED5E1306C1D3785CA81334D08A1D19D963F' then
+                return 'Unexpected fingerprint: ' .. fingerprint
+            end
+
             if key['uids'][1] ~= 'Hans Acker (example comment) <hans.acker@example.com>' then
                 return 'Unexpected uid: ' .. key['uid']
             end
@@ -136,9 +149,9 @@ vA==
                 return 'Unexpected keyid: ' .. keyid
             end
 
-            fingerprint = key['sigs'][1]['fingerprint']
-            if fingerprint ~= 'CB378ED5E1306C1D3785CA81334D08A1D19D963F' then
-                return 'Unexpected fingerprint: ' .. fingerprint
+            sigfp = key['sigs'][1]['fingerprint']
+            if sigfp ~= 'CB378ED5E1306C1D3785CA81334D08A1D19D963F' then
+                return 'Unexpected sigfp: ' .. sigfp
             end
         end
         "#).expect("Failed to load script");
