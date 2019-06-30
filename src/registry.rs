@@ -97,11 +97,17 @@ pub fn run_search(engine: &Engine, search: &Search, config: &Config) -> Result<(
 
     for module in &modules {
         let canonical = module.canonical();
+        let installed = engine.get_opt(&canonical)?;
+
+        if search.new && installed.is_some() {
+            continue;
+        }
+
         println!("{} ({}) - {} downloads{}{}", canonical.green(),
                             module.latest.yellow(),
                             module.downloads.separated_string(),
                             (if module.featured { " [featured]" } else { "" }).cyan(),
-                            (if engine.is_installed(&canonical) { " [installed]" } else { "" }).green());
+                            (if installed.is_some() { " [installed]" } else { "" }).green());
         println!("\t{}", module.description);
     }
 
