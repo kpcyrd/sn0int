@@ -107,7 +107,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
         },
-        SubCommand::Search(search) => registry::run_search(&search, &config)?,
+        SubCommand::Search(search) => registry::run_search(rl.engine(), &search, &config)?,
         SubCommand::Reload(_) => {
             let current = rl.take_module()
                             .map(|m| m.canonical());

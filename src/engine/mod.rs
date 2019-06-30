@@ -201,6 +201,11 @@ impl<'a> Engine<'a> {
         modules
     }
 
+    pub fn is_installed(&self, canonical: &str) -> bool {
+        // TODO: maybe also compare version
+        self.modules.get(canonical).is_some()
+    }
+
     pub fn variants(&self) -> Vec<String> {
         self.modules.iter()
             .filter(|(_, values)| values.len() == 1)

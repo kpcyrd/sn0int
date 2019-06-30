@@ -9,7 +9,7 @@ use sn0int::cmd;
 use sn0int::complete;
 use sn0int::config::Config;
 use sn0int::errors::*;
-use sn0int::engine::{self, Module};
+use sn0int::engine::{self, Engine, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
 use sn0int::psl::Psl;
@@ -97,7 +97,10 @@ fn run() -> Result<()> {
         Some(SubCommand::New(new)) => run_new(&args, &new),
         Some(SubCommand::Publish(publish)) => registry::run_publish(&args, &publish, &config),
         Some(SubCommand::Install(install)) => registry::run_install(&install, &config),
-        Some(SubCommand::Search(search)) => registry::run_search(&search, &config),
+        Some(SubCommand::Search(search)) => {
+            let engine = Engine::new(false, &config)?;
+            registry::run_search(&engine, &search, &config)
+        },
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
         Some(SubCommand::Delete(delete)) => run_cmd(&args, delete, &config),
