@@ -299,6 +299,13 @@ impl Module {
             self.author.cmp(&other.author)
         }
     }
+
+    pub fn source_equals(&self, other: &str) -> bool {
+        match self.source() {
+            Some(source) => source.group_as_str() == other,
+            None => other == "",
+        }
+    }
 }
 
 pub trait Reporter: Debug {

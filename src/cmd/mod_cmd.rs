@@ -44,6 +44,9 @@ pub enum SubCommand {
 
 #[derive(Debug, StructOpt)]
 pub struct List {
+    /// Only show modules with a specific input source
+    #[structopt(long="source")]
+    pub source: Option<String>,
 }
 
 #[derive(Debug, StructOpt)]
@@ -86,8 +89,14 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let config = rl.config().clone();
 
     match args.subcommand {
-        SubCommand::List(_) => {
+        SubCommand::List(list) => {
             for module in rl.engine().list() {
+                if let Some(source) = &list.source {
+                    if !module.source_equals(&source) {
+                        continue;
+                    }
+                }
+
                 println!("{} ({})", module.canonical().green(),
                                     module.version().yellow());
                 println!("\t{}", module.description());
