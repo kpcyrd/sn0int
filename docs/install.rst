@@ -65,7 +65,8 @@ OpenBSD
 Windows
 -------
 
-This is not recommended and only passively maintained. Please prefer linux in a virtual machine if needed.
+This is not recommended and only passively maintained. Please prefer linux in a
+virtual machine if needed.
 
 Make sure rust is installed and setup.
 

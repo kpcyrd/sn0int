@@ -24,11 +24,11 @@ while (<$r>) {
 # generate new toc
 while (my $line = <$t>) {
     if ($line =~ /toctree-l(\d).*href="([^"]+)">(.+)<\/a/) {
-        my $space = $1;
+        my $space = int($1)-1;
         my $section = $2;
         my $label = $3;
         $label =~ s/([\[\]])/\\$1/g;
-        print $space==2?"  ":"", "- [$label](https://sn0int.readthedocs.io/en/latest/$section)\n";
+        print " " x ($space*2), "- [$label](https://sn0int.readthedocs.io/en/latest/$section)\n";
     }
 }
 print;
