@@ -23,6 +23,7 @@ pub enum Insert {
     BreachEmail(NewBreachEmail),
     Image(NewImage),
     Port(NewPort),
+    Netblock(NewNetblock),
 }
 
 impl Insert {
@@ -55,6 +56,7 @@ impl Insert {
             }
             Insert::Image(x) => format!("{:?}", x.value),
             Insert::Port(x) => format!("{:?}", x.value),
+            Insert::Netblock(x) => format!("{:?}", x.value),
         };
         Ok(label)
     }
@@ -76,6 +78,7 @@ impl Insert {
             Insert::BreachEmail(_) => "breach_emails",
             Insert::Image(_) => "images",
             Insert::Port(_) => "ports",
+            Insert::Netblock(_) => "netblocks",
         }
     }
 
@@ -96,6 +99,7 @@ impl Insert {
             Insert::BreachEmail(x) => x.printable(db)?.to_string(),
             Insert::Image(x) => format!("Image: {}", x.printable(db)?),
             Insert::Port(x) => format!("Port: {}", x.printable(db)?),
+            Insert::Netblock(x) => format!("Netblock: {}", x.printable(db)?),
         })
     }
 }
@@ -114,6 +118,7 @@ pub enum Update {
     BreachEmail(BreachEmailUpdate),
     Image(ImageUpdate),
     Port(PortUpdate),
+    Netblock(NetblockUpdate),
 }
 
 impl Update {
@@ -131,6 +136,7 @@ impl Update {
             Update::BreachEmail(update)   => update.is_dirty(),
             Update::Image(update)         => update.is_dirty(),
             Update::Port(update)          => update.is_dirty(),
+            Update::Netblock(update)      => update.is_dirty(),
         }
     }
 }
@@ -150,6 +156,7 @@ impl fmt::Display for Update {
             Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
             Update::Image(update)         => write!(w, "{}", update.to_string()),
             Update::Port(update)          => write!(w, "{}", update.to_string()),
+            Update::Netblock(update)      => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -327,6 +334,9 @@ pub use self::domain::*;
 
 mod subdomain;
 pub use self::subdomain::*;
+
+mod netblock;
+pub use self::netblock::*;
 
 mod ipaddr;
 pub use self::ipaddr::*;

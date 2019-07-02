@@ -135,6 +135,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
         Some(Source::Breaches) => prepare_args::<Breach>(rl, &filter, None),
         Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
         Some(Source::Ports) => prepare_args::<Port>(rl, &filter, None),
+        Some(Source::Netblocks) => prepare_args::<Netblock>(rl, &filter, None),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {

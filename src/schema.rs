@@ -108,6 +108,18 @@ table! {
 }
 
 table! {
+    netblocks (id) {
+        id -> Integer,
+        family -> Text,
+        value -> Text,
+        unscoped -> Bool,
+        asn -> Nullable<Integer>,
+        as_org -> Nullable<Text>,
+        description -> Nullable<Text>,
+    }
+}
+
+table! {
     network_devices (id) {
         id -> Integer,
         network_id -> Integer,
@@ -223,6 +235,7 @@ allow_tables_to_appear_in_same_query!(
     emails,
     images,
     ipaddrs,
+    netblocks,
     network_devices,
     networks,
     phonenumbers,

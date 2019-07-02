@@ -97,6 +97,7 @@ impl Completer for CmdCompleter {
 
                         let options = &["domain",
                                         "subdomain",
+                                        "ipnet",
                                         "ipaddr",
                                         "email",
                                         "phonenumber",

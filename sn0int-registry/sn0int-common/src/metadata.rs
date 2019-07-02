@@ -41,6 +41,7 @@ pub enum Source {
     Breaches,
     Images,
     Ports,
+    Netblocks,
     KeyRing(String),
 }
 
@@ -59,6 +60,7 @@ impl Source {
             Source::Breaches => "breaches",
             Source::Images => "images",
             Source::Ports => "ports",
+            Source::Netblocks => "netblocks",
             Source::KeyRing(_) => "keyring",
         }
     }
@@ -88,6 +90,7 @@ impl FromStr for Source {
             ("breaches", None) => Ok(Source::Breaches),
             ("images", None) => Ok(Source::Images),
             ("ports", None) => Ok(Source::Ports),
+            ("netblocks", None) => Ok(Source::Netblocks),
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),

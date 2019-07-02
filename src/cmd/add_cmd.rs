@@ -11,9 +11,9 @@ use crate::utils;
 use crate::term;
 use std::fs;
 use std::net;
+use ipnetwork;
 use std::path::Path;
 use walkdir::WalkDir;
-
 
 #[derive(Debug, StructOpt)]
 #[structopt(author = "",
@@ -34,6 +34,9 @@ pub enum Target {
     /// Insert subdomain into the database
     #[structopt(name="subdomain")]
     Subdomain(AddSubdomain),
+    /// Insert ip network into the database
+    #[structopt(name="netblock")]
+    Netblock(AddNetblock),
     /// Insert ip address into the database
     #[structopt(name="ipaddr")]
     IpAddr(AddIpAddr),
@@ -73,6 +76,7 @@ impl Cmd for Args {
             Target::Account(args) => args.insert(rl, self.dry_run),
             Target::Breach(args) => args.insert(rl, self.dry_run),
             Target::Image(args) => args.insert(rl, self.dry_run),
+            Target::Netblock(args) => args.insert(rl, self.dry_run),
         }
     }
 }
@@ -148,6 +152,37 @@ impl IntoInsert for AddSubdomain {
             domain_id,
             value: subdomain,
             resolvable: None,
+            unscoped: false,
+        }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddNetblock {
+    ipnet: Option<ipnetwork::IpNetwork>,
+}
+
+impl IntoInsert for AddNetblock {
+    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+        let ipnet = match self.ipnet {
+            Some(ipnet) => ipnet,
+            _ => {
+                let ipnet = utils::question("IP network")?;
+                ipnet.parse()?
+            },
+        };
+
+        let family = match ipnet {
+            ipnetwork::IpNetwork::V4(_) => "4",
+            ipnetwork::IpNetwork::V6(_) => "6",
+        };
+
+        Ok(Insert::Netblock(NewNetblock {
+            family: family.to_string(),
+            value: ipnet.to_string(),
+            asn: None,
+            as_org: None,
+            description: None,
             unscoped: false,
         }))
     }

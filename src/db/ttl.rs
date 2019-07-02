@@ -110,6 +110,12 @@ impl Ttl {
             "devices" => Device::delete_id(db, self.key)?,
             "networks" => Network::delete_id(db, self.key)?,
             "network_devices" => NetworkDevice::delete_id(db, self.key)?,
+            "accounts" => Account::delete_id(db, self.key)?,
+            "breaches" => Breach::delete_id(db, self.key)?,
+            "breach_emails" => BreachEmail::delete_id(db, self.key)?,
+            "images" => Image::delete_id(db, self.key)?,
+            "ports" => Port::delete_id(db, self.key)?,
+            "netblocks" => Netblock::delete_id(db, self.key)?,
             _ => bail!("Unknown table"),
         };
 
