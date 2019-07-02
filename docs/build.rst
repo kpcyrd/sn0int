@@ -49,6 +49,13 @@ OpenBSD
 
     $ pkg_add sqlite3 geolite2-city geolite2-asn
 
+Gentoo
+~~~~~~
+
+.. code-block:: bash
+
+    emerge --ask sys-libs/libseccomp dev-db/sqlite
+
 Windows
 ~~~~~~~
 
