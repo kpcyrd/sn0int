@@ -36,6 +36,7 @@ Getting Started
    :glob:
 
    install
+   build
    usage
    scripting
    database

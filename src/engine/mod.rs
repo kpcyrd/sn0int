@@ -181,14 +181,22 @@ impl<'a> Engine<'a> {
     }
 
     pub fn get(&self, name: &str) -> Result<&Module> {
+        if let Some(module) = self.get_opt(name)? {
+            Ok(module)
+        } else {
+            bail!("Module not found")
+        }
+    }
+
+    pub fn get_opt(&self, name: &str) -> Result<Option<&Module>> {
         if let Some(modules) = self.modules.get(name) {
             if modules.len() != 1 {
                 bail!("Ambiguous name: {:?}", modules)
             } else {
-                Ok(&modules[0])
+                Ok(Some(&modules[0]))
             }
         } else {
-            bail!("Module not found")
+            Ok(None)
         }
     }
 
@@ -297,6 +305,13 @@ impl Module {
             self.name.cmp(&other.name)
         } else {
             self.author.cmp(&other.author)
+        }
+    }
+
+    pub fn source_equals(&self, other: &str) -> bool {
+        match self.source() {
+            Some(source) => source.group_as_str() == other,
+            None => other == "",
         }
     }
 }

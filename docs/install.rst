@@ -1,7 +1,9 @@
 Installation
 ============
 
-If available, please prefer the package shipped by your linux distribution.
+If available, please prefer the package shipped by operating system. If your
+operating system has a package but you're running on older version, please use
+the `build from source <build.html>`_ instructions instead.
 
 Archlinux
 ---------
@@ -40,32 +42,39 @@ Docker
 
 .. code-block:: bash
 
-    $ docker run --rm --init -it -v $PWD/.cache:/cache -v $PWD/.data:/data kpcyrd/sn0int
+    $ docker run --rm --init -it -v "$PWD/.cache:/cache" -v "$PWD/.data:/data" kpcyrd/sn0int
 
 Alpine
 ------
 
+On alpine edge, with enabled testing repositories:
+
 .. code-block:: bash
 
-    $ apk add --no-cache sqlite-dev libseccomp-dev cargo
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
+    $ apk add sn0int
 
 OpenBSD
 -------
 
+On -current:
+
 .. code-block:: bash
 
-    $ pkg_add git cargo sqlite3 geolite2-city geolite2-asn
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
+    $ pkg_add sn0int
+
+Gentoo
+------
+
+.. code-block:: bash
+
+    layman -f -o https://raw.githubusercontent.com/kpcyrd/overlay/master/overlay.xml -a kpcyrd-overlay
+    emerge --ask net-analyzer/sn0int
 
 Windows
 -------
 
-This is not recommended and only passively maintained. Please prefer linux in a virtual machine if needed.
+This is not recommended and only passively maintained. Please prefer linux in a
+virtual machine if needed.
 
 Make sure rust is installed and setup.
 

@@ -3,6 +3,7 @@ use crate::args::{Args, Publish, Install, Search};
 use crate::api::Client;
 use crate::auth;
 use crate::config::Config;
+use crate::engine::Engine;
 use colored::Colorize;
 use separator::Separatable;
 use sn0int_common::metadata::Metadata;
@@ -86,7 +87,7 @@ pub fn run_install(install: &Install, config: &Config) -> Result<()> {
     }, false)
 }
 
-pub fn run_search(search: &Search, config: &Config) -> Result<()> {
+pub fn run_search(engine: &Engine, search: &Search, config: &Config) -> Result<()> {
     let client = Client::new(&config)?;
 
     let label = format!("Searching {:?}", search.query);
@@ -95,10 +96,18 @@ pub fn run_search(search: &Search, config: &Config) -> Result<()> {
     }, true)?;
 
     for module in &modules {
-        println!("{} ({}) - {} downloads {}", module.canonical().green(),
+        let canonical = module.canonical();
+        let installed = engine.get_opt(&canonical)?;
+
+        if search.new && installed.is_some() {
+            continue;
+        }
+
+        println!("{} ({}) - {} downloads{}{}", canonical.green(),
                             module.latest.yellow(),
                             module.downloads.separated_string(),
-                            (if module.featured { "[featured]" } else { "" }).cyan());
+                            (if module.featured { " [featured]" } else { "" }).cyan(),
+                            (if installed.is_some() { " [installed]" } else { "" }).green());
         println!("\t{}", module.description);
     }
 

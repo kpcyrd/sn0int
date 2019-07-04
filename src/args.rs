@@ -136,6 +136,9 @@ pub struct Install {
 
 #[derive(Debug, StructOpt)]
 pub struct Search {
+    /// Only show modules that aren't installed yet
+    #[structopt(long="new")]
+    pub new: bool,
     /// The search query
     pub query: String,
 }
