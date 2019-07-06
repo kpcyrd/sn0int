@@ -1,4 +1,5 @@
 use crate::args::{Args, Completions};
+use crate::autonoscope::RuleType;
 use crate::errors::*;
 use rustyline::{self, Context};
 use rustyline::completion::Completer;
@@ -24,28 +25,30 @@ impl CmdCompleter {
         if args.len() != 2 {
             Ok((0, vec![]))
         } else {
-            let arg = &args[1];
-
-            let options = &["domains",
-                            "subdomains",
-                            "ipaddrs",
-                            "urls",
-                            "emails",
-                            "phonenumbers",
-                            "devices",
-                            "networks",
-                            "accounts",
-                            "breaches",
-                            "images",
-                            "ports"];
-
-            let results: Vec<String> = options.iter()
-                .filter(|x| x.starts_with(arg))
-                .map(|x| format!("{} {} ", cmd, x))
-                .collect();
-            Ok((0, results))
+            Ok(filter_options(cmd, &[
+                "domains",
+                "subdomains",
+                "ipaddrs",
+                "urls",
+                "emails",
+                "phonenumbers",
+                "devices",
+                "networks",
+                "accounts",
+                "breaches",
+                "images",
+                "ports",
+            ], &args[1]))
         }
     }
+}
+
+fn filter_options(prefix: &str, options: &[&str], arg: &str) -> (usize, Vec<String>) {
+    let results: Vec<String> = options.iter()
+        .filter(|x| x.starts_with(arg))
+        .map(|x| format!("{} {} ", prefix, x))
+        .collect();
+    (0, results)
 }
 
 impl Completer for CmdCompleter {
@@ -110,24 +113,45 @@ impl Completer for CmdCompleter {
                         Ok((0, results))
                     }
                 },
+                Command::Autonoscope | Command::Autoscope => {
+                    match (args, cmd.get(1).map(|x| x.as_str())) {
+                        (2, _) => {
+                            Ok(filter_options(&cmd[0], &[
+                                "add",
+                                "delete",
+                                "list"
+                            ], &cmd[1]))
+                        },
+                        (3, Some("add")) | (3, Some("delete")) => {
+                            let base = &cmd[0];
+                            let action = &cmd[1];
+                            let arg = &cmd[2];
+
+                            let options = RuleType::list_all();
+
+                            let results: Vec<String> = options.iter()
+                                .filter(|x| x.starts_with(arg))
+                                .map(|x| format!("{} {} {} ", base, action, x))
+                                .collect();
+                            Ok((0, results))
+                        },
+                        _ => {
+                            Ok((0, vec![]))
+                        },
+                    }
+                },
                 Command::Delete => self.filter("delete", &cmd),
                 Command::Keyring => {
                     // we can only complete the 2nd argument
                     if args != 2 {
                         Ok((0, vec![]))
                     } else {
-                        let arg = &cmd[1];
-
-                        let options = &["add",
-                                        "delete",
-                                        "get",
-                                        "list"];
-
-                        let results: Vec<String> = options.iter()
-                            .filter(|x| x.starts_with(arg))
-                            .map(|x| format!("keyring {} ", x))
-                            .collect();
-                        Ok((0, results))
+                        Ok(filter_options("keyring", &[
+                            "add",
+                            "delete",
+                            "get",
+                            "list"
+                        ], &cmd[1]))
                     }
                 },
                 Command::Mod => {
@@ -135,21 +159,14 @@ impl Completer for CmdCompleter {
                     if args != 2 {
                         Ok((0, vec![]))
                     } else {
-                        let arg = &cmd[1];
-
-                        let options = &["list",
-                                        "install",
-                                        "search",
-                                        "reload",
-                                        "update"];
-
-                        let results: Vec<String> = options.iter()
-                            .filter(|x| x.starts_with(arg))
-                            .map(|x| format!("mod {} ", x))
-                            .collect();
-                        Ok((0, results))
+                        Ok(filter_options("mod", &[
+                            "list",
+                            "install",
+                            "search",
+                            "reload",
+                            "update",
+                        ], &cmd[1]))
                     }
-
                 },
                 Command::Noscope => self.filter("noscope", &cmd),
                 Command::Use => {

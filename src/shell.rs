@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use crate::args::Args;
+use crate::autonoscope::RuleSet;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
@@ -30,6 +31,8 @@ use crate::workspaces::Workspace;
 #[derive(Debug)]
 pub enum Command {
     Add,
+    Autonoscope,
+    Autoscope,
     Back,
     Delete,
     Help,
@@ -52,6 +55,8 @@ impl Command {
     pub fn as_str(&self) -> &'static str {
         match *self {
             Command::Add => "add",
+            Command::Autonoscope => "autonoscope",
+            Command::Autoscope => "autoscope",
             Command::Back => "back",
             Command::Delete => "delete",
             Command::Help => "help",
@@ -74,6 +79,8 @@ impl Command {
         lazy_static! {
             static ref COMMANDS: Vec<&'static str> = vec![
                 Command::Add.as_str(),
+                Command::Autonoscope.as_str(),
+                Command::Autoscope.as_str(),
                 Command::Back.as_str(),
                 Command::Delete.as_str(),
                 Command::Help.as_str(),
@@ -101,6 +108,8 @@ impl FromStr for Command {
     fn from_str(s: &str) -> Result<Self> {
         match s {
             "add" => Ok(Command::Add),
+            "autonoscope" => Ok(Command::Autonoscope),
+            "autoscope" => Ok(Command::Autoscope),
             "back" => Ok(Command::Back),
             "delete" => Ok(Command::Delete),
             "help" => Ok(Command::Help),
@@ -129,12 +138,13 @@ pub struct Readline<'a> {
     config: &'a Config,
     engine: Engine<'a>,
     keyring: KeyRing,
+    autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
 }
 
 impl<'a> Readline<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing, autonoscope: RuleSet) -> Readline<'a> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -155,6 +165,7 @@ impl<'a> Readline<'a> {
             config,
             engine,
             keyring,
+            autonoscope,
             options: None,
             signal_register: Arc::new(SignalRegister::new()),
         };
@@ -164,11 +175,13 @@ impl<'a> Readline<'a> {
         rl
     }
 
+    #[inline(always)]
     pub fn take_module(&mut self) -> Option<Module> {
         self.options = None;
         self.prompt.module.take()
     }
 
+    #[inline(always)]
     pub fn set_module(&mut self, module: Module) {
         self.options = Some(HashMap::new());
         self.prompt.module = Some(module);
@@ -176,18 +189,22 @@ impl<'a> Readline<'a> {
         self.prompt.target = None;
     }
 
+    #[inline(always)]
     pub fn module(&self) -> Option<&Module> {
         self.prompt.module.as_ref()
     }
 
+    #[inline(always)]
     pub fn options_mut(&mut self) -> Option<&mut HashMap<String, String>> {
         self.options.as_mut()
     }
 
+    #[inline(always)]
     pub fn set_target(&mut self, target: Option<db::Filter>) {
         self.prompt.target = target;
     }
 
+    #[inline(always)]
     pub fn target(&self) -> &Option<db::Filter> {
         &self.prompt.target
     }
@@ -199,45 +216,65 @@ impl<'a> Readline<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn db(&self) -> &Database {
         &self.db
     }
 
+    #[inline(always)]
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
     }
 
+    #[inline(always)]
     pub fn blobs(&self) -> &BlobStorage {
         &self.blobs
     }
 
+    #[inline(always)]
     pub fn set_blobstorage(&mut self, blobs: BlobStorage) {
         self.blobs = blobs;
     }
 
+    #[inline(always)]
     pub fn psl(&self) -> &Psl {
         &self.psl
     }
 
+    #[inline(always)]
     pub fn config(&self) -> &Config {
         &self.config
     }
 
+    #[inline(always)]
     pub fn engine(&self) -> &Engine {
         &self.engine
     }
 
+    #[inline(always)]
     pub fn engine_mut(&mut self) -> &mut Engine<'a> {
         &mut self.engine
     }
 
+    #[inline(always)]
     pub fn keyring(&self) -> &KeyRing {
         &self.keyring
     }
 
+    #[inline(always)]
     pub fn keyring_mut(&mut self) -> &mut KeyRing {
         &mut self.keyring
+    }
+
+    #[inline(always)]
+    pub fn autonoscope(&self) -> &RuleSet {
+        &self.autonoscope
+    }
+
+    #[inline(always)]
+    pub fn autonoscope_mut(&mut self) -> (&mut RuleSet, &Database) {
+        (&mut self.autonoscope, &self.db)
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -322,6 +359,7 @@ impl<'a> Readline<'a> {
         }).map_err(Error::from)
     }
 
+    #[inline(always)]
     pub fn signal_register(&self) -> &Arc<SignalRegister> {
         &self.signal_register
     }
@@ -377,6 +415,8 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     debug!("Received line: {:?}", line);
     match line {
         Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
+        Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
+        Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
@@ -422,6 +462,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
         .context("Failed to download ASN database")?;
     let engine = Engine::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
+    let autonoscope = RuleSet::load(&db)?;
 
     if verbose_init && engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
@@ -433,7 +474,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
     }
     autoupdate.check_background(&config, engine.list());
 
-    let rl = Readline::new(&config, db, blobs, psl, engine, keyring);
+    let rl = Readline::new(&config, db, blobs, psl, engine, keyring, autonoscope);
 
     Ok(rl)
 }

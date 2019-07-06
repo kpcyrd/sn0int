@@ -13,6 +13,15 @@ table! {
 }
 
 table! {
+    autonoscope (id) {
+        id -> Integer,
+        object -> Text,
+        value -> Text,
+        scoped -> Bool,
+    }
+}
+
+table! {
     breach_emails (id) {
         id -> Integer,
         breach_id -> Integer,
@@ -206,6 +215,7 @@ joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
     accounts,
+    autonoscope,
     breach_emails,
     breaches,
     devices,

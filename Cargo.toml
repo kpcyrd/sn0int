@@ -68,6 +68,7 @@ semver = "0.9"
 bytes = "0.4"
 xml-rs = "0.8"
 bytesize = "1.0"
+ipnetwork = "0.14"
 
 digest = "0.8.0"
 hex = "0.3.1"
