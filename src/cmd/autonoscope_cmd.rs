@@ -53,7 +53,7 @@ pub fn run_with_scope_param(rl: &mut Readline, args: Args, scoped: bool) -> Resu
         },
         Subcommand::Delete(delete) => {
             let (autonoscope, db) = rl.autonoscope_mut();
-            autonoscope.delete(db, &delete.object, &delete.value)
+            autonoscope.delete_rule(db, &delete.object, &delete.value)
         },
         Subcommand::List => {
             for (object, rule, scoped) in rl.autonoscope().rules() {

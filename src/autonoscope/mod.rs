@@ -73,6 +73,8 @@ impl RuleSet {
     }
 
     pub fn add_rule(&mut self, db: &Database, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
+        self.delete_rule(db, object, value)?;
+
         match object {
             RuleType::Domain => {
                 let rule = DomainRule::try_from(value)?;
@@ -106,7 +108,7 @@ impl RuleSet {
         Ok(())
     }
 
-    pub fn delete(&mut self, db: &Database, obj: &RuleType, rule: &str) -> Result<()> {
+    pub fn delete_rule(&mut self, db: &Database, obj: &RuleType, rule: &str) -> Result<()> {
         match obj {
             RuleType::Domain => {
                 self.domains.retain(|x| x.to_string().as_str() != rule);
