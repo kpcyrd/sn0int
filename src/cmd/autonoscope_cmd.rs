@@ -48,15 +48,13 @@ fn display_rule<T: Color>(object: &str, rule: &str) -> Result<()> {
 pub fn run_with_scope_param(rl: &mut Readline, args: Args, scoped: bool) -> Result<()> {
     match args.subcommand {
         Subcommand::Add(add) => {
-            let (autonoscope, db) = rl.autonoscope_mut();
-            autonoscope.add_rule(db, &add.object, &add.value, scoped)
+            rl.db_mut().autonoscope_add_rule(&add.object, &add.value, scoped)
         },
         Subcommand::Delete(delete) => {
-            let (autonoscope, db) = rl.autonoscope_mut();
-            autonoscope.delete_rule(db, &delete.object, &delete.value)
+            rl.db_mut().autonoscope_delete_rule(&delete.object, &delete.value)
         },
         Subcommand::List => {
-            for (object, rule, scoped) in rl.autonoscope().rules() {
+            for (object, rule, scoped) in rl.db().autonoscope_rules() {
                 if scoped {
                     display_rule::<Green>(&format!("  scope {}", object), &rule)?;
                 } else {

@@ -231,11 +231,16 @@ pub struct NewDevice {
     pub hostname: Option<String>,
     pub vendor: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Device> for NewDevice {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

@@ -231,11 +231,17 @@ pub struct NewPhoneNumber {
     pub last_ported: Option<NaiveDateTime>,
     pub caller_name: Option<String>,
     pub caller_type: Option<String>,
+
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<PhoneNumber> for NewPhoneNumber {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

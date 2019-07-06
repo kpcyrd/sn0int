@@ -246,11 +246,16 @@ pub struct NewEmail {
     pub value: String,
     pub displayname: Option<String>,
     pub valid: Option<bool>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Email> for NewEmail {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

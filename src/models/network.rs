@@ -211,11 +211,16 @@ pub struct NewNetwork {
     pub value: String,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Network> for NewNetwork {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

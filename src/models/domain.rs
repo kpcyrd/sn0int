@@ -194,11 +194,16 @@ impl Detailed for Domain {
 #[table_name="domains"]
 pub struct NewDomain {
     pub value: String,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Domain> for NewDomain {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

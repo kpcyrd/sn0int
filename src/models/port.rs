@@ -217,11 +217,17 @@ pub struct NewPort {
     pub banner: Option<String>,
     pub service: Option<String>,
     pub version: Option<String>,
+
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Port> for NewPort {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -291,6 +297,8 @@ impl LuaInsertToNew for InsertPort {
             banner: self.banner,
             service: self.service,
             version: self.version,
+
+            unscoped: false,
         })
     }
 }

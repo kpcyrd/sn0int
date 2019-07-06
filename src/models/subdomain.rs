@@ -209,11 +209,16 @@ pub struct NewSubdomain {
     pub domain_id: i32,
     pub value: String,
     pub resolvable: Option<bool>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Subdomain> for NewSubdomain {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {

@@ -1,4 +1,4 @@
-use crate::db::Database;
+use crate::db::DatabaseSock;
 use crate::errors::*;
 use diesel;
 use diesel::prelude::*;
@@ -47,9 +47,9 @@ fn sort_precision_desc<T: RulePrecision>(a: &T, b: &T) -> Ordering {
 }
 
 impl RuleSet {
-    pub fn load(db: &Database) -> Result<Self> {
+    pub fn load(db: &DatabaseSock) -> Result<Self> {
         use crate::schema::autonoscope::dsl::*;
-        let rules = autonoscope.load::<Autonoscope>(db.db())?;
+        let rules = autonoscope.load::<Autonoscope>(db)?;
 
         let mut set = RuleSet::default();
         for rule in rules {
@@ -72,7 +72,7 @@ impl RuleSet {
         self.urls.sort_by(sort_precision_desc);
     }
 
-    pub fn add_rule(&mut self, db: &Database, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
+    pub fn add_rule(&mut self, db: &DatabaseSock, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
         self.delete_rule(db, object, value)?;
 
         match object {
@@ -100,15 +100,15 @@ impl RuleSet {
         Ok(())
     }
 
-    fn db_add<I: Into<NewAutonoscope>>(&mut self, db: &Database, rule: I) -> Result<()> {
+    fn db_add<I: Into<NewAutonoscope>>(&mut self, db: &DatabaseSock, rule: I) -> Result<()> {
         use crate::schema::autonoscope::dsl::*;
         diesel::insert_into(autonoscope)
             .values(rule.into())
-            .execute(db.db())?;
+            .execute(db)?;
         Ok(())
     }
 
-    pub fn delete_rule(&mut self, db: &Database, obj: &RuleType, rule: &str) -> Result<()> {
+    pub fn delete_rule(&mut self, db: &DatabaseSock, obj: &RuleType, rule: &str) -> Result<()> {
         match obj {
             RuleType::Domain => {
                 self.domains.retain(|x| x.to_string().as_str() != rule);
@@ -126,12 +126,12 @@ impl RuleSet {
         Ok(())
     }
 
-    fn db_delete(&mut self, db: &Database, obj: &RuleType, rule: &str) -> Result<()> {
+    fn db_delete(&mut self, db: &DatabaseSock, obj: &RuleType, rule: &str) -> Result<()> {
         use crate::schema::autonoscope::dsl::*;
         diesel::delete(autonoscope
             .filter(object.eq(obj.as_str()))
             .filter(value.eq(rule)))
-            .execute(db.db())?;
+            .execute(db)?;
         Ok(())
     }
 
@@ -151,8 +151,8 @@ impl RuleSet {
         }
     }
 
-    pub fn is_autonoscoped(&self, object: &Insert) -> Result<bool> {
-        let autonoscoped = match object {
+    pub fn matches(&self, object: &Insert) -> Result<bool> {
+        let scoped = match object {
             Insert::Domain(domain) => Self::matches_any(&self.domains, domain)?,
             Insert::Subdomain(subdomain) => Self::matches_any(&self.domains, subdomain)?,
             Insert::IpAddr(ip_addr) => Self::matches_any(&self.ips, ip_addr)?,
@@ -170,7 +170,7 @@ impl RuleSet {
             Insert::Port(port) => Self::matches_any(&self.ips, port)?,
             _ => None,
         };
-        Ok(autonoscoped.unwrap_or(false))
+        Ok(scoped.unwrap_or(true))
     }
 
     fn matches_any<T1, T2>(rules: &[Rule<T1>], object: &T2) -> Result<Option<bool>>

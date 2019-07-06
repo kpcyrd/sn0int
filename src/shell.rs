@@ -1,7 +1,6 @@
 use crate::errors::*;
 
 use crate::args::Args;
-use crate::autonoscope::RuleSet;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::*;
 use crate::complete::CmdCompleter;
@@ -138,13 +137,13 @@ pub struct Readline<'a> {
     config: &'a Config,
     engine: Engine<'a>,
     keyring: KeyRing,
-    autonoscope: RuleSet,
+    // autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
 }
 
 impl<'a> Readline<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing, autonoscope: RuleSet) -> Readline<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
@@ -165,7 +164,6 @@ impl<'a> Readline<'a> {
             config,
             engine,
             keyring,
-            autonoscope,
             options: None,
             signal_register: Arc::new(SignalRegister::new()),
         };
@@ -222,6 +220,11 @@ impl<'a> Readline<'a> {
     }
 
     #[inline(always)]
+    pub fn db_mut(&mut self) -> &mut Database {
+        &mut self.db
+    }
+
+    #[inline(always)]
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
@@ -265,16 +268,6 @@ impl<'a> Readline<'a> {
     #[inline(always)]
     pub fn keyring_mut(&mut self) -> &mut KeyRing {
         &mut self.keyring
-    }
-
-    #[inline(always)]
-    pub fn autonoscope(&self) -> &RuleSet {
-        &self.autonoscope
-    }
-
-    #[inline(always)]
-    pub fn autonoscope_mut(&mut self) -> (&mut RuleSet, &Database) {
-        (&mut self.autonoscope, &self.db)
     }
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
@@ -462,7 +455,6 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
         .context("Failed to download ASN database")?;
     let engine = Engine::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
-    let autonoscope = RuleSet::load(&db)?;
 
     if verbose_init && engine.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
@@ -474,7 +466,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
     }
     autoupdate.check_background(&config, engine.list());
 
-    let rl = Readline::new(&config, db, blobs, psl, engine, keyring, autonoscope);
+    let rl = Readline::new(&config, db, blobs, psl, engine, keyring);
 
     Ok(rl)
 }
