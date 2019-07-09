@@ -4,7 +4,7 @@ use crate::blobs::Blob;
 use crate::engine::{Environment, Module, Reporter};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::keyring::KeyRingEntry;
-use crate::psl::Psl;
+use crate::psl::PslReader;
 use serde_json;
 use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
 
@@ -221,14 +221,12 @@ pub fn spawn_module(module: Module,
     Ok(exit)
 }
 
-pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: &str) -> Result<()> {
+pub fn run_worker(geoip: Vec<u8>, asn: Vec<u8>, psl: PslReader) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 
     let geoip = GeoIP::from_buf(geoip)?;
     let asn = AsnDB::from_buf(asn)?;
-    let psl = psl.parse::<Psl>()
-        .context("Failed to load public suffix list")?;
 
     let environment = Environment {
         verbose: start.verbose,

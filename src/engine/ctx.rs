@@ -7,7 +7,8 @@ use crate::geoip::{GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
-use crate::psl::Psl;
+use crate::psl::{Psl, PslReader};
+use crate::lazy::Lazy;
 use crate::runtime;
 use crate::sockets::Socket;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
@@ -119,7 +120,7 @@ pub trait State {
 
     fn getopt(&self, key: &str) -> Option<&String>;
 
-    fn psl(&self) -> &Psl;
+    fn psl(&self) -> Result<Arc<Psl>>;
 
     fn geoip(&self) -> &GeoIP;
 
@@ -150,7 +151,7 @@ pub trait State {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct LuaState {
     error: Mutex<Option<Error>>,
     logger: Arc<Mutex<Box<Reporter>>>,
@@ -162,7 +163,7 @@ pub struct LuaState {
     verbose: u64,
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
     dns_config: Resolver,
-    psl: Psl,
+    psl: Mutex<Lazy<PslReader, Arc<Psl>>>,
     geoip: GeoIP,
     asn: AsnDB,
     proxy: Option<SocketAddr>,
@@ -219,8 +220,10 @@ impl State for LuaState {
         self.options.get(key)
     }
 
-    fn psl(&self) -> &Psl {
-        &self.psl
+    fn psl(&self) -> Result<Arc<Psl>> {
+        let mut psl = self.psl.lock().unwrap();
+        let psl = psl.get()?;
+        Ok(psl.clone())
     }
 
     fn geoip(&self) -> &GeoIP {
@@ -323,7 +326,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         verbose: env.verbose,
         keyring: env.keyring,
         dns_config: env.dns_config,
-        psl: env.psl,
+        psl: Mutex::new(Lazy::from(env.psl)),
         geoip: env.geoip,
         asn: env.asn,
         proxy: env.proxy,
@@ -441,7 +444,7 @@ impl Script {
 
     pub fn run(&self, env: Environment,
                       tx: Arc<Mutex<Box<Reporter>>>,
-                      arg: AnyLuaValue
+                      arg: AnyLuaValue,
     ) -> Result<()> {
         let (mut lua, state) = ctx(env, tx);
 
@@ -476,11 +479,11 @@ impl Script {
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
         let proxy = None;
-        let psl = r#"
+        let psl = PslReader::String(r#"
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
-"#.parse::<Psl>()?;
+"#.into());
         let geoip = GeoIP::open_or_download()?;
         let asn = AsnDB::open_or_download()?;
 

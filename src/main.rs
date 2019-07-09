@@ -12,7 +12,7 @@ use sn0int::errors::*;
 use sn0int::engine::{self, Engine, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
-use sn0int::psl::Psl;
+use sn0int::psl::PslReader;
 use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
@@ -45,13 +45,13 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    let geoip = GeoIP::open_into_buf()?;
-    let asn = AsnDB::open_into_buf()?;
-    let psl = Psl::open_into_string()?;
+    let geoip = GeoIP::open_into_buf()?; // TODO
+    let asn = AsnDB::open_into_buf()?; // TODO
+    let psl = PslReader::open()?;
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn, &psl)
+    engine::isolation::run_worker(geoip, asn, psl)
 }
 
 fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {

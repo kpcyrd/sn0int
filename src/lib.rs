@@ -31,6 +31,7 @@ pub mod gfx;
 pub mod html;
 pub mod json;
 pub mod keyring;
+pub mod lazy;
 pub mod migrations;
 pub mod models;
 pub mod paths;
