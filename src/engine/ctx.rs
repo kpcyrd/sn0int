@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::blobs::Blob;
 use crate::db::Family;
 use crate::engine::{Environment, Reporter};
-use crate::geoip::{GeoIP, AsnDB};
+use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
@@ -122,9 +122,9 @@ pub trait State {
 
     fn psl(&self) -> Result<Arc<Psl>>;
 
-    fn geoip(&self) -> &GeoIP;
+    fn geoip(&self) -> Result<Arc<GeoIP>>;
 
-    fn asn(&self) -> &AsnDB;
+    fn asn(&self) -> Result<Arc<AsnDB>>;
 
     fn sock_connect(&self, host: &str, port: u16) -> Result<String>;
 
@@ -164,8 +164,8 @@ pub struct LuaState {
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
     dns_config: Resolver,
     psl: Mutex<Lazy<PslReader, Arc<Psl>>>,
-    geoip: GeoIP,
-    asn: AsnDB,
+    geoip: Mutex<Lazy<MaxmindReader, Arc<GeoIP>>>,
+    asn: Mutex<Lazy<MaxmindReader, Arc<AsnDB>>>,
     proxy: Option<SocketAddr>,
     options: HashMap<String, String>,
 }
@@ -226,12 +226,16 @@ impl State for LuaState {
         Ok(psl.clone())
     }
 
-    fn geoip(&self) -> &GeoIP {
-        &self.geoip
+    fn geoip(&self) -> Result<Arc<GeoIP>> {
+        let mut geoip = self.geoip.lock().unwrap();
+        let geoip = geoip.get()?;
+        Ok(geoip.clone())
     }
 
-    fn asn(&self) -> &AsnDB {
-        &self.asn
+    fn asn(&self) -> Result<Arc<AsnDB>> {
+        let mut asn = self.asn.lock().unwrap();
+        let asn = asn.get()?;
+        Ok(asn.clone())
     }
 
     fn sock_connect(&self, host: &str, port: u16) -> Result<String> {
@@ -327,8 +331,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         keyring: env.keyring,
         dns_config: env.dns_config,
         psl: Mutex::new(Lazy::from(env.psl)),
-        geoip: env.geoip,
-        asn: env.asn,
+        geoip: Mutex::new(Lazy::from(env.geoip)),
+        asn: Mutex::new(Lazy::from(env.asn)),
         proxy: env.proxy,
         options: env.options,
     });
@@ -484,8 +488,8 @@ impl Script {
 com
 // ===END ICANN DOMAINS===
 "#.into());
-        let geoip = GeoIP::open_or_download()?;
-        let asn = AsnDB::open_or_download()?;
+        let geoip = GeoIP::open_reader()?;
+        let asn = AsnDB::open_reader()?;
 
         let env = Environment {
             verbose: 0,

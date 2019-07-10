@@ -18,18 +18,25 @@ pub enum PslReader {
 
 impl PslReader {
     pub fn open_or_download() -> Result<PslReader> {
-        let reader = match Self::open() {
+        let path = Self::path()?;
+        let reader = match Self::open_from(&path) {
             Ok(r) => r,
             Err(_) => worker::spawn_fn("Downloading public suffix list", || {
-                PslReader::download(&Self::path()?, publicsuffix::LIST_URL)?;
-                Self::open()
+                PslReader::download(&path, publicsuffix::LIST_URL)?;
+                Self::open_from(&path)
             }, false)?,
         };
         Ok(reader)
     }
 
     pub fn open() -> Result<PslReader> {
-        let file = File::open(Self::path()?)?;
+        let path = Self::path()?;
+        Self::open_from(&path)
+
+    }
+
+    pub fn open_from(path: &Path) -> Result<PslReader> {
+        let file = File::open(path)?;
         Ok(PslReader::Reader(file))
     }
 

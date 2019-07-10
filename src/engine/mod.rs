@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::config::Config;
-use crate::geoip::{GeoIP, AsnDB};
+use crate::geoip::MaxmindReader;
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
 use serde_json;
@@ -38,8 +38,8 @@ pub struct Environment {
     pub options: HashMap<String, String>,
     pub blobs: Vec<Blob>,
     pub psl: PslReader,
-    pub geoip: GeoIP,
-    pub asn: AsnDB,
+    pub geoip: MaxmindReader,
+    pub asn: MaxmindReader,
 }
 
 #[derive(Debug)]

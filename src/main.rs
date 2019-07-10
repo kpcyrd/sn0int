@@ -45,8 +45,8 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    let geoip = GeoIP::open_into_buf()?; // TODO
-    let asn = AsnDB::open_into_buf()?; // TODO
+    let geoip = GeoIP::open_reader()?;
+    let asn = AsnDB::open_reader()?;
     let psl = PslReader::open()?;
 
     sandbox::init()
