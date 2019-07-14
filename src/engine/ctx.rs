@@ -342,6 +342,13 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         state.register_blob(blob);
     }
 
+    runtime::asn_lookup(&mut lua, state.clone());
+    runtime::base64_decode(&mut lua, state.clone());
+    runtime::base64_encode(&mut lua, state.clone());
+    runtime::base64_custom_decode(&mut lua, state.clone());
+    runtime::base64_custom_encode(&mut lua, state.clone());
+    runtime::base32_custom_decode(&mut lua, state.clone());
+    runtime::base32_custom_encode(&mut lua, state.clone());
     runtime::clear_err(&mut lua, state.clone());
     runtime::create_blob(&mut lua, state.clone());
     runtime::datetime(&mut lua, state.clone());
@@ -352,7 +359,6 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::debug(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
-    runtime::asn_lookup(&mut lua, state.clone());
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::getopt(&mut lua, state.clone());
     runtime::hex(&mut lua, state.clone());

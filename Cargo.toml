@@ -41,6 +41,7 @@ url = "1.7"
 #chrootable-https = { path = "../chrootable-https" }
 chrootable-https = "0.10"
 base64 = "0.10"
+data-encoding = "2.1.2"
 kuchiki = "0.7.2"
 serde_urlencoded = "0.5"
 serde = "1.0"
