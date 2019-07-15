@@ -251,13 +251,24 @@ impl Printable<PrintableNetwork> for NewNetwork {
     }
 }
 
-pub type InsertNetwork = NewNetwork;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertNetwork {
+    pub value: String,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+}
 
 impl LuaInsertToNew for InsertNetwork {
     type Target = NewNetwork;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetwork> {
-        Ok(self)
+        Ok(NewNetwork {
+            value: self.value,
+            latitude: self.latitude,
+            longitude: self.longitude,
+
+            unscoped: false,
+        })
     }
 }
 

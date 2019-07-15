@@ -263,12 +263,19 @@ impl Printable<PrintableBreach> for NewBreach {
     }
 }
 
-pub type InsertBreach = NewBreach;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertBreach {
+    pub value: String,
+}
 
 impl LuaInsertToNew for InsertBreach {
     type Target = NewBreach;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreach> {
-        Ok(self)
+        Ok(NewBreach {
+            value: self.value,
+
+            unscoped: false,
+        })
     }
 }

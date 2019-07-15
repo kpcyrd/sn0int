@@ -286,13 +286,24 @@ impl Printable<PrintableEmail> for NewEmail {
     }
 }
 
-pub type InsertEmail = NewEmail;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertEmail {
+    pub value: String,
+    pub displayname: Option<String>,
+    pub valid: Option<bool>,
+}
 
 impl LuaInsertToNew for InsertEmail {
     type Target = NewEmail;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewEmail> {
-        Ok(self)
+        Ok(NewEmail {
+            value: self.value,
+            displayname: self.displayname,
+            valid: self.valid,
+
+            unscoped: false,
+        })
     }
 }
 

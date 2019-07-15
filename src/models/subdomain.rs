@@ -248,13 +248,24 @@ impl Printable<PrintableSubdomain> for NewSubdomain {
     }
 }
 
-pub type InsertSubdomain = NewSubdomain;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertSubdomain {
+    pub domain_id: i32,
+    pub value: String,
+    pub resolvable: Option<bool>,
+}
 
 impl LuaInsertToNew for InsertSubdomain {
     type Target = NewSubdomain;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomain> {
-        Ok(self)
+        Ok(NewSubdomain {
+            domain_id: self.domain_id,
+            value: self.value,
+            resolvable: self.resolvable,
+
+            unscoped: false,
+        })
     }
 }
 

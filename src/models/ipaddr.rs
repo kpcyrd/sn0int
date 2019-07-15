@@ -355,8 +355,6 @@ pub struct InsertIpAddr {
     pub as_org: Option<String>,
     pub description: Option<String>,
     pub reverse_dns: Option<String>,
-
-    pub unscoped: bool,
 }
 
 impl LuaInsertToNew for InsertIpAddr {
@@ -367,12 +365,12 @@ impl LuaInsertToNew for InsertIpAddr {
             .context("Failed to parse ip address")?;
 
         let family = match ipaddr {
-            net::IpAddr::V4(_) => "4",
-            net::IpAddr::V6(_) => "6",
+            net::IpAddr::V4(_) => String::from("4"),
+            net::IpAddr::V6(_) => String::from("6"),
         };
 
         Ok(NewIpAddr {
-            family: family.to_string(),
+            family,
             value: ipaddr.to_string(),
 
             continent: self.continent,

@@ -280,14 +280,27 @@ impl Printable<PrintablePhoneNumber> for NewPhoneNumber {
     }
 }
 
-pub type InsertPhoneNumber = NewPhoneNumber;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertPhoneNumber {
+    pub value: String,
+    pub name: Option<String>,
+    pub valid: Option<bool>,
+    pub last_online: Option<NaiveDateTime>,
+    pub country: Option<String>,
+    pub carrier: Option<String>,
+    pub line: Option<String>,
+    pub is_ported: Option<bool>,
+    pub last_ported: Option<NaiveDateTime>,
+    pub caller_name: Option<String>,
+    pub caller_type: Option<String>,
+}
 
 // TODO: enforce valid E.164 number?
 impl LuaInsertToNew for InsertPhoneNumber {
     type Target = NewPhoneNumber;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewPhoneNumber> {
-        if self.value.starts_with('+') {
+        if !self.value.starts_with('+') {
             bail!("E.164 phone number must start with '+'");
         }
 
@@ -295,7 +308,21 @@ impl LuaInsertToNew for InsertPhoneNumber {
             bail!("E.164 phone number must only contain numbers");
         }
 
-        Ok(self)
+        Ok(NewPhoneNumber {
+            value: self.value,
+            name: self.name,
+            valid: self.valid,
+            last_online: self.last_online,
+            country: self.country,
+            carrier: self.carrier,
+            line: self.line,
+            is_ported: self.is_ported,
+            last_ported: self.last_ported,
+            caller_name: self.caller_name,
+            caller_type: self.caller_type,
+
+            unscoped: false,
+        })
     }
 }
 

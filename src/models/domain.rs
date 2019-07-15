@@ -232,12 +232,18 @@ impl Printable<PrintableDomain> for NewDomain {
     }
 }
 
-pub type InsertDomain = NewDomain;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertDomain {
+    pub value: String,
+}
 
 impl LuaInsertToNew for InsertDomain {
     type Target = NewDomain;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewDomain> {
-        Ok(self)
+        Ok(NewDomain {
+            value: self.value,
+            unscoped: false,
+        })
     }
 }
