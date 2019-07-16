@@ -1,12 +1,12 @@
-FROM rust
+FROM rust:buster
 RUN rustup install nightly
 WORKDIR /usr/src/sn0int-registry
 COPY . .
 RUN cargo +nightly build --release --verbose
 RUN strip target/release/sn0int-registry
 
-FROM debian
-RUN apt-get update -q && apt-get install -yq libcurl3 libpq5 \
+FROM debian:buster
+RUN apt-get update -q && apt-get install -yq libcurl4 libpq5 \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=0 /usr/src/sn0int-registry/target/release/sn0int-registry /usr/local/bin/sn0int-registry
 COPY templates /templates
