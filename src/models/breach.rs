@@ -225,11 +225,16 @@ impl Detailed for Breach {
 #[table_name="breaches"]
 pub struct NewBreach {
     pub value: String,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Breach> for NewBreach {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -258,12 +263,19 @@ impl Printable<PrintableBreach> for NewBreach {
     }
 }
 
-pub type InsertBreach = NewBreach;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertBreach {
+    pub value: String,
+}
 
 impl LuaInsertToNew for InsertBreach {
     type Target = NewBreach;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreach> {
-        Ok(self)
+        Ok(NewBreach {
+            value: self.value,
+
+            unscoped: false,
+        })
     }
 }

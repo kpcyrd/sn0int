@@ -15,6 +15,7 @@ pub mod api;
 pub mod archive;
 pub mod args;
 pub mod auth;
+pub mod autonoscope;
 pub mod blobs;
 pub mod cmd;
 pub mod complete;

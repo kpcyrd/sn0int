@@ -116,6 +116,7 @@ impl IntoInsert for AddDomain {
 
         Ok(Insert::Domain(NewDomain {
             value: domain,
+            unscoped: false,
         }))
     }
 }
@@ -141,7 +142,8 @@ impl IntoInsert for AddSubdomain {
 
         let domain_id = match rl.db().insert_struct(NewDomain {
             value: domain,
-        })? {
+            unscoped: false,
+        }, false)? {
             Some((_, domain_id)) => domain_id,
             _ => bail!("Domain is out out of scope"),
         };
@@ -150,6 +152,7 @@ impl IntoInsert for AddSubdomain {
             domain_id,
             value: subdomain,
             resolvable: None,
+            unscoped: false,
         }))
     }
 }
@@ -188,6 +191,7 @@ impl IntoInsert for AddIpAddr {
             as_org: None,
             description: None,
             reverse_dns: None,
+            unscoped: false,
         }))
     }
 }
@@ -208,6 +212,7 @@ impl IntoInsert for AddEmail {
             value: email,
             displayname: None,
             valid: None,
+            unscoped: false,
         }))
     }
 }
@@ -241,6 +246,7 @@ impl IntoInsert for AddPhoneNumber {
             last_ported: None,
             caller_name: None,
             caller_type: None,
+            unscoped: false,
         }))
     }
 }
@@ -270,6 +276,7 @@ impl IntoInsert for AddDevice {
             hostname: None,
             vendor: None,
             last_seen: None,
+            unscoped: false,
         }))
     }
 }
@@ -297,6 +304,7 @@ impl IntoInsert for AddNetwork {
             value: network,
             latitude,
             longitude,
+            unscoped: false,
         }))
     }
 }
@@ -334,6 +342,7 @@ impl IntoInsert for AddAccount {
             email: None,
             url: None,
             last_seen: None,
+            unscoped: false,
         }))
     }
 }
@@ -355,6 +364,7 @@ impl IntoInsert for AddBreach {
 
         Ok(Insert::Breach(NewBreach {
             value: name,
+            unscoped: false,
         }))
     }
 }
@@ -447,6 +457,8 @@ impl IntoInsert for AddImage {
                         ahash: None,
                         dhash: None,
                         phash: None,
+
+                        unscoped: false,
                     }))?;
                 }
             }

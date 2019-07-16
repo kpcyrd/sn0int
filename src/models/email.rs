@@ -246,11 +246,16 @@ pub struct NewEmail {
     pub value: String,
     pub displayname: Option<String>,
     pub valid: Option<bool>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Email> for NewEmail {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -281,13 +286,24 @@ impl Printable<PrintableEmail> for NewEmail {
     }
 }
 
-pub type InsertEmail = NewEmail;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertEmail {
+    pub value: String,
+    pub displayname: Option<String>,
+    pub valid: Option<bool>,
+}
 
 impl LuaInsertToNew for InsertEmail {
     type Target = NewEmail;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewEmail> {
-        Ok(self)
+        Ok(NewEmail {
+            value: self.value,
+            displayname: self.displayname,
+            valid: self.valid,
+
+            unscoped: false,
+        })
     }
 }
 

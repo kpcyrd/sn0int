@@ -210,6 +210,8 @@ pub trait Scopable: Model {
 pub trait InsertableStruct<T: Model>: Upsertable<T> {
     fn value(&self) -> &T::ID;
 
+    fn set_scoped(&mut self, scoped: bool);
+
     fn insert(&self, db: &Database) -> Result<()>;
 }
 

@@ -291,11 +291,17 @@ pub struct NewImage {
     pub ahash: Option<String>,
     pub dhash: Option<String>,
     pub phash: Option<String>,
+
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Image> for NewImage {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -389,6 +395,8 @@ impl LuaInsertToNew for InsertImage {
             ahash: self.ahash,
             dhash: self.dhash,
             phash: self.phash,
+
+            unscoped: false,
         })
     }
 }

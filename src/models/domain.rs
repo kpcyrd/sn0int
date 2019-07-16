@@ -194,11 +194,16 @@ impl Detailed for Domain {
 #[table_name="domains"]
 pub struct NewDomain {
     pub value: String,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Domain> for NewDomain {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -227,12 +232,18 @@ impl Printable<PrintableDomain> for NewDomain {
     }
 }
 
-pub type InsertDomain = NewDomain;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertDomain {
+    pub value: String,
+}
 
 impl LuaInsertToNew for InsertDomain {
     type Target = NewDomain;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewDomain> {
-        Ok(self)
+        Ok(NewDomain {
+            value: self.value,
+            unscoped: false,
+        })
     }
 }

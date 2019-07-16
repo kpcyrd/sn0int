@@ -5,6 +5,7 @@ use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;
 use diesel::sql_types::Bool;
 use diesel::prelude::*;
+use crate::autonoscope::{RuleSet, RuleType};
 use crate::models::*;
 use crate::schema::*;
 use std::str::FromStr;
@@ -78,7 +79,10 @@ impl FromStr for Family {
 pub struct Database {
     workspace: Workspace,
     db: SqliteConnection,
+    autonoscope: RuleSet,
 }
+
+pub type DatabaseSock = diesel::SqliteConnection;
 
 impl Database {
     pub fn establish(workspace: Workspace) -> Result<Database> {
@@ -103,9 +107,12 @@ impl Database {
         db.execute("PRAGMA foreign_keys = ON")
             .context("Failed to enforce foreign keys")?;
 
+        let autonoscope = RuleSet::load(&db)?;
+
         Ok(Database {
             workspace,
             db,
+            autonoscope,
         })
     }
 
@@ -124,29 +131,45 @@ impl Database {
         &self.workspace
     }
 
+    #[inline(always)]
+    pub fn autonoscope_add_rule(&mut self, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
+        self.autonoscope.add_rule(&self.db, object, value, scoped)
+    }
+
+    #[inline(always)]
+    pub fn autonoscope_delete_rule(&mut self, object: &RuleType, value: &str) -> Result<()> {
+        self.autonoscope.delete_rule(&self.db, object, value)
+    }
+
+    #[inline(always)]
+    pub fn autonoscope_rules(&self) -> Vec<(&'static str, String, bool)> {
+        self.autonoscope.rules()
+    }
+
     /// Returns true if we didn't have this value yet
     pub fn insert_generic(&self, object: Insert) -> Result<Option<(DbChange, i32)>> {
+        let scoped = self.autonoscope.matches(&object)?;
         match object {
-            Insert::Domain(object) => self.insert_struct(object),
-            Insert::Subdomain(object) => self.insert_struct(object),
-            Insert::IpAddr(object) => self.insert_struct(object),
+            Insert::Domain(object) => self.insert_struct(object, scoped),
+            Insert::Subdomain(object) => self.insert_struct(object, scoped),
+            Insert::IpAddr(object) => self.insert_struct(object, scoped),
             Insert::SubdomainIpAddr(object) => self.insert_subdomain_ipaddr_struct(&object),
-            Insert::Url(object) => self.insert_struct(object),
-            Insert::Email(object) => self.insert_struct(object),
-            Insert::PhoneNumber(object) => self.insert_struct(object),
-            Insert::Device(object) => self.insert_struct(object),
-            Insert::Network(object) => self.insert_struct(object),
+            Insert::Url(object) => self.insert_struct(object, scoped),
+            Insert::Email(object) => self.insert_struct(object, scoped),
+            Insert::PhoneNumber(object) => self.insert_struct(object, scoped),
+            Insert::Device(object) => self.insert_struct(object, scoped),
+            Insert::Network(object) => self.insert_struct(object, scoped),
             Insert::NetworkDevice(object) => self.insert_network_device_struct(&object),
-            Insert::Account(object) => self.insert_struct(object),
-            Insert::Breach(object) => self.insert_struct(object),
+            Insert::Account(object) => self.insert_struct(object, scoped),
+            Insert::Breach(object) => self.insert_struct(object, scoped),
             Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
-            Insert::Image(object) => self.insert_struct(object),
-            Insert::Port(object) => self.insert_struct(object),
+            Insert::Image(object) => self.insert_struct(object, scoped),
+            Insert::Port(object) => self.insert_struct(object, scoped),
         }
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_struct<T: InsertableStruct<M>, M: Model + Scopable>(&self, obj: T) -> Result<Option<(DbChange, i32)>> {
+    pub fn insert_struct<T: InsertableStruct<M>, M: Model + Scopable>(&self, mut obj: T, scoped: bool) -> Result<Option<(DbChange, i32)>> {
         if let Some(existing) = M::get_opt(self, obj.value())? {
             // entity is out of scope
             if !existing.scoped() {
@@ -161,6 +184,7 @@ impl Database {
                 Ok(Some((DbChange::None, existing.id())))
             }
         } else {
+            obj.set_scoped(scoped);
             obj.insert(&self)?;
             let id = M::get_id(self, obj.value())?;
             Ok(Some((DbChange::Insert, id)))

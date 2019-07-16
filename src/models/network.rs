@@ -211,11 +211,16 @@ pub struct NewNetwork {
     pub value: String,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Network> for NewNetwork {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -246,13 +251,24 @@ impl Printable<PrintableNetwork> for NewNetwork {
     }
 }
 
-pub type InsertNetwork = NewNetwork;
+#[derive(Debug, Serialize, Deserialize)]
+pub struct InsertNetwork {
+    pub value: String,
+    pub latitude: Option<f32>,
+    pub longitude: Option<f32>,
+}
 
 impl LuaInsertToNew for InsertNetwork {
     type Target = NewNetwork;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetwork> {
-        Ok(self)
+        Ok(NewNetwork {
+            value: self.value,
+            latitude: self.latitude,
+            longitude: self.longitude,
+
+            unscoped: false,
+        })
     }
 }
 

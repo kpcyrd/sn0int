@@ -288,11 +288,17 @@ pub struct NewIpAddr {
     pub as_org: Option<String>,
     pub description: Option<String>,
     pub reverse_dns: Option<String>,
+
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<IpAddr> for NewIpAddr {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -337,6 +343,7 @@ pub struct InsertIpAddr {
     // TODO: deprecate family field
     pub family: Option<String>,
     pub value: String,
+
     pub continent: Option<String>,
     pub continent_code: Option<String>,
     pub country: Option<String>,
@@ -358,13 +365,14 @@ impl LuaInsertToNew for InsertIpAddr {
             .context("Failed to parse ip address")?;
 
         let family = match ipaddr {
-            net::IpAddr::V4(_) => "4",
-            net::IpAddr::V6(_) => "6",
+            net::IpAddr::V4(_) => String::from("4"),
+            net::IpAddr::V6(_) => String::from("6"),
         };
 
         Ok(NewIpAddr {
-            family: family.to_string(),
+            family,
             value: ipaddr.to_string(),
+
             continent: self.continent,
             continent_code: self.continent_code,
             country: self.country,
@@ -376,6 +384,8 @@ impl LuaInsertToNew for InsertIpAddr {
             as_org: self.as_org,
             description: self.description,
             reverse_dns: self.reverse_dns,
+
+            unscoped: false,
         })
     }
 }

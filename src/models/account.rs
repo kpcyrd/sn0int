@@ -217,11 +217,16 @@ pub struct NewAccount {
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Account> for NewAccount {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -280,6 +285,7 @@ impl LuaInsertToNew for InsertAccount {
             email: self.email,
             url: self.url,
             last_seen: self.last_seen,
+            unscoped: false,
         })
     }
 }

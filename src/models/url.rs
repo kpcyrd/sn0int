@@ -235,11 +235,16 @@ pub struct NewUrl {
     pub online: Option<bool>,
     pub title: Option<String>,
     pub redirect: Option<String>,
+    pub unscoped: bool,
 }
 
 impl InsertableStruct<Url> for NewUrl {
     fn value(&self) -> &str {
         &self.value
+    }
+
+    fn set_scoped(&mut self, scoped: bool) {
+        self.unscoped = !scoped;
     }
 
     fn insert(&self, db: &Database) -> Result<()> {
@@ -303,6 +308,7 @@ impl LuaInsertToNew for InsertUrl {
             online: self.online,
             title: self.title,
             redirect: self.redirect,
+            unscoped: false,
         })
     }
 }

@@ -30,6 +30,8 @@ use crate::workspaces::Workspace;
 #[derive(Debug)]
 pub enum Command {
     Add,
+    Autonoscope,
+    Autoscope,
     Back,
     Delete,
     Help,
@@ -52,6 +54,8 @@ impl Command {
     pub fn as_str(&self) -> &'static str {
         match *self {
             Command::Add => "add",
+            Command::Autonoscope => "autonoscope",
+            Command::Autoscope => "autoscope",
             Command::Back => "back",
             Command::Delete => "delete",
             Command::Help => "help",
@@ -74,6 +78,8 @@ impl Command {
         lazy_static! {
             static ref COMMANDS: Vec<&'static str> = vec![
                 Command::Add.as_str(),
+                Command::Autonoscope.as_str(),
+                Command::Autoscope.as_str(),
                 Command::Back.as_str(),
                 Command::Delete.as_str(),
                 Command::Help.as_str(),
@@ -101,6 +107,8 @@ impl FromStr for Command {
     fn from_str(s: &str) -> Result<Self> {
         match s {
             "add" => Ok(Command::Add),
+            "autonoscope" => Ok(Command::Autonoscope),
+            "autoscope" => Ok(Command::Autoscope),
             "back" => Ok(Command::Back),
             "delete" => Ok(Command::Delete),
             "help" => Ok(Command::Help),
@@ -129,6 +137,7 @@ pub struct Readline<'a> {
     config: &'a Config,
     engine: Engine<'a>,
     keyring: KeyRing,
+    // autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
 }
@@ -164,11 +173,13 @@ impl<'a> Readline<'a> {
         rl
     }
 
+    #[inline(always)]
     pub fn take_module(&mut self) -> Option<Module> {
         self.options = None;
         self.prompt.module.take()
     }
 
+    #[inline(always)]
     pub fn set_module(&mut self, module: Module) {
         self.options = Some(HashMap::new());
         self.prompt.module = Some(module);
@@ -176,18 +187,22 @@ impl<'a> Readline<'a> {
         self.prompt.target = None;
     }
 
+    #[inline(always)]
     pub fn module(&self) -> Option<&Module> {
         self.prompt.module.as_ref()
     }
 
+    #[inline(always)]
     pub fn options_mut(&mut self) -> Option<&mut HashMap<String, String>> {
         self.options.as_mut()
     }
 
+    #[inline(always)]
     pub fn set_target(&mut self, target: Option<db::Filter>) {
         self.prompt.target = target;
     }
 
+    #[inline(always)]
     pub fn target(&self) -> &Option<db::Filter> {
         &self.prompt.target
     }
@@ -199,43 +214,58 @@ impl<'a> Readline<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn db(&self) -> &Database {
         &self.db
     }
 
+    #[inline(always)]
+    pub fn db_mut(&mut self) -> &mut Database {
+        &mut self.db
+    }
+
+    #[inline(always)]
     pub fn set_db(&mut self, db: Database) {
         self.prompt.workspace = db.name().to_string();
         self.db = db;
     }
 
+    #[inline(always)]
     pub fn blobs(&self) -> &BlobStorage {
         &self.blobs
     }
 
+    #[inline(always)]
     pub fn set_blobstorage(&mut self, blobs: BlobStorage) {
         self.blobs = blobs;
     }
 
+    #[inline(always)]
     pub fn psl(&self) -> &Psl {
         &self.psl
     }
 
+    #[inline(always)]
     pub fn config(&self) -> &Config {
         &self.config
     }
 
+    #[inline(always)]
     pub fn engine(&self) -> &Engine {
         &self.engine
     }
 
+    #[inline(always)]
     pub fn engine_mut(&mut self) -> &mut Engine<'a> {
         &mut self.engine
     }
 
+    #[inline(always)]
     pub fn keyring(&self) -> &KeyRing {
         &self.keyring
     }
 
+    #[inline(always)]
     pub fn keyring_mut(&mut self) -> &mut KeyRing {
         &mut self.keyring
     }
@@ -322,6 +352,7 @@ impl<'a> Readline<'a> {
         }).map_err(Error::from)
     }
 
+    #[inline(always)]
     pub fn signal_register(&self) -> &Arc<SignalRegister> {
         &self.signal_register
     }
@@ -377,6 +408,8 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     debug!("Received line: {:?}", line);
     match line {
         Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
+        Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
+        Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
