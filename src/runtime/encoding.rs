@@ -36,6 +36,9 @@ pub fn base64_encode(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("base64_custom_decode", hlua::function3(move |bytes: String, alphabet: String, padding: String| -> Result<AnyLuaValue> {
+        if alphabet.len() != 64 {
+            bail!("alphabet isn't base64");
+        }
         let spec = spec(&alphabet, &padding)
             .map_err(|err| state.set_error(err.into()))?;
         spec.decode(bytes.as_bytes())
@@ -46,6 +49,9 @@ pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("base64_custom_encode", hlua::function3(move |bytes: AnyLuaValue, alphabet: String, padding: String| -> Result<String> {
+        if alphabet.len() != 64 {
+            bail!("alphabet isn't base64");
+        }
         let spec = spec(&alphabet, &padding)
             .map_err(|err| state.set_error(err.into()))?;
         byte_array(bytes)
@@ -56,6 +62,9 @@ pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("base32_custom_decode", hlua::function3(move |bytes: String, alphabet: String, padding: String| -> Result<AnyLuaValue> {
+        if alphabet.len() != 32 {
+            bail!("alphabet isn't base32");
+        }
         let spec = spec(&alphabet, &padding)
             .map_err(|err| state.set_error(err.into()))?;
         spec.decode(bytes.as_bytes())
@@ -66,6 +75,9 @@ pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn base32_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("base32_custom_encode", hlua::function3(move |bytes: AnyLuaValue, alphabet: String, padding: String| -> Result<String> {
+        if alphabet.len() != 32 {
+            bail!("alphabet isn't base32");
+        }
         let spec = spec(&alphabet, &padding)
             .map_err(|err| state.set_error(err.into()))?;
         byte_array(bytes)
