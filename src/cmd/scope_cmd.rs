@@ -1,5 +1,6 @@
 use crate::errors::*;
 
+use crate::cmd::Cmd;
 use crate::filters::{Target, Filter};
 use crate::shell::Readline;
 use structopt::StructOpt;
@@ -16,24 +17,30 @@ pub struct Args {
     subcommand: Target,
 }
 
+impl Cmd for Args {
+    fn run(self, rl: &mut Readline) -> Result<()> {
+        let rows = match self.subcommand {
+            Target::Domains(filter) => scope::<Domain>(rl, &filter),
+            Target::Subdomains(filter) => scope::<Subdomain>(rl, &filter),
+            Target::IpAddrs(filter) => scope::<IpAddr>(rl, &filter),
+            Target::Urls(filter) => scope::<Url>(rl, &filter),
+            Target::Emails(filter) => scope::<Email>(rl, &filter),
+            Target::PhoneNumbers(filter) => scope::<PhoneNumber>(rl, &filter),
+            Target::Devices(filter) => scope::<Device>(rl, &filter),
+            Target::Networks(filter) => scope::<Network>(rl, &filter),
+            Target::Accounts(filter) => scope::<Account>(rl, &filter),
+            Target::Breaches(filter) => scope::<Breach>(rl, &filter),
+            Target::Images(filter) => scope::<Image>(rl, &filter),
+            Target::Ports(filter) => scope::<Port>(rl, &filter),
+        }?;
+        term::info(&format!("Updated {} rows", rows));
+        Ok(())
+    }
+}
+
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
-    let rows = match args.subcommand {
-        Target::Domains(filter) => scope::<Domain>(rl, &filter),
-        Target::Subdomains(filter) => scope::<Subdomain>(rl, &filter),
-        Target::IpAddrs(filter) => scope::<IpAddr>(rl, &filter),
-        Target::Urls(filter) => scope::<Url>(rl, &filter),
-        Target::Emails(filter) => scope::<Email>(rl, &filter),
-        Target::PhoneNumbers(filter) => scope::<PhoneNumber>(rl, &filter),
-        Target::Devices(filter) => scope::<Device>(rl, &filter),
-        Target::Networks(filter) => scope::<Network>(rl, &filter),
-        Target::Accounts(filter) => scope::<Account>(rl, &filter),
-        Target::Breaches(filter) => scope::<Breach>(rl, &filter),
-        Target::Images(filter) => scope::<Image>(rl, &filter),
-        Target::Ports(filter) => scope::<Port>(rl, &filter),
-    }?;
-    term::info(&format!("Updated {} rows", rows));
-    Ok(())
+    args.run(rl)
 }
 
 #[inline]
