@@ -15,7 +15,7 @@ use crate::engine::{Engine, Module};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::update::AutoUpdater;
 use rustyline::error::ReadlineError;
-use rustyline::{self, CompletionType, EditMode, Editor};
+use rustyline::{self, CompletionType, EditMode, Editor, KeyPress, Movement, Word, At};
 use shellwords;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -150,6 +150,8 @@ impl<'a> Readline<'a> {
             .edit_mode(EditMode::Emacs)
             .build();
         let mut rl: Editor<CmdCompleter> = Editor::with_config(rl_config);
+        rl.bind_sequence(KeyPress::ControlLeft, rustyline::Cmd::Move(Movement::BackwardWord(1, Word::Big)));
+        rl.bind_sequence(KeyPress::ControlRight, rustyline::Cmd::Move(Movement::ForwardWord(1, At::Start, Word::Big)));
 
         let h = CmdCompleter::default();
         rl.set_helper(Some(h));
