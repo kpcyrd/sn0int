@@ -143,7 +143,7 @@ impl IntoInsert for AddSubdomain {
         let domain_id = match rl.db().insert_struct(NewDomain {
             value: domain,
             unscoped: false,
-        }, false)? {
+        }, true)? {
             Some((_, domain_id)) => domain_id,
             _ => bail!("Domain is out out of scope"),
         };
