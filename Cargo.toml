@@ -81,10 +81,10 @@ sha2 = "0.8.0"
 sha3 = "0.8.0"
 hmac = "0.7"
 
-image = "0.21"
+image = "0.22"
 kamadak-exif = "0.3.1"
 walkdir = "2.2"
-nude = "0.1.0"
+nude = "0.2"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
