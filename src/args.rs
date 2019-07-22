@@ -58,6 +58,12 @@ pub enum SubCommand {
     /// Delete from the database
     #[structopt(author="", name="delete")]
     Delete(cmd::delete_cmd::Args),
+    /// Include entities in the scope
+    #[structopt(author="", name="scope")]
+    Scope(cmd::scope_cmd::Args),
+    /// Exclude entities from scope
+    #[structopt(author="", name="noscope")]
+    Noscope(cmd::noscope_cmd::Args),
     /// Manage workspaces
     #[structopt(author="", name="workspace")]
     Workspace(cmd::workspace_cmd::Args),

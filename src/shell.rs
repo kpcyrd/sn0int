@@ -15,7 +15,7 @@ use crate::engine::{Engine, Module};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::update::AutoUpdater;
 use rustyline::error::ReadlineError;
-use rustyline::{self, CompletionType, EditMode, Editor};
+use rustyline::{self, CompletionType, EditMode, Editor, KeyPress, Movement, Word, At};
 use shellwords;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -23,7 +23,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use crate::term::{self, Prompt};
 use crate::paths;
-use crate::psl::Psl;
+use crate::psl::{Psl, PslReader};
+use crate::lazy::Lazy;
 use crate::workspaces::Workspace;
 
 
@@ -133,7 +134,7 @@ pub struct Readline<'a> {
     prompt: Prompt,
     db: Database,
     blobs: BlobStorage,
-    psl: Psl,
+    psl: Lazy<PslReader, Arc<Psl>>,
     config: &'a Config,
     engine: Engine<'a>,
     keyring: KeyRing,
@@ -143,12 +144,14 @@ pub struct Readline<'a> {
 }
 
 impl<'a> Readline<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: Psl, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
             .build();
         let mut rl: Editor<CmdCompleter> = Editor::with_config(rl_config);
+        rl.bind_sequence(KeyPress::ControlLeft, rustyline::Cmd::Move(Movement::BackwardWord(1, Word::Big)));
+        rl.bind_sequence(KeyPress::ControlRight, rustyline::Cmd::Move(Movement::ForwardWord(1, At::Start, Word::Big)));
 
         let h = CmdCompleter::default();
         rl.set_helper(Some(h));
@@ -160,7 +163,7 @@ impl<'a> Readline<'a> {
             prompt,
             db,
             blobs,
-            psl,
+            psl: Lazy::from(psl),
             config,
             engine,
             keyring,
@@ -241,8 +244,8 @@ impl<'a> Readline<'a> {
     }
 
     #[inline(always)]
-    pub fn psl(&self) -> &Psl {
-        &self.psl
+    pub fn psl(&mut self) -> Result<&Arc<Psl>> {
+        Ok(self.psl.get()?)
     }
 
     #[inline(always)]
@@ -447,7 +450,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
     };
     ttl::reap_expired(&db)?;
 
-    let psl = Psl::open_or_download()
+    let psl = PslReader::open_or_download()
         .context("Failed to download public suffix list")?;
     let _geoip = GeoIP::open_or_download()
         .context("Failed to download GeoIP database")?;

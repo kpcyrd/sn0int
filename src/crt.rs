@@ -1,7 +1,8 @@
 use crate::errors::*;
 
 use x509_parser;
-use der_parser::{DerObject, DerObjectContent};
+use der_parser::der::DerObject;
+use der_parser::ber::{BerObjectContent, BerTag};
 use der_parser::oid::Oid;
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -14,7 +15,7 @@ pub enum AlternativeName {
 }
 
 pub fn san_extension(i: &[u8]) -> Result<Vec<AlternativeName>> {
-    let (rem, seq) = der_parser::parse_der_sequence(i)
+    let (rem, seq) = der_parser::der::parse_der_sequence(i)
         .map_err(|_| format_err!("Failed to parse san extension"))?;
 
     if !rem.is_empty() {
@@ -22,7 +23,7 @@ pub fn san_extension(i: &[u8]) -> Result<Vec<AlternativeName>> {
     }
 
     debug!("Decoded sequence: {:?}", seq);
-    if let DerObjectContent::Sequence(seq) = seq.content {
+    if let BerObjectContent::Sequence(seq) = seq.content {
         seq.into_iter()
             .map(san_value)
             .collect()
@@ -35,8 +36,8 @@ pub fn san_value(o: DerObject) -> Result<AlternativeName> {
     debug!("DER object in SAN extension: {:?}", o);
 
     match (o.class, o.tag, &o.content) {
-        (2, 2, DerObjectContent::Unknown(value)) => san_value_dns(value),
-        (2, 7, DerObjectContent::Unknown(value)) => san_value_ipaddr(value),
+        (2, BerTag::Integer, BerObjectContent::Unknown(BerTag::Integer, value)) => san_value_dns(value),
+        (2, BerTag::ObjDescriptor, BerObjectContent::Unknown(BerTag::ObjDescriptor, value)) => san_value_ipaddr(value),
         _ => bail!("Unexpected object: {:?}", o),
     }
 }
@@ -363,12 +364,12 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
         assert_eq!(v, DerObject {
             class: 2,
             structured: 0,
-            tag: 2,
-            content: DerObjectContent::Unknown(&[103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
+            tag: BerTag::Integer,
+            content: BerObjectContent::Unknown(BerTag::Integer, &[103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
         });
         let content = match v.content {
-            DerObjectContent::Unknown(v) => v,
-            _ => panic!("Wrong DerObjectContent"),
+            BerObjectContent::Unknown(BerTag::Integer, v) => v,
+            _ => panic!("Wrong BerObjectContent"),
         };
         let v = san_value_dns(content)
             .expect("Failed to process san value");
@@ -384,12 +385,12 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
         assert_eq!(v, DerObject {
             class: 2,
             structured: 0,
-            tag: 7,
-            content: DerObjectContent::Unknown(&[1, 1, 1, 1])
+            tag: BerTag::ObjDescriptor,
+            content: BerObjectContent::Unknown(BerTag::ObjDescriptor, &[1, 1, 1, 1])
         });
         let content = match v.content {
-            DerObjectContent::Unknown(v) => v,
-            _ => panic!("Wrong DerObjectContent"),
+            BerObjectContent::Unknown(BerTag::ObjDescriptor, v) => v,
+            _ => panic!("Wrong BerObjectContent"),
         };
         let v = san_value_ipaddr(content)
             .expect("Failed to process san value");

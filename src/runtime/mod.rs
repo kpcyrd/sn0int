@@ -9,6 +9,7 @@ import_fns!(blobs);
 import_fns!(datetime);
 import_fns!(db);
 import_fns!(dns);
+import_fns!(encoding);
 import_fns!(error);
 import_fns!(geoip);
 import_fns!(gfx);

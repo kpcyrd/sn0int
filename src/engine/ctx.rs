@@ -3,11 +3,12 @@ use crate::errors::*;
 use crate::blobs::Blob;
 use crate::db::Family;
 use crate::engine::{Environment, Reporter};
-use crate::geoip::{GeoIP, AsnDB};
+use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
 use crate::models::{Insert, Update};
-use crate::psl::Psl;
+use crate::psl::{Psl, PslReader};
+use crate::lazy::Lazy;
 use crate::runtime;
 use crate::sockets::Socket;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
@@ -119,11 +120,11 @@ pub trait State {
 
     fn getopt(&self, key: &str) -> Option<&String>;
 
-    fn psl(&self) -> &Psl;
+    fn psl(&self) -> Result<Arc<Psl>>;
 
-    fn geoip(&self) -> &GeoIP;
+    fn geoip(&self) -> Result<Arc<GeoIP>>;
 
-    fn asn(&self) -> &AsnDB;
+    fn asn(&self) -> Result<Arc<AsnDB>>;
 
     fn sock_connect(&self, host: &str, port: u16) -> Result<String>;
 
@@ -150,7 +151,7 @@ pub trait State {
     }
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 pub struct LuaState {
     error: Mutex<Option<Error>>,
     logger: Arc<Mutex<Box<Reporter>>>,
@@ -162,9 +163,9 @@ pub struct LuaState {
     verbose: u64,
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
     dns_config: Resolver,
-    psl: Psl,
-    geoip: GeoIP,
-    asn: AsnDB,
+    psl: Mutex<Lazy<PslReader, Arc<Psl>>>,
+    geoip: Mutex<Lazy<MaxmindReader, Arc<GeoIP>>>,
+    asn: Mutex<Lazy<MaxmindReader, Arc<AsnDB>>>,
     proxy: Option<SocketAddr>,
     options: HashMap<String, String>,
 }
@@ -219,16 +220,22 @@ impl State for LuaState {
         self.options.get(key)
     }
 
-    fn psl(&self) -> &Psl {
-        &self.psl
+    fn psl(&self) -> Result<Arc<Psl>> {
+        let mut psl = self.psl.lock().unwrap();
+        let psl = psl.get()?;
+        Ok(psl.clone())
     }
 
-    fn geoip(&self) -> &GeoIP {
-        &self.geoip
+    fn geoip(&self) -> Result<Arc<GeoIP>> {
+        let mut geoip = self.geoip.lock().unwrap();
+        let geoip = geoip.get()?;
+        Ok(geoip.clone())
     }
 
-    fn asn(&self) -> &AsnDB {
-        &self.asn
+    fn asn(&self) -> Result<Arc<AsnDB>> {
+        let mut asn = self.asn.lock().unwrap();
+        let asn = asn.get()?;
+        Ok(asn.clone())
     }
 
     fn sock_connect(&self, host: &str, port: u16) -> Result<String> {
@@ -323,9 +330,9 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         verbose: env.verbose,
         keyring: env.keyring,
         dns_config: env.dns_config,
-        psl: env.psl,
-        geoip: env.geoip,
-        asn: env.asn,
+        psl: Mutex::new(Lazy::from(env.psl)),
+        geoip: Mutex::new(Lazy::from(env.geoip)),
+        asn: Mutex::new(Lazy::from(env.asn)),
         proxy: env.proxy,
         options: env.options,
     });
@@ -335,6 +342,13 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
         state.register_blob(blob);
     }
 
+    runtime::asn_lookup(&mut lua, state.clone());
+    runtime::base64_decode(&mut lua, state.clone());
+    runtime::base64_encode(&mut lua, state.clone());
+    runtime::base64_custom_decode(&mut lua, state.clone());
+    runtime::base64_custom_encode(&mut lua, state.clone());
+    runtime::base32_custom_decode(&mut lua, state.clone());
+    runtime::base32_custom_encode(&mut lua, state.clone());
     runtime::clear_err(&mut lua, state.clone());
     runtime::create_blob(&mut lua, state.clone());
     runtime::datetime(&mut lua, state.clone());
@@ -345,7 +359,6 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::debug(&mut lua, state.clone());
     runtime::dns(&mut lua, state.clone());
     runtime::error(&mut lua, state.clone());
-    runtime::asn_lookup(&mut lua, state.clone());
     runtime::geoip_lookup(&mut lua, state.clone());
     runtime::getopt(&mut lua, state.clone());
     runtime::hex(&mut lua, state.clone());
@@ -441,7 +454,7 @@ impl Script {
 
     pub fn run(&self, env: Environment,
                       tx: Arc<Mutex<Box<Reporter>>>,
-                      arg: AnyLuaValue
+                      arg: AnyLuaValue,
     ) -> Result<()> {
         let (mut lua, state) = ctx(env, tx);
 
@@ -476,13 +489,13 @@ impl Script {
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
         let proxy = None;
-        let psl = r#"
+        let psl = PslReader::String(r#"
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
-"#.parse::<Psl>()?;
-        let geoip = GeoIP::open_or_download()?;
-        let asn = AsnDB::open_or_download()?;
+"#.into());
+        let geoip = GeoIP::open_reader()?;
+        let asn = AsnDB::open_reader()?;
 
         let env = Environment {
             verbose: 0,

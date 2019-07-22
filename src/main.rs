@@ -12,7 +12,7 @@ use sn0int::errors::*;
 use sn0int::engine::{self, Engine, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
-use sn0int::psl::Psl;
+use sn0int::psl::PslReader;
 use sn0int::registry;
 use sn0int::sandbox;
 use sn0int::shell;
@@ -45,13 +45,13 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    let geoip = GeoIP::open_into_buf()?;
-    let asn = AsnDB::open_into_buf()?;
-    let psl = Psl::open_into_string()?;
+    let geoip = GeoIP::open_reader()?;
+    let asn = AsnDB::open_reader()?;
+    let psl = PslReader::open()?;
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn, &psl)
+    engine::isolation::run_worker(geoip, asn, psl)
 }
 
 fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {
@@ -104,6 +104,8 @@ fn run() -> Result<()> {
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
         Some(SubCommand::Delete(delete)) => run_cmd(&args, delete, &config),
+        Some(SubCommand::Scope(scope)) => run_cmd(&args, scope, &config),
+        Some(SubCommand::Noscope(noscope)) => run_cmd(&args, noscope, &config),
         Some(SubCommand::Workspace(workspace)) => run_cmd(&args, workspace, &config),
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
         Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),

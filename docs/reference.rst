@@ -12,6 +12,76 @@ Run an ASN lookup for a given ip address. The function returns ``asn`` and
     lookup = asn_lookup('1.1.1.1')
     if last_err() then return end
 
+base64_decode
+-------------
+
+Decode a base64 string with the default alphabet+padding.
+
+.. code-block:: lua
+
+    base64_decode("ww==")
+
+base64_encode
+-------------
+
+Encode a binary array with base64 and the default alphabet+padding.
+
+.. code-block:: lua
+
+    base64_encode("\x00\xff")
+
+base64_custom_decode
+--------------------
+
+Decode a base64 string with custom alphabet+padding.
+
+.. code-block:: lua
+
+    -- base64
+    base64_custom_decode('b2hhaQ==', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', '=')
+    -- base64 no padding
+    base64_custom_decode('b2hhaQ', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', '')
+    -- base64 url safe
+    base64_custom_decode('b2hhaQ==', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', '=')
+
+base64_custom_encode
+--------------------
+
+Encode a binary array with base64 and custom alphabet+padding.
+
+.. code-block:: lua
+
+    -- base64
+    base64_custom_encode('ohai', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', '=')
+    -- base64 no padding
+    base64_custom_encode('ohai', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/', '')
+    -- base64 url safe
+    base64_custom_encode('ohai', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_', '=')
+
+base32_custom_decode
+--------------------
+
+Decode a base32 string with custom alphabet+padding.
+
+.. code-block:: lua
+
+    -- rfc-4648 base32
+    base32_custom_decode('N5UGC2I=', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', '=')
+    -- z-base-32
+    base32_custom_decode('p7wgn4e', 'ybndrfg8ejkmcpqxot1uwisza345h769', '')
+
+base32_custom_encode
+--------------------
+
+Encode a binary array with base32 and custom alphabet+padding.
+
+.. code-block:: lua
+
+    -- rfc-4648 base32
+    x = base32_custom_encode('ohai', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567', '=')
+    -- z-base-32
+    x = base32_custom_encode('ohai', 'ybndrfg8ejkmcpqxot1uwisza345h769', '')
+
 clear_err
 ---------
 

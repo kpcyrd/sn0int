@@ -1,6 +1,7 @@
 use chrootable_https::Client;
 use crate::archive;
 use crate::errors::*;
+use crate::lazy::LazyInit;
 use crate::paths;
 use crate::worker;
 use maxminddb::{self, geoip2};
@@ -8,6 +9,8 @@ use std::fmt;
 use std::fs::{self, File};
 use std::net::IpAddr;
 use std::path::Path;
+use std::io::Read;
+use std::sync::Arc;
 
 pub static GEOIP_CITY_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz";
 pub static GEOIP_ASN_URL: &str = "https://geolite.maxmind.com/download/geoip/database/GeoLite2-ASN.tar.gz";
@@ -62,10 +65,9 @@ pub trait Maxmind: Sized {
         Self::from_buf(buf)
     }
 
-    fn open_into_buf() -> Result<Vec<u8>> {
+    fn open_reader() -> Result<MaxmindReader> {
         let path = Self::cache_path()?;
-        let buf = fs::read(path)?;
-        Ok(buf)
+        MaxmindReader::open_path(path)
     }
 
     fn open_or_download() -> Result<Self> {
@@ -89,6 +91,41 @@ pub trait Maxmind: Sized {
         debug!("Downloaded {} bytes", resp.body.len());
         archive::extract(&mut &resp.body[..], filter, path)?;
         Ok(())
+    }
+}
+
+pub struct MaxmindReader {
+    reader: File,
+}
+
+impl MaxmindReader {
+    fn open_path<P: AsRef<Path>>(path: P) -> Result<MaxmindReader> {
+        let reader = File::open(path)?;
+        Ok(MaxmindReader {
+            reader,
+        })
+    }
+}
+
+impl fmt::Debug for MaxmindReader {
+    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+        write!(w, "MaxmindReader {{ ... }}")
+    }
+}
+
+impl LazyInit<Arc<GeoIP>> for MaxmindReader {
+    fn initialize(mut self) -> Result<Arc<GeoIP>> {
+        let mut buf = Vec::new();
+        self.reader.read_to_end(&mut buf)?;
+        Ok(Arc::new(GeoIP::from_buf(buf)?))
+    }
+}
+
+impl LazyInit<Arc<AsnDB>> for MaxmindReader {
+    fn initialize(mut self) -> Result<Arc<AsnDB>> {
+        let mut buf = Vec::new();
+        self.reader.read_to_end(&mut buf)?;
+        Ok(Arc::new(AsnDB::from_buf(buf)?))
     }
 }
 

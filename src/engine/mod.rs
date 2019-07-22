@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::config::Config;
-use crate::geoip::{GeoIP, AsnDB};
+use crate::geoip::MaxmindReader;
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
 use serde_json;
@@ -16,7 +16,7 @@ use crate::engine::ctx::Script;
 use sn0int_common::ModuleID;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::Resolver;
-use crate::psl::Psl;
+use crate::psl::PslReader;
 use crate::paths;
 use std::cmp::Ordering;
 use std::path::Path;
@@ -37,9 +37,9 @@ pub struct Environment {
     pub proxy: Option<SocketAddr>,
     pub options: HashMap<String, String>,
     pub blobs: Vec<Blob>,
-    pub psl: Psl,
-    pub geoip: GeoIP,
-    pub asn: AsnDB,
+    pub psl: PslReader,
+    pub geoip: MaxmindReader,
+    pub asn: MaxmindReader,
 }
 
 #[derive(Debug)]
