@@ -11,12 +11,7 @@ pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<State>) {
         let dns_name = psl.parse_dns_name(&dns_name)
             .map_err(|err| state.set_error(err))?;
 
-        let domain = dns_name.domain()
-            .ok_or_else(|| format_err!("Failed to get domain from {:?}", dns_name))
-            .map_err(|err| state.set_error(err))?
-            .to_string();
-
-        Ok(domain)
+        Ok(dns_name.root)
     }))
 }
 
@@ -30,7 +25,7 @@ mod tests {
         function run()
             domain = psl_domain_from_dns_name("foo.example.com")
             if domain ~= "example.com" then 
-                return 'unexpected domain'
+                return 'unexpected domain: ' .. domain
             end
         end
         "#).expect("Failed to load script");
@@ -43,7 +38,7 @@ mod tests {
         function run()
             domain = psl_domain_from_dns_name("example.com")
             if domain ~= "example.com" then 
-                return 'unexpected domain'
+                return 'unexpected domain: ' .. domain
             end
         end
         "#).expect("Failed to load script");
@@ -51,14 +46,25 @@ mod tests {
     }
 
     #[test]
-    fn verify_psl_lookup_invalid() {
+    fn verify_psl_lookup_tld() {
         let script = Script::load_unchecked(r#"
         function run()
-            domain = psl_domain_from_dns_name("asdf")
-            if last_err() then
-                clear_err()
-            else
-                return "invalid value didn't cause error"
+            domain = psl_domain_from_dns_name("asdfinvalid")
+            if domain ~= "asdfinvalid" then
+                return 'unexpected domain: ' .. domain
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_psl_lookup_fastly() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            domain = psl_domain_from_dns_name("a.prod.fastly.net")
+            if domain ~= "a.prod.fastly.net" then
+                return 'unexpected domain: ' .. domain
             end
         end
         "#).expect("Failed to load script");

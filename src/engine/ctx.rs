@@ -493,6 +493,9 @@ impl Script {
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
+// ===BEGIN PRIVATE DOMAINS===
+a.prod.fastly.net
+// ===END PRIVATE DOMAINS===
 "#.into());
         let geoip = GeoIP::open_reader()?;
         let asn = AsnDB::open_reader()?;
