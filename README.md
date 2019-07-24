@@ -170,6 +170,7 @@ For everything else please have a look at the [detailed list][1].
   - [psl_domain_from_dns_name](https://sn0int.readthedocs.io/en/latest/reference.html#psl-domain-from-dns-name)
   - [regex_find](https://sn0int.readthedocs.io/en/latest/reference.html#regex-find)
   - [regex_find_all](https://sn0int.readthedocs.io/en/latest/reference.html#regex-find-all)
+  - [set_err](https://sn0int.readthedocs.io/en/latest/reference.html#set-err)
   - [sha1](https://sn0int.readthedocs.io/en/latest/reference.html#sha1)
   - [sha2_256](https://sn0int.readthedocs.io/en/latest/reference.html#sha2-256)
   - [sha2_512](https://sn0int.readthedocs.io/en/latest/reference.html#sha2-512)

@@ -649,6 +649,23 @@ Same as regex_find_, but returns all matches.
     print(m[3][1] == 'ef')
     print(m[3][2] == 'f')
 
+set_err
+-------
+
+Manipulate the global error object. If you want to exit the main ``run``
+function with an error you can simply return a string, but those are difficult
+to propagate through functions. ``set_err`` specifically assigns an error to
+the global error object that are also used by all other rust functions.
+
+.. code-block:: lua
+
+    function foo()
+        set_err("something failed")
+    end
+
+    foo()
+    if last_err() then return end
+
 sha1
 ----
 

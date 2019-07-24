@@ -17,3 +17,9 @@ pub fn last_err(lua: &mut hlua::Lua, state: Arc<State>) {
         }
     }))
 }
+
+pub fn set_err(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("set_err", hlua::function1(move |err: String| {
+        state.set_error(failure::err_msg(err));
+    }))
+}
