@@ -373,6 +373,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::http_mksession(&mut lua, state.clone());
     runtime::http_request(&mut lua, state.clone());
     runtime::http_send(&mut lua, state.clone());
+    runtime::http_fetch_json(&mut lua, state.clone());
     runtime::img_exif(&mut lua, state.clone());
     runtime::img_load(&mut lua, state.clone());
     runtime::img_nudity(&mut lua, state.clone());

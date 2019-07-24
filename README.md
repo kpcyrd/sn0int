@@ -153,6 +153,7 @@ For everything else please have a look at the [detailed list][1].
   - [http_mksession](https://sn0int.readthedocs.io/en/latest/reference.html#http-mksession)
   - [http_request](https://sn0int.readthedocs.io/en/latest/reference.html#http-request)
   - [http_send](https://sn0int.readthedocs.io/en/latest/reference.html#http-send)
+  - [http_fetch_json](https://sn0int.readthedocs.io/en/latest/reference.html#http-fetch-json)
   - [img_load](https://sn0int.readthedocs.io/en/latest/reference.html#img-load)
   - [img_exif](https://sn0int.readthedocs.io/en/latest/reference.html#img-exif)
   - [img_nudity](https://sn0int.readthedocs.io/en/latest/reference.html#img-nudity)

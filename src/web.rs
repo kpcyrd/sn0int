@@ -1,4 +1,4 @@
-pub use chrootable_https::{Client, HttpClient, Resolver};
+pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 
 use crate::blobs::Blob;
 use std::collections::{HashMap, HashSet};
@@ -130,7 +130,7 @@ impl HttpRequest {
         request
     }
 
-    pub fn send(&self, state: &State) -> Result<LuaMap> {
+    pub fn send(&self, state: &State) -> Result<Response> {
         let mut url = self.url.parse::<Uri>()?;
 
         // set query string
@@ -214,6 +214,12 @@ impl HttpRequest {
         let res = state.http().request(req)
             .with_timeout(self.timeout)
             .wait_for_response()?;
+
+        Ok(res)
+    }
+
+    pub fn send_lua(&self, state: &State) -> Result<LuaMap> {
+        let res = self.send(state)?;
 
         // map result to LuaMap
         let mut resp = LuaMap::new();

@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::engine::ctx::State;
 use crate::hlua::{self, AnyLuaValue, AnyHashableLuaValue};
+use crate::json;
 use std::sync::Arc;
 use std::collections::HashMap;
 use crate::web::{RequestOptions, HttpRequest};
@@ -26,15 +27,31 @@ pub fn http_request(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("http_send", hlua::function1(move |request: AnyLuaValue| -> Result<HashMap<AnyHashableLuaValue, AnyLuaValue>> {
-        let req = match HttpRequest::try_from(request)
-                                .context("invalid http request object") {
-            Ok(req) => req,
-            Err(err) => return Err(state.set_error(Error::from(err))),
-        };
+        let req = HttpRequest::try_from(request)
+            .context("invalid http request object")
+            .map_err(|err| state.set_error(err.into()))?;
 
-        req.send(state.as_ref())
+        req.send_lua(state.as_ref())
             .map_err(|err| state.set_error(err))
             .map(|resp| resp.into())
+    }))
+}
+
+pub fn http_fetch_json(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("http_fetch_json", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
+        let req = HttpRequest::try_from(request)
+            .context("invalid http request object")
+            .map_err(|err| state.set_error(err.into()))?;
+
+        let resp = req.send(state.as_ref())
+            .map_err(|err| state.set_error(err))?;
+
+        if resp.status < 200 || resp.status > 299 {
+            return Err(state.set_error(format_err!("http status error: {}", resp.status)));
+        }
+
+        json::decode(&resp.body)
+            .map_err(|err| state.set_error(err))
     }))
 }
 
@@ -145,5 +162,49 @@ mod tests {
         end
         "#).expect("failed to load script");
         script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_ok() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/anything", {})
+            x = http_fetch_json(req)
+            if last_err() then return end
+            print(x)
+            if x['method'] ~= 'GET' then
+                return 'unexpected response'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_404() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/status/404", {})
+            x = http_fetch_json(req)
+        end
+        "#).expect("failed to load script");
+        script.test().err().expect("Script should have failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_invalid_json() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/html", {})
+            x = http_fetch_json(req)
+        end
+        "#).expect("failed to load script");
+        script.test().err().expect("Script should have failed");
     }
 }

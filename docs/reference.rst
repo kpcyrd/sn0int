@@ -375,7 +375,7 @@ This function may fail.
     })
     resp = http_send(req)
     if last_err() then return end
-    if resp["status"] ~= 200 then return "invalid status code" end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
 
 http_send
 ---------
@@ -403,7 +403,26 @@ the following keys:
     })
     resp = http_send(req)
     if last_err() then return end
-    if resp["status"] ~= 200 then return "invalid status code" end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
+
+http_fetch_json
+---------------
+
+This is a shorthand for http_send_, validating the status code and parsing the
+response body as json.
+
+.. code-block:: lua
+
+    -- short form
+    data = http_fetch_json(req)
+    if last_err() then return end
+
+    -- long form
+    resp = http_send(req)
+    if last_err() then return end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
+    data = json_decode(resp['text'])
+    if last_err() then return end
 
 img_load
 --------
