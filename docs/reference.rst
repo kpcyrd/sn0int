@@ -649,6 +649,24 @@ Same as regex_find_, but returns all matches.
     print(m[3][1] == 'ef')
     print(m[3][2] == 'f')
 
+semver_match
+------------
+
+Compare a version to a version requirement. This can be used with
+sn0int_version_ to test for certain features or behavior.
+
+.. code-block:: lua
+
+    semver_match('=0.11.2', sn0int_version())
+    semver_match('>0.11.2', sn0int_version())
+    semver_match('<0.11.2', sn0int_version())
+    semver_match('~0.11.2', sn0int_version())
+    semver_match('^0.11.2', sn0int_version())
+    semver_match('0.11.2', sn0int_version()) -- synonym for ^0.11.2
+    semver_match('<=0.11.2', sn0int_version())
+    semver_match('>=0.11.2', sn0int_version())
+    semver_match('>=0.4.0, <=0.10.0', sn0int_version())
+
 set_err
 -------
 
@@ -720,6 +738,16 @@ only used for debugging.
 .. code-block:: lua
 
     sleep(1)
+
+sn0int_version
+--------------
+
+Get the current sn0int version string. This can be used with semver_match_ to
+test for certain features or behavior.
+
+.. code-block:: lua
+
+    info(sn0int_version())
 
 sock_connect
 ------------
