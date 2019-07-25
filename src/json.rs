@@ -6,8 +6,8 @@ use crate::hlua::AnyLuaValue;
 use serde_json::{self, Deserializer, Value, Number, Map};
 
 
-pub fn decode(x: &str) -> Result<AnyLuaValue> {
-    let v: Value = serde_json::from_str(&x)
+pub fn decode<T: AsRef<[u8]>>(x: T) -> Result<AnyLuaValue> {
+    let v: Value = serde_json::from_slice(x.as_ref())
                         .context("deserialize failed")?;
     let v: LuaJsonValue = v.into();
     Ok(v.into())

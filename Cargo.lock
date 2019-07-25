@@ -2425,13 +2425,23 @@ dependencies = [
 
 [[package]]
 name = "rocket_failure"
-version = "0.1.2"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket_failure_errors 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "rocket_failure_errors"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2784,7 +2794,6 @@ dependencies = [
  "dirs 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hlua-badtouch 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hmac 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "image 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2799,7 +2808,6 @@ dependencies = [
  "maxminddb 0.13.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "md-5 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "nude 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "opener 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pledge 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2839,7 +2847,7 @@ version = "0.7.0"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "rocket_failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket_failure_errors 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -2862,7 +2870,7 @@ dependencies = [
  "reqwest 0.9.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rocket_contrib 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "rocket_failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rocket_failure 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "semver 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.97 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3982,7 +3990,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum rocket 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "42c1e9deb3ef4fa430d307bfccd4231434b707ca1328fae339c43ad1201cc6f7"
 "checksum rocket_codegen 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "79aa1366f9b2eccddc05971e17c5de7bb75a5431eb12c2b5c66545fd348647f4"
 "checksum rocket_contrib 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e0fa5c1392135adc0f96a02ba150ac4c765e27c58dbfd32aa40678e948f6e56f"
-"checksum rocket_failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b4be7ec53a7d81e2fb2bd48febb34aa9d52a8bc518ac4ee7cb68c05d9b32fb95"
+"checksum rocket_failure 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b62e0d82ae96e59ec6af6cf3dbfc6fcb71adcfbb10188909338dfeed1fe3ab50"
+"checksum rocket_failure_errors 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "7b125cdd87ffc0c5e453153bee0224aade4c13e57dc2d2663d077d42bd0060e2"
 "checksum rocket_http 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b1391457ee4e80b40d4b57fa5765c0f2836b20d73bcbee4e3f35d93cf3b80817"
 "checksum rustc-demangle 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)" = "a7f4dccf6f4891ebcc0c39f9b6eb1a83b9bf5d747cb439ec6fba4f3b977038af"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"

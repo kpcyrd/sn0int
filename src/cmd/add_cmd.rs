@@ -107,11 +107,11 @@ impl IntoInsert for AddDomain {
         };
 
         // ensure input is a valid domain
-        let parsed_domain = rl.psl()?.parse_domain(&domain)
+        let dns_name = rl.psl()?.parse_dns_name(&domain)
             .map_err(|e| format_err!("Failed to parse domain: {}", e))?;
 
-        if Some(domain.as_str()) != parsed_domain.root() {
-            bail!("This is not a valid domain, might be a subdomain or tld");
+        if dns_name.fulldomain.is_some() {
+            bail!("Domain has an unexpected subdomain, add as a subdomain instead");
         }
 
         Ok(Insert::Domain(NewDomain {
@@ -136,12 +136,8 @@ impl IntoInsert for AddSubdomain {
         let dns_name = rl.psl()?.parse_dns_name(&subdomain)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
-        let domain = dns_name.domain()
-            .ok_or_else(|| format_err!("Dns Name seems invalid"))?
-            .to_string();
-
         let domain_id = match rl.db().insert_struct(NewDomain {
-            value: domain,
+            value: dns_name.root,
             unscoped: false,
         }, true)? {
             Some((_, domain_id)) => domain_id,

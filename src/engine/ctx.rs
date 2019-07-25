@@ -373,6 +373,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::http_mksession(&mut lua, state.clone());
     runtime::http_request(&mut lua, state.clone());
     runtime::http_send(&mut lua, state.clone());
+    runtime::http_fetch_json(&mut lua, state.clone());
     runtime::img_exif(&mut lua, state.clone());
     runtime::img_load(&mut lua, state.clone());
     runtime::img_nudity(&mut lua, state.clone());
@@ -390,6 +391,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::semver_match(&mut lua, state.clone());
+    runtime::set_err(&mut lua, state.clone());
     runtime::sha1(&mut lua, state.clone());
     runtime::sha2_256(&mut lua, state.clone());
     runtime::sha2_512(&mut lua, state.clone());
@@ -493,6 +495,9 @@ impl Script {
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
+// ===BEGIN PRIVATE DOMAINS===
+a.prod.fastly.net
+// ===END PRIVATE DOMAINS===
 "#.into());
         let geoip = GeoIP::open_reader()?;
         let asn = AsnDB::open_reader()?;

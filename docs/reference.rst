@@ -375,7 +375,7 @@ This function may fail.
     })
     resp = http_send(req)
     if last_err() then return end
-    if resp["status"] ~= 200 then return "invalid status code" end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
 
 http_send
 ---------
@@ -403,7 +403,26 @@ the following keys:
     })
     resp = http_send(req)
     if last_err() then return end
-    if resp["status"] ~= 200 then return "invalid status code" end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
+
+http_fetch_json
+---------------
+
+This is a shorthand for http_send_, validating the status code and parsing the
+response body as json.
+
+.. code-block:: lua
+
+    -- short form
+    data = http_fetch_json(req)
+    if last_err() then return end
+
+    -- long form
+    resp = http_send(req)
+    if last_err() then return end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
+    data = json_decode(resp['text'])
+    if last_err() then return end
 
 img_load
 --------
@@ -630,6 +649,41 @@ Same as regex_find_, but returns all matches.
     print(m[3][1] == 'ef')
     print(m[3][2] == 'f')
 
+semver_match
+------------
+
+Compare a version to a version requirement. This can be used with
+sn0int_version_ to test for certain features or behavior.
+
+.. code-block:: lua
+
+    semver_match('=0.11.2', sn0int_version())
+    semver_match('>0.11.2', sn0int_version())
+    semver_match('<0.11.2', sn0int_version())
+    semver_match('~0.11.2', sn0int_version())
+    semver_match('^0.11.2', sn0int_version())
+    semver_match('0.11.2', sn0int_version()) -- synonym for ^0.11.2
+    semver_match('<=0.11.2', sn0int_version())
+    semver_match('>=0.11.2', sn0int_version())
+    semver_match('>=0.4.0, <=0.10.0', sn0int_version())
+
+set_err
+-------
+
+Manipulate the global error object. If you want to exit the main ``run``
+function with an error you can simply return a string, but those are difficult
+to propagate through functions. ``set_err`` specifically assigns an error to
+the global error object that are also used by all other rust functions.
+
+.. code-block:: lua
+
+    function foo()
+        set_err("something failed")
+    end
+
+    foo()
+    if last_err() then return end
+
 sha1
 ----
 
@@ -684,6 +738,16 @@ only used for debugging.
 .. code-block:: lua
 
     sleep(1)
+
+sn0int_version
+--------------
+
+Get the current sn0int version string. This can be used with semver_match_ to
+test for certain features or behavior.
+
+.. code-block:: lua
+
+    info(sn0int_version())
 
 sock_connect
 ------------
