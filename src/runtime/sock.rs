@@ -237,4 +237,34 @@ mod tests {
         "#).expect("failed to load script");
         script.test().expect("Script failed");
     }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_cert_chain_order() {
+        let script = Script::load_unchecked(r#"
+        function verify(crt)
+            return crt['valid_names'][1] == 'badssl.com' or crt['valid_names'][2] == 'badssl.com'
+        end
+
+        function run()
+            sock = sock_connect('badssl.com', 443, {})
+            if last_err() then return end
+            tls = sock_upgrade_tls(sock, {
+                sni_value='badssl.com',
+            })
+            if last_err() then return end
+
+            crt = x509_parse_pem(tls['cert'])
+            if not verify(crt) then
+                return 'unexpected certificate in tls[cert]'
+            end
+
+            crt = x509_parse_pem(tls['cert_chain'][#tls['cert_chain']])
+            if not verify(crt) then
+                return 'unexpected certificate in tls[cert_chain]'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
 }

@@ -10,9 +10,11 @@ use std::net::TcpStream;
 
 use super::{Socket, Stream, SocketOptions};
 
+
 #[derive(Debug, Serialize)]
 pub struct TlsData {
-// ClientSession::get_peer_certificates
+    cert: Option<String>,
+    cert_chain: Vec<String>,
 }
 
 impl TlsData {
@@ -48,11 +50,7 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
 
     let config = Arc::new(config);
     let session = ClientSession::new(&config, dns_name.as_ref());
-    let stream = setup(stream, session)?;
-
-    let tls = TlsData { }; // TODO
-
-    Ok((Socket::new(stream), tls))
+    setup(stream, session)
 }
 
 fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
@@ -66,7 +64,7 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
     }
 }
 
-fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<Stream> {
+fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, TlsData)> {
     if session.is_handshaking() {
         session.complete_io(&mut stream)?;
     }
@@ -75,6 +73,27 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<Stream> {
         session.complete_io(&mut stream)?;
     }
 
+    let mut tls = TlsData {
+        cert: None,
+        cert_chain: Vec::new(),
+    };
+
+    if let Some(certs) = session.get_peer_certificates() {
+        tls.cert_chain = certs.into_iter()
+            .rev()
+            .map(|c| {
+                pem::encode(&pem::Pem {
+                    tag: String::from("CERTIFICATE"),
+                    contents: c.0,
+                })
+            })
+            .collect();
+    }
+
+    tls.cert = tls.cert_chain.last()
+        .map(|x| x.to_owned());
+
     let stream = rustls::StreamOwned::new(session, stream);
-    Ok(Stream::Tls(stream))
+    let stream = Stream::Tls(stream);
+    Ok((Socket::new(stream), tls))
 }
