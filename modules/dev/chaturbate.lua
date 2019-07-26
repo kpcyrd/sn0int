@@ -53,6 +53,7 @@ function run(arg)
 
     db_update('account', arg, {
         last_seen=last_seen,
+        url='https://chaturbate.com/' .. arg['username'] .. '/',
     })
 
     local links = html_select_list(r['text'], 'a[href^="/external_link/"]')

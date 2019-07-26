@@ -10,7 +10,7 @@ use crate::models::{Insert, Update};
 use crate::psl::{Psl, PslReader};
 use crate::lazy::Lazy;
 use crate::runtime;
-use crate::sockets::Socket;
+use crate::sockets::{Socket, SocketOptions, TlsData};
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
 use chrootable_https::{self, Resolver};
@@ -126,9 +126,11 @@ pub trait State {
 
     fn asn(&self) -> Result<Arc<AsnDB>>;
 
-    fn sock_connect(&self, host: &str, port: u16) -> Result<String>;
+    fn sock_connect(&self, host: &str, port: u16, options: &SocketOptions) -> Result<String>;
 
     fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>>;
+
+    fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData>;
 
     fn http(&self) -> &chrootable_https::Client<Resolver>;
 
@@ -238,13 +240,13 @@ impl State for LuaState {
         Ok(asn.clone())
     }
 
-    fn sock_connect(&self, host: &str, port: u16) -> Result<String> {
+    fn sock_connect(&self, host: &str, port: u16, options: &SocketOptions) -> Result<String> {
         let mut mtx = self.socket_sessions.lock().unwrap();
         let id = self.random_id();
 
         let sock = match &self.proxy {
-            Some(proxy) => Socket::connect_socks5(proxy, host, port)?,
-            _ => Socket::connect(&self.dns_config, host, port)?,
+            Some(proxy) => Socket::connect_socks5(proxy, host, port, options)?,
+            _ => Socket::connect(&self.dns_config, host, port, options)?,
         };
 
         mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
@@ -256,6 +258,20 @@ impl State for LuaState {
         let mtx = self.socket_sessions.lock().unwrap();
         let sock = mtx.get(id).expect("invalid session reference"); // TODO
         sock.clone()
+    }
+
+    fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData> {
+        let mut mtx = self.socket_sessions.lock().unwrap();
+        let sock = mtx.remove(id).expect("invalid session reference"); // TODO
+
+        let sock = Arc::try_unwrap(sock).unwrap();
+        let sock = sock.into_inner().unwrap();
+
+        let (sock, tls) = sock.upgrade_to_tls(options)?;
+
+        mtx.insert(id.to_string(), Arc::new(Mutex::new(sock)));
+
+        Ok(tls)
     }
 
     fn http(&self) -> &chrootable_https::Client<Resolver> {
@@ -400,6 +416,7 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a
     runtime::sleep(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
+    runtime::sock_upgrade_tls(&mut lua, state.clone());
     runtime::sock_send(&mut lua, state.clone());
     runtime::sock_recv(&mut lua, state.clone());
     runtime::sock_sendline(&mut lua, state.clone());
