@@ -40,11 +40,12 @@ pub struct SocketOptions {
     #[serde(default)]
     pub tls: bool,
     sni_value: Option<String>,
+    #[serde(default)]
+    disable_tls_verify: bool,
 
     // TODO: enable_sni (default to true)
     // TODO: cacert
     // TODO: timeout
-    // TODO: tls_verify (default to true)
 }
 
 impl SocketOptions {

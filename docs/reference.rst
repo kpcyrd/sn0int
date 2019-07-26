@@ -760,6 +760,10 @@ The following options are available:
   Set to true to enable tls (certificates are validated)
 ``sni_value``
   Instead of the host argument, use a custom string for the sni extension.
+``disable_tls_verify``
+  **Danger**: disable tls verification. This disables all security on the
+  connection. Note that sn0int is still rather strict, you're going to run into
+  issues if you need support for insecure ciphers.
 
 .. code-block:: lua
 

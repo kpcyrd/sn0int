@@ -267,4 +267,18 @@ mod tests {
         "#).expect("failed to load script");
         script.test().expect("Script failed");
     }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_connect_insecure() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('expired.badssl.com', 443, {
+                tls=true,
+                disable_tls_verify=true,
+            })
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
 }

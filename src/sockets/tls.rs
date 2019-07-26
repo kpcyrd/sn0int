@@ -5,6 +5,7 @@ use crate::json::LuaJsonValue;
 use rustls::{self, ClientConfig, Session, ClientSession, RootCertStore};
 
 use std::str;
+use std::result;
 use std::sync::Arc;
 use std::net::TcpStream;
 
@@ -42,6 +43,12 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
     let mut config = ClientConfig::new();
     config.root_store = anchors;
 
+    if options.disable_tls_verify {
+        info!("tls verification has been disabled");
+        config.dangerous()
+            .set_certificate_verifier(Arc::new(NoCertificateVerification {}));
+    }
+
     let dns_name = if let Some(v) = &options.sni_value {
         get_dns_name(&mut config, &v)
     } else {
@@ -55,8 +62,10 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
 
 fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
     if let Ok(name) = webpki::DNSNameRef::try_from_ascii_str(&host) {
+        debug!("setting sni value to: {:?}", host);
         name.to_owned()
     } else {
+        debug!("sni extension has been disabled");
         config.enable_sni = false;
         webpki::DNSNameRef::try_from_ascii_str("invalid.com")
             .unwrap()
@@ -65,6 +74,7 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
 }
 
 fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, TlsData)> {
+    info!("starting tls handshake");
     if session.is_handshaking() {
         session.complete_io(&mut stream)?;
     }
@@ -93,7 +103,20 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, T
     tls.cert = tls.cert_chain.last()
         .map(|x| x.to_owned());
 
+    info!("successfully established tls connection");
     let stream = rustls::StreamOwned::new(session, stream);
     let stream = Stream::Tls(stream);
     Ok((Socket::new(stream), tls))
+}
+
+pub struct NoCertificateVerification {}
+
+impl rustls::ServerCertVerifier for NoCertificateVerification {
+    fn verify_server_cert(&self,
+        _roots: &rustls::RootCertStore,
+        _presented_certs: &[rustls::Certificate],
+        _dns_name: webpki::DNSNameRef<'_>,
+        _ocsp: &[u8]) -> result::Result<rustls::ServerCertVerified, rustls::TLSError> {
+        Ok(rustls::ServerCertVerified::assertion())
+    }
 }
