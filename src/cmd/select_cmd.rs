@@ -96,6 +96,7 @@ impl Cmd for Args {
             Target::Breaches(filter) => printer.select::<Breach>(&filter),
             Target::Images(filter) => printer.select::<Image>(&filter),
             Target::Ports(filter) => printer.select::<Port>(&filter),
+            Target::Netblocks(filter) => printer.select::<Netblock>(&filter),
         }
     }
 }

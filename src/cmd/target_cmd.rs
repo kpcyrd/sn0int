@@ -43,6 +43,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             Source::Breaches => select::<Breach>(rl, None)?,
             Source::Images => select::<Image>(rl, None)?,
             Source::Ports => select::<Port>(rl, None)?,
+            Source::Netblocks => select::<Netblock>(rl, None)?,
             Source::KeyRing(namespace) => {
                 for key in rl.keyring().list_for(&namespace) {
                     println!("{}:{}", key.namespace, key.name);
@@ -76,6 +77,7 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
         Source::Breaches => db.filter::<Breach>(&filter)?.len(),
         Source::Images => db.filter::<Image>(&filter)?.len(),
         Source::Ports => db.filter::<Port>(&filter)?.len(),
+        Source::Netblocks => db.filter::<Netblock>(&filter)?.len(),
         Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
     };
     Ok(num)

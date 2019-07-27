@@ -65,6 +65,9 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
         Family::Port => {
             Insert::Port(try_into_new::<InsertPort>(object, state)?)
         },
+        Family::Netblock => {
+            Insert::Netblock(try_into_new::<InsertNetblock>(object, state)?)
+        },
     };
     Ok(obj)
 }
@@ -162,6 +165,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
                 .map(|(id, v, u)| (id, v, Update::Image(u))),
             Family::Port => gen_changeset::<Port, PortUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Port(u))),
+            Family::Netblock => gen_changeset::<Netblock, NetblockUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::Netblock(u))),
         };
 
         let (id, value, update) = update

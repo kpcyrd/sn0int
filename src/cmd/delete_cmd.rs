@@ -32,6 +32,7 @@ impl Cmd for Args {
             Target::Breaches(filter) => delete::<Breach>(rl, &filter),
             Target::Images(filter) => delete::<Image>(rl, &filter),
             Target::Ports(filter) => delete::<Port>(rl, &filter),
+            Target::Netblocks(filter) => delete::<Netblock>(rl, &filter),
         }?;
         term::info(&format!("Deleted {} rows", rows));
         Ok(())

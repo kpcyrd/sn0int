@@ -227,6 +227,30 @@ The status of a port on an ip address.
 ``version``
     The version of the service running on this port.
 
+Netblocks
+---------
+
+A netblock is a network address range that has been allocated to an individual,
+organization or company. Those are commonly found when running whois lookups on
+an ip address.
+
+Consider the following example: Running a whois lookup on ``140.82.118.4`` (one
+of the addresses currently in use by github) returns that this address belongs
+to the netrange ``140.82.112.0 - 140.82.127.255``, so the netblock in this case
+is ``140.82.112.0/20``.
+
+``family``
+    This is either ``4`` or ``6`` and populated automatically.
+``value``
+    This is the network range in CIDR notation.
+``asn``
+    The number of the autonomous system this network belongs to.
+``as_org``
+    The organization of the autonomous system this network belongs to.
+``description``
+    This field isn't strictly defined and meant to be used as a human
+    meaningful name if available.
+
 Relations
 ---------
 

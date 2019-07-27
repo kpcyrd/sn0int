@@ -42,6 +42,9 @@ pub enum Target {
     /// On ports
     #[structopt(name="ports")]
     Ports(Filter),
+    /// On ipnets
+    #[structopt(name="netblocks")]
+    Netblocks(Filter),
 }
 
 #[derive(Debug, StructOpt)]

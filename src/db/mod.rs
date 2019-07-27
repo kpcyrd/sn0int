@@ -49,6 +49,7 @@ pub enum Family {
     BreachEmail,
     Image,
     Port,
+    Netblock,
 }
 
 impl FromStr for Family {
@@ -71,6 +72,7 @@ impl FromStr for Family {
             "breach-email" => Family::BreachEmail,
             "image" => Family::Image,
             "port" => Family::Port,
+            "netblock" => Family::Netblock,
             _ => bail!("Unknown object family"),
         })
     }
@@ -165,6 +167,7 @@ impl Database {
             Insert::BreachEmail(object) => self.insert_breach_email_struct(object),
             Insert::Image(object) => self.insert_struct(object, scoped),
             Insert::Port(object) => self.insert_struct(object, scoped),
+            Insert::Netblock(object) => self.insert_struct(object, scoped),
         }
     }
 
@@ -253,6 +256,7 @@ impl Database {
             Update::BreachEmail(update) => self.update_breach_email(update),
             Update::Image(update) => self.update_image(update),
             Update::Port(update) => self.update_port(update),
+            Update::Netblock(update) => self.update_netblock(update),
         }
     }
 
@@ -352,6 +356,14 @@ impl Database {
         Ok(port_update.id)
     }
 
+    pub fn update_netblock(&self, netblock_update: &NetblockUpdate) -> Result<i32> {
+        use crate::schema::netblocks::columns::*;
+        diesel::update(netblocks::table.filter(id.eq(netblock_update.id)))
+            .set(netblock_update)
+            .execute(&self.db)?;
+        Ok(netblock_update.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -376,6 +388,7 @@ impl Database {
             Family::BreachEmail => bail!("Unsupported operation"),
             Family::Image => self.get_opt_typed::<Image>(&value),
             Family::Port => self.get_opt_typed::<Port>(&value),
+            Family::Netblock => self.get_opt_typed::<Netblock>(&value),
         }
     }
 
