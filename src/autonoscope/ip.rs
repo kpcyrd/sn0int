@@ -49,6 +49,18 @@ impl AutoRule<NewPort> for IpRule {
     }
 }
 
+impl AutoRule<NewNetblock> for IpRule {
+    fn matches(&self, netblock: &NewNetblock) -> Result<bool> {
+        let range = netblock.value.parse::<ipnetwork::IpNetwork>()?;
+
+        if self.network.prefix() <= range.prefix() {
+            Ok(self.network.contains(range.ip()))
+        } else {
+            Ok(false)
+        }
+    }
+}
+
 impl AutoRule<str> for IpRule {
     fn matches(&self, ipaddr: &str) -> Result<bool> {
         let ipaddr = ipaddr.parse::<net::IpAddr>()?;
@@ -133,5 +145,70 @@ mod tests {
         let rule = IpRule::try_from("2001:db8::/32").unwrap();
         assert!(!rule.matches("192.0.2.1").unwrap());
         assert_eq!(rule.precision(), 32);
+    }
+
+    #[test]
+    fn test_ip_rule_netblock_inner() {
+        let rule = IpRule::try_from("192.0.2.0/24").unwrap();
+        assert!(rule.matches(&NewNetblock {
+            family: String::from("4"),
+            value: String::from("192.0.2.128/25"),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }).unwrap());
+    }
+
+    #[test]
+    fn test_ip_rule_netblock_equal() {
+        let rule = IpRule::try_from("192.0.2.0/24").unwrap();
+        assert!(rule.matches(&NewNetblock {
+            family: String::from("4"),
+            value: String::from("192.0.2.0/24"),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }).unwrap());
+    }
+
+    #[test]
+    fn test_ip_rule_netblock_outer1() {
+        let rule = IpRule::try_from("192.0.2.0/24").unwrap();
+        assert!(!rule.matches(&NewNetblock {
+            family: String::from("4"),
+            value: String::from("192.0.2.0/23"),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }).unwrap());
+    }
+
+    #[test]
+    fn test_ip_rule_netblock_outer2() {
+        let rule = IpRule::try_from("192.0.2.0/24").unwrap();
+        assert!(!rule.matches(&NewNetblock {
+            family: String::from("4"),
+            value: String::from("192.0.0.0/22"),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }).unwrap());
+    }
+
+    #[test]
+    fn test_ip_rule_netblock_no_overlap() {
+        let rule = IpRule::try_from("192.0.2.0/24").unwrap();
+        assert!(!rule.matches(&NewNetblock {
+            family: String::from("4"),
+            value: String::from("192.0.3.0/24"),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }).unwrap());
     }
 }

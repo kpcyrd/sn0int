@@ -168,6 +168,7 @@ impl RuleSet {
             // Insert::Email(email) => unimplemented!(),
             // Insert::Account(account) => unimplemented!(),
             Insert::Port(port) => Self::matches_any(&self.ips, port)?,
+            Insert::Netblock(netblock) => Self::matches_any(&self.ips, netblock)?,
             _ => None,
         };
         Ok(scoped.unwrap_or(true))

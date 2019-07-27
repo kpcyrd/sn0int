@@ -158,37 +158,6 @@ impl IntoInsert for AddSubdomain {
 }
 
 #[derive(Debug, StructOpt)]
-pub struct AddNetblock {
-    ipnet: Option<ipnetwork::IpNetwork>,
-}
-
-impl IntoInsert for AddNetblock {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
-        let ipnet = match self.ipnet {
-            Some(ipnet) => ipnet,
-            _ => {
-                let ipnet = utils::question("IP network")?;
-                ipnet.parse()?
-            },
-        };
-
-        let family = match ipnet {
-            ipnetwork::IpNetwork::V4(_) => "4",
-            ipnetwork::IpNetwork::V6(_) => "6",
-        };
-
-        Ok(Insert::Netblock(NewNetblock {
-            family: family.to_string(),
-            value: ipnet.to_string(),
-            asn: None,
-            as_org: None,
-            description: None,
-            unscoped: false,
-        }))
-    }
-}
-
-#[derive(Debug, StructOpt)]
 pub struct AddIpAddr {
     ipaddr: Option<net::IpAddr>,
 }
@@ -496,5 +465,36 @@ impl IntoInsert for AddImage {
         }
 
         Ok(())
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddNetblock {
+    ipnet: Option<ipnetwork::IpNetwork>,
+}
+
+impl IntoInsert for AddNetblock {
+    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+        let ipnet = match self.ipnet {
+            Some(ipnet) => ipnet,
+            _ => {
+                let ipnet = utils::question("IP network")?;
+                ipnet.parse()?
+            },
+        };
+
+        let family = match ipnet {
+            ipnetwork::IpNetwork::V4(_) => "4",
+            ipnetwork::IpNetwork::V6(_) => "6",
+        };
+
+        Ok(Insert::Netblock(NewNetblock {
+            family: family.to_string(),
+            value: ipnet.to_string(),
+            asn: None,
+            as_org: None,
+            description: None,
+            unscoped: false,
+        }))
     }
 }
