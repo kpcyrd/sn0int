@@ -754,9 +754,46 @@ sock_connect
 
 Create a tcp connection.
 
+The following options are available:
+
+``tls``
+  Set to true to enable tls (certificates are validated)
+``sni_value``
+  Instead of the host argument, use a custom string for the sni extension.
+``disable_tls_verify``
+  **Danger**: disable tls verification. This disables all security on the
+  connection. Note that sn0int is still rather strict, you're going to run into
+  issues if you need support for insecure ciphers.
+
 .. code-block:: lua
 
-    sock = sock_connect("127.0.0.1", 1337)
+    sock = sock_connect("127.0.0.1", 1337, {
+        tls=true,
+    })
+
+sock_upgrade_tls
+----------------
+
+Take an existing tcp connection and start a tls handshake. The options are the
+same as sock_connect_ but the ``tls`` value is always assumed to be true.
+
+The sni value needs to be set specifically, otherwise the sni extension is
+disabled.
+
+Using this function specifically returns some extra information that is
+discarded when using sock_connect_ directly with ``tls=true``.
+
+.. code-block:: lua
+
+    sock = sock_connect("127.0.0.1", 1337, {})
+    if last_err() then return end
+
+    tls = sock_upgrade_tls(sock, {
+        sni_value='example.com',
+    })
+    if last_err() then return end
+
+    info(tls)
 
 sock_send
 ---------

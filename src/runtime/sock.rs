@@ -3,13 +3,31 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
+use crate::sockets::SocketOptions;
 use std::sync::Arc;
 
 
 pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<State>) {
-    lua.set("sock_connect", hlua::function3(move |host: String, port: u16, _settings: AnyLuaValue| -> Result<String> {
-        state.sock_connect(&host, port)
+    lua.set("sock_connect", hlua::function3(move |host: String, port: u16, options: AnyLuaValue| -> Result<String> {
+        let options = SocketOptions::try_from(options)
+            .context("invalid socket options")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        state.sock_connect(&host, port, &options)
             .map_err(|err| state.set_error(err))
+    }))
+}
+
+pub fn sock_upgrade_tls(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("sock_upgrade_tls", hlua::function2(move |sock: String, options: AnyLuaValue| -> Result<AnyLuaValue> {
+        let options = SocketOptions::try_from(options)
+            .context("invalid socket options")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        let tls = state.sock_upgrade_tls(&sock, &options)
+            .map_err(|err| state.set_error(err))?;
+
+        tls.to_lua()
     }))
 }
 
@@ -152,4 +170,115 @@ pub fn sock_newline(lua: &mut hlua::Lua, state: Arc<State>) {
 
         sock.newline(newline);
     }))
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::engine::ctx::Script;
+
+    #[test]
+    #[ignore]
+    fn verify_tcp_connect() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('badssl.com', 443, {})
+            if last_err() then return end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_connect() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('badssl.com', 443, {
+                tls=true,
+            })
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_upgrade() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('badssl.com', 443, {})
+            if last_err() then return end
+            sock_upgrade_tls(sock, {
+                sni_value='badssl.com',
+            })
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_upgrade_expired() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('expired.badssl.com', 443, {})
+            if last_err() then return end
+            sock_upgrade_tls(sock, {
+                sni_value='expired.badssl.com',
+            })
+            if last_err() then
+                -- this is supposed to fail
+                clear_err()
+            else
+                return 'expired cert did not cause an error'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_cert_chain_order() {
+        let script = Script::load_unchecked(r#"
+        function verify(crt)
+            return crt['valid_names'][1] == 'badssl.com' or crt['valid_names'][2] == 'badssl.com'
+        end
+
+        function run()
+            sock = sock_connect('badssl.com', 443, {})
+            if last_err() then return end
+            tls = sock_upgrade_tls(sock, {
+                sni_value='badssl.com',
+            })
+            if last_err() then return end
+
+            crt = x509_parse_pem(tls['cert'])
+            if not verify(crt) then
+                return 'unexpected certificate in tls[cert]'
+            end
+
+            crt = x509_parse_pem(tls['cert_chain'][#tls['cert_chain']])
+            if not verify(crt) then
+                return 'unexpected certificate in tls[cert_chain]'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_tls_connect_insecure() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            sock = sock_connect('expired.badssl.com', 443, {
+                tls=true,
+                disable_tls_verify=true,
+            })
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
 }
