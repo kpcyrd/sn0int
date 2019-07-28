@@ -221,7 +221,6 @@ impl Module {
             .left_join(releases::table)
             .group_by(modules::id)
             //.filter(q.matches(modules::search_vector))
-            .filter(modules::source.is_not_null())
             .order((
                 modules::featured.desc(),
                 diesel::dsl::sql::<BigInt>("sum").desc(),
@@ -240,12 +239,16 @@ impl Module {
                 featured,
                 source,
             };
-            if let Some(source) = &module.source {
-                if let Some(cat) = categories.get_mut(source) {
-                    cat.push(module);
-                } else {
-                    categories.insert(source.clone(), vec![module]);
-                }
+
+            let source = match &module.source {
+                Some(source) => source.as_str(),
+                _ => "none",
+            };
+
+            if let Some(cat) = categories.get_mut(source) {
+                cat.push(module);
+            } else {
+                categories.insert(source.to_string(), vec![module]);
             }
         }
 
