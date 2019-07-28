@@ -9,6 +9,7 @@ use crate::engine::Module;
 use crate::registry;
 use crate::shell::Readline;
 use crate::update::AutoUpdater;
+use std::fmt::Write;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::term;
@@ -47,6 +48,9 @@ pub struct List {
     /// Only show modules with a specific input source
     #[structopt(long="source")]
     pub source: Option<String>,
+    /// List outdated modules
+    #[structopt(long="outdated")]
+    pub outdated: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -90,6 +94,8 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
 
     match args.subcommand {
         SubCommand::List(list) => {
+            let autoupdate = AutoUpdater::load()?;
+
             for module in rl.engine().list() {
                 if let Some(source) = &list.source {
                     if !module.source_equals(&source) {
@@ -97,8 +103,17 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
                     }
                 }
 
-                println!("{} ({})", module.canonical().green(),
-                                    module.version().yellow());
+                let canonical = module.canonical();
+
+                let mut out = String::new();
+                write!(&mut out, "{} ({})", canonical.green(),
+                                            module.version().yellow())?;
+                if autoupdate.is_outdated(&canonical) {
+                    write!(&mut out, " {}", "[outdated]".red())?;
+                } else if list.outdated {
+                    continue;
+                }
+                println!("{}", out);
                 println!("\t{}", module.description());
             }
         },
@@ -124,26 +139,24 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         SubCommand::Update(_) => {
             let client = Client::new(&config)?;
 
-            let mut success = true;
+            let mut autoupdate = AutoUpdater::load()?;
 
             for module in rl.engine().list() {
+                let canonical = module.canonical();
+
                 if module.is_private() {
-                    debug!("{} is a private module, skipping", module.canonical());
+                    debug!("{} is a private module, skipping", canonical);
                     continue;
                 }
 
                 if let Err(err) = update(&client, &config, &module) {
-                    term::error(&format!("Failed to update {}: {}", module.canonical(), err));
-                    success = false;
+                    term::error(&format!("Failed to update {}: {}", canonical, err));
+                } else {
+                    autoupdate.updated(&canonical);
                 }
             }
 
-            // TODO: keep a list of outdated packages and remove them after they've been updated
-            if success {
-                let mut autoupdate = AutoUpdater::load()?;
-                autoupdate.all_updated();
-                autoupdate.save()?;
-            }
+            autoupdate.save()?;
 
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
