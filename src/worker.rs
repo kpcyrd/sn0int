@@ -44,8 +44,8 @@ pub enum Event2 {
 
 #[derive(Debug)]
 pub struct MultiEvent {
-    name: String,
-    event: Event2,
+    pub name: String,
+    pub event: Event2,
 }
 
 impl MultiEvent {
@@ -64,6 +64,7 @@ pub struct EventSender {
 }
 
 impl EventSender {
+    #[inline]
     pub fn new(name: String, tx: channel::Sender<MultiEvent>) -> EventSender {
         EventSender {
             name,
@@ -71,6 +72,12 @@ impl EventSender {
         }
     }
 
+    #[inline]
+    pub fn log(&self, log: LogEvent) {
+        self.send(Event2::Log(log));
+    }
+
+    #[inline]
     pub fn send(&self, event: Event2) {
         self.tx.send(MultiEvent::new(self.name.clone(), event)).unwrap();
     }
@@ -93,6 +100,7 @@ pub enum ExitEvent {
 pub enum LogEvent {
     Info(String),
     Debug(String),
+    Success(String),
     Error(String),
     Warn(String),
     WarnOnce(String),
@@ -104,6 +112,7 @@ impl LogEvent {
         match self {
             LogEvent::Info(info) => spinner.log(&info),
             LogEvent::Debug(debug) => spinner.debug(&debug),
+            LogEvent::Success(success) => spinner.success(&success),
             LogEvent::Error(error) => spinner.error(&error),
             LogEvent::Warn(warn) => spinner.warn(&warn),
             LogEvent::WarnOnce(warn) => spinner.warn_once(&warn),
@@ -398,4 +407,92 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
     }
 
     result
+}
+
+pub trait Task {
+    fn initial_label(name: &str) -> String;
+
+    fn name(&self) -> String;
+
+    fn run(self, tx: &EventSender) -> Result<()>;
+}
+
+pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) -> Result<()>
+    where
+        F: FnMut(String),
+        T: 'static + Send
+{
+    // This function hangs if args is empty, so return early if that's the case
+    if tasks.is_empty() {
+        return Ok(());
+    }
+
+    let mut expected = 0;
+    let mut stack = StackedSpinners::new();
+
+    let (tx, rx) = channel::bounded(1);
+    let pool = ThreadPool::new(threads);
+
+    for task in tasks {
+        let tx = tx.clone();
+        pool.execute(move || {
+            let name = task.name();
+            let tx = EventSender::new(name, tx);
+
+            tx.send(Event2::Start);
+
+            let exit = match task.run(&tx) {
+                Ok(_) => ExitEvent::Ok,
+                Err(err) => ExitEvent::Err(err.to_string()),
+            };
+
+            tx.send(Event2::Exit(exit));
+        });
+        expected += 1;
+    }
+
+    let timeout = Duration::from_millis(100);
+    loop {
+        select! {
+            recv(rx) -> msg => match msg.ok() {
+                Some(event) => {
+                    let (name, event) = (event.name, event.event);
+
+                    match event {
+                        Event2::Start => {
+                            let label = T::initial_label(&name);
+                            stack.add(name, label);
+                        },
+                        Event2::Log(log) => log.apply(&mut stack.prefixed(&name)),
+                        Event2::Database(_) => (),
+                        Event2::Blob(_) => (),
+                        Event2::Exit(event) => {
+                            debug!("Received exit: {:?} -> {:?}", name, event);
+                            stack.remove(&name);
+
+                            match event {
+                                ExitEvent::Ok => done_fn(name),
+                                ExitEvent::Err(err) => {
+                                    LogEvent::Error(err).apply(&mut stack.prefixed(&name));
+                                },
+                                ExitEvent::SetupFailed(_) => (),
+                            }
+
+                            // if every task reported back, exit
+                            expected -= 1;
+                            info!("spawn_all is expecting {} more results", expected);
+                            if expected == 0 {
+                                break;
+                            }
+                        },
+                    }
+                },
+                None => break, // channel closed
+            },
+            default(timeout) => (),
+        }
+        stack.tick();
+    }
+
+    Ok(())
 }

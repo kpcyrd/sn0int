@@ -1,19 +1,14 @@
 use crate::errors::*;
 
 use crate::args;
-use crate::args::Install;
-use crate::api::Client;
-use crate::config::Config;
-use colored::Colorize;
-use crate::engine::Module;
-use crate::registry;
+use crate::registry::{self, UpdateTask};
 use crate::shell::Readline;
 use crate::update::AutoUpdater;
+use crate::worker;
+use colored::Colorize;
 use std::fmt::Write;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
-use crate::term;
-use crate::worker;
 
 
 #[derive(Debug, StructOpt)]
@@ -59,33 +54,6 @@ pub struct Reload {
 
 #[derive(Debug, StructOpt)]
 pub struct Update {
-}
-
-fn update(client: &Client, config: &Config, module: &Module) -> Result<()> {
-    let name = module.canonical();
-    let installed = module.version();
-
-    let label = format!("Searching for updates {}", name);
-    let infos = worker::spawn_fn(&label, || {
-        client.query_module(&module.id())
-    }, true)?;
-    debug!("Latest version: {:?}", infos);
-
-    let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
-
-    if installed != latest {
-        let label = format!("Updating {}: {:?} -> {:?}", &name, installed, latest);
-        worker::spawn_fn(&label, || {
-            registry::run_install(&Install {
-                module: module.id(),
-                version: None,
-            }, &config)
-        }, true)?;
-
-        term::success(&format!("Updated {}: {:?} -> {:?}", &name, installed, latest));
-    }
-
-    Ok(())
 }
 
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
@@ -137,24 +105,25 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             }
         },
         SubCommand::Update(_) => {
-            let client = Client::new(&config)?;
-
             let mut autoupdate = AutoUpdater::load()?;
 
-            for module in rl.engine().list() {
-                let canonical = module.canonical();
+            let modules = rl.engine().list()
+                .into_iter()
+                .filter_map(|module| {
+                    let canonical = module.canonical();
 
-                if module.is_private() {
-                    debug!("{} is a private module, skipping", canonical);
-                    continue;
-                }
+                    if module.is_private() {
+                        debug!("{} is a private module, skipping", canonical);
+                        return None;
+                    }
 
-                if let Err(err) = update(&client, &config, &module) {
-                    term::error(&format!("Failed to update {}: {}", canonical, err));
-                } else {
-                    autoupdate.updated(&canonical);
-                }
-            }
+                    Some(UpdateTask::new(module.clone(), config.clone()))
+                })
+                .collect::<Vec<_>>();
+
+            worker::spawn_multi(modules, |name| {
+                autoupdate.updated(&name);
+            }, 3)?;
 
             autoupdate.save()?;
 
