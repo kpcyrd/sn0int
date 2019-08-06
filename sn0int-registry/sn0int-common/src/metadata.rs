@@ -3,7 +3,7 @@ use crate::errors::*;
 use std::str::FromStr;
 
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum EntryType {
     Description,
     Version,

@@ -13,4 +13,4 @@ serde_derive = "1.0"
 #rocket_failure_errors = { path = "../../../rocket_failure/rocket_failure_errors" }
 rocket_failure_errors = "0.2"
 failure = "0.1"
-nom = "4.0"
+nom = "5.0"

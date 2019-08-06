@@ -1,38 +1,40 @@
 use crate::errors::*;
 use nom;
-use nom::types::CompleteStr;
 use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
 use std::fmt;
 use std::result;
 use std::str::FromStr;
 
 
+#[inline(always)]
 fn valid_char(c: char) -> bool {
-    nom::is_alphanumeric(c as u8) || c == '-'
+    nom::character::is_alphanumeric(c as u8) || c == '-'
 }
 
 pub fn valid_name(name: &str) -> Result<()> {
-    if token(CompleteStr(name)).is_ok() {
+    if token(name).is_ok() {
         Ok(())
     } else {
         bail!("String contains invalid character")
     }
 }
 
-named!(module<CompleteStr, ModuleID>, do_parse!(
-    author: token   >>
-    tag!("/")       >>
-    name: token     >>
-    eof!()          >>
-    (
-        ModuleID {
-            author: author.to_string(),
-            name: name.to_string(),
-        }
-    )
-));
+fn module(s: &str) -> nom::IResult<&str, ModuleID> {
+    let (input, (author, _, name)) = nom::sequence::tuple((
+        token,
+        nom::bytes::complete::tag("/"),
+        token,
+    ))(s)?;
+    Ok((input, ModuleID {
+        author: author.to_string(),
+        name: name.to_string(),
+    }))
+}
 
-named!(token<CompleteStr, CompleteStr>, take_while1!(valid_char));
+#[inline]
+fn token(s: &str) -> nom::IResult<&str, &str> {
+    nom::bytes::complete::take_while1(valid_char)(s)
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct ModuleID {
@@ -50,8 +52,11 @@ impl FromStr for ModuleID {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<ModuleID> {
-        let (_, module) = module(CompleteStr(s))
+        let (trailing, module) = module(s)
             .map_err(|err| format_err!("Failed to parse module id: {:?}", err))?;
+        if !trailing.is_empty() {
+            bail!("Trailing data in module id");
+        }
         Ok(module)
     }
 }

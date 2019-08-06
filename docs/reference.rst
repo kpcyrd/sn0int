@@ -144,7 +144,7 @@ ttl.
 .. code-block:: lua
 
     -- this link is valid for 2min
-    domain_id = db_add('network-device', {
+    domain_id = db_add_ttl('network-device', {
         network_id=1,
         device_id=13,
     }, 120)
