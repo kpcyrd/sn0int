@@ -26,10 +26,10 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
         Family::Subdomain => {
             Insert::Subdomain(try_into_new::<InsertSubdomain>(object, state)?)
         },
-        Family::IpAddr => {
+        Family::Ipaddr => {
             Insert::IpAddr(try_into_new::<InsertIpAddr>(object, state)?)
         },
-        Family::SubdomainIpAddr => {
+        Family::SubdomainIpaddr => {
             Insert::SubdomainIpAddr(try_into_new::<InsertSubdomainIpAddr>(object, state)?)
         },
         Family::Url => {
@@ -38,7 +38,7 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
         Family::Email => {
             Insert::Email(try_into_new::<InsertEmail>(object, state)?)
         },
-        Family::PhoneNumber => {
+        Family::Phonenumber => {
             Insert::PhoneNumber(try_into_new::<InsertPhoneNumber>(object, state)?)
         },
         Family::Device => {
@@ -75,7 +75,7 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
 pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
-            .map_err(|e| state.set_error(e))?;
+            .map_err(|e| state.set_error(e.into()))?;
         let object = LuaJsonValue::from(object);
 
         let object = into_insert(family, object, &state)
@@ -89,7 +89,7 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
 pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_add_ttl", hlua::function3(move |family: String, object: AnyLuaValue, ttl: i32| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
-            .map_err(|e| state.set_error(e))?;
+            .map_err(|e| state.set_error(e.into()))?;
         let object = LuaJsonValue::from(object);
 
         let object = into_insert(family, object, &state)
@@ -103,7 +103,7 @@ pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
 pub fn db_select(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_select", hlua::function2(move |family: String, value: String| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
-            .map_err(|e| state.set_error(e))?;
+            .map_err(|e| state.set_error(e.into()))?;
 
         state.db_select(family, value)
             .map_err(|e| state.set_error(e))
@@ -133,7 +133,7 @@ fn gen_changeset<T: Model, U: Updateable<T>>(object: LuaJsonValue, mut update: L
 pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
     lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
-            .map_err(|e| state.set_error(e))?;
+            .map_err(|e| state.set_error(e.into()))?;
         let object = LuaJsonValue::from(object);
         let update = LuaJsonValue::from(update);
 
@@ -141,14 +141,14 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
             Family::Domain => bail!("Domain doesn't have mutable fields"),
             Family::Subdomain => gen_changeset::<Subdomain, SubdomainUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Subdomain(u))),
-            Family::IpAddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
+            Family::Ipaddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::IpAddr(u))),
-            Family::SubdomainIpAddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
+            Family::SubdomainIpaddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
             Family::Url => gen_changeset::<Url, UrlUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Url(u))),
             Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Email(u))),
-            Family::PhoneNumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
+            Family::Phonenumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::PhoneNumber(u))),
             Family::Device => gen_changeset::<Device, DeviceUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Device(u))),

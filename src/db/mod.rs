@@ -5,10 +5,10 @@ use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;
 use diesel::sql_types::Bool;
 use diesel::prelude::*;
+use strum_macros::{EnumString, IntoStaticStr};
 use crate::autonoscope::{RuleSet, RuleType};
 use crate::models::*;
 use crate::schema::*;
-use std::str::FromStr;
 use crate::migrations;
 use crate::worker;
 use crate::workspaces::Workspace;
@@ -33,14 +33,16 @@ impl DbChange {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[derive(EnumString, IntoStaticStr)]
+#[strum(serialize_all = "kebab_case")]
 pub enum Family {
     Domain,
     Subdomain,
-    IpAddr,
-    SubdomainIpAddr,
+    Ipaddr,
+    SubdomainIpaddr,
     Url,
     Email,
-    PhoneNumber,
+    Phonenumber,
     Device,
     Network,
     NetworkDevice,
@@ -52,29 +54,38 @@ pub enum Family {
     Netblock,
 }
 
-impl FromStr for Family {
-    type Err = Error;
+impl Family {
+    #[inline(always)]
+    pub fn as_str(&self) -> &'static str {
+        self.into()
+    }
+}
 
-    fn from_str(s: &str) -> Result<Family> {
-        Ok(match s {
-            "domain" => Family::Domain,
-            "subdomain" => Family::Subdomain,
-            "ipaddr" => Family::IpAddr,
-            "subdomain-ipaddr" => Family::SubdomainIpAddr,
-            "url" => Family::Url,
-            "email" => Family::Email,
-            "phonenumber" => Family::PhoneNumber,
-            "device" => Family::Device,
-            "network" => Family::Network,
-            "network-device" => Family::NetworkDevice,
-            "account" => Family::Account,
-            "breach" => Family::Breach,
-            "breach-email" => Family::BreachEmail,
-            "image" => Family::Image,
-            "port" => Family::Port,
-            "netblock" => Family::Netblock,
-            _ => bail!("Unknown object family"),
-        })
+#[derive(EnumString, IntoStaticStr)]
+#[strum(serialize_all = "snake_case")]
+pub enum Table {
+    Domains,
+    Subdomains,
+    Ipaddrs,
+    SubdomainIpaddrs,
+    Urls,
+    Emails,
+    Phonenumbers,
+    Devices,
+    Networks,
+    NetworkDevices,
+    Accounts,
+    Breaches,
+    BreachEmails,
+    Images,
+    Ports,
+    Netblocks,
+}
+
+impl Table {
+    #[inline(always)]
+    pub fn as_str(&self) -> &'static str {
+        self.into()
     }
 }
 
@@ -375,11 +386,11 @@ impl Database {
         match family {
             Family::Domain => self.get_opt_typed::<Domain>(&value),
             Family::Subdomain => self.get_opt_typed::<Subdomain>(&value),
-            Family::IpAddr => self.get_opt_typed::<IpAddr>(&value),
-            Family::SubdomainIpAddr => bail!("Unsupported operation"),
+            Family::Ipaddr => self.get_opt_typed::<IpAddr>(&value),
+            Family::SubdomainIpaddr => bail!("Unsupported operation"),
             Family::Url => self.get_opt_typed::<Url>(&value),
             Family::Email => self.get_opt_typed::<Email>(&value),
-            Family::PhoneNumber => self.get_opt_typed::<PhoneNumber>(&value),
+            Family::Phonenumber => self.get_opt_typed::<PhoneNumber>(&value),
             Family::Device => self.get_opt_typed::<Device>(&value),
             Family::Network => self.get_opt_typed::<Network>(&value),
             Family::NetworkDevice => bail!("Unsupported operation"),
@@ -633,5 +644,46 @@ mod tests {
                                      "123".to_string(),
                                     ]).unwrap();
         assert_eq!(filter, Filter::new(" value <= '123'"));
+    }
+
+    #[test]
+    fn test_family_names() {
+        assert_eq!(Family::Domain.as_str(),             "domain");
+        assert_eq!(Family::Subdomain.as_str(),          "subdomain");
+        assert_eq!(Family::Ipaddr.as_str(),             "ipaddr");
+        assert_eq!(Family::SubdomainIpaddr.as_str(),    "subdomain-ipaddr");
+        assert_eq!(Family::Url.as_str(),                "url");
+        assert_eq!(Family::Email.as_str(),              "email");
+        assert_eq!(Family::Phonenumber.as_str(),        "phonenumber");
+        assert_eq!(Family::Device.as_str(),             "device");
+        assert_eq!(Family::Network.as_str(),            "network");
+        assert_eq!(Family::NetworkDevice.as_str(),      "network-device");
+        assert_eq!(Family::Account.as_str(),            "account");
+        assert_eq!(Family::Breach.as_str(),             "breach");
+        assert_eq!(Family::BreachEmail.as_str(),        "breach-email");
+        assert_eq!(Family::Image.as_str(),              "image");
+        assert_eq!(Family::Port.as_str(),               "port");
+        assert_eq!(Family::Netblock.as_str(),           "netblock");
+    }
+
+    #[test]
+    fn test_table_names() {
+        use super::Table;
+        assert_eq!(Table::Domains.as_str(),             "domains");
+        assert_eq!(Table::Subdomains.as_str(),          "subdomains");
+        assert_eq!(Table::Ipaddrs.as_str(),             "ipaddrs");
+        assert_eq!(Table::SubdomainIpaddrs.as_str(),    "subdomain_ipaddrs");
+        assert_eq!(Table::Urls.as_str(),                "urls");
+        assert_eq!(Table::Emails.as_str(),              "emails");
+        assert_eq!(Table::Phonenumbers.as_str(),        "phonenumbers");
+        assert_eq!(Table::Devices.as_str(),             "devices");
+        assert_eq!(Table::Networks.as_str(),            "networks");
+        assert_eq!(Table::NetworkDevices.as_str(),      "network_devices");
+        assert_eq!(Table::Accounts.as_str(),            "accounts");
+        assert_eq!(Table::Breaches.as_str(),            "breaches");
+        assert_eq!(Table::BreachEmails.as_str(),        "breach_emails");
+        assert_eq!(Table::Images.as_str(),              "images");
+        assert_eq!(Table::Ports.as_str(),               "ports");
+        assert_eq!(Table::Netblocks.as_str(),           "netblocks");
     }
 }

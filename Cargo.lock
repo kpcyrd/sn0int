@@ -2844,6 +2844,8 @@ dependencies = [
  "sloppy-rfc4880 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "sn0int-common 0.7.0",
  "structopt 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "strum_macros 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "syscallz 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tar 0.4.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

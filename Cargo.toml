@@ -73,6 +73,8 @@ bytes = "0.4"
 xml-rs = "0.8"
 bytesize = "1.0"
 ipnetwork = "0.14"
+strum = "0.15"
+strum_macros = "0.15"
 
 digest = "0.8.0"
 bs58 = "0.2.2"
