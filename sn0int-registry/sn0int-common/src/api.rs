@@ -31,6 +31,12 @@ pub struct ModuleInfoResponse {
     pub latest: Option<String>,
 }
 
+impl ModuleInfoResponse {
+    pub fn canonical(&self) -> String {
+        format!("{}/{}", self.author, self.name)
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SearchResponse {
     pub author: String,

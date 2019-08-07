@@ -1,18 +1,14 @@
 use crate::errors::*;
 
 use crate::args;
-use crate::args::Install;
-use crate::api::Client;
-use crate::config::Config;
-use colored::Colorize;
-use crate::engine::Module;
-use crate::registry;
+use crate::registry::{self, UpdateTask};
 use crate::shell::Readline;
 use crate::update::AutoUpdater;
+use crate::worker;
+use colored::Colorize;
+use std::fmt::Write;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
-use crate::term;
-use crate::worker;
 
 
 #[derive(Debug, StructOpt)]
@@ -47,6 +43,9 @@ pub struct List {
     /// Only show modules with a specific input source
     #[structopt(long="source")]
     pub source: Option<String>,
+    /// List outdated modules
+    #[structopt(long="outdated")]
+    pub outdated: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -57,39 +56,14 @@ pub struct Reload {
 pub struct Update {
 }
 
-fn update(client: &Client, config: &Config, module: &Module) -> Result<()> {
-    let name = module.canonical();
-    let installed = module.version();
-
-    let label = format!("Searching for updates {}", name);
-    let infos = worker::spawn_fn(&label, || {
-        client.query_module(&module.id())
-    }, true)?;
-    debug!("Latest version: {:?}", infos);
-
-    let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
-
-    if installed != latest {
-        let label = format!("Updating {}: {:?} -> {:?}", &name, installed, latest);
-        worker::spawn_fn(&label, || {
-            registry::run_install(&Install {
-                module: module.id(),
-                version: None,
-            }, &config)
-        }, true)?;
-
-        term::success(&format!("Updated {}: {:?} -> {:?}", &name, installed, latest));
-    }
-
-    Ok(())
-}
-
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     let config = rl.config().clone();
 
     match args.subcommand {
         SubCommand::List(list) => {
+            let autoupdate = AutoUpdater::load()?;
+
             for module in rl.engine().list() {
                 if let Some(source) = &list.source {
                     if !module.source_equals(&source) {
@@ -97,8 +71,17 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
                     }
                 }
 
-                println!("{} ({})", module.canonical().green(),
-                                    module.version().yellow());
+                let canonical = module.canonical();
+
+                let mut out = String::new();
+                write!(&mut out, "{} ({})", canonical.green(),
+                                            module.version().yellow())?;
+                if autoupdate.is_outdated(&canonical) {
+                    write!(&mut out, " {}", "[outdated]".red())?;
+                } else if list.outdated {
+                    continue;
+                }
+                println!("{}", out);
                 println!("\t{}", module.description());
             }
         },
@@ -122,28 +105,27 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
             }
         },
         SubCommand::Update(_) => {
-            let client = Client::new(&config)?;
+            let mut autoupdate = AutoUpdater::load()?;
 
-            let mut success = true;
+            let modules = rl.engine().list()
+                .into_iter()
+                .filter_map(|module| {
+                    let canonical = module.canonical();
 
-            for module in rl.engine().list() {
-                if module.is_private() {
-                    debug!("{} is a private module, skipping", module.canonical());
-                    continue;
-                }
+                    if module.is_private() {
+                        debug!("{} is a private module, skipping", canonical);
+                        return None;
+                    }
 
-                if let Err(err) = update(&client, &config, &module) {
-                    term::error(&format!("Failed to update {}: {}", module.canonical(), err));
-                    success = false;
-                }
-            }
+                    Some(UpdateTask::new(module.clone(), config.clone()))
+                })
+                .collect::<Vec<_>>();
 
-            // TODO: keep a list of outdated packages and remove them after they've been updated
-            if success {
-                let mut autoupdate = AutoUpdater::load()?;
-                autoupdate.all_updated();
-                autoupdate.save()?;
-            }
+            worker::spawn_multi(modules, |name| {
+                autoupdate.updated(&name);
+            }, 3)?;
+
+            autoupdate.save()?;
 
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;

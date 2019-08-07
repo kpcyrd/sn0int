@@ -95,9 +95,8 @@ mod tests {
             req = http_request(session, 'GET', 'https://www.kernel.org/theme/images/logos/tux.png', {
                 into_blob=true,
             })
-            r = http_send(req)
+            r = http_fetch(req)
             if last_err() then return end
-            if r['status'] ~= 200 then return 'http error: ' .. r['status'] end
 
             img = img_load(r['blob'])
 
@@ -125,9 +124,8 @@ mod tests {
             req = http_request(session, 'GET', 'https://www.kernel.org/theme/images/logos/tux.png', {
                 into_blob=true,
             })
-            r = http_send(req)
+            r = http_fetch(req)
             if last_err() then return end
-            if r['status'] ~= 200 then return 'http error: ' .. r['status'] end
 
             nudity = img_nudity(r['blob'])
 
@@ -155,10 +153,9 @@ mod tests {
             req = http_request(session, 'GET', url, {
                 into_blob=true,
             })
-            r = http_send(req)
+            r = http_fetch(req)
             if last_err() then return end
             print(r)
-            if r['status'] ~= 200 then return 'wrong status code' end
 
             location = img_exif(r['blob'])
             print(location)

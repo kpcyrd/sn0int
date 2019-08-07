@@ -78,6 +78,8 @@ pub trait SpinLogger {
 
     fn debug(&mut self, line: &str);
 
+    fn success(&mut self, line: &str);
+
     fn error(&mut self, line: &str);
 
     fn warn(&mut self, line: &str);
@@ -85,6 +87,8 @@ pub trait SpinLogger {
     fn warn_once(&mut self, line: &str);
 
     fn status(&mut self, status: String);
+
+    fn stacked_status(&mut self, name: &String, status: String);
 }
 
 pub struct Spinner {
@@ -164,6 +168,11 @@ impl SpinLogger for Spinner {
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
     }
 
+    fn success(&mut self, line: &str) {
+        if self.dummy { return; }
+        println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+    }
+
     fn error(&mut self, line: &str) {
         if self.dummy { return; }
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
@@ -183,6 +192,11 @@ impl SpinLogger for Spinner {
 
     #[inline]
     fn status(&mut self, status: String) {
+        self.status = status;
+    }
+
+    #[inline]
+    fn stacked_status(&mut self, _name: &String, status: String) {
         self.status = status;
     }
 }
@@ -321,6 +335,11 @@ impl SpinLogger for StackedSpinners {
         println!("\r\x1b[2K\x1b[1m[\x1b[34m{}\x1b[0;1m]\x1b[0m {}", '#', line);
     }
 
+    fn success(&mut self, line: &str) {
+        self.jump2start();
+        println!("\r\x1b[2K\x1b[1m[\x1b[32m{}\x1b[0;1m]\x1b[0m {}", '+', line);
+    }
+
     fn error(&mut self, line: &str) {
         self.jump2start();
         println!("\r\x1b[2K\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
@@ -341,6 +360,12 @@ impl SpinLogger for StackedSpinners {
 
     fn status(&mut self, status: String) {
         self.error(&format!("TODO: set status: {:?}", status));
+    }
+
+    fn stacked_status(&mut self, name: &String, status: String) {
+        if let Some(spinner) = self.spinners.get_mut(name) {
+            spinner.status(status);
+        }
     }
 }
 
@@ -371,6 +396,11 @@ impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
     }
 
     #[inline]
+    fn success(&mut self, line: &str) {
+        self.s.success(&format!("{:50}: {}", self.prefix, line))
+    }
+
+    #[inline]
     fn error(&mut self, line: &str) {
         self.s.error(&format!("{:50}: {}", self.prefix, line))
     }
@@ -387,6 +417,11 @@ impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
 
     #[inline]
     fn status(&mut self, status: String) {
-        self.s.status(format!("{:50}: {}", self.prefix, status))
+        self.s.stacked_status(&self.prefix, status)
+    }
+
+    #[inline]
+    fn stacked_status(&mut self, prefix: &String, status: String) {
+        self.s.stacked_status(prefix, status)
     }
 }

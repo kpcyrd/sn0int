@@ -3,6 +3,7 @@ use crate::api::Client;
 use crate::config::Config;
 use crate::engine;
 use crate::paths;
+use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -19,15 +20,17 @@ pub struct AutoUpdater {
     #[serde(default)]
     last_update: u64,
     #[serde(default)]
-    outdated: u64,
+    outdated: HashSet<String>,
 }
 
 impl AutoUpdater {
+    #[inline]
     fn path() -> Result<PathBuf> {
         let path = paths::data_dir()?;
         Ok(path.join("autoupdate.json"))
     }
 
+    #[inline]
     fn now() -> u64 {
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -36,8 +39,18 @@ impl AutoUpdater {
     }
 
     #[inline]
-    pub fn outdated(&self) -> u64 {
-        self.outdated
+    pub fn outdated(&self) -> usize {
+        self.outdated.len()
+    }
+
+    #[inline]
+    pub fn updated(&mut self, module: &str) {
+        self.outdated.remove(module);
+    }
+
+    #[inline]
+    pub fn is_outdated(&self, module: &str) -> bool {
+        self.outdated.contains(module)
     }
 
     pub fn load() -> Result<AutoUpdater> {
@@ -54,10 +67,6 @@ impl AutoUpdater {
         let config = serde_json::to_string(&self)?;
         fs::write(AutoUpdater::path()?, &config)?;
         Ok(())
-    }
-
-    pub fn all_updated(&mut self) {
-        self.outdated = 0;
     }
 
     pub fn check_background(mut self, config: &Config, modules: Vec<&engine::Module>) {
@@ -94,7 +103,7 @@ impl AutoUpdater {
         let latest = client.latest_release()?;
 
         if latest.time != self.registry {
-            let mut outdated = 0;
+            let mut outdated = HashSet::new();
 
             for module in modules {
                 if module.is_private() {
@@ -108,8 +117,9 @@ impl AutoUpdater {
 
                     if let Some(latest) = infos.latest {
                         if installed != latest {
-                            debug!("Outdated: {}: {:?} -> {:?}", module.canonical(), installed, latest);
-                            outdated += 1;
+                            let canonical = module.canonical();
+                            debug!("Outdated: {}: {:?} -> {:?}", canonical, installed, latest);
+                            outdated.insert(canonical);
                         }
                     }
                 }

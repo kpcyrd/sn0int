@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::db::{Database, Filter};
+use crate::db::{Database, Table, Filter};
 use crate::fmt;
 use crate::schema::*;
 use std::sync::Arc;
@@ -61,25 +61,9 @@ impl Insert {
         Ok(label)
     }
 
+    #[inline]
     pub fn table(&self) -> &str {
-        match self {
-            Insert::Domain(_) => "domains",
-            Insert::Subdomain(_) => "subdomains",
-            Insert::IpAddr(_) => "ipaddrs",
-            Insert::SubdomainIpAddr(_) => "subdomain_ipaddrs",
-            Insert::Url(_) => "urls",
-            Insert::Email(_) => "emails",
-            Insert::PhoneNumber(_) => "phonenumbers",
-            Insert::Device(_) => "devices",
-            Insert::Network(_) => "networks",
-            Insert::NetworkDevice(_) => "network_devices",
-            Insert::Account(_) => "accounts",
-            Insert::Breach(_) => "breaches",
-            Insert::BreachEmail(_) => "breach_emails",
-            Insert::Image(_) => "images",
-            Insert::Port(_) => "ports",
-            Insert::Netblock(_) => "netblocks",
-        }
+        Table::from(self).into()
     }
 
     pub fn printable(&self, db: &Database) -> Result<String> {
@@ -101,6 +85,29 @@ impl Insert {
             Insert::Port(x) => format!("Port: {}", x.printable(db)?),
             Insert::Netblock(x) => format!("Netblock: {}", x.printable(db)?),
         })
+    }
+}
+
+impl From<&Insert> for Table {
+    fn from(insert: &Insert) -> Table {
+        match insert {
+            Insert::Domain(_) => Table::Domains,
+            Insert::Subdomain(_) => Table::Subdomains,
+            Insert::IpAddr(_) => Table::Ipaddrs,
+            Insert::SubdomainIpAddr(_) => Table::SubdomainIpaddrs,
+            Insert::Url(_) => Table::Urls,
+            Insert::Email(_) => Table::Emails,
+            Insert::PhoneNumber(_) => Table::Phonenumbers,
+            Insert::Device(_) => Table::Devices,
+            Insert::Network(_) => Table::Networks,
+            Insert::NetworkDevice(_) => Table::NetworkDevices,
+            Insert::Account(_) => Table::Accounts,
+            Insert::Breach(_) => Table::Breaches,
+            Insert::BreachEmail(_) => Table::BreachEmails,
+            Insert::Image(_) => Table::Images,
+            Insert::Port(_) => Table::Ports,
+            Insert::Netblock(_) => Table::Netblocks,
+        }
     }
 }
 

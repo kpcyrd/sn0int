@@ -22,9 +22,9 @@
         </code></p>
 
         {{#each modules}}
-            <h3>[ {{@key}} ]</h3>
+            <h3>[ {{this.0}} ]</h3>
             <ul class="modules">
-            {{#each this}}
+            {{#each this.1}}
                 <li>
                     <span class="mod-cell mod-name"><a href="#">{{this.author}}/{{this.name}}</a></span><span class="mod-cell mod-version">{{this.latest}}</span><span class="mod-cell mod-descr">{{this.description}}</span>
                 </li>

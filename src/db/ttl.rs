@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::db::Database;
+use crate::db::{Database, Table};
 use crate::schema::*;
 use crate::models::*;
 use chrono::{NaiveDateTime, Duration, Utc};
@@ -99,24 +99,24 @@ impl Ttl {
     }
 
     pub fn delete(&self, db: &Database) -> Result<()> {
-        match self.family.as_str() {
-            "domains" => Domain::delete_id(db, self.key)?,
-            "subdomains" => Subdomain::delete_id(db, self.key)?,
-            "ipaddrs" => IpAddr::delete_id(db, self.key)?,
-            "subdomain_ipaddrs" => SubdomainIpAddr::delete_id(db, self.key)?,
-            "urls" => Url::delete_id(db, self.key)?,
-            "emails" => Email::delete_id(db, self.key)?,
-            "phonenumbers" => PhoneNumber::delete_id(db, self.key)?,
-            "devices" => Device::delete_id(db, self.key)?,
-            "networks" => Network::delete_id(db, self.key)?,
-            "network_devices" => NetworkDevice::delete_id(db, self.key)?,
-            "accounts" => Account::delete_id(db, self.key)?,
-            "breaches" => Breach::delete_id(db, self.key)?,
-            "breach_emails" => BreachEmail::delete_id(db, self.key)?,
-            "images" => Image::delete_id(db, self.key)?,
-            "ports" => Port::delete_id(db, self.key)?,
-            "netblocks" => Netblock::delete_id(db, self.key)?,
-            _ => bail!("Unknown table"),
+        let family = self.family.parse::<Table>()?;
+        match family {
+            Table::Domains => Domain::delete_id(db, self.key)?,
+            Table::Subdomains => Subdomain::delete_id(db, self.key)?,
+            Table::Ipaddrs => IpAddr::delete_id(db, self.key)?,
+            Table::SubdomainIpaddrs => SubdomainIpAddr::delete_id(db, self.key)?,
+            Table::Urls => Url::delete_id(db, self.key)?,
+            Table::Emails => Email::delete_id(db, self.key)?,
+            Table::Phonenumbers => PhoneNumber::delete_id(db, self.key)?,
+            Table::Devices => Device::delete_id(db, self.key)?,
+            Table::Networks => Network::delete_id(db, self.key)?,
+            Table::NetworkDevices => NetworkDevice::delete_id(db, self.key)?,
+            Table::Accounts => Account::delete_id(db, self.key)?,
+            Table::Breaches => Breach::delete_id(db, self.key)?,
+            Table::BreachEmails => BreachEmail::delete_id(db, self.key)?,
+            Table::Images => Image::delete_id(db, self.key)?,
+            Table::Ports => Port::delete_id(db, self.key)?,
+            Table::Netblocks => Netblock::delete_id(db, self.key)?,
         };
 
         diesel::delete(self)
