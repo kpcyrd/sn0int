@@ -215,26 +215,23 @@ impl HttpRequest {
             .with_timeout(self.timeout)
             .wait_for_response()?;
 
-        Ok(res)
-    }
-
-    pub fn send_lua(&self, state: &State) -> Result<LuaMap> {
-        let res = self.send(state)?;
-
-        // map result to LuaMap
-        let mut resp = LuaMap::new();
-        resp.insert_num("status", f64::from(res.status));
-
         for cookie in &res.cookies {
             HttpRequest::register_cookies_on_state(&self.session, state, cookie);
         }
+
+        Ok(res)
+    }
+
+    pub fn response_to_lua(&self, state: &State, res: Response) -> Result<LuaMap> {
+        // map result to LuaMap
+        let mut resp = LuaMap::new();
+        resp.insert_num("status", f64::from(res.status));
 
         let mut headers = LuaMap::new();
         for (key, value) in res.headers {
             headers.insert_str(key.to_lowercase(), value);
         }
         resp.insert("headers", headers);
-
 
         if self.into_blob {
             let blob = Blob::create(res.body);
@@ -286,6 +283,7 @@ impl Into<AnyLuaValue> for HttpRequest {
 pub struct CookieJar(HashMap<String, String>);
 
 impl CookieJar {
+    #[inline(always)]
     pub fn register_in_jar(&mut self, key: String, value: String) {
         self.0.insert(key, value);
     }
@@ -294,6 +292,7 @@ impl CookieJar {
 impl Deref for CookieJar {
     type Target = HashMap<String, String>;
 
+    #[inline(always)]
     fn deref(&self) -> &Self::Target {
         &self.0
     }

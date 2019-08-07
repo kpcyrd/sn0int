@@ -405,11 +405,31 @@ the following keys:
     if last_err() then return end
     if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
 
+http_fetch
+----------
+
+This does an http_send_ and also automatically validate the status code.
+
+.. note::
+   You almost always want this when setting the ``into_blob`` option since this
+   function validates the status code *before* inserting the response body into
+   blob storage.
+
+.. code-block:: lua
+
+    -- short form
+    data = http_fetch(req)
+    if last_err() then return end
+
+    -- long form
+    resp = http_send(req)
+    if last_err() then return end
+    if resp['status'] ~= 200 then return 'http status error: ' .. resp['status'] end
+
 http_fetch_json
 ---------------
 
-This is a shorthand for http_send_, validating the status code and parsing the
-response body as json.
+Identical to http_fetch_ but also automatically parses the response body as json.
 
 .. code-block:: lua
 

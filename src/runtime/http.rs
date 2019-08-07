@@ -31,7 +31,29 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
             .context("invalid http request object")
             .map_err(|err| state.set_error(err.into()))?;
 
-        req.send_lua(state.as_ref())
+        let resp = req.send(state.as_ref())
+            .map_err(|err| state.set_error(err))?;
+
+        req.response_to_lua(state.as_ref(), resp)
+            .map_err(|err| state.set_error(err))
+            .map(|resp| resp.into())
+    }))
+}
+
+pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<State>) {
+    lua.set("http_fetch", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
+        let req = HttpRequest::try_from(request)
+            .context("invalid http request object")
+            .map_err(|err| state.set_error(err.into()))?;
+
+        let resp = req.send(state.as_ref())
+            .map_err(|err| state.set_error(err))?;
+
+        if resp.status < 200 || resp.status > 299 {
+            return Err(state.set_error(format_err!("http status error: {}", resp.status)));
+        }
+
+        req.response_to_lua(state.as_ref(), resp)
             .map_err(|err| state.set_error(err))
             .map(|resp| resp.into())
     }))
@@ -171,6 +193,27 @@ mod tests {
         function run()
             session = http_mksession()
             req = http_request(session, "GET", "https://httpbin.org/anything", {})
+            x = http_fetch(req)
+            if last_err() then return end
+
+            o = json_decode(x['text'])
+            if last_err() then return end
+
+            if o['method'] ~= 'GET' then
+                return 'unexpected response'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_json_ok() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/anything", {})
             x = http_fetch_json(req)
             if last_err() then return end
             print(x)
@@ -189,6 +232,19 @@ mod tests {
         function run()
             session = http_mksession()
             req = http_request(session, "GET", "https://httpbin.org/status/404", {})
+            x = http_fetch(req)
+        end
+        "#).expect("failed to load script");
+        script.test().err().expect("Script should have failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_json_404() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "https://httpbin.org/status/404", {})
             x = http_fetch_json(req)
         end
         "#).expect("failed to load script");
@@ -197,7 +253,7 @@ mod tests {
 
     #[test]
     #[ignore]
-    fn verify_fetch_invalid_json() {
+    fn verify_fetch_json_invalid() {
         let script = Script::load_unchecked(r#"
         function run()
             session = http_mksession()
