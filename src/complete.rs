@@ -17,6 +17,7 @@ use crate::workspaces;
 #[derive(Debug, Default)]
 pub struct CmdCompleter {
     pub modules: Vec<String>,
+    pub keyring: Vec<String>,
 }
 
 impl CmdCompleter {
@@ -143,16 +144,29 @@ impl Completer for CmdCompleter {
                 },
                 Command::Delete => self.filter("delete", &cmd),
                 Command::Keyring => {
-                    // we can only complete the 2nd argument
-                    if args != 2 {
-                        Ok((0, vec![]))
-                    } else {
-                        Ok(filter_options("keyring", &[
-                            "add",
-                            "delete",
-                            "get",
-                            "list"
-                        ], &cmd[1]))
+                    match (args, cmd.get(1).map(|x| x.as_str())) {
+                        (2, _) => {
+                            Ok(filter_options("keyring", &[
+                                "add",
+                                "delete",
+                                "get",
+                                "list"
+                            ], &cmd[1]))
+                        },
+                        (3, Some("get")) | (3, Some("delete")) => {
+                            let base = &cmd[0];
+                            let action = &cmd[1];
+                            let arg = &cmd[2];
+
+                            let results: Vec<String> = self.keyring.iter()
+                                .filter(|x| x.starts_with(arg))
+                                .map(|x| format!("{} {} {} ", base, action, x))
+                                .collect();
+                            Ok((0, results))
+                        },
+                        _ => {
+                            Ok((0, vec![]))
+                        },
                     }
                 },
                 Command::Mod => {

@@ -172,6 +172,7 @@ impl<'a> Readline<'a> {
         };
 
         rl.reload_module_cache();
+        rl.reload_keyring_cache();
 
         rl
     }
@@ -324,6 +325,16 @@ impl<'a> Readline<'a> {
             for module in self.engine.variants() {
                 helper.modules.push(module);
             }
+        }
+    }
+
+    pub fn reload_keyring_cache(&mut self) {
+        let keys = self.keyring().list().iter()
+            .map(|k| k.to_string())
+            .collect();
+
+        if let Some(helper) = self.rl.helper_mut() {
+            helper.keyring = keys;
         }
     }
 

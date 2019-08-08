@@ -6,6 +6,7 @@ use crate::json::LuaJsonValue;
 use crate::paths;
 use std::collections::{HashMap, HashSet};
 use std::fs;
+use std::fmt;
 use std::str::FromStr;
 use std::path::{Path, PathBuf};
 use sn0int_common::ModuleID;
@@ -56,6 +57,12 @@ impl FromStr for KeyName {
         } else {
             bail!("Missing namespace")
         }
+    }
+}
+
+impl fmt::Display for KeyName {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.namespace, self.name)
     }
 }
 
