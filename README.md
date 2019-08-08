@@ -1,4 +1,4 @@
-# sn0int [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
+# sn0int [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int][twitter-img]][twitter] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
 
 [travis-img]:   https://travis-ci.org/kpcyrd/sn0int.svg?branch=master
 [travis]:       https://travis-ci.org/kpcyrd/sn0int
@@ -8,6 +8,8 @@
 [docs]:         https://sn0int.readthedocs.io/en/latest/?badge=latest
 [irc-img]:      https://img.shields.io/badge/hackint-%23sn0int-blue.svg
 [irc]:          https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int
+[twitter-img]:  https://img.shields.io/badge/twitter-@sn0int-blue.svg
+[twitter]:      https://twitter.com/sn0int
 [mastodon-img]: https://img.shields.io/badge/mastodon-chaos.social-blue.svg
 [mastodon]:     https://chaos.social/@sn0int
 [registry-img]: https://img.shields.io/website/https/sn0int.com.svg?label=registry
