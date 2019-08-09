@@ -26,13 +26,44 @@ function entry(parent, href)
     host = parts['host']
     psl = psl_domain_from_dns_name(host)
 
-
     domain_id = db_select('domain', psl)
     if domain_id ~= nil then
         db_add('subdomain', {
             domain_id=domain_id,
             value=host,
         })
+    end
+
+    -- whatsapp links
+    if host == 'wa.me' then
+        m = regex_find('^/([0-9]+)$', parts['path'])
+        if m then
+            db_add('phonenumber', {
+                value='+' .. m[2],
+            })
+        end
+    end
+
+    -- instagram
+    if host == 'www.instagram.com' then
+        m = regex_find('^/([^/]+)', parts['path'])
+        if m then
+            db_add('account', {
+                service='instagram.com',
+                username=m[2],
+            })
+        end
+    end
+
+    -- facebook
+    if host == 'www.facebook.com' then
+        m = regex_find('^/([^/]+)', parts['path'])
+        if m then
+            db_add('account', {
+                service='facebook.com',
+                username=m[2],
+            })
+        end
     end
 end
 

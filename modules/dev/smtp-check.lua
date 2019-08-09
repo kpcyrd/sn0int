@@ -4,9 +4,7 @@
 -- License: GPL-3.0
 
 function find_mx(domain)
-    local records, i, r
-
-    records = dns(domain, {
+    local records = dns(domain, {
         record='MX',
     })
     if last_err() then return end
@@ -15,7 +13,7 @@ function find_mx(domain)
     -- debug(records)
 
     for i=1, #records do
-        r = records[i][2]['MX']
+        local r = records[i][2]['MX']
         if r then
             debug('mx: ' .. r[2])
             return r[2]
