@@ -15,11 +15,13 @@
 [registry-img]: https://img.shields.io/website/https/sn0int.com.svg?label=registry
 [registry]:     https://sn0int.com/
 
-sn0int is a semi-automatic OSINT framework and package manager. It was built
-for IT security professionals and bug hunters to gather intelligence about a
-given target or about yourself. sn0int is enumerating attack surface by
-semi-automatically processing public information and mapping the results in a
-unified format for followup investigations.
+sn0int (pronounced [`/snoɪnt/`][ipa]) is a semi-automatic OSINT framework and
+package manager. It was built for IT security professionals and bug hunters to
+gather intelligence about a given target or about yourself. sn0int is
+enumerating attack surface by semi-automatically processing public information
+and mapping the results in a unified format for followup investigations.
+
+[ipa]: http://ipa-reader.xyz/?text=sno%C9%AAnt
 
 Among other things, sn0int is currently able to:
 
@@ -30,6 +32,7 @@ Among other things, sn0int is currently able to:
 - Find somebody's profiles across the internet
 - Enumerate local networks with unique techniques like passive arp
 - Gather information about phonenumbers
+- Attempt to bypass cloudflare with shodan
 - Harvest data and images from instagram profiles
 - Scan images for nudity
 
