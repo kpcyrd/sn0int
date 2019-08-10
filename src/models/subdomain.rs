@@ -259,9 +259,10 @@ impl LuaInsertToNew for InsertSubdomain {
     type Target = NewSubdomain;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomain> {
+        let value = self.value.to_lowercase();
         Ok(NewSubdomain {
             domain_id: self.domain_id,
-            value: self.value,
+            value,
             resolvable: self.resolvable,
 
             unscoped: false,

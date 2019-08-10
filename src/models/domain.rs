@@ -241,8 +241,9 @@ impl LuaInsertToNew for InsertDomain {
     type Target = NewDomain;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewDomain> {
+        let value = self.value.to_lowercase();
         Ok(NewDomain {
-            value: self.value,
+            value,
             unscoped: false,
         })
     }

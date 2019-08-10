@@ -297,8 +297,9 @@ impl LuaInsertToNew for InsertEmail {
     type Target = NewEmail;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewEmail> {
+        let value = self.value.to_lowercase();
         Ok(NewEmail {
-            value: self.value,
+            value,
             displayname: self.displayname,
             valid: self.valid,
 
