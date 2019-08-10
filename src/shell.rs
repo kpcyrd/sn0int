@@ -283,6 +283,10 @@ impl<'a> Readline<'a> {
 
                 self.rl.add_history_entry(line.as_str());
 
+                if line.starts_with('#') {
+                    return None;
+                }
+
                 let cmd = match shellwords::split(&line) {
                     Ok(cmd) => cmd,
                     Err(err) => {
