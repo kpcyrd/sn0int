@@ -20,6 +20,9 @@ pub struct Account {
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
     pub unscoped: bool,
+    pub birthday: Option<String>,
+    pub phonenumber: Option<String>,
+    pub profile_pic: Option<String>,
 }
 
 impl Model for Account {
@@ -84,29 +87,29 @@ impl Model for Account {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::accounts::dsl::*;
 
-        let domain = accounts.filter(id.eq(my_id))
+        let account = accounts.filter(id.eq(my_id))
             .first::<Self>(db.db())?;
 
-        Ok(domain)
+        Ok(account)
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::accounts::dsl::*;
 
-        let domain = accounts.filter(value.eq(query))
+        let account = accounts.filter(value.eq(query))
             .first::<Self>(db.db())?;
 
-        Ok(domain)
+        Ok(account)
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::accounts::dsl::*;
 
-        let domain = accounts.filter(value.eq(query))
+        let account = accounts.filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
-        Ok(domain)
+        Ok(account)
     }
 }
 
@@ -160,6 +163,9 @@ pub struct DetailedAccount {
     url: Option<String>,
     last_seen: Option<NaiveDateTime>,
     unscoped: bool,
+    birthday: Option<String>,
+    phonenumber: Option<String>,
+    profile_pic: Option<String>,
 }
 
 impl DisplayableDetailed for DetailedAccount {
@@ -178,6 +184,9 @@ impl DisplayableDetailed for DetailedAccount {
         w.opt_debug::<Yellow, _>(&self.email)?;
         w.opt_debug::<Yellow, _>(&self.url)?;
         w.opt_debug::<Yellow, _>(&self.last_seen)?;
+        w.opt_debug::<Yellow, _>(&self.birthday)?;
+        w.opt_debug::<Yellow, _>(&self.phonenumber)?;
+        w.opt_debug::<Yellow, _>(&self.profile_pic)?;
         w.end_group()?;
 
         Ok(())
@@ -203,6 +212,9 @@ impl Detailed for Account {
             url: self.url.clone(),
             last_seen: self.last_seen.clone(),
             unscoped: self.unscoped,
+            birthday: self.birthday.clone(),
+            phonenumber: self.phonenumber.clone(),
+            profile_pic: self.profile_pic.clone(),
         })
     }
 }
@@ -218,6 +230,9 @@ pub struct NewAccount {
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
     pub unscoped: bool,
+    pub birthday: Option<String>,
+    pub phonenumber: Option<String>,
+    pub profile_pic: Option<String>,
 }
 
 impl InsertableStruct<Account> for NewAccount {
@@ -247,6 +262,9 @@ impl Upsertable<Account> for NewAccount {
             email: Self::upsert_opt(self.email, &existing.email),
             url: Self::upsert_opt(self.url, &existing.url),
             last_seen: Self::upsert_opt(self.last_seen, &existing.last_seen),
+            birthday: Self::upsert_opt(self.birthday, &existing.birthday),
+            phonenumber: Self::upsert_opt(self.phonenumber, &existing.phonenumber),
+            profile_pic: Self::upsert_opt(self.profile_pic, &existing.profile_pic),
         }
     }
 }
@@ -267,6 +285,9 @@ pub struct InsertAccount {
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
+    pub birthday: Option<String>,
+    pub phonenumber: Option<String>,
+    pub profile_pic: Option<String>,
 }
 
 impl LuaInsertToNew for InsertAccount {
@@ -285,6 +306,9 @@ impl LuaInsertToNew for InsertAccount {
             email: self.email,
             url: self.url,
             last_seen: self.last_seen,
+            birthday: self.birthday,
+            phonenumber: self.phonenumber,
+            profile_pic: self.profile_pic,
             unscoped: false,
         })
     }
@@ -298,6 +322,9 @@ pub struct AccountUpdate {
     pub email: Option<String>,
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
+    pub birthday: Option<String>,
+    pub phonenumber: Option<String>,
+    pub profile_pic: Option<String>,
 }
 
 impl Upsert for AccountUpdate {
@@ -305,7 +332,10 @@ impl Upsert for AccountUpdate {
         self.displayname.is_some() ||
         self.email.is_some() ||
         self.url.is_some() ||
-        self.last_seen.is_some()
+        self.last_seen.is_some() ||
+        self.birthday.is_some() ||
+        self.phonenumber.is_some() ||
+        self.profile_pic.is_some()
     }
 
     fn generic(self) -> Update {
@@ -323,6 +353,9 @@ impl Updateable<Account> for AccountUpdate {
         Self::clear_if_equal(&mut self.email, &existing.email);
         Self::clear_if_equal(&mut self.url, &existing.url);
         Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
+        Self::clear_if_equal(&mut self.birthday, &existing.birthday);
+        Self::clear_if_equal(&mut self.phonenumber, &existing.phonenumber);
+        Self::clear_if_equal(&mut self.profile_pic, &existing.profile_pic);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
@@ -330,5 +363,8 @@ impl Updateable<Account> for AccountUpdate {
         Self::push_value(updates, "email", &self.email);
         Self::push_value(updates, "url", &self.url);
         Self::push_value(updates, "last_seen", &self.last_seen);
+        Self::push_value(updates, "birthday", &self.birthday);
+        Self::push_value(updates, "phonenumber", &self.phonenumber);
+        Self::push_value(updates, "profile_pic", &self.profile_pic);
     }
 }

@@ -145,6 +145,8 @@ connected to.
     Latitude of the networks location.
 ``longitude``
     Longitude of the networks location.
+``description``
+    A human readable description in case the value is a technical identifier.
 
 Accounts
 --------
@@ -166,6 +168,12 @@ A users account or profile on a webservice, like github or instagram.
     The url of the public profile if available.
 ``last_seen``
     The last time this account has been active/online.
+``birthday``
+    The users birthday set on the account.
+``phonenumber``
+    The phonenumber associated with the account.
+``profile_pic``
+    The blob identifier of the users current profile picture.
 
 Breaches
 --------
