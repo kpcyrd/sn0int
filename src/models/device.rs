@@ -286,8 +286,9 @@ impl LuaInsertToNew for InsertDevice {
     type Target = NewDevice;
 
     fn try_into_new(self, _state: &Arc<State>) -> Result<NewDevice> {
+        let value = self.value.to_lowercase();
         Ok(NewDevice {
-            value: self.value,
+            value,
             name: self.name,
             hostname: self.hostname,
             vendor: self.vendor,

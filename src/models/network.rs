@@ -15,6 +15,7 @@ pub struct Network {
     pub unscoped: bool,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub description: Option<String>,
 }
 
 impl Model for Network {
@@ -153,6 +154,7 @@ pub struct DetailedNetwork {
     unscoped: bool,
     latitude: Option<f32>,
     longitude: Option<f32>,
+    description: Option<String>,
     devices: Vec<PrintableDevice>,
 }
 
@@ -170,6 +172,7 @@ impl DisplayableDetailed for DetailedNetwork {
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.latitude)?;
         w.opt_debug::<Yellow, _>(&self.longitude)?;
+        w.opt_debug::<Yellow, _>(&self.description)?;
         w.end_group()?;
 
         Ok(())
@@ -200,6 +203,7 @@ impl Detailed for Network {
             unscoped: self.unscoped,
             latitude: self.latitude.clone(),
             longitude: self.longitude.clone(),
+            description: self.description.clone(),
             devices,
         })
     }
@@ -211,6 +215,7 @@ pub struct NewNetwork {
     pub value: String,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub description: Option<String>,
     pub unscoped: bool,
 }
 
@@ -239,6 +244,7 @@ impl Upsertable<Network> for NewNetwork {
             id: existing.id,
             latitude: Self::upsert_opt(self.latitude, &existing.latitude),
             longitude: Self::upsert_opt(self.longitude, &existing.longitude),
+            description: Self::upsert_opt(self.description, &existing.description),
         }
     }
 }
@@ -256,6 +262,7 @@ pub struct InsertNetwork {
     pub value: String,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub description: Option<String>,
 }
 
 impl LuaInsertToNew for InsertNetwork {
@@ -266,6 +273,7 @@ impl LuaInsertToNew for InsertNetwork {
             value: self.value,
             latitude: self.latitude,
             longitude: self.longitude,
+            description: self.description,
 
             unscoped: false,
         })
@@ -278,12 +286,14 @@ pub struct NetworkUpdate {
     pub id: i32,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub description: Option<String>,
 }
 
 impl Upsert for NetworkUpdate {
     fn is_dirty(&self) -> bool {
         self.latitude.is_some() ||
-        self.longitude.is_some()
+        self.longitude.is_some() ||
+        self.description.is_some()
     }
 
     fn generic(self) -> Update {
@@ -299,10 +309,12 @@ impl Updateable<Network> for NetworkUpdate {
     fn changeset(&mut self, existing: &Network) {
         Self::clear_if_equal(&mut self.latitude, &existing.latitude);
         Self::clear_if_equal(&mut self.longitude, &existing.longitude);
+        Self::clear_if_equal(&mut self.description, &existing.description);
     }
 
     fn fmt(&self, updates: &mut Vec<String>) {
         Self::push_value(updates, "latitude", &self.latitude);
         Self::push_value(updates, "longitude", &self.longitude);
+        Self::push_value(updates, "description", &self.description);
     }
 }

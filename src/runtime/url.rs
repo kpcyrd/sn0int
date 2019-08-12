@@ -4,7 +4,7 @@ use crate::engine::structs::LuaMap;
 use crate::hlua::{self, AnyLuaValue};
 use crate::json::LuaJsonValue;
 use url::Url;
-use url::percent_encoding::{percent_encode, percent_decode, DEFAULT_ENCODE_SET};
+use percent_encoding::{percent_encode, percent_decode, NON_ALPHANUMERIC};
 use serde_json::Value;
 use serde_urlencoded;
 use std::sync::Arc;
@@ -80,7 +80,7 @@ pub fn url_decode(lua: &mut hlua::Lua, state: Arc<State>) {
 
 pub fn url_escape(lua: &mut hlua::Lua, _state: Arc<State>) {
     lua.set("url_escape", hlua::function1(move |v: String| -> String {
-        percent_encode(v.as_bytes(), DEFAULT_ENCODE_SET)
+        percent_encode(v.as_bytes(), NON_ALPHANUMERIC)
             .to_string()
     }))
 }

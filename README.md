@@ -1,4 +1,4 @@
-# sn0int [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
+# sn0int [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int][twitter-img]][twitter] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
 
 [travis-img]:   https://travis-ci.org/kpcyrd/sn0int.svg?branch=master
 [travis]:       https://travis-ci.org/kpcyrd/sn0int
@@ -8,16 +8,20 @@
 [docs]:         https://sn0int.readthedocs.io/en/latest/?badge=latest
 [irc-img]:      https://img.shields.io/badge/hackint-%23sn0int-blue.svg
 [irc]:          https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int
+[twitter-img]:  https://img.shields.io/badge/twitter-@sn0int-blue.svg
+[twitter]:      https://twitter.com/sn0int
 [mastodon-img]: https://img.shields.io/badge/mastodon-chaos.social-blue.svg
 [mastodon]:     https://chaos.social/@sn0int
 [registry-img]: https://img.shields.io/website/https/sn0int.com.svg?label=registry
 [registry]:     https://sn0int.com/
 
-sn0int is a semi-automatic OSINT framework and package manager. It was built
-for IT security professionals and bug hunters to gather intelligence about a
-given target or about yourself. sn0int is enumerating attack surface by
-semi-automatically processing public information and mapping the results in a
-unified format for followup investigations.
+sn0int (pronounced [`/snoɪnt/`][ipa]) is a semi-automatic OSINT framework and
+package manager. It was built for IT security professionals and bug hunters to
+gather intelligence about a given target or about yourself. sn0int is
+enumerating attack surface by semi-automatically processing public information
+and mapping the results in a unified format for followup investigations.
+
+[ipa]: http://ipa-reader.xyz/?text=sno%C9%AAnt
 
 Among other things, sn0int is currently able to:
 
@@ -28,6 +32,7 @@ Among other things, sn0int is currently able to:
 - Find somebody's profiles across the internet
 - Enumerate local networks with unique techniques like passive arp
 - Gather information about phonenumbers
+- Attempt to bypass cloudflare with shodan
 - Harvest data and images from instagram profiles
 - Scan images for nudity
 
@@ -84,6 +89,10 @@ For everything else please have a look at the [detailed list][1].
   - [Running a module](https://sn0int.readthedocs.io/en/latest/usage.html#running-a-module)
   - [Running followup modules on the results](https://sn0int.readthedocs.io/en/latest/usage.html#running-followup-modules-on-the-results)
   - [Unscoping entities](https://sn0int.readthedocs.io/en/latest/usage.html#unscoping-entities)
+  - [Autonoscope](https://sn0int.readthedocs.io/en/latest/usage.html#autonoscope)
+    - [Domains](https://sn0int.readthedocs.io/en/latest/usage.html#domains)
+    - [IPs](https://sn0int.readthedocs.io/en/latest/usage.html#ips)
+    - [URLs](https://sn0int.readthedocs.io/en/latest/usage.html#urls)
 - [Scripting](https://sn0int.readthedocs.io/en/latest/scripting.html)
   - [Write your first module](https://sn0int.readthedocs.io/en/latest/scripting.html#write-your-first-module)
   - [Publish your module](https://sn0int.readthedocs.io/en/latest/scripting.html#publish-your-module)

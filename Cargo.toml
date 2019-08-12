@@ -37,17 +37,18 @@ diesel_migrations = { version = "1.3.0", features = ["sqlite"] }
 libsqlite3-sys = "0.12.0"
 chrono = { version = "0.4", features = ["serde"] }
 dirs = "2.0"
-url = "1.7"
+url = "2.0"
+percent-encoding = "2.1"
 #chrootable-https = { path = "../chrootable-https" }
-chrootable-https = "0.10"
-rustls = { version="0.15", features=["dangerous_configuration"] }
-webpki = "0.19"
-webpki-roots = "0.16.0"
+chrootable-https = "0.11"
+rustls = { version="0.16", features=["dangerous_configuration"] }
+webpki = "0.21"
+webpki-roots = "0.17"
 pem = "0.6.0"
 base64 = "0.10"
 data-encoding = "2.1.2"
 kuchiki = "0.7.2"
-serde_urlencoded = "0.5"
+serde_urlencoded = "0.6"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
@@ -94,7 +95,7 @@ nude = "0.2"
 caps = "0.3"
 #syscallz = { path="../syscallz-rs" }
 syscallz = "0.11"
-nix = "0.14"
+nix = "0.15"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.3.1"
@@ -102,5 +103,5 @@ unveil = "0.2.0"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
-boxxy = "0.10"
+boxxy = "0.11"
 tempfile = "3.0"

@@ -53,25 +53,32 @@ pub struct KeyRingList {
 pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
-        Args::Add(add) => keyring_add(rl.keyring_mut(), add),
-        Args::Delete(delete) => keyring_delete(rl.keyring_mut(), delete),
+        Args::Add(add) => keyring_add(rl, add),
+        Args::Delete(delete) => keyring_delete(rl, delete),
         Args::Get(get) => keyring_get(rl.keyring(), &get),
         Args::List(list) => keyring_list(rl.keyring(), list),
     }
 }
 
-fn keyring_add(keyring: &mut KeyRing, add: KeyRingAdd) -> Result<()> {
+fn keyring_add(rl: &mut Readline, add: KeyRingAdd) -> Result<()> {
+    let keyring = rl.keyring_mut();
+
     // TODO: there's no non-interactive way to add a key without a secret key
     let secret = match add.secret {
         Some(secret) => Some(secret),
         None => utils::question_opt("Secretkey")?,
     };
 
-    keyring.insert(add.key, secret)
+    keyring.insert(add.key, secret)?;
+    rl.reload_keyring_cache();
+    Ok(())
 }
 
-fn keyring_delete(keyring: &mut KeyRing, delete: KeyRingDelete) -> Result<()> {
-    keyring.delete(delete.key)
+fn keyring_delete(rl: &mut Readline, delete: KeyRingDelete) -> Result<()> {
+    let keyring = rl.keyring_mut();
+    keyring.delete(delete.key)?;
+    rl.reload_keyring_cache();
+    Ok(())
 }
 
 fn keyring_get(keyring: &KeyRing, get: &KeyRingGet) -> Result<()> {

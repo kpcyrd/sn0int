@@ -9,6 +9,9 @@ table! {
         url -> Nullable<Text>,
         last_seen -> Nullable<Timestamp>,
         unscoped -> Bool,
+        phonenumber -> Nullable<Text>,
+        profile_pic -> Nullable<Text>,
+        birthday -> Nullable<Text>,
     }
 }
 
@@ -136,6 +139,7 @@ table! {
         unscoped -> Bool,
         latitude -> Nullable<Float>,
         longitude -> Nullable<Float>,
+        description -> Nullable<Text>,
     }
 }
 

@@ -304,6 +304,7 @@ impl IntoInsert for AddNetwork {
             value: network,
             latitude,
             longitude,
+            description: None,
             unscoped: false,
         }))
     }
@@ -342,6 +343,9 @@ impl IntoInsert for AddAccount {
             email: None,
             url: None,
             last_seen: None,
+            birthday: None,
+            phonenumber: None,
+            profile_pic: None,
             unscoped: false,
         }))
     }
