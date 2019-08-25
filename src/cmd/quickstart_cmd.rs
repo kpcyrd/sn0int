@@ -3,10 +3,11 @@ use crate::errors::*;
 use crate::args::Install;
 use crate::api::Client;
 use crate::cmd::mod_cmd;
-use crate::registry::InstallTask;
+use crate::registry::{InstallTask, Updater};
 use crate::shell::Readline;
 use crate::update::AutoUpdater;
 use crate::worker;
+use std::sync::Arc;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use sn0int_common::ModuleID;
@@ -23,6 +24,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     let config = rl.config().clone();
 
     let client = Client::new(&config)?;
+    let updater = Arc::new(Updater::new(&config)?);
     let mut autoupdate = AutoUpdater::load()?;
 
     let modules = client.quickstart()?
@@ -34,7 +36,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
                     name: module.name,
                 },
                 version: None,
-            }, config.clone())
+            }, updater.clone())
         })
         .collect::<Vec<_>>();
 

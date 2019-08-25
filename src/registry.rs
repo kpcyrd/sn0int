@@ -11,6 +11,7 @@ use sn0int_common::api::ModuleInfoResponse;
 use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 use crate::paths;
 use crate::term;
 use crate::worker::{self, Task, EventSender, LogEvent};
@@ -104,14 +105,14 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
 
 pub struct InstallTask {
     install: Install,
-    config: Config,
+    client: Arc<Updater>,
 }
 
 impl InstallTask {
-    pub fn new(install: Install, config: Config) -> InstallTask {
+    pub fn new(install: Install, client: Arc<Updater>) -> InstallTask {
         InstallTask {
             install,
-            config,
+            client,
         }
     }
 }
@@ -128,8 +129,7 @@ impl Task for InstallTask {
     }
 
     fn run(self, tx: &EventSender) -> Result<()> {
-        let client = Updater::new(&self.config)?;
-        let version = client.install(&self.install)?;
+        let version = self.client.install(&self.install)?;
         let label = format!("installed v{}", version);
         tx.log(LogEvent::Success(label));
         Ok(())

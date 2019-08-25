@@ -330,7 +330,7 @@ pub mod tests {
     pub struct DummyReporter;
 
     impl DummyReporter {
-        pub fn new() -> Arc<Mutex<Box<Reporter>>> {
+        pub fn new() -> Arc<Mutex<Box<dyn Reporter>>> {
             Arc::new(Mutex::new(Box::new(DummyReporter)))
         }
     }
