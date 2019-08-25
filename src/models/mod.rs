@@ -333,7 +333,7 @@ macro_rules! display_detailed {
 pub trait LuaInsertToNew {
     type Target;
 
-    fn try_into_new(self, state: &Arc<State>) -> Result<Self::Target>;
+    fn try_into_new(self, state: &Arc<dyn State>) -> Result<Self::Target>;
 }
 
 mod domain;

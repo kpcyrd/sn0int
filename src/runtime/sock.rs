@@ -7,7 +7,7 @@ use crate::sockets::SocketOptions;
 use std::sync::Arc;
 
 
-pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_connect", hlua::function3(move |host: String, port: u16, options: AnyLuaValue| -> Result<String> {
         let options = SocketOptions::try_from(options)
             .context("invalid socket options")
@@ -18,7 +18,7 @@ pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_upgrade_tls(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_upgrade_tls(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_upgrade_tls", hlua::function2(move |sock: String, options: AnyLuaValue| -> Result<AnyLuaValue> {
         let options = SocketOptions::try_from(options)
             .context("invalid socket options")
@@ -31,7 +31,7 @@ pub fn sock_upgrade_tls(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_send(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_send(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_send", hlua::function2(move |sock: String, bytes: AnyLuaValue| -> Result<()> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -46,7 +46,7 @@ pub fn sock_send(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recv(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recv(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recv", hlua::function1(move |sock: String| -> Result<AnyLuaValue> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -58,7 +58,7 @@ pub fn sock_recv(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_sendline(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_sendline(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_sendline", hlua::function2(move |sock: String, line: String| -> Result<()> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -70,7 +70,7 @@ pub fn sock_sendline(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvline(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvline(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvline", hlua::function1(move |sock: String| -> Result<String> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -82,7 +82,7 @@ pub fn sock_recvline(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvall(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvall(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvall", hlua::function1(move |sock: String| -> Result<AnyLuaValue> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -94,7 +94,7 @@ pub fn sock_recvall(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvline_contains(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvline_contains(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvline_contains", hlua::function2(move |sock: String, needle: String| -> Result<String> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -106,7 +106,7 @@ pub fn sock_recvline_contains(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvline_regex(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvline_regex(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvline_regex", hlua::function2(move |sock: String, regex: String| -> Result<String> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -118,7 +118,7 @@ pub fn sock_recvline_regex(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvn(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvn(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvn", hlua::function2(move |sock: String, n: u32| -> Result<AnyLuaValue> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -130,7 +130,7 @@ pub fn sock_recvn(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_recvuntil(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_recvuntil(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_recvuntil", hlua::function2(move |sock: String, delim: AnyLuaValue| -> Result<AnyLuaValue> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -145,7 +145,7 @@ pub fn sock_recvuntil(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_sendafter(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_sendafter(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_sendafter", hlua::function3(move |sock: String, delim: AnyLuaValue, bytes: AnyLuaValue| -> Result<()> {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
@@ -163,7 +163,7 @@ pub fn sock_sendafter(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sock_newline(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sock_newline(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_newline", hlua::function2(move |sock: String, newline: String| -> () {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();

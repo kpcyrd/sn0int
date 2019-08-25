@@ -296,7 +296,7 @@ pub struct InsertEmail {
 impl LuaInsertToNew for InsertEmail {
     type Target = NewEmail;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewEmail> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewEmail> {
         let value = self.value.to_lowercase();
         Ok(NewEmail {
             value,

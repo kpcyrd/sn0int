@@ -257,7 +257,7 @@ pub struct InsertNetblock {
 impl LuaInsertToNew for InsertNetblock {
     type Target = NewNetblock;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetblock> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewNetblock> {
         let ipnet = self.value.parse::<ipnetwork::IpNetwork>()
             .context("Failed to parse ip network")?;
 

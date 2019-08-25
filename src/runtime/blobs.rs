@@ -6,7 +6,7 @@ use crate::hlua::{self, AnyLuaValue};
 use std::sync::Arc;
 
 
-pub fn create_blob(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn create_blob(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("create_blob", hlua::function1(move |bytes: AnyLuaValue| -> Result<String> {
         let bytes = byte_array(bytes)
             .map_err(|err| state.set_error(err))?;

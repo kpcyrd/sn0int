@@ -295,7 +295,7 @@ pub struct InsertUrl {
 impl LuaInsertToNew for InsertUrl {
     type Target = NewUrl;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewUrl> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewUrl> {
         let url = url::Url::parse(&self.value)?;
         let path = url.path().to_string();
 

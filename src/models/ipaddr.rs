@@ -360,7 +360,7 @@ pub struct InsertIpAddr {
 impl LuaInsertToNew for InsertIpAddr {
     type Target = NewIpAddr;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewIpAddr> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewIpAddr> {
         let ipaddr = self.value.parse::<net::IpAddr>()
             .context("Failed to parse ip address")?;
 

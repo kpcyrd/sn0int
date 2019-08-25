@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::net::IpAddr;
 
 
-pub fn asn_lookup(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn asn_lookup(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("asn_lookup", hlua::function1(move |ip: String| -> Result<AnyLuaValue> {
         let asn = state.asn()
             .map_err(|err| state.set_error(err))?;
@@ -27,7 +27,7 @@ pub fn asn_lookup(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn geoip_lookup(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn geoip_lookup(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("geoip_lookup", hlua::function1(move |ip: String| -> Result<AnyLuaValue> {
         let geoip = state.geoip()
             .map_err(|err| state.set_error(err))?;

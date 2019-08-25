@@ -8,7 +8,7 @@ use serde_json;
 use std::sync::Arc;
 
 
-pub fn x509_parse_pem(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn x509_parse_pem(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("x509_parse_pem", hlua::function1(move |cert: String| -> Result<AnyLuaValue> {
         let cert = Certificate::parse_pem(&cert)
             .map_err(|e| state.set_error(e))?;

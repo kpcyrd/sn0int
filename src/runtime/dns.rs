@@ -50,7 +50,7 @@ impl ResolveOptions {
     }
 }
 
-pub fn dns(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn dns(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("dns", hlua::function2(move |name: String, options: AnyLuaValue| -> Result<AnyLuaValue> {
         if state.proxy().is_some() {
             let e = format_err!("dns is disabled if a proxy is active");

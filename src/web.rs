@@ -130,7 +130,7 @@ impl HttpRequest {
         request
     }
 
-    pub fn send(&self, state: &State) -> Result<Response> {
+    pub fn send(&self, state: &dyn State) -> Result<Response> {
         let mut url = self.url.parse::<Uri>()?;
 
         // set query string
@@ -222,7 +222,7 @@ impl HttpRequest {
         Ok(res)
     }
 
-    pub fn response_to_lua(&self, state: &State, res: Response) -> Result<LuaMap> {
+    pub fn response_to_lua(&self, state: &dyn State, res: Response) -> Result<LuaMap> {
         // map result to LuaMap
         let mut resp = LuaMap::new();
         resp.insert_num("status", f64::from(res.status));
@@ -244,7 +244,7 @@ impl HttpRequest {
         Ok(resp)
     }
 
-    fn register_cookies_on_state(session: &str, state: &State, cookie: &str) {
+    fn register_cookies_on_state(session: &str, state: &dyn State, cookie: &str) {
         let mut key = String::new();
         let mut value = String::new();
         let mut in_key = true;

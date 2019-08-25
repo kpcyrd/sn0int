@@ -271,7 +271,7 @@ pub struct InsertBreach {
 impl LuaInsertToNew for InsertBreach {
     type Target = NewBreach;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreach> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewBreach> {
         Ok(NewBreach {
             value: self.value,
 

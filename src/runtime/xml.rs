@@ -5,7 +5,7 @@ use crate::xml;
 use std::sync::Arc;
 
 
-pub fn xml_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn xml_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("xml_decode", hlua::function1(move |x: String| -> Result<AnyLuaValue> {
         xml::decode(&x)
             .map_err(|err| state.set_error(err))
@@ -57,7 +57,7 @@ fn match_element_name(xml: &AnyLuaValue, name: &str) -> bool {
     }
 }
 
-pub fn xml_named(lua: &mut hlua::Lua, _state: Arc<State>) {
+pub fn xml_named(lua: &mut hlua::Lua, _state: Arc<dyn State>) {
     lua.set("xml_named", hlua::function2(move |xml: AnyLuaValue, name: String| -> AnyLuaValue {
         if let Some(value) = get_children(xml) {
             match value {

@@ -139,7 +139,7 @@ pub type InsertSubdomainIpAddr = NewSubdomainIpAddr;
 impl LuaInsertToNew for InsertSubdomainIpAddr {
     type Target = NewSubdomainIpAddr;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomainIpAddr> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewSubdomainIpAddr> {
         Ok(self)
     }
 }

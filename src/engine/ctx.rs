@@ -156,7 +156,7 @@ pub trait State {
 // #[derive(Debug)]
 pub struct LuaState {
     error: Mutex<Option<Error>>,
-    logger: Arc<Mutex<Box<Reporter>>>,
+    logger: Arc<Mutex<Box<dyn Reporter>>>,
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
     blobs: Mutex<HashMap<String, Arc<Blob>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
@@ -322,7 +322,7 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
+fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -473,7 +473,7 @@ impl Script {
     }
 
     pub fn run(&self, env: Environment,
-                      tx: Arc<Mutex<Box<Reporter>>>,
+                      tx: Arc<Mutex<Box<dyn Reporter>>>,
                       arg: AnyLuaValue,
     ) -> Result<()> {
         let (mut lua, state) = ctx(env, tx);

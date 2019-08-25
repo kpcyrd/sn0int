@@ -15,7 +15,7 @@ pub struct ImageData<'a> {
     height: u32,
 }
 
-pub fn img_load(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn img_load(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("img_load", hlua::function1(move |blob: String| -> Result<AnyLuaValue> {
         let img = state.get_blob(&blob)
             .map_err(|err| state.set_error(err))?;
@@ -43,7 +43,7 @@ pub struct Nudity {
     score: f64,
 }
 
-pub fn img_nudity(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn img_nudity(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("img_nudity", hlua::function1(move |blob: String| -> Result<AnyLuaValue> {
         let img = state.get_blob(&blob)
             .map_err(|err| state.set_error(err))?;
@@ -66,7 +66,7 @@ pub fn img_nudity(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn img_exif(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn img_exif(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("img_exif", hlua::function1(move |blob: String| -> Result<AnyLuaValue> {
         let img = state.get_blob(&blob)
             .map_err(|err| state.set_error(err))?;

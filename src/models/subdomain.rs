@@ -258,7 +258,7 @@ pub struct InsertSubdomain {
 impl LuaInsertToNew for InsertSubdomain {
     type Target = NewSubdomain;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewSubdomain> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewSubdomain> {
         let value = self.value.to_lowercase();
         Ok(NewSubdomain {
             domain_id: self.domain_id,

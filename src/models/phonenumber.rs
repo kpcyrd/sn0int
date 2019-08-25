@@ -299,7 +299,7 @@ pub struct InsertPhoneNumber {
 impl LuaInsertToNew for InsertPhoneNumber {
     type Target = NewPhoneNumber;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewPhoneNumber> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewPhoneNumber> {
         if !self.value.starts_with('+') {
             bail!("E.164 phone number must start with '+'");
         }
