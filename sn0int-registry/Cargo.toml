@@ -8,7 +8,7 @@ repository = "https://github.com/kpcyrd/sn0int"
 edition = "2018"
 
 [dependencies]
-sn0int-common = { version="0.7.0", path="sn0int-common" }
+sn0int-common = { version="0.8.0", path="sn0int-common" }
 rocket = { version = "0.4", default-features=false }
 #rocket_failure = { path = "../../rocket_failure" }
 rocket_failure = { version = "0.2" }
