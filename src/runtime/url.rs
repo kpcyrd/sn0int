@@ -9,7 +9,7 @@ use serde_json::Value;
 use serde_urlencoded;
 use std::sync::Arc;
 
-pub fn url_join(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn url_join(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("url_join", hlua::function2(move |base: String, update: String| -> Result<String> {
         let base = Url::parse(&base)
             .map_err(|err| state.set_error(Error::from(err)))?;
@@ -20,7 +20,7 @@ pub fn url_join(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn url_parse(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn url_parse(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("url_parse", hlua::function1(move |url: String| -> Result<AnyLuaValue> {
         let url = Url::parse(&url)
             .map_err(|err| state.set_error(Error::from(err)))?;
@@ -60,7 +60,7 @@ pub fn url_parse(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn url_encode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn url_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("url_encode", hlua::function1(move |v: AnyLuaValue| -> Result<String> {
         let v: LuaJsonValue = v.into();
         let v: Value = v.into();
@@ -69,7 +69,7 @@ pub fn url_encode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn url_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn url_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("url_decode", hlua::function1(move |v: String| -> Result<AnyLuaValue> {
         let v: Value = serde_urlencoded::from_str(&v)
             .map_err(|err| state.set_error(Error::from(err)))?;
@@ -78,14 +78,14 @@ pub fn url_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn url_escape(lua: &mut hlua::Lua, _state: Arc<State>) {
+pub fn url_escape(lua: &mut hlua::Lua, _state: Arc<dyn State>) {
     lua.set("url_escape", hlua::function1(move |v: String| -> String {
         percent_encode(v.as_bytes(), NON_ALPHANUMERIC)
             .to_string()
     }))
 }
 
-pub fn url_unescape(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn url_unescape(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("url_unescape", hlua::function1(move |v: String| -> Result<String> {
         percent_decode(v.as_bytes())
             .decode_utf8()

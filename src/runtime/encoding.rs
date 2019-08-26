@@ -18,7 +18,7 @@ fn spec(symbols: &str, padding: &str) -> Result<Encoding> {
         .map_err(Error::from)
 }
 
-pub fn base64_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base64_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_decode", hlua::function1(move |bytes: String| -> Result<AnyLuaValue> {
         base64::decode(&bytes)
             .map_err(|err| state.set_error(err.into()))
@@ -26,7 +26,7 @@ pub fn base64_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn base64_encode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base64_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_encode", hlua::function1(move |bytes: AnyLuaValue| -> Result<String> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -34,7 +34,7 @@ pub fn base64_encode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_custom_decode", hlua::function3(move |bytes: String, alphabet: String, padding: String| -> Result<AnyLuaValue> {
         if alphabet.len() != 64 {
             bail!("alphabet isn't base64");
@@ -47,7 +47,7 @@ pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_custom_encode", hlua::function3(move |bytes: AnyLuaValue, alphabet: String, padding: String| -> Result<String> {
         if alphabet.len() != 64 {
             bail!("alphabet isn't base64");
@@ -60,7 +60,7 @@ pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base32_custom_decode", hlua::function3(move |bytes: String, alphabet: String, padding: String| -> Result<AnyLuaValue> {
         if alphabet.len() != 32 {
             bail!("alphabet isn't base32");
@@ -73,7 +73,7 @@ pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn base32_custom_encode(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn base32_custom_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base32_custom_encode", hlua::function3(move |bytes: AnyLuaValue, alphabet: String, padding: String| -> Result<String> {
         if alphabet.len() != 32 {
             bail!("alphabet isn't base32");

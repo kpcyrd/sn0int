@@ -11,14 +11,14 @@ use crate::models::*;
 use crate::json::LuaJsonValue;
 
 
-pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue, state: &Arc<State>) -> Result<T::Target>
+pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue, state: &Arc<dyn State>) -> Result<T::Target>
     where for<'de> T: serde::Deserialize<'de>
 {
     structs::from_lua::<T>(x)?
         .try_into_new(state)
 }
 
-fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Result<Insert> {
+fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<dyn State>) -> Result<Insert> {
     let obj = match family {
         Family::Domain => {
             Insert::Domain(try_into_new::<InsertDomain>(object, state)?)
@@ -72,7 +72,7 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<State>) -> Resu
     Ok(obj)
 }
 
-pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn db_add(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_add", hlua::function2(move |family: String, object: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e.into()))?;
@@ -86,7 +86,7 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_add_ttl", hlua::function3(move |family: String, object: AnyLuaValue, ttl: i32| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e.into()))?;
@@ -100,7 +100,7 @@ pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn db_select(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn db_select(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_select", hlua::function2(move |family: String, value: String| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e.into()))?;
@@ -130,7 +130,7 @@ fn gen_changeset<T: Model, U: Updateable<T>>(object: LuaJsonValue, mut update: L
     Ok((existing.id(), value, update))
 }
 
-pub fn db_update(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e.into()))?;

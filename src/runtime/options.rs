@@ -3,7 +3,7 @@ use crate::hlua;
 use std::sync::Arc;
 
 
-pub fn getopt(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn getopt(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("getopt", hlua::function1(move |key: String| -> Option<String> {
         state.getopt(&key)
             .map(|x| x.to_owned())

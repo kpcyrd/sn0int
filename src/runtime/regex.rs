@@ -17,7 +17,7 @@ fn capture_to_lua(caps: &Captures) -> AnyLuaValue {
     list.into()
 }
 
-pub fn regex_find(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn regex_find(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("regex_find", hlua::function2(move |regex: String, data: String| -> Result<AnyLuaValue> {
         let re = Regex::new(&regex)
             .map_err(|err| state.set_error(Error::from(err)))?;
@@ -29,7 +29,7 @@ pub fn regex_find(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn regex_find_all(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn regex_find_all(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("regex_find_all", hlua::function2(move |regex: String, data: String| -> Result<Vec<AnyLuaValue>> {
         let re = Regex::new(&regex)
             .map_err(|err| state.set_error(Error::from(err)))?;

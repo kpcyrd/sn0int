@@ -294,7 +294,7 @@ impl Module {
         self.private_module
     }
 
-    pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<dyn Reporter>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
         self.script.run(env, reporter, arg.into())
     }
@@ -330,7 +330,7 @@ pub mod tests {
     pub struct DummyReporter;
 
     impl DummyReporter {
-        pub fn new() -> Arc<Mutex<Box<Reporter>>> {
+        pub fn new() -> Arc<Mutex<Box<dyn Reporter>>> {
             Arc::new(Mutex::new(Box::new(DummyReporter)))
         }
     }

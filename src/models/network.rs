@@ -268,7 +268,7 @@ pub struct InsertNetwork {
 impl LuaInsertToNew for InsertNetwork {
     type Target = NewNetwork;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetwork> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewNetwork> {
         Ok(NewNetwork {
             value: self.value,
             latitude: self.latitude,

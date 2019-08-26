@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 
 // TODO: consider renaming to time_sn0int
-pub fn datetime(lua: &mut hlua::Lua, _: Arc<State>) {
+pub fn datetime(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("datetime", hlua::function0(move || -> String {
         let now = Utc::now().naive_utc();
         now.format("%Y-%m-%dT%H:%M:%S")
@@ -14,7 +14,7 @@ pub fn datetime(lua: &mut hlua::Lua, _: Arc<State>) {
     }))
 }
 
-pub fn strftime(lua: &mut hlua::Lua, _: Arc<State>) {
+pub fn strftime(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("strftime", hlua::function2(move |format: String, time: i32| -> Result<String> {
         let time = NaiveDateTime::from_timestamp_opt(time.into(), 0)
             .ok_or_else(|| format_err!(""))?;
@@ -23,7 +23,7 @@ pub fn strftime(lua: &mut hlua::Lua, _: Arc<State>) {
     }))
 }
 
-pub fn strptime(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn strptime(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("strptime", hlua::function2(move |format: String, time: String| -> Result<i32> {
         let datetime = NaiveDateTime::parse_from_str(&time, &format)
             .map_err(|err| state.set_error(Error::from(err)))?;
@@ -31,7 +31,7 @@ pub fn strptime(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn time_unix(lua: &mut hlua::Lua, _: Arc<State>) {
+pub fn time_unix(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("time_unix", hlua::function0(move || -> i32 {
         let now = Utc::now().naive_utc();
         now.timestamp() as i32

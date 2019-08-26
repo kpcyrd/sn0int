@@ -369,7 +369,7 @@ pub struct InsertImage {
 impl LuaInsertToNew for InsertImage {
     type Target = NewImage;
 
-    fn try_into_new(self, state: &Arc<State>) -> Result<NewImage> {
+    fn try_into_new(self, state: &Arc<dyn State>) -> Result<NewImage> {
         // TODO: enforce this rule for updates as well
         if let Some(filename) = &self.filename {
             if filename.contains('/') {

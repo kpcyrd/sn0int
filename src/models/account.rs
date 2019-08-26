@@ -293,7 +293,7 @@ pub struct InsertAccount {
 impl LuaInsertToNew for InsertAccount {
     type Target = NewAccount;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewAccount> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewAccount> {
         if self.service.contains('/') {
             bail!("Service field can't contain `/`");
         }

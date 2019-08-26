@@ -174,7 +174,7 @@ pub type InsertBreachEmail = NewBreachEmail;
 impl LuaInsertToNew for InsertBreachEmail {
     type Target = NewBreachEmail;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewBreachEmail> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewBreachEmail> {
         Ok(self)
     }
 }

@@ -3,7 +3,7 @@ use crate::engine::ctx::State;
 use crate::hlua;
 use std::sync::Arc;
 
-pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn psl_domain_from_dns_name(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("psl_domain_from_dns_name", hlua::function1(move |dns_name: String| -> Result<String> {
         let psl = state.psl()
             .map_err(|err| state.set_error(err))?;

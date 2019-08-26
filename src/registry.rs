@@ -11,6 +11,7 @@ use sn0int_common::api::ModuleInfoResponse;
 use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::Path;
+use std::sync::Arc;
 use crate::paths;
 use crate::term;
 use crate::worker::{self, Task, EventSender, LogEvent};
@@ -104,14 +105,14 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
 
 pub struct InstallTask {
     install: Install,
-    config: Config,
+    client: Arc<Updater>,
 }
 
 impl InstallTask {
-    pub fn new(install: Install, config: Config) -> InstallTask {
+    pub fn new(install: Install, client: Arc<Updater>) -> InstallTask {
         InstallTask {
             install,
-            config,
+            client,
         }
     }
 }
@@ -128,8 +129,7 @@ impl Task for InstallTask {
     }
 
     fn run(self, tx: &EventSender) -> Result<()> {
-        let client = Updater::new(&self.config)?;
-        let version = client.install(&self.install)?;
+        let version = self.client.install(&self.install)?;
         let label = format!("installed v{}", version);
         tx.log(LogEvent::Success(label));
         Ok(())
@@ -148,14 +148,14 @@ pub fn run_install(arg: &Install, config: &Config) -> Result<()> {
 
 pub struct UpdateTask {
     module: Module,
-    config: Config,
+    client: Arc<Updater>,
 }
 
 impl UpdateTask {
-    pub fn new(module: Module, config: Config) -> UpdateTask {
+    pub fn new(module: Module, client: Arc<Updater>) -> UpdateTask {
         UpdateTask {
             module,
-            config,
+            client,
         }
     }
 }
@@ -174,9 +174,7 @@ impl Task for UpdateTask {
     fn run(self, tx: &EventSender) -> Result<()> {
         let installed = self.module.version();
 
-        let client = Updater::new(&self.config)?;
-
-        let infos = client.query_module(&self.module.id())?;
+        let infos = self.client.query_module(&self.module.id())?;
         debug!("Latest version: {:?}", infos);
         let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
 
@@ -184,7 +182,7 @@ impl Task for UpdateTask {
             let label = format!("Updating {}: v{} -> v{}", self.name(), installed, latest);
             tx.log(LogEvent::Status(label));
 
-            client.install(&Install {
+            self.client.install(&Install {
                 module: self.module.id(),
                 version: None,
             })?;

@@ -8,7 +8,7 @@ use hmac::{Hmac, Mac};
 use std::sync::Arc;
 
 
-pub fn md5(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn md5(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("md5", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -16,7 +16,7 @@ pub fn md5(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sha1(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sha1(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha1", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -24,7 +24,7 @@ pub fn sha1(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sha2_256(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sha2_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha2_256", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -32,7 +32,7 @@ pub fn sha2_256(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sha2_512(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sha2_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha2_512", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -40,7 +40,7 @@ pub fn sha2_512(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sha3_256(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sha3_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha3_256", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -48,7 +48,7 @@ pub fn sha3_256(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn sha3_512(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn sha3_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha3_512", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
@@ -74,42 +74,42 @@ fn hmac<D>(secret: AnyLuaValue, msg: AnyLuaValue) -> Result<AnyLuaValue>
     Ok(lua_bytes(&result.code()))
 }
 
-pub fn hmac_md5(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_md5(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_md5", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<md5::Md5>(secret, msg)
             .map_err(|err| state.set_error(err))
     }))
 }
 
-pub fn hmac_sha1(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_sha1(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_sha1", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<sha1::Sha1>(secret, msg)
             .map_err(|err| state.set_error(err))
     }))
 }
 
-pub fn hmac_sha2_256(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_sha2_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_sha2_256", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<sha2::Sha256>(secret, msg)
             .map_err(|err| state.set_error(err))
     }))
 }
 
-pub fn hmac_sha2_512(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_sha2_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_sha2_512", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<sha2::Sha512>(secret, msg)
             .map_err(|err| state.set_error(err))
     }))
 }
 
-pub fn hmac_sha3_256(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_sha3_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_sha3_256", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<sha3::Sha3_256>(secret, msg)
             .map_err(|err| state.set_error(err))
     }))
 }
 
-pub fn hmac_sha3_512(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hmac_sha3_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hmac_sha3_512", hlua::function2(move |secret: AnyLuaValue, msg: AnyLuaValue| -> Result<AnyLuaValue> {
         hmac::<sha3::Sha3_512>(secret, msg)
             .map_err(|err| state.set_error(err))

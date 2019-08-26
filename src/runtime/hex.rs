@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 
 // TODO: consider deprecating this function, replace with hex_{en,de}code and hex_custom_{en,de}code
-pub fn hex(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn hex(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("hex", hlua::function1(move |bytes: AnyLuaValue| -> Result<String> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))

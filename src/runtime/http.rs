@@ -8,13 +8,13 @@ use std::collections::HashMap;
 use crate::web::{RequestOptions, HttpRequest};
 
 
-pub fn http_mksession(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn http_mksession(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("http_mksession", hlua::function0(move || -> String {
         state.http_mksession()
     }))
 }
 
-pub fn http_request(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn http_request(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("http_request", hlua::function4(move |session: String, method: String, url: String, options: AnyLuaValue| -> Result<AnyLuaValue> {
         RequestOptions::try_from(options)
             .context("invalid request options")
@@ -25,7 +25,7 @@ pub fn http_request(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn http_send(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("http_send", hlua::function1(move |request: AnyLuaValue| -> Result<HashMap<AnyHashableLuaValue, AnyLuaValue>> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")
@@ -40,7 +40,7 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("http_fetch", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")
@@ -59,7 +59,7 @@ pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn http_fetch_json(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn http_fetch_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("http_fetch_json", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")

@@ -1,12 +1,13 @@
 use crate::errors::*;
 
 use crate::args;
-use crate::registry::{self, UpdateTask};
+use crate::registry::{self, UpdateTask, Updater};
 use crate::shell::Readline;
 use crate::update::AutoUpdater;
 use crate::worker;
 use colored::Colorize;
 use std::fmt::Write;
+use std::sync::Arc;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -106,6 +107,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
         },
         SubCommand::Update(_) => {
             let mut autoupdate = AutoUpdater::load()?;
+            let updater = Arc::new(Updater::new(&config)?);
 
             let modules = rl.engine().list()
                 .into_iter()
@@ -117,7 +119,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
                         return None;
                     }
 
-                    Some(UpdateTask::new(module.clone(), config.clone()))
+                    Some(UpdateTask::new(module.clone(), updater.clone()))
                 })
                 .collect::<Vec<_>>();
 

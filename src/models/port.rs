@@ -276,7 +276,7 @@ pub struct InsertPort {
 impl LuaInsertToNew for InsertPort {
     type Target = NewPort;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewPort> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewPort> {
         let addr = SocketAddr::new(self.ip_addr, self.port as u16);
         let value = format!("{}/{}", self.protocol, addr);
 

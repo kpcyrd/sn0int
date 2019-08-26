@@ -443,7 +443,13 @@ pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) ->
 
             let exit = match task.run(&tx) {
                 Ok(_) => ExitEvent::Ok,
-                Err(err) => ExitEvent::Err(err.to_string()),
+                Err(err) => {
+                    let err = err.iter_chain()
+                        .map(|e| e.to_string())
+                        .collect::<Vec<_>>()
+                        .join(": ");
+                    ExitEvent::Err(err.to_string())
+                },
             };
 
             tx.send(Event2::Exit(exit));

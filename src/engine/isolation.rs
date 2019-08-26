@@ -237,7 +237,7 @@ pub fn run_worker(geoip: MaxmindReader, asn: MaxmindReader, psl: PslReader) -> R
         asn,
     };
 
-    let mtx: Arc<Mutex<Box<Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
+    let mtx: Arc<Mutex<Box<dyn Reporter>>> = Arc::new(Mutex::new(Box::new(reporter)));
     let result = start.module.run(environment,
                                   mtx.clone(),
                                   start.arg.into());

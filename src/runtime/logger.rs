@@ -35,7 +35,7 @@ fn format_lua(out: &mut String, x: &AnyLuaValue) {
     }
 }
 
-pub fn info(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn info(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("info", hlua::function1(move |val: AnyLuaValue| {
         let mut out = String::new();
         format_lua(&mut out, &val);
@@ -43,7 +43,7 @@ pub fn info(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn debug(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn debug(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("debug", hlua::function1(move |val: AnyLuaValue| {
         let mut out = String::new();
         format_lua(&mut out, &val);
@@ -51,31 +51,31 @@ pub fn debug(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn error(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn error(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("error", hlua::function1(move |msg: String| {
         state.error(msg);
     }))
 }
 
-pub fn warn(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn warn(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("warn", hlua::function1(move |msg: String| {
         state.warn(msg);
     }))
 }
 
-pub fn warn_once(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn warn_once(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("warn_once", hlua::function1(move |msg: String| {
         state.warn_once(msg);
     }))
 }
 
-pub fn status(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn status(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("status", hlua::function1(move |msg: String| {
         state.status(msg);
     }))
 }
 
-pub fn print(lua: &mut hlua::Lua, _: Arc<State>) {
+pub fn print(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("print", hlua::function1(move |val: AnyLuaValue| {
         // println!("{:?}", val);
         let mut out = String::new();

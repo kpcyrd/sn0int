@@ -67,7 +67,7 @@ fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
     Ok(map.into())
 }
 
-pub fn pgp_pubkey(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn pgp_pubkey(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("pgp_pubkey", hlua::function1(move |pubkey: AnyLuaValue| -> Result<AnyLuaValue> {
         let pubkey = byte_array(pubkey)
             .map_err(|err| state.set_error(err))?;
@@ -76,7 +76,7 @@ pub fn pgp_pubkey(lua: &mut hlua::Lua, state: Arc<State>) {
     }))
 }
 
-pub fn pgp_pubkey_armored(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn pgp_pubkey_armored(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("pgp_pubkey_armored", hlua::function1(move |pubkey: String| -> Result<AnyLuaValue> {
         let mut r = BufReader::new(pubkey.as_bytes());
         let pubkey = sloppy_rfc4880::armor::read_armored(&mut r)

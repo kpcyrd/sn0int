@@ -161,7 +161,7 @@ pub type InsertNetworkDevice = NewNetworkDevice;
 impl LuaInsertToNew for InsertNetworkDevice {
     type Target = NewNetworkDevice;
 
-    fn try_into_new(self, _state: &Arc<State>) -> Result<NewNetworkDevice> {
+    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewNetworkDevice> {
         Ok(self)
     }
 }

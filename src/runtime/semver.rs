@@ -5,13 +5,13 @@ use semver::{Version, VersionReq};
 use std::sync::Arc;
 
 
-pub fn sn0int_version(lua: &mut hlua::Lua, _: Arc<State>) {
+pub fn sn0int_version(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("sn0int_version", hlua::function0(move || -> String {
         env!("CARGO_PKG_VERSION").to_string()
     }))
 }
 
-pub fn semver_match(lua: &mut hlua::Lua, state: Arc<State>) {
+pub fn semver_match(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("semver_match", hlua::function2(move |range: String, version: String| -> Result<bool> {
         let r = VersionReq::parse(&range)
             .map_err(|err| state.set_error(Error::from(err)))?;
