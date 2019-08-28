@@ -1,5 +1,5 @@
 -- Description: Verify email address by asking the smtp server
--- Version: 0.2.0
+-- Version: 0.3.0
 -- Source: emails
 -- License: GPL-3.0
 

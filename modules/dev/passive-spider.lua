@@ -1,5 +1,5 @@
 -- Description: Scrape known http responses for urls
--- Version: 0.2.0
+-- Version: 0.3.0
 -- Source: urls
 -- License: GPL-3.0
 
