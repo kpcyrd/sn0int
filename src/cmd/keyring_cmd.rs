@@ -8,8 +8,7 @@ use crate::utils;
 
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub enum Args {
     #[structopt(name="add")]
     /// Add a new key to the keyring

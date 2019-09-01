@@ -14,8 +14,7 @@ use sn0int_common::ModuleID;
 
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
 }
 

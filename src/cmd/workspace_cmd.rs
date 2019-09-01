@@ -12,8 +12,7 @@ use crate::workspaces::{self, Workspace};
 
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Delete a workspaceb
     #[structopt(long = "delete", group = "action")]

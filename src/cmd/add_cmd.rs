@@ -16,8 +16,7 @@ use std::path::Path;
 use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,

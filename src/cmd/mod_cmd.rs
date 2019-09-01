@@ -13,8 +13,7 @@ use structopt::clap::AppSettings;
 
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     #[structopt(subcommand)]
     pub subcommand: SubCommand,
@@ -23,19 +22,19 @@ pub struct Args {
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
     /// List installed modules
-    #[structopt(author="", name="list")]
+    #[structopt(name="list")]
     List(List),
     /// Install module from registry
-    #[structopt(author="", name="install")]
+    #[structopt(name="install")]
     Install(args::Install),
     /// Search modules in registry
-    #[structopt(author="", name="search")]
+    #[structopt(name="search")]
     Search(args::Search),
     /// Reload modules
-    #[structopt(author="", name="reload")]
+    #[structopt(name="reload")]
     Reload(Reload),
     /// Update modules
-    #[structopt(author="", name="update")]
+    #[structopt(name="update")]
     Update(Update),
 }
 
