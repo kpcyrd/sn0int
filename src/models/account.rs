@@ -352,7 +352,7 @@ impl Updateable<Account> for AccountUpdate {
         Self::clear_if_equal(&mut self.displayname, &existing.displayname);
         Self::clear_if_equal(&mut self.email, &existing.email);
         Self::clear_if_equal(&mut self.url, &existing.url);
-        Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
+        Self::clear_if_lower_or_equal(&mut self.last_seen, &existing.last_seen);
         Self::clear_if_equal(&mut self.birthday, &existing.birthday);
         Self::clear_if_equal(&mut self.phonenumber, &existing.phonenumber);
         Self::clear_if_equal(&mut self.profile_pic, &existing.profile_pic);

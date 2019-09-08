@@ -6,8 +6,7 @@ use crate::workspaces::Workspace;
 
 
 #[derive(Debug, StructOpt)]
-#[structopt(author = "",
-            raw(global_settings = "&[AppSettings::ColoredHelp]"))]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Select a different workspace instead of the default
     #[structopt(short="w", long="workspace")]
@@ -29,49 +28,49 @@ impl Args {
 #[derive(Debug, StructOpt)]
 pub enum SubCommand {
     /// Run a module directly
-    #[structopt(author="", name="run")]
+    #[structopt(name="run")]
     Run(Run),
     /// For internal use
-    #[structopt(author="", name="sandbox")]
+    #[structopt(name="sandbox")]
     Sandbox(Sandbox),
     /// Login to the registry for publishing
-    #[structopt(author="", name="login")]
+    #[structopt(name="login")]
     Login(Login),
     /// Create a new module
-    #[structopt(author="", name="new")]
+    #[structopt(name="new")]
     New(New),
     /// Publish a script to the registry
-    #[structopt(author="", name="publish")]
+    #[structopt(name="publish")]
     Publish(Publish),
     /// Install a module from the registry
-    #[structopt(author="", name="install")]
+    #[structopt(name="install")]
     Install(Install),
     /// Search in the registry
-    #[structopt(author="", name="search")]
+    #[structopt(name="search")]
     Search(Search),
     /// Insert into the database
-    #[structopt(author="", name="add")]
+    #[structopt(name="add")]
     Add(cmd::add_cmd::Args),
     /// Select from the database
-    #[structopt(author="", name="select")]
+    #[structopt(name="select")]
     Select(cmd::select_cmd::Args),
     /// Delete from the database
-    #[structopt(author="", name="delete")]
+    #[structopt(name="delete")]
     Delete(cmd::delete_cmd::Args),
     /// Include entities in the scope
-    #[structopt(author="", name="scope")]
+    #[structopt(name="scope")]
     Scope(cmd::scope_cmd::Args),
     /// Exclude entities from scope
-    #[structopt(author="", name="noscope")]
+    #[structopt(name="noscope")]
     Noscope(cmd::noscope_cmd::Args),
     /// Manage workspaces
-    #[structopt(author="", name="workspace")]
+    #[structopt(name="workspace")]
     Workspace(cmd::workspace_cmd::Args),
     /// Verify blob storage for corrupt and dangling blobs
-    #[structopt(author="", name="fsck")]
+    #[structopt(name="fsck")]
     Fsck(cmd::fsck_cmd::Args),
     /// Generate shell completions
-    #[structopt(author="", name="completions")]
+    #[structopt(name="completions")]
     Completions(Completions),
 }
 
@@ -128,7 +127,7 @@ pub struct New {
 #[derive(Debug, StructOpt)]
 pub struct Publish {
     /// The scripts to publish
-    #[structopt(raw(required = "true"))]
+    #[structopt(required = true)]
     pub paths: Vec<String>,
 }
 
@@ -151,6 +150,6 @@ pub struct Search {
 
 #[derive(Debug, StructOpt)]
 pub struct Completions {
-    #[structopt(raw(possible_values="&Shell::variants()"))]
+    #[structopt(possible_values=&Shell::variants())]
     pub shell: Shell,
 }

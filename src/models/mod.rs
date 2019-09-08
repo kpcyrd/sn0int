@@ -278,6 +278,14 @@ pub trait Updateable<M> {
         if update == existing { update.take(); }
     }
 
+    fn clear_if_lower_or_equal<T: PartialOrd>(update: &mut Option<T>, existing: &Option<T>) {
+        if let (Some(new), Some(old)) = (&update, &existing) {
+            if *new <= *old {
+                update.take();
+            }
+        }
+    }
+
     fn changeset(&mut self, existing: &M);
 
     #[inline]
