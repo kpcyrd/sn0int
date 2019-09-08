@@ -35,13 +35,22 @@ function run(arg)
     if last_err() then return end
 
     -- info(r)
+
+    --[[
+    TODO: use this for last_seen
+    local last_modified = strptime('%Y/%m/%d %H:%M:%S +0000', r['last_modified'])
+    info(last_modified)
+    ]]--
+
+    local update = {}
+    update['url'] = r['permalink_url']
+    if r['full_name'] and r['full_name'] ~= "" then
+        -- full_name is technically not the display name
+        update['displayname'] = r['full_name']
+    end
     -- TODO: extract avatar
 
-    db_update('account', arg, {
-        -- full_name is technically not the display name
-        displayname=r['full_name'],
-        url=r['permalink_url']
-    })
+    db_update('account', arg, update)
 
     url = 'https://api-v2.soundcloud.com/users/soundcloud:users:' .. r['id'] .. '/web-profiles?client_id=' .. client_id
     req = http_request(session, 'GET', url, {})
