@@ -20,10 +20,7 @@ function scrape_panels(uid)
         headers=headers,
         body='[{"operationName":"ChannelPanels","variables":{"id":"' .. uid .. '"},"extensions":{"persistedQuery":{"version":1,"sha256Hash":"236b0ec07489e5172ee1327d114172f27aceca206a1a8053106d60926a7f622e"}}}]'
     })
-    local r = http_send(req)
-    if last_err() then return end
-    if r['status'] ~= 200 then return 'http error: ' .. r['status'] end -- TODO: set_err
-    local data = json_decode(r['text'])
+    local data = http_fetch_json(req)
     if last_err() then return end
 
     if not data[1] then return end
