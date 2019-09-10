@@ -69,6 +69,9 @@ pub enum SubCommand {
     /// Verify blob storage for corrupt and dangling blobs
     #[structopt(name="fsck")]
     Fsck(cmd::fsck_cmd::Args),
+    /// Run a lua repl
+    #[structopt(name="repl")]
+    Repl,
     /// Generate shell completions
     #[structopt(name="completions")]
     Completions(Completions),

@@ -3,7 +3,7 @@ use crate::hlua::{self, AnyLuaValue};
 use std::sync::Arc;
 
 
-fn format_lua(out: &mut String, x: &AnyLuaValue) {
+pub fn format_lua(out: &mut String, x: &AnyLuaValue) {
     match *x {
         AnyLuaValue::LuaNil => out.push_str("null"),
         AnyLuaValue::LuaString(ref x) => out.push_str(&format!("{:?}", x)),

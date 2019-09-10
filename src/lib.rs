@@ -38,6 +38,7 @@ pub mod paths;
 pub mod psl;
 pub mod options;
 pub mod registry;
+pub mod repl;
 pub mod runtime;
 pub mod sandbox;
 pub mod schema;

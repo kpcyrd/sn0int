@@ -322,7 +322,7 @@ pub struct Script {
     code: String,
 }
 
-fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
+pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -504,7 +504,7 @@ impl Script {
 
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
-        use crate::engine::tests::DummyReporter;
+        use crate::engine::DummyReporter;
         use crate::geoip::Maxmind;
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
