@@ -9,7 +9,7 @@ use crate::engine::{self, Module};
 use crate::engine::isolation::Supervisor;
 use crate::models::*;
 use serde_json;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{mpsc, Arc, Mutex};
@@ -263,7 +263,7 @@ impl StdioEvent {
     }
 }
 
-pub fn spawn(rl: &mut Readline, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
+pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;

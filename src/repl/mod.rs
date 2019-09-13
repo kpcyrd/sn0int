@@ -1,25 +1,29 @@
+use crate::config::Config;
 use crate::errors::*;
 use crate::engine::{ctx, Environment, DummyReporter};
 use crate::engine::ctx::State;
 use crate::geoip::{Maxmind, AsnDB, GeoIP};
 use crate::hlua::AnyLuaValue;
 use crate::psl::PslReader;
+use crate::shell::readline::Readline;
 use crate::runtime::format_lua;
 use chrootable_https::Resolver;
 use std::collections::HashMap;
-use rustyline::{CompletionType, EditMode, Editor, KeyPress, Movement, Word, At};
+
+mod complete;
+use self::complete::ReplCompleter;
 
 
-pub fn run() -> Result<()> {
+pub fn run(config: &Config) -> Result<()> {
     let keyring = Vec::new();
     let dns_config = Resolver::from_system()?;
-    let proxy = None;
+    let proxy = config.network.proxy;
     let psl = PslReader::open()?;
     let geoip = GeoIP::open_reader()?;
     let asn = AsnDB::open_reader()?;
 
     let env = Environment {
-        verbose: 0,
+        verbose: 0, // this doesn't do anything since we use a dummy reporter
         keyring,
         dns_config,
         proxy,
@@ -33,14 +37,12 @@ pub fn run() -> Result<()> {
     let tx = DummyReporter::new();
     let (mut lua, state) = ctx::ctx(env, tx);
 
-    let rl_config = rustyline::Config::builder()
-        .completion_type(CompletionType::List)
-        .edit_mode(EditMode::Emacs)
-        .build();
-    let mut rl: Editor<()> = Editor::with_config(rl_config);
-    rl.bind_sequence(KeyPress::ControlLeft, rustyline::Cmd::Move(Movement::BackwardWord(1, Word::Big)));
-    rl.bind_sequence(KeyPress::ControlRight, rustyline::Cmd::Move(Movement::ForwardWord(1, At::Start, Word::Big)));
+    println!(r#":: sn0int v{} lua repl
+Assign variables with `a = sn0int_version()` and `return a` to print
+Read the docs at https://sn0int.readthedocs.io/en/stable/reference.html
+"#, env!("CARGO_PKG_VERSION"));
 
+    let mut rl = Readline::with(ReplCompleter);
     loop {
         match rl.readline("> ") {
             Ok(line) => {

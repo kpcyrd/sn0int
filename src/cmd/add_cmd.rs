@@ -4,7 +4,7 @@ use crate::blobs::Blob;
 use crate::cmd::Cmd;
 use crate::gfx;
 use crate::models::*;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::utils;
@@ -63,7 +63,7 @@ pub enum Target {
 }
 
 impl Cmd for Args {
-    fn run(self, rl: &mut Readline) -> Result<()> {
+    fn run(self, rl: &mut Shell) -> Result<()> {
         match self.subcommand {
             Target::Domain(args) => args.insert(rl, self.dry_run),
             Target::Subdomain(args) => args.insert(rl, self.dry_run),
@@ -81,14 +81,14 @@ impl Cmd for Args {
 }
 
 #[inline]
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     Args::run_str(rl, args)
 }
 
 trait IntoInsert: Sized {
-    fn into_insert(self, rl: &mut Readline) -> Result<Insert>;
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert>;
 
-    fn insert(self, rl: &mut Readline, dry_run: bool) -> Result<()> {
+    fn insert(self, rl: &mut Shell, dry_run: bool) -> Result<()> {
         let insert = self.into_insert(rl)?;
         if !dry_run {
             rl.db().insert_generic(insert)?;
@@ -103,7 +103,7 @@ pub struct AddDomain {
 }
 
 impl IntoInsert for AddDomain {
-    fn into_insert(self, rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
         let domain = match self.domain {
             Some(domain) => domain,
             _ => utils::question("Domain")?,
@@ -130,7 +130,7 @@ pub struct AddSubdomain {
 }
 
 impl IntoInsert for AddSubdomain {
-    fn into_insert(self, rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
         let subdomain = match self.subdomain {
             Some(subdomain) => subdomain,
             _ => utils::question("Subdomain")?,
@@ -162,7 +162,7 @@ pub struct AddIpAddr {
 }
 
 impl IntoInsert for AddIpAddr {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let ipaddr = match self.ipaddr {
             Some(ipaddr) => ipaddr,
             _ => {
@@ -201,7 +201,7 @@ pub struct AddEmail {
 }
 
 impl IntoInsert for AddEmail {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let email = match self.email {
             Some(email) => email,
             _ => utils::question("Email")?,
@@ -223,7 +223,7 @@ pub struct AddPhoneNumber {
 }
 
 impl IntoInsert for AddPhoneNumber {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let (phonenumber, name) = match self.phonenumber {
             Some(phonenumber) => (phonenumber, self.name),
             _ => {
@@ -257,7 +257,7 @@ pub struct AddDevice {
 }
 
 impl IntoInsert for AddDevice {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let (mac, name) = match self.mac {
             Some(mac) => {
                 (mac, self.name)
@@ -288,7 +288,7 @@ pub struct AddNetwork {
 }
 
 impl IntoInsert for AddNetwork {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let (network, latitude, longitude) = match self.network {
             Some(network) => (network, self.latitude, self.longitude),
             _ => {
@@ -316,7 +316,7 @@ pub struct AddAccount {
 }
 
 impl IntoInsert for AddAccount {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let (service, username) = match (self.service, self.username) {
             (Some(service), Some(username)) => (service, username),
             _ => {
@@ -356,7 +356,7 @@ pub struct AddBreach {
 }
 
 impl IntoInsert for AddBreach {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let name = match self.name {
             Some(name) => name,
             _ => {
@@ -378,11 +378,11 @@ pub struct AddImage {
 }
 
 impl IntoInsert for AddImage {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         unreachable!()
     }
 
-    fn insert(self, rl: &mut Readline, dry_run: bool) -> Result<()> {
+    fn insert(self, rl: &mut Shell, dry_run: bool) -> Result<()> {
         let paths = if self.paths.is_empty() {
             let path = utils::question("Path")?;
             vec![path]
@@ -477,7 +477,7 @@ pub struct AddNetblock {
 }
 
 impl IntoInsert for AddNetblock {
-    fn into_insert(self, _rl: &mut Readline) -> Result<Insert> {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let ipnet = match self.ipnet {
             Some(ipnet) => ipnet,
             _ => {

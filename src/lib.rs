@@ -18,7 +18,6 @@ pub mod auth;
 pub mod autonoscope;
 pub mod blobs;
 pub mod cmd;
-pub mod complete;
 pub mod config;
 pub mod crt;
 pub mod db;

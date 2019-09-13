@@ -3,20 +3,15 @@ use crate::errors::*;
 use crate::args::Args;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::*;
-use crate::complete::CmdCompleter;
 use crate::config::Config;
 use crate::db::ttl;
 use crate::keyring::KeyRing;
 use crate::worker::VoidSender;
 use colored::Colorize;
-use ctrlc;
 use crate::db::{self, Database};
 use crate::engine::{Engine, Module};
 use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::update::AutoUpdater;
-use rustyline::error::ReadlineError;
-use rustyline::{self, CompletionType, EditMode, Editor, KeyPress, Movement, Word, At};
-use shellwords;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -26,6 +21,11 @@ use crate::paths;
 use crate::psl::{Psl, PslReader};
 use crate::lazy::Lazy;
 use crate::workspaces::Workspace;
+
+pub mod complete;
+use self::complete::CmdCompleter;
+pub mod readline;
+use self::readline::{Readline, ReadlineError};
 
 
 #[derive(Debug)]
@@ -129,8 +129,8 @@ impl FromStr for Command {
     }
 }
 
-pub struct Readline<'a> {
-    rl: Editor<CmdCompleter>,
+pub struct Shell<'a> {
+    rl: Readline<CmdCompleter>,
     prompt: Prompt,
     db: Database,
     blobs: BlobStorage,
@@ -143,22 +143,14 @@ pub struct Readline<'a> {
     signal_register: Arc<SignalRegister>,
 }
 
-impl<'a> Readline<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, engine: Engine<'a>, keyring: KeyRing) -> Readline<'a> {
-        let rl_config = rustyline::Config::builder()
-            .completion_type(CompletionType::List)
-            .edit_mode(EditMode::Emacs)
-            .build();
-        let mut rl: Editor<CmdCompleter> = Editor::with_config(rl_config);
-        rl.bind_sequence(KeyPress::ControlLeft, rustyline::Cmd::Move(Movement::BackwardWord(1, Word::Big)));
-        rl.bind_sequence(KeyPress::ControlRight, rustyline::Cmd::Move(Movement::ForwardWord(1, At::Start, Word::Big)));
-
+impl<'a> Shell<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, engine: Engine<'a>, keyring: KeyRing) -> Shell<'a> {
         let h = CmdCompleter::default();
-        rl.set_helper(Some(h));
+        let rl = Readline::with(h);
 
         let prompt = Prompt::new(db.name().to_string());
 
-        let mut rl = Readline {
+        let mut rl = Shell {
             rl,
             prompt,
             db,
@@ -344,12 +336,10 @@ impl<'a> Readline<'a> {
 
     pub fn load_history(&mut self) -> Result<()> {
         self.rl.load_history(&paths::history_path()?)
-            .map_err(Error::from)
     }
 
     pub fn save_history(&self) -> Result<()> {
         self.rl.save_history(&paths::history_path()?)
-            .map_err(Error::from)
     }
 
     pub fn set_signal_handler(&self) -> Result<()> {
@@ -421,7 +411,7 @@ pub fn print_banner() {
 "irc.hackint.org:6697/#sn0int".green());
 }
 
-pub fn run_once(rl: &mut Readline) -> Result<bool> {
+pub fn run_once(rl: &mut Shell) -> Result<bool> {
     let line = rl.readline();
     debug!("Received line: {:?}", line);
     match line {
@@ -451,7 +441,7 @@ pub fn run_once(rl: &mut Readline) -> Result<bool> {
     Ok(false)
 }
 
-pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<Readline<'a>> {
+pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<Shell<'a>> {
     let workspace = match args.workspace {
         Some(ref workspace) => workspace.clone(),
         None => Workspace::from_str("default").unwrap(),
@@ -484,7 +474,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<R
     }
     autoupdate.check_background(&config, engine.list());
 
-    let rl = Readline::new(&config, db, blobs, psl, engine, keyring);
+    let rl = Shell::new(&config, db, blobs, psl, engine, keyring);
 
     Ok(rl)
 }

@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::cmd::Cmd;
 use crate::db::ttl;
 use crate::filters::{Target, Filter};
-use crate::shell::Readline;
+use crate::shell::Shell;
 use serde::Serialize;
 use serde_json;
 use structopt::StructOpt;
@@ -31,12 +31,12 @@ enum Output {
 }
 
 struct Printer<'a, 'b> {
-    rl: &'a mut Readline<'b>,
+    rl: &'a mut Shell<'b>,
     output: Output,
 }
 
 impl<'a, 'b> Printer<'a, 'b> {
-    pub fn new(rl: &'a mut Readline<'b>, args: &Args) -> Printer<'a, 'b> {
+    pub fn new(rl: &'a mut Shell<'b>, args: &Args) -> Printer<'a, 'b> {
         let output = if args.json {
             Output::Json
         } else if args.paths {
@@ -79,7 +79,7 @@ impl<'a, 'b> Printer<'a, 'b> {
 }
 
 impl Cmd for Args {
-    fn run(self, rl: &mut Readline) -> Result<()> {
+    fn run(self, rl: &mut Shell) -> Result<()> {
         let printer = Printer::new(rl, &self);
 
         match &self.subcommand {
@@ -101,7 +101,7 @@ impl Cmd for Args {
 }
 
 #[inline]
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     ttl::reap_expired(rl.db())?;
     Args::run_str(rl, args)
 }

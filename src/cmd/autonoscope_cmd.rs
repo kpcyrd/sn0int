@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::autonoscope;
 use crate::fmt::colors::*;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use std::fmt::Write;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -44,7 +44,7 @@ fn display_rule<T: Color>(object: &str, rule: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn run_with_scope_param(rl: &mut Readline, args: Args, scoped: bool) -> Result<()> {
+pub fn run_with_scope_param(rl: &mut Shell, args: Args, scoped: bool) -> Result<()> {
     match args.subcommand {
         Subcommand::Add(add) => {
             rl.db_mut().autonoscope_add_rule(&add.object, &add.value, scoped)
@@ -65,7 +65,7 @@ pub fn run_with_scope_param(rl: &mut Readline, args: Args, scoped: bool) -> Resu
     }
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     run_with_scope_param(rl, args, false)
 }

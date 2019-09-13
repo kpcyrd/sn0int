@@ -4,7 +4,7 @@ use crate::args::Install;
 use crate::api::Client;
 use crate::cmd::mod_cmd;
 use crate::registry::{InstallTask, Updater};
-use crate::shell::Readline;
+use crate::shell::Shell;
 use crate::update::AutoUpdater;
 use crate::worker;
 use std::sync::Arc;
@@ -18,7 +18,7 @@ use sn0int_common::ModuleID;
 pub struct Args {
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let _args = Args::from_iter_safe(args)?;
     let config = rl.config().clone();
 

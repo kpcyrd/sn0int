@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use crate::term;
 use crate::worker;
 use crate::models::*;
@@ -24,7 +24,7 @@ pub struct Args {
 }
 
 impl Cmd for Args {
-    fn run(self, rl: &mut Readline) -> Result<()> {
+    fn run(self, rl: &mut Shell) -> Result<()> {
         let blobs = rl.blobs();
 
         let hashset = worker::spawn_fn("Building reference set...", || {
