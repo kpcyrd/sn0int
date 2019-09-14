@@ -15,7 +15,7 @@ use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 use std::thread;
-use std::io::{Stdin, BufRead, BufReader};
+use std::io::{Stdin, Read, BufRead, BufReader};
 use std::net::SocketAddr;
 use crate::term::{Spinner, StackedSpinners, SpinLogger};
 use threadpool::ThreadPool;
@@ -236,11 +236,13 @@ impl DatabaseEvent {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct StdioEvent {
+pub enum StdioEvent {
+    Readline,
+    ToEnd,
 }
 
 impl StdioEvent {
-    fn read(reader: &mut Option<BufReader<Stdin>>) -> Result<Option<String>> {
+    fn read_line(reader: &mut Option<BufReader<Stdin>>) -> Result<Option<String>> {
         if let Some(ref mut reader) = reader {
             let mut line = String::new();
             let len = reader.read_line(&mut line)?;
@@ -256,9 +258,27 @@ impl StdioEvent {
         }
     }
 
+    fn read_to_end(reader: &mut Option<BufReader<Stdin>>) -> Result<Option<String>> {
+        if let Some(ref mut reader) = reader {
+            let mut buf = String::new();
+            let len = reader.read_to_string(&mut buf)?;
+
+            if len > 0 {
+                Ok(Some(buf))
+            } else {
+                Ok(None)
+            }
+        } else {
+            bail!("stdin is unavailable");
+        }
+    }
+
     pub fn apply(self, supervisor: &mut Supervisor, tx: &EventSender, reader: &mut Option<BufReader<Stdin>>) {
-        let reply = Self::read(reader)
-            .map_err(|e| e.to_string());
+        let reply = match self {
+            StdioEvent::Readline => Self::read_line(reader),
+            StdioEvent::ToEnd => Self::read_to_end(reader),
+        };
+        let reply = reply.map_err(|e| e.to_string());
         supervisor.send_struct(reply, tx);
     }
 }

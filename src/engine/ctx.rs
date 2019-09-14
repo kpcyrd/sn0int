@@ -100,8 +100,15 @@ pub trait State {
         reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
     }
 
-    fn stdin_readline(&self) -> Result<Option<String>> {
-        self.send(&Event::Stdio(StdioEvent {}));
+    fn stdin_read_line(&self) -> Result<Option<String>> {
+        self.send(&Event::Stdio(StdioEvent::Readline));
+        let reply = self.recv()?;
+        let reply: result::Result<Option<String>, String> = serde_json::from_value(reply)?;
+        reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
+    }
+
+    fn stdin_read_to_end(&self) -> Result<Option<String>> {
+        self.send(&Event::Stdio(StdioEvent::ToEnd));
         let reply = self.recv()?;
         let reply: result::Result<Option<String>, String> = serde_json::from_value(reply)?;
         reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
@@ -430,7 +437,8 @@ fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua::Lu
     runtime::sock_sendafter(&mut lua, state.clone());
     runtime::sock_newline(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
-    runtime::stdin_readline(&mut lua, state.clone());
+    runtime::stdin_read_line(&mut lua, state.clone());
+    runtime::stdin_read_to_end(&mut lua, state.clone());
     runtime::strftime(&mut lua, state.clone());
     runtime::strptime(&mut lua, state.clone());
     runtime::time_unix(&mut lua, state.clone());
