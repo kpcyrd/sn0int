@@ -40,8 +40,9 @@ fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
                 fingerprint = Some(fp);
             },
             Tag::UserID => {
-                let body = String::from_utf8(body)?;
-                uids.push_str(body);
+                if let Ok(body) = String::from_utf8(body) {
+                    uids.push_str(body);
+                }
             },
             Tag::Signature => {
                 if let Ok(sig) = sloppy_rfc4880::signature::parse(&body) {

@@ -937,6 +937,20 @@ Read a line from stdin. The final newline is not removed.
 .. note::
    This only works with `sn0int run --stdin`.
 
+.. TODO: add stdin_read_line and deprecate stdin_readline
+
+stdin_read_to_end
+-----------------
+
+Read stdin until EOF as a utf-8 string.
+
+.. code-block:: lua
+
+    stdin_read_to_end()
+
+.. note::
+   This only works with `sn0int run --stdin`.
+
 strftime
 --------
 

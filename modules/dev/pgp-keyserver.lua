@@ -40,32 +40,37 @@ function run(arg)
                 error('http error: ' .. url .. ' => ' .. resp['status'])
             else
                 pubkey = pgp_pubkey_armored(resp['text'])
-                -- print(pubkey)
+                if last_err() then
+                    warn(last_err())
+                    clear_err()
+                else
+                    -- print(pubkey)
 
-                emails = {}
-                domain_matched = false
+                    local emails = {}
+                    local domain_matched = false
 
-                -- TODO: ensure at least one email matches our target domain
-                if pubkey['uids'] then
-                    for j=1, #pubkey['uids'] do
-                        local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
-                        if m then
-                            local email = m[3]:lower()
-                            emails[#emails+1] = {
-                                value=email,
-                                displayname=m[2],
-                            }
+                    -- TODO: ensure at least one email matches our target domain
+                    if pubkey['uids'] then
+                        for j=1, #pubkey['uids'] do
+                            local m = regex_find("(.+) <([^< ]+@[^< ]+)>$", pubkey['uids'][j])
+                            if m then
+                                local email = m[3]:lower()
+                                emails[#emails+1] = {
+                                    value=email,
+                                    displayname=m[2],
+                                }
 
-                            if email:match('@' .. domain .. '$') then
-                                domain_matched = true
+                                if email:match('@' .. domain .. '$') then
+                                    domain_matched = true
+                                end
                             end
                         end
                     end
-                end
 
-                if domain_matched then
-                    for j=1, #emails do
-                        db_add('email', emails[j])
+                    if domain_matched then
+                        for j=1, #emails do
+                            db_add('email', emails[j])
+                        end
                     end
                 end
             end
