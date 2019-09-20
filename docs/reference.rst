@@ -120,6 +120,10 @@ for ``DATETIME`` database fields.
     This format is sn0int specific, to get the current time for scripting use
     time_unix_ instead.
 
+.. warning::
+    This function is going to be deprecated at some point. Prefer sn0int_time_
+    for new scripts.
+
 db_add
 ------
 
@@ -761,6 +765,30 @@ only used for debugging.
 .. code-block:: lua
 
     sleep(1)
+
+sn0int_time
+-----------
+
+Return current time in UTC. This function is suitable to determine datetimes
+for ``DATETIME`` database fields.
+
+.. code-block:: lua
+
+    now = sn0int_time()
+
+.. note::
+    This format is sn0int specific, to get the current time for scripting use
+    time_unix_ instead.
+
+sn0int_time_from
+----------------
+
+Identical to sn0int_time_ but uses a unix timestamp in seconds instead of the
+current time. This function is compatible with time_unix_ and strptime_.
+
+.. code-block:: lua
+
+    time = sn0int_time_from(1567931337)
 
 sn0int_version
 --------------
