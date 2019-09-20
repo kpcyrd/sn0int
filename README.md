@@ -205,6 +205,7 @@ For everything else please have a look at the [detailed list][1].
   - [sock_newline](https://sn0int.readthedocs.io/en/latest/reference.html#sock-newline)
   - [status](https://sn0int.readthedocs.io/en/latest/reference.html#status)
   - [stdin_readline](https://sn0int.readthedocs.io/en/latest/reference.html#stdin-readline)
+  - [stdin_read_to_end](https://sn0int.readthedocs.io/en/latest/reference.html#stdin-read-to-end)
   - [strftime](https://sn0int.readthedocs.io/en/latest/reference.html#strftime)
   - [strptime](https://sn0int.readthedocs.io/en/latest/reference.html#strptime)
   - [time_unix](https://sn0int.readthedocs.io/en/latest/reference.html#time-unix)

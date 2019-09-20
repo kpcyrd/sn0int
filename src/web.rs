@@ -11,6 +11,7 @@ use serde_json;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use std::fmt;
+use std::net::SocketAddr;
 use serde::Serialize;
 use crate::engine::structs::LuaMap;
 use crate::json::LuaJsonValue;
@@ -64,6 +65,7 @@ pub struct RequestOptions {
     timeout: Option<u64>,
     #[serde(default)]
     into_blob: bool,
+    proxy: Option<SocketAddr>,
 }
 
 impl RequestOptions {
@@ -92,6 +94,7 @@ pub struct HttpRequest {
     body: Option<ReqBody>,
     timeout: Option<Duration>,
     into_blob: bool,
+    proxy: Option<SocketAddr>,
 }
 
 impl HttpRequest {
@@ -113,6 +116,7 @@ impl HttpRequest {
             body: None,
             timeout,
             into_blob: options.into_blob,
+            proxy: options.proxy,
         };
 
         if let Some(json) = options.json {
@@ -208,10 +212,12 @@ impl HttpRequest {
         };
         let req = req.body(body)?;
 
+        debug!("Getting http client");
+        let client = state.http(&self.proxy)?;
+
         // send request
         debug!("Sending http request: {:?}", req);
-
-        let res = state.http().request(req)
+        let res = client.request(req)
             .with_timeout(self.timeout)
             .wait_for_response()?;
 

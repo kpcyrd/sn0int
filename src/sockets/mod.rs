@@ -42,6 +42,7 @@ pub struct SocketOptions {
     sni_value: Option<String>,
     #[serde(default)]
     disable_tls_verify: bool,
+    pub proxy: Option<SocketAddr>,
 
     // TODO: enable_sni (default to true)
     // TODO: cacert

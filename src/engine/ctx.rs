@@ -139,7 +139,7 @@ pub trait State {
 
     fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData>;
 
-    fn http(&self) -> &chrootable_https::Client<Resolver>;
+    fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>>;
 
     fn http_mksession(&self) -> String;
 
@@ -167,7 +167,7 @@ pub struct LuaState {
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
     blobs: Mutex<HashMap<String, Arc<Blob>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
-    http: chrootable_https::Client<Resolver>,
+    http_clients: Mutex<HashMap<String, Arc<chrootable_https::Client<Resolver>>>>,
 
     verbose: u64,
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
@@ -251,9 +251,10 @@ impl State for LuaState {
         let mut mtx = self.socket_sessions.lock().unwrap();
         let id = self.random_id();
 
-        let sock = match &self.proxy {
-            Some(proxy) => Socket::connect_socks5(proxy, host, port, options)?,
-            _ => Socket::connect(&self.dns_config, host, port, options)?,
+        let sock = if let Some(proxy) = self.resolve_proxy_options(&options.proxy)? {
+            Socket::connect_socks5(proxy, host, port, options)?
+        } else {
+            Socket::connect(&self.dns_config, host, port, options)?
         };
 
         mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
@@ -281,8 +282,30 @@ impl State for LuaState {
         Ok(tls)
     }
 
-    fn http(&self) -> &chrootable_https::Client<Resolver> {
-        &self.http
+    fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>> {
+        let proxy = self.resolve_proxy_options(proxy)?;
+
+        let proxy_str = if let Some(proxy) = &proxy {
+            proxy.to_string()
+        } else {
+            String::new()
+        };
+
+        let mut clients = self.http_clients.lock().unwrap();
+
+        if let Some(client) = clients.get(&proxy_str) {
+            Ok(client.clone())
+        } else {
+            let client = if let Some(proxy) = proxy {
+                chrootable_https::Client::with_socks5(*proxy)
+            } else {
+                let resolver = self.dns_config.clone();
+                chrootable_https::Client::new(resolver)
+            };
+            let client = Arc::new(client);
+            clients.insert(proxy_str, client.clone());
+            Ok(client)
+        }
     }
 
     fn http_mksession(&self) -> String {
@@ -324,6 +347,18 @@ impl State for LuaState {
     }
 }
 
+impl LuaState {
+    fn resolve_proxy_options<'a>(&'a self, options: &'a Option<SocketAddr>) -> Result<Option<&'a SocketAddr>> {
+        match (&self.proxy, options) {
+            (Some(system),  Some(options))  if system == options => Ok(Some(system)),
+            (Some(_),       Some(_))        => bail!("Overriding the system proxy isn't allowed"),
+            (Some(system),  None)           => Ok(Some(system)),
+            (None,          Some(options))  => Ok(Some(options)),
+            (None,          None)           => Ok(None),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Script {
     code: String,
@@ -334,21 +369,13 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     let mut lua = hlua::Lua::new();
     lua.open_string();
 
-    let http = match env.proxy {
-        Some(proxy) => chrootable_https::Client::with_socks5(proxy),
-        _ => {
-            let resolver = env.dns_config.clone();
-            chrootable_https::Client::new(resolver)
-        },
-    };
-
     let state = Arc::new(LuaState {
         error: Mutex::new(None),
         logger,
         socket_sessions: Mutex::new(HashMap::new()),
         blobs: Mutex::new(HashMap::new()),
         http_sessions: Mutex::new(HashMap::new()),
-        http,
+        http_clients: Mutex::new(HashMap::new()),
 
         verbose: env.verbose,
         keyring: env.keyring,
