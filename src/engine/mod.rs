@@ -322,26 +322,21 @@ pub trait Reporter: Debug {
     fn recv(&mut self) -> Result<serde_json::Value>;
 }
 
-#[cfg(test)]
-pub mod tests {
-    use super::*;
+#[derive(Debug)]
+pub struct DummyReporter;
 
-    #[derive(Debug)]
-    pub struct DummyReporter;
+impl DummyReporter {
+    pub fn new() -> Arc<Mutex<Box<dyn Reporter>>> {
+        Arc::new(Mutex::new(Box::new(DummyReporter)))
+    }
+}
 
-    impl DummyReporter {
-        pub fn new() -> Arc<Mutex<Box<dyn Reporter>>> {
-            Arc::new(Mutex::new(Box::new(DummyReporter)))
-        }
+impl Reporter for DummyReporter {
+    fn send(&mut self, _event: &Event) -> Result<()> {
+        Ok(())
     }
 
-    impl Reporter for DummyReporter {
-        fn send(&mut self, _event: &Event) -> Result<()> {
-            Ok(())
-        }
-
-        fn recv(&mut self) -> Result<serde_json::Value> {
-            unimplemented!("DummyReporter::recv doesn't exist")
-        }
+    fn recv(&mut self) -> Result<serde_json::Value> {
+        unimplemented!("DummyReporter::recv doesn't exist")
     }
 }

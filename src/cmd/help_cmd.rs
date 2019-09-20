@@ -1,6 +1,6 @@
 use crate::errors::*;
 
-use crate::shell::Readline;
+use crate::shell::Shell;
 
 
 #[inline]
@@ -8,7 +8,7 @@ fn help(name: &str, descr: &str) {
     println!("    \x1b[32m{:13}\x1b[0m {}", name, descr);
 }
 
-pub fn run(_rl: &mut Readline, _args: &[String]) -> Result<()> {
+pub fn run(_rl: &mut Shell, _args: &[String]) -> Result<()> {
 
     println!("\n\x1b[33mCOMMANDS:\x1b[0m");
     help("add",         "Add new entities to the database");

@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::blobs::BlobStorage;
 use crate::cmd::Cmd;
 use crate::db::Database;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use crate::term;
 use crate::utils;
 use structopt::StructOpt;
@@ -51,7 +51,7 @@ fn usage(workspace: Option<Workspace>) -> Result<()> {
     Ok(())
 }
 
-fn change(rl: &mut Readline, workspace: Workspace) -> Result<()> {
+fn change(rl: &mut Shell, workspace: Workspace) -> Result<()> {
     let blobs = BlobStorage::workspace(&workspace)?;
     let db = Database::establish(workspace)?;
     rl.set_blobstorage(blobs);
@@ -67,7 +67,7 @@ fn list() -> Result<()> {
 }
 
 impl Cmd for Args {
-    fn run(self, rl: &mut Readline) -> Result<()> {
+    fn run(self, rl: &mut Shell) -> Result<()> {
         if self.delete {
             if let Some(workspace) = self.workspace {
                 if *rl.db().workspace() == workspace {
@@ -89,6 +89,6 @@ impl Cmd for Args {
 }
 
 #[inline]
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     Args::run_str(rl, args)
 }

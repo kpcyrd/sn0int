@@ -1,7 +1,7 @@
 use crate::errors::*;
 
 use crate::keyring::{KeyName, KeyRing};
-use crate::shell::Readline;
+use crate::shell::Shell;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::utils;
@@ -49,7 +49,7 @@ pub struct KeyRingList {
     namespace: Option<String>,
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     match args {
         Args::Add(add) => keyring_add(rl, add),
@@ -59,7 +59,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     }
 }
 
-fn keyring_add(rl: &mut Readline, add: KeyRingAdd) -> Result<()> {
+fn keyring_add(rl: &mut Shell, add: KeyRingAdd) -> Result<()> {
     let keyring = rl.keyring_mut();
 
     // TODO: there's no non-interactive way to add a key without a secret key
@@ -73,7 +73,7 @@ fn keyring_add(rl: &mut Readline, add: KeyRingAdd) -> Result<()> {
     Ok(())
 }
 
-fn keyring_delete(rl: &mut Readline, delete: KeyRingDelete) -> Result<()> {
+fn keyring_delete(rl: &mut Shell, delete: KeyRingDelete) -> Result<()> {
     let keyring = rl.keyring_mut();
     keyring.delete(delete.key)?;
     rl.reload_keyring_cache();

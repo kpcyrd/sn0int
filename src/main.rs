@@ -6,7 +6,6 @@ use env_logger::{self, Env};
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
-use sn0int::complete;
 use sn0int::config::Config;
 use sn0int::errors::*;
 use sn0int::engine::{self, Engine, Module};
@@ -14,8 +13,9 @@ use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
 use sn0int::psl::PslReader;
 use sn0int::registry;
+use sn0int::repl;
 use sn0int::sandbox;
-use sn0int::shell;
+use sn0int::shell::{self, complete};
 use structopt::StructOpt;
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -108,6 +108,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Noscope(noscope)) => run_cmd(&args, noscope, &config),
         Some(SubCommand::Workspace(workspace)) => run_cmd(&args, workspace, &config),
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
+        Some(SubCommand::Repl) => repl::run(&config),
         Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),
         None => shell::run(&args, &config),
     }

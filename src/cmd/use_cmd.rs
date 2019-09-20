@@ -1,6 +1,6 @@
 use crate::errors::*;
 
-use crate::shell::Readline;
+use crate::shell::Shell;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -11,7 +11,7 @@ pub struct Args {
     module: String,
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
 
     let module = rl.engine().get(&args.module)?.clone();

@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::args;
 use crate::registry::{self, UpdateTask, Updater};
-use crate::shell::Readline;
+use crate::shell::Shell;
 use crate::update::AutoUpdater;
 use crate::worker;
 use colored::Colorize;
@@ -56,7 +56,7 @@ pub struct Reload {
 pub struct Update {
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
     let config = rl.config().clone();
 

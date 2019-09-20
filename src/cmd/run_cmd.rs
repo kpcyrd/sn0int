@@ -5,7 +5,7 @@ use crate::blobs::{Blob, BlobStorage};
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
 use crate::models::*;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use crate::keyring::KeyRing;
 use crate::term;
 use crate::utils;
@@ -80,7 +80,7 @@ fn prepare_arg<T: Serialize + Model>(bs: &BlobStorage, x: T) -> Result<(serde_js
     Ok((arg, Some(pretty), blobs))
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(rl: &Readline, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
+fn prepare_args<T: Scopable + Serialize + Model>(rl: &Shell, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
     let db = rl.db();
     let bs = rl.blobs();
     db.filter_with_param::<T>(filter, param)?
@@ -112,7 +112,7 @@ fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> R
     Ok(())
 }
 
-pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, String>) -> Result<()> {
+pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
     let module = rl.module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
@@ -169,7 +169,7 @@ pub fn execute(rl: &mut Readline, params: Params, options: HashMap<String, Strin
     Ok(())
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     ttl::reap_expired(rl.db())?;
     let args = Args::from_iter_safe(args)?;
     let options = match rl.options_mut() {

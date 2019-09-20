@@ -1,7 +1,7 @@
 use crate::errors::*;
 
 use crate::db;
-use crate::shell::Readline;
+use crate::shell::Shell;
 use sn0int_common::metadata::Source;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -18,7 +18,7 @@ pub struct Args {
     filter: Vec<String>,
 }
 
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
 
     let source = rl.module()
@@ -59,7 +59,7 @@ pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
+fn count_selected(rl: &mut Shell, source: &Source) -> Result<usize> {
     let db = rl.db();
     let filter = rl.scoped_targets();
 
@@ -82,7 +82,7 @@ fn count_selected(rl: &mut Readline, source: &Source) -> Result<usize> {
     Ok(num)
 }
 
-fn select<T: Model + Detailed>(rl: &mut Readline, param: Option<&String>) -> Result<()> {
+fn select<T: Model + Detailed>(rl: &mut Shell, param: Option<&String>) -> Result<()> {
     let filter = rl.scoped_targets();
 
     for obj in rl.db().filter_with_param::<T>(&filter, param)? {

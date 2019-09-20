@@ -1,6 +1,6 @@
 use crate::errors::*;
 
-use crate::shell::Readline;
+use crate::shell::Shell;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -14,7 +14,7 @@ pub struct Args {
 
 // TODO: maybe introduce global settings
 // TODO: maybe allow setting jobs here as well in addition to -j
-pub fn run(rl: &mut Readline, args: &[String]) -> Result<()> {
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
 
     let options = rl.options_mut()
