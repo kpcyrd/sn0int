@@ -13,7 +13,7 @@ impl Completer for ReplCompleter {
     type Candidate = String;
 
     #[inline]
-    fn complete(&self, line: &str, pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<String>)> {
+    fn complete(&self, _line: &str, pos: usize, _ctx: &Context<'_>) -> rustyline::Result<(usize, Vec<String>)> {
         if pos == 0 {
             Ok((0, vec![
                 String::from("return "),
