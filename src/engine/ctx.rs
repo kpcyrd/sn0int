@@ -449,6 +449,8 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::sha3_256(&mut lua, state.clone());
     runtime::sha3_512(&mut lua, state.clone());
     runtime::sleep(&mut lua, state.clone());
+    runtime::sn0int_time(&mut lua, state.clone());
+    runtime::sn0int_time_from(&mut lua, state.clone());
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
     runtime::sock_upgrade_tls(&mut lua, state.clone());

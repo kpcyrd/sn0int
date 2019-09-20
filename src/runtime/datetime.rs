@@ -5,19 +5,38 @@ use chrono::{NaiveDateTime, Utc};
 use std::sync::Arc;
 
 
-// TODO: consider renaming to time_sn0int
+const SN0INT_DATETIME_FORMAT: &str = "%Y-%m-%dT%H:%M:%S";
+
+// TODO: deprecate this function
 pub fn datetime(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("datetime", hlua::function0(move || -> String {
         let now = Utc::now().naive_utc();
-        now.format("%Y-%m-%dT%H:%M:%S")
+        now.format(SN0INT_DATETIME_FORMAT)
            .to_string()
+    }))
+}
+
+pub fn sn0int_time(lua: &mut hlua::Lua, _: Arc<dyn State>) {
+    lua.set("sn0int_time", hlua::function0(move || -> String {
+        let now = Utc::now().naive_utc();
+        now.format(SN0INT_DATETIME_FORMAT)
+           .to_string()
+    }))
+}
+
+pub fn sn0int_time_from(lua: &mut hlua::Lua, _: Arc<dyn State>) {
+    lua.set("sn0int_time_from", hlua::function1(move |time: i32| -> Result<String> {
+        let time = NaiveDateTime::from_timestamp_opt(time.into(), 0)
+            .ok_or_else(|| format_err!("Failed to get time from timestamp"))?;
+        let time = time.format(SN0INT_DATETIME_FORMAT).to_string();
+        Ok(time)
     }))
 }
 
 pub fn strftime(lua: &mut hlua::Lua, _: Arc<dyn State>) {
     lua.set("strftime", hlua::function2(move |format: String, time: i32| -> Result<String> {
         let time = NaiveDateTime::from_timestamp_opt(time.into(), 0)
-            .ok_or_else(|| format_err!(""))?;
+            .ok_or_else(|| format_err!("Failed to get time from timestamp"))?;
         let time = time.format(&format).to_string();
         Ok(time)
     }))
@@ -42,6 +61,7 @@ pub fn time_unix(lua: &mut hlua::Lua, _: Arc<dyn State>) {
 mod tests {
     use crate::engine::ctx::Script;
 
+    // TODO: deprecate this function
     #[test]
     fn verify_datetime() {
         let script = Script::load_unchecked(r#"
@@ -50,6 +70,33 @@ mod tests {
             print(now)
             if regex_find("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", now) == nil then
                 return 'invalid date'
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_sn0int_time() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            now = sn0int_time()
+            print(now)
+            if regex_find("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", now) == nil then
+                return 'invalid date'
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    fn verify_sn0int_time_from() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            t = sn0int_time_from(1567931337)
+            if t ~= '2019-09-08T08:28:57' then
+                return 'invalid: ' .. t
             end
         end
         "#).expect("Failed to load script");

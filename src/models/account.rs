@@ -20,9 +20,9 @@ pub struct Account {
     pub url: Option<String>,
     pub last_seen: Option<NaiveDateTime>,
     pub unscoped: bool,
-    pub birthday: Option<String>,
     pub phonenumber: Option<String>,
     pub profile_pic: Option<String>,
+    pub birthday: Option<String>,
 }
 
 impl Model for Account {
