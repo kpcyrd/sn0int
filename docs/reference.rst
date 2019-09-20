@@ -362,6 +362,9 @@ options are set. The following options are available:
 ``into_blob``
   If true, the response body is stored in blob storage and a blob reference is
   returned as ``blob`` instead of the full body.
+``proxy``
+  Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
+  if it doesn't conflict with the global proxy settings.
 
 This function may fail.
 
@@ -784,6 +787,9 @@ The following options are available:
   **Danger**: disable tls verification. This disables all security on the
   connection. Note that sn0int is still rather strict, you're going to run into
   issues if you need support for insecure ciphers.
+``proxy``
+  Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
+  if it doesn't conflict with the global proxy settings.
 
 .. code-block:: lua
 
