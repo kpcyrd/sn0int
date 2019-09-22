@@ -1,11 +1,11 @@
-Scripting
-=========
+Writing your first module
+=========================
 
 Scripting is the core feature in sn0int. It's not strictly required, but if you
 want to write your own modules, this section is for you.
 
-Write your first module
------------------------
+Creating a repository
+---------------------
 
 It's highly recommended to use a VCS for development, so let's start by setting
 that up. We're going to assume you store your repos in ``~/repos`` but you're
@@ -90,21 +90,26 @@ database.
 
 .. code-block:: lua
 
+    -- Description: Scan for www. subdomains
+    -- Version: 0.1.0
+    -- Source: domains
+    -- License: GPL-3.0
+
     function run(arg)
         subdomain = 'www.' .. arg['value']
-        print(subdomain)
+        info(subdomain)
     end
 
-Combined with the header we wrote previously we can already execute this
-module. Make sure you've added a domain to scope with ``add domain
-example.com``, save your file and run it like this::
+This is already enough to execute it. Make sure you've added a domain to scope
+with ``add domain example.com``, save your file and run it like this::
 
     sn0int run -f ./first.lua
 
-We should see some output by our print function.
+We should see some output by our info function.
 
 .. note::
-   ``print`` is useful for development but must be removed before publishing.
+   ``info`` is useful for development but you usually want your module to run
+   quietly, so before publishing either remove it or replace it with ``debug``.
 
 Next, we want to actually resolve that name, we're going to use the ``dns``
 function for that. This function takes a name and a query type and returns a
@@ -114,6 +119,11 @@ truth-y.
 
 .. code-block:: lua
 
+    -- Description: Scan for www. subdomains
+    -- Version: 0.1.0
+    -- Source: domains
+    -- License: GPL-3.0
+
     function run(arg)
         subdomain = 'www.' .. arg['value']
 
@@ -122,15 +132,21 @@ truth-y.
         })
         if last_err() then return end
 
-        print(records)
+        info(records)
     end
 
 If you run your module again you're going to see some output, either
 ``{"answers":[somedata],"error":null}`` or
-``{"answers":[],"error":"NXDomain"}``. We decide that we add the subdomain to
-our scope and set it to resolvable if ``error`` is ``nil``.
+``{"answers":[],"error":"NXDomain"}``. If the dns reply doesn't indicate an
+error this means the subdomain exists and we can add it to our database with
+``resolvable`` being set to ``true``.
 
 .. code-block:: lua
+
+    -- Description: Scan for www. subdomains
+    -- Version: 0.1.0
+    -- Source: domains
+    -- License: GPL-3.0
 
     function run(arg)
         subdomain = 'www.' .. arg['value']
@@ -152,40 +168,19 @@ our scope and set it to resolvable if ``error`` is ``nil``.
 .. hint::
    See the database section to understand how the database works in detail.
 
-If we execute our module one more time it's going to log that it discovered a
-subdomain, if it doesn't, try adding more domains to scope. Note that this only
-happens the first time. Modules that don't discover anything or don't discover
-anything new exit silently.
-
-After putting everything together, our final module looks like this:
-
-.. code-block:: lua
-
-    -- Description: ohai wurld
-    -- Version: 0.1.0
-    -- Source: domains
-    -- License: GPL-3.0
-
-    function run(arg)
-        subdomain = 'www.' .. arg['value']
-
-        records = dns(subdomain, {
-            record='A'
-        })
-        if last_err() then return end
-
-        if records['success'] ~= nil then
-            db_add('subdomain', {
-                domain_id=arg['id'],
-                value=subdomain,
-                resolvable=true,
-            })
-        end
-    end
+If we execute our finished module one more time it's going to log that it
+discovered a subdomain, if it doesn't, try adding more domains to scope. Note
+that this only happens the first time. Modules that don't discover anything or
+don't discover anything new exit silently.
 
 There's still some room for improvement, for example, since we already resolved
 that record, we could also add the ip address to the scope and link it to the
 subdomain we added.
+
+.. hint::
+   For debugging purposes you can increase the verbosity with ``sn0int run -v``
+   so database operations are logged even if nothing was changed, or with
+   ``sn0int run -vv`` to enable ``debug()`` output.
 
 Publish your module
 -------------------
@@ -204,6 +199,11 @@ your identity.
 Afterwards publish your module with::
 
     sn0int publish ./first.lua
+
+Please also make sure you publish your repository to github so other people can
+submit pull requests. The recommended repository location is::
+
+    https://github.com/<your-username>/sn0int-modules
 
 Reading data from stdin
 -----------------------
