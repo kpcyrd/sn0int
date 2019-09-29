@@ -80,11 +80,6 @@ impl Cmd for Args {
     }
 }
 
-#[inline]
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    Args::run_str(rl, args)
-}
-
 trait IntoInsert: Sized {
     fn into_insert(self, rl: &mut Shell) -> Result<Insert>;
 

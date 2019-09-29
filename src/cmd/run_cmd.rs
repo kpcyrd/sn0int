@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::args;
 use crate::blobs::{Blob, BlobStorage};
+use crate::cmd::Cmd;
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
 use crate::models::*;
@@ -169,12 +170,13 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
     Ok(())
 }
 
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    ttl::reap_expired(rl.db())?;
-    let args = Args::from_iter_safe(args)?;
-    let options = match rl.options_mut() {
-        Some(options) => options.clone(),
-        _ => HashMap::new(),
-    };
-    execute(rl, args.into(), options)
+impl Cmd for Args {
+    fn run(self, rl: &mut Shell) -> Result<()> {
+        ttl::reap_expired(rl.db())?;
+        let options = match rl.options_mut() {
+            Some(options) => options.clone(),
+            _ => HashMap::new(),
+        };
+        execute(rl, self.into(), options)
+    }
 }
