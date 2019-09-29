@@ -411,11 +411,16 @@ pub fn print_banner() {
 "irc.hackint.org:6697/#sn0int".green());
 }
 
+#[inline(always)]
+fn cmd<T: Cmd>(rl: &mut Shell, args: &[String]) -> Result<()> {
+    T::run_str(rl, args)
+}
+
 pub fn run_once(rl: &mut Shell) -> Result<bool> {
     let line = rl.readline();
     debug!("Received line: {:?}", line);
     match line {
-        Some((Command::Add, args)) => add_cmd::run(rl, &args)?,
+        Some((Command::Add, args)) => cmd::<add_cmd::Args>(rl, &args)?,
         Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
         Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
@@ -426,10 +431,10 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Keyring, args)) => keyring_cmd::run(rl, &args)?,
         Some((Command::Mod, args)) => mod_cmd::run(rl, &args)?,
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
-        Some((Command::Run, args)) => run_cmd::run(rl, &args)?,
+        Some((Command::Run, args)) => cmd::<run_cmd::Args>(rl, &args)?,
         Some((Command::Scope, args)) => scope_cmd::run(rl, &args)?,
         Some((Command::Set, args)) => set_cmd::run(rl, &args)?,
-        Some((Command::Select, args)) => select_cmd::run(rl, &args)?,
+        Some((Command::Select, args)) => cmd::<select_cmd::Args>(rl, &args)?,
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,

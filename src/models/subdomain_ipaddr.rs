@@ -7,7 +7,7 @@ use std::sync::Arc;
 use crate::engine::ctx::State;
 
 
-#[derive(Identifiable, Queryable, Associations)]
+#[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Subdomain)]
 #[belongs_to(IpAddr)]
 #[table_name="subdomain_ipaddrs"]

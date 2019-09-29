@@ -80,6 +80,7 @@ impl<'a, 'b> Printer<'a, 'b> {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
+        ttl::reap_expired(rl.db())?;
         let printer = Printer::new(rl, &self);
 
         match &self.subcommand {
@@ -98,10 +99,4 @@ impl Cmd for Args {
             Target::Netblocks(filter) => printer.select::<Netblock>(&filter),
         }
     }
-}
-
-#[inline]
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    ttl::reap_expired(rl.db())?;
-    Args::run_str(rl, args)
 }
