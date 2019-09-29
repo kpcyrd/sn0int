@@ -14,6 +14,12 @@ free to change that to something else::
     $ git init ~/repos/sn0int-modules
     $ cd ~/repos/sn0int-modules
 
+.. note::
+   If you're using github you can also create a repo from the `module repo
+   template`_.
+
+.. _module repo template: https://github.com/sn0int/sn0int-modules
+
 We need to add this folder to the sn0int config file so it's correctly detected
 when starting sn0int. Open the `config file <config.html>`_ in your prefered
 editor. Note that the file does not exist by default and the path is different
@@ -204,6 +210,19 @@ Please also make sure you publish your repository to github so other people can
 submit pull requests. The recommended repository location is::
 
     https://github.com/<your-username>/sn0int-modules
+
+Publish your repo
+-----------------
+
+It is highly recommended to publish your repository on github so people can
+file issues and pull requests for your module. If you've been following along
+with the github template you can simply commit your changes and push them.
+
+Your repository would look like one of these:
+
+- https://github.com/kpcyrd/sn0int-modules
+- https://github.com/ysf/sn0int-modules
+- https://github.com/cybiere/sn0int-modules
 
 Reading data from stdin
 -----------------------
