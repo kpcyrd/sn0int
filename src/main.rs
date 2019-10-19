@@ -96,7 +96,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Login(_)) => auth::run_login(&config),
         Some(SubCommand::New(new)) => run_new(&args, &new),
         Some(SubCommand::Publish(publish)) => registry::run_publish(&args, &publish, &config),
-        Some(SubCommand::Install(install)) => registry::run_install(&install, &config),
+        Some(SubCommand::Install(install)) => registry::run_install(install, &config),
         Some(SubCommand::Search(search)) => {
             let engine = Engine::new(false, &config)?;
             registry::run_search(&engine, &search, &config)

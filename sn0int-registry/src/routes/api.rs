@@ -70,6 +70,7 @@ pub fn info(author: String, name: String, connection: db::Connection) -> ApiResu
         name: module.name,
         description: module.description,
         latest: module.latest,
+        redirect: None,
     }))
 }
 

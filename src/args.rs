@@ -143,6 +143,8 @@ pub struct Install {
     pub module: ModuleID,
     /// Specify the version, defaults to the latest version
     pub version: Option<String>,
+    #[structopt(short="f", long="force")]
+    pub force: bool,
 }
 
 #[derive(Debug, StructOpt)]

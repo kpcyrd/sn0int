@@ -34,29 +34,45 @@ impl Updater {
         self.client.query_module(module)
     }
 
-    pub fn install(&self, install: &Install) -> Result<String> {
-        let version = match install.version {
-            Some(ref version) => version.to_string(),
-            None => self.client.query_module(&install.module)
-                        .context("Failed to query module infos")?
+    pub fn install(&self, install: Install) -> Result<String> {
+        if let Some(version) = install.version {
+            let module = self.client.download_module(&install.module, &version)
+                .context("Failed to download module")?;
+
+            let path = paths::module_dir()?
+                .join(format!("{}/{}.lua", install.module.author,
+                                           install.module.name));
+
+            fs::create_dir_all(path.parent().unwrap())
+                .context("Failed to create folder")?;
+
+            fs::write(&path, module.code)
+                .context(format_err!("Failed to write to {:?}", path))?;
+
+            Ok(version.to_string())
+        } else {
+            let infos = self.query_module(&install.module)
+                        .context("Failed to query module infos")?;
+
+            if !install.force {
+                if let Some(redirect) = infos.redirect {
+                    return self.install(Install {
+                        module: redirect,
+                        version: None,
+                        force: install.force,
+                    });
+                }
+            }
+
+            let latest = infos
                         .latest
-                        .ok_or_else(|| format_err!("Module doesn't have a latest version"))?,
-        };
-
-        let module = self.client.download_module(&install.module, &version)
-            .context("Failed to download module")?;
-
-        let path = paths::module_dir()?
-            .join(format!("{}/{}.lua", install.module.author,
-                                       install.module.name));
-
-        fs::create_dir_all(path.parent().unwrap())
-            .context("Failed to create folder")?;
-
-        fs::write(&path, module.code)
-            .context(format_err!("Failed to write to {:?}", path))?;
-
-        Ok(version)
+                        .ok_or_else(|| format_err!("Module doesn't have a latest version"))?;
+            self.install(Install {
+                module: install.module,
+                version: Some(latest),
+                force: install.force,
+            })
+        }
     }
 }
 
@@ -129,7 +145,7 @@ impl Task for InstallTask {
     }
 
     fn run(self, tx: &EventSender) -> Result<()> {
-        let version = self.client.install(&self.install)?;
+        let version = self.client.install(self.install)?;
         let label = format!("installed v{}", version);
         tx.log(LogEvent::Success(label));
         Ok(())
@@ -137,7 +153,7 @@ impl Task for InstallTask {
 }
 
 
-pub fn run_install(arg: &Install, config: &Config) -> Result<()> {
+pub fn run_install(arg: Install, config: &Config) -> Result<()> {
     let label = format!("Installing {}", arg.module);
     worker::spawn_fn(&label, || {
         let client = Updater::new(config)?;
@@ -178,13 +194,26 @@ impl Task for UpdateTask {
         debug!("Latest version: {:?}", infos);
         let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
 
-        if installed != latest {
+        if let Some(redirect) = infos.redirect {
+            let label = format!("Replacing {}: {}", self.name(), redirect);
+            tx.log(LogEvent::Status(label));
+
+            self.client.install(Install {
+                module: self.module.id(),
+                version: None,
+                force: false,
+            })?;
+
+            let label = format!("done");
+            tx.log(LogEvent::Success(label));
+        } else if installed != latest {
             let label = format!("Updating {}: v{} -> v{}", self.name(), installed, latest);
             tx.log(LogEvent::Status(label));
 
-            self.client.install(&Install {
+            self.client.install(Install {
                 module: self.module.id(),
-                version: None,
+                version: Some(latest.clone()),
+                force: false,
             })?;
 
             let label = format!("updated v{} -> v{}", installed, latest);

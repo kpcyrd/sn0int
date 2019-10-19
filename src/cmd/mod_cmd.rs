@@ -86,7 +86,7 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
             }
         },
         SubCommand::Install(install) => {
-            registry::run_install(&install, &config)?;
+            registry::run_install(install, &config)?;
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
         },
