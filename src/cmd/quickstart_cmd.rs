@@ -35,6 +35,7 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
                     name: module.name,
                 },
                 version: None,
+                force: false,
             }, updater.clone())
         })
         .collect::<Vec<_>>();
