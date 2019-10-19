@@ -10,7 +10,7 @@ use sn0int_common::ModuleID;
 use sn0int_common::api::ModuleInfoResponse;
 use sn0int_common::metadata::Metadata;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use crate::paths;
 use crate::term;
@@ -34,14 +34,19 @@ impl Updater {
         self.client.query_module(module)
     }
 
+    fn path(&self, module: &ModuleID) -> Result<PathBuf> {
+        let path = paths::module_dir()?
+            .join(format!("{}/{}.lua", module.author,
+                                       module.name));
+        Ok(path)
+    }
+
     pub fn install(&self, install: Install) -> Result<String> {
         if let Some(version) = install.version {
             let module = self.client.download_module(&install.module, &version)
                 .context("Failed to download module")?;
 
-            let path = paths::module_dir()?
-                .join(format!("{}/{}.lua", install.module.author,
-                                           install.module.name));
+            let path = self.path(&install.module)?;
 
             fs::create_dir_all(path.parent().unwrap())
                 .context("Failed to create folder")?;
@@ -74,11 +79,23 @@ impl Updater {
             })
         }
     }
+
+    pub fn uninstall(&self, module: &ModuleID) -> Result<()> {
+        let path = self.path(module)?;
+        fs::remove_file(&path)?;
+
+        // try to delete parent folder if empty
+        if let Some(parent) = path.parent() {
+            fs::remove_dir(parent).ok();
+        }
+
+        Ok(())
+    }
 }
 
 pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<()> {
     let session = auth::load_token()
-        .context("Failed to load auth token")?;
+        .context("Failed to load auth token, login first")?;
 
     let mut client = Client::new(&config)?;
     client.authenticate(session);
@@ -203,8 +220,9 @@ impl Task for UpdateTask {
                 version: None,
                 force: false,
             })?;
+            self.client.uninstall(&self.module.id())?;
 
-            let label = format!("done");
+            let label = format!("replaced with {}", redirect);
             tx.log(LogEvent::Success(label));
         } else if installed != latest {
             let label = format!("Updating {}: v{} -> v{}", self.name(), installed, latest);
