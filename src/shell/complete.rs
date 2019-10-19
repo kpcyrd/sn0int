@@ -180,6 +180,7 @@ impl Completer for CmdCompleter {
                             "search",
                             "reload",
                             "update",
+                            "uninstall",
                         ], &cmd[1]))
                     }
                 },
