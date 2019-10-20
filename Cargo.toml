@@ -43,7 +43,7 @@ percent-encoding = "2.1"
 chrootable-https = "0.12"
 rustls = { version="0.16", features=["dangerous_configuration"] }
 webpki = "0.21"
-webpki-roots = "0.17"
+webpki-roots = "0.18"
 pem = "0.6.0"
 base64 = "0.10"
 data-encoding = "2.1.2"
