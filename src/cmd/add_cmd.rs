@@ -312,20 +312,21 @@ pub struct AddAccount {
 
 impl IntoInsert for AddAccount {
     fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
-        let (service, username) = match (self.service, self.username) {
-            (Some(service), Some(username)) => (service, username),
-            _ => {
-                let service = utils::question("Service")?;
-                let username = utils::question("Username")?;
-
-                (service, username)
-            },
+        let service = if let Some(service) = self.service {
+            service
+        } else {
+            utils::question("Service")?
         };
 
         if service.contains('/') {
-            // TODO: avoid duplication
             bail!("Service field can't contain `/`");
         }
+
+        let username = if let Some(username) = self.username {
+            username
+        } else {
+            utils::question("Username")?
+        };
 
         let value = format!("{}/{}", service, username);
 
