@@ -7,6 +7,7 @@ use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd;
 use sn0int::config::Config;
+use sn0int::db;
 use sn0int::errors::*;
 use sn0int::engine::{self, Engine, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
@@ -41,6 +42,14 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     };
 
     rl.set_module(module);
+
+    if let Some(target) = &args.target {
+        let target = shellwords::split(&target)
+            .map_err(|_| format_err!("Failed to parse target quotes"))?;
+        let target = db::Filter::parse(&target)?;
+        rl.set_target(Some(target));
+    }
+
     cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
 }
 

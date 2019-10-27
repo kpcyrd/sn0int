@@ -112,6 +112,9 @@ pub struct Run {
     /// Set an option
     #[structopt(short="o", long="option")]
     pub options: Vec<options::Opt>,
+    /// Narrow down targeted entities
+    #[structopt(short="t", long="target")]
+    pub target: Option<String>,
 }
 
 #[derive(Debug, StructOpt)]
