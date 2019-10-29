@@ -26,7 +26,14 @@
             <ul class="modules">
             {{#each this.1}}
                 <li>
-                    <span class="mod-cell mod-name"><a href="#">{{this.author}}/{{this.name}}</a></span><span class="mod-cell mod-version">{{this.latest}}</span><span class="mod-cell mod-descr">{{this.description}}</span>
+                    <span class="mod-cell mod-name">
+                        <a href="#">{{this.author}}/{{this.name}}</a>
+                        <i class="fas fa-paste copy noscript-hidden" data-clipboard-text="{{this.author}}/{{this.name}}"></i>
+                    </span><span class="mod-cell mod-version">
+                        {{this.latest}}
+                    </span><span class="mod-cell mod-descr">
+                        {{this.description}}
+                    </span>
                 </li>
             {{/each}}
             </ul>
