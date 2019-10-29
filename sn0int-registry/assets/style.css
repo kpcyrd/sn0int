@@ -85,3 +85,19 @@ a {
 .noscript-hidden {
     display: none !important;
 }
+
+pre {
+    white-space: pre-wrap;
+}
+
+.source .comment {
+    color: #2179d7;
+}
+
+.source .control, .source .operator {
+    color: #caca47;
+}
+
+.source .string, .source .constant {
+    color: #d90000;
+}

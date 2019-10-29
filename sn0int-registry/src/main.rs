@@ -95,7 +95,8 @@ fn run() -> Result<()> {
             routes::auth::login,
         ])
         .mount("/", routes![
-            routes::assets::index,
+            routes::html::index,
+            routes::html::details,
             routes::assets::favicon,
             routes::assets::style,
             routes::assets::javascript,

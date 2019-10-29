@@ -1,0 +1,12 @@
+{{#*inline "title"}}
+{{module.author}}/{{module.name}} - 
+{{/inline}}
+{{#*inline "page"}}
+<h2>
+    {{module.author}}/{{module.name}}
+    <i class="fas fa-paste copy noscript-hidden" data-clipboard-text="{{module.author}}/{{module.name}}"></i>
+</h2>
+
+<pre class="code">{{{code_html}}}</pre>
+{{/inline}}
+{{~> base }}

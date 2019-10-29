@@ -1,36 +1,7 @@
 use crate::assets::*;
-use crate::db;
-use crate::errors::ApiResult;
-use crate::models::*;
 use rocket::http::{ContentType, Status};
 use rocket::http::hyper::header::{CacheControl, CacheDirective};
-use rocket_contrib::templates::Template;
-use std::cmp::Ordering;
 
-
-#[get("/")]
-pub fn index(connection: db::Connection) -> ApiResult<Template> {
-    let asset_rev = ASSET_REV.as_str();
-
-    let mut modules = Module::start_page(&connection)?
-        .into_iter()
-        .map(|(k, v)| (k, v))
-        .collect::<Vec<_>>();
-
-    modules.sort_by(|a, b| {
-        match (a.0.as_str(), b.0.as_str()) {
-            ("none", "none") => Ordering::Equal,
-            ("none", _) => Ordering::Greater,
-            (_, "none") => Ordering::Less,
-            (a, b) => a.cmp(b),
-        }
-    });
-
-    Ok(Template::render("index", json!({
-        "ASSET_REV": asset_rev,
-        "modules": modules,
-    })))
-}
 
 #[derive(Responder)]
 pub struct CachableResponder {
