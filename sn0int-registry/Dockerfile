@@ -1,4 +1,6 @@
 FROM rust:buster
+RUN apt-get update -q && apt-get install -yq llvm libclang-dev \
+    && rm -rf /var/lib/apt/lists/*
 RUN rustup install nightly
 WORKDIR /usr/src/sn0int-registry
 COPY . .

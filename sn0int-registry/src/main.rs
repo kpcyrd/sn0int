@@ -95,9 +95,14 @@ fn run() -> Result<()> {
             routes::auth::login,
         ])
         .mount("/", routes![
-            routes::assets::index,
+            routes::html::index,
+            routes::html::details,
             routes::assets::favicon,
             routes::assets::style,
+            routes::assets::javascript,
+            routes::assets::javascript_clipboard,
+            routes::assets::fontawesome_style,
+            routes::assets::fontawesome_font,
             routes::health::health,
         ])
         .register(catchers![

@@ -28,6 +28,7 @@ lazy_static = "1"
 blake2 = "0.8.0"
 hex = "0.3.1"
 maplit = "1.0.1"
+syntect = "3.3"
 
 serde = "1.0"
 serde_derive = "1.0"

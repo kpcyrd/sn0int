@@ -26,6 +26,10 @@ a {
     color: #00aa00;
 }
 
+.copy {
+    cursor: pointer;
+}
+
 .code {
     background-color: #222;
     padding: 10px;
@@ -45,6 +49,14 @@ a {
     padding: 2px 5px;
     margin: 1px 0;
     background-color: #222;
+}
+
+.modules li .copy {
+    display: none;
+}
+
+.modules li:hover .copy {
+    display: inline;
 }
 
 .mod-cell {
@@ -68,4 +80,24 @@ a {
 
 .mod-descr {
     width: 50%;
+}
+
+.noscript-hidden {
+    display: none !important;
+}
+
+pre {
+    white-space: pre-wrap;
+}
+
+.source .comment {
+    color: #2179d7;
+}
+
+.source .control, .source .operator {
+    color: #caca47;
+}
+
+.source .string, .source .constant {
+    color: #d90000;
 }
