@@ -4,8 +4,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -290,10 +288,10 @@ pub struct InsertAccount {
     pub profile_pic: Option<String>,
 }
 
-impl LuaInsertToNew for InsertAccount {
+impl InsertToNew for InsertAccount {
     type Target = NewAccount;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewAccount> {
+    fn try_into_new(self) -> Result<NewAccount> {
         if self.service.contains('/') {
             bail!("Service field can't contain `/`");
         }

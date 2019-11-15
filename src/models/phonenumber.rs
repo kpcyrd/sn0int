@@ -4,8 +4,6 @@ use crate::models::*;
 use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -296,10 +294,10 @@ pub struct InsertPhoneNumber {
 }
 
 // TODO: enforce valid E.164 number?
-impl LuaInsertToNew for InsertPhoneNumber {
+impl InsertToNew for InsertPhoneNumber {
     type Target = NewPhoneNumber;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewPhoneNumber> {
+    fn try_into_new(self) -> Result<NewPhoneNumber> {
         if !self.value.starts_with('+') {
             bail!("E.164 phone number must start with '+'");
         }

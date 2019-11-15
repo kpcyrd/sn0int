@@ -3,8 +3,6 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -265,10 +263,10 @@ pub struct InsertNetwork {
     pub description: Option<String>,
 }
 
-impl LuaInsertToNew for InsertNetwork {
+impl InsertToNew for InsertNetwork {
     type Target = NewNetwork;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewNetwork> {
+    fn try_into_new(self) -> Result<NewNetwork> {
         Ok(NewNetwork {
             value: self.value,
             latitude: self.latitude,

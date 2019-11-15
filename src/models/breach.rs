@@ -1,11 +1,8 @@
 use crate::errors::*;
-//use crate::fmt::Write;
 use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -268,10 +265,10 @@ pub struct InsertBreach {
     pub value: String,
 }
 
-impl LuaInsertToNew for InsertBreach {
+impl InsertToNew for InsertBreach {
     type Target = NewBreach;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewBreach> {
+    fn try_into_new(self) -> Result<NewBreach> {
         Ok(NewBreach {
             value: self.value,
 

@@ -6,8 +6,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::ser;
 use crate::url;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -292,10 +290,10 @@ pub struct InsertUrl {
     pub redirect: Option<String>,
 }
 
-impl LuaInsertToNew for InsertUrl {
+impl InsertToNew for InsertUrl {
     type Target = NewUrl;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewUrl> {
+    fn try_into_new(self) -> Result<NewUrl> {
         let url = url::Url::parse(&self.value)?;
         let path = url.path().to_string();
 

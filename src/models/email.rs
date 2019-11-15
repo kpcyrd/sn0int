@@ -3,8 +3,6 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -293,10 +291,10 @@ pub struct InsertEmail {
     pub valid: Option<bool>,
 }
 
-impl LuaInsertToNew for InsertEmail {
+impl InsertToNew for InsertEmail {
     type Target = NewEmail;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewEmail> {
+    fn try_into_new(self) -> Result<NewEmail> {
         let value = self.value.to_lowercase();
         Ok(NewEmail {
             value,

@@ -4,8 +4,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::result;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -255,10 +253,10 @@ pub struct InsertSubdomain {
     pub resolvable: Option<bool>,
 }
 
-impl LuaInsertToNew for InsertSubdomain {
+impl InsertToNew for InsertSubdomain {
     type Target = NewSubdomain;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewSubdomain> {
+    fn try_into_new(self) -> Result<NewSubdomain> {
         let value = self.value.to_lowercase();
         Ok(NewSubdomain {
             domain_id: self.domain_id,

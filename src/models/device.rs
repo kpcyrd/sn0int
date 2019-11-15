@@ -4,8 +4,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -282,10 +280,10 @@ pub struct InsertDevice {
     pub last_seen: Option<NaiveDateTime>,
 }
 
-impl LuaInsertToNew for InsertDevice {
+impl InsertToNew for InsertDevice {
     type Target = NewDevice;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewDevice> {
+    fn try_into_new(self) -> Result<NewDevice> {
         let value = self.value.to_lowercase();
         Ok(NewDevice {
             value,
