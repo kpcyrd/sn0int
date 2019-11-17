@@ -1,7 +1,7 @@
-use crate::errors::*;
+use sn0int_registry::errors::*;
 use crate::auth2::AuthHeader;
-use crate::db;
-use crate::models::*;
+use sn0int_registry::db;
+use sn0int_registry::models::*;
 use diesel::Connection;
 use rocket::request::Form;
 use rocket_contrib::json::Json;

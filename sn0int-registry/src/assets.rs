@@ -4,6 +4,7 @@ use blake2::{Blake2b, Digest};
 pub static FAVICON: &[u8] = include_bytes!("../assets/favicon.ico");
 pub static STYLESHEET: &[u8] = include_bytes!("../assets/style.css");
 pub static JAVASCRIPT: &[u8] = include_bytes!("../assets/script.js");
+pub static SOCIAL_CARD: &[u8] = include_bytes!("../assets/social-card.png");
 
 pub static JAVASCRIPT_CLIPBOARD: &[u8] = include_bytes!("../assets/clipboard.min.js");
 

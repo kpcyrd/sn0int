@@ -1,4 +1,4 @@
-use crate::errors::*;
+use sn0int_registry::errors::*;
 use std::env;
 use reqwest;
 

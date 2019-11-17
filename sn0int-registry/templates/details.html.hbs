@@ -1,12 +1,16 @@
-{{#*inline "title"}}
-{{module.author}}/{{module.name}} - 
-{{/inline}}
-{{#*inline "page"}}
-<h2>
-    {{module.author}}/{{module.name}}
-    <i class="fas fa-paste copy noscript-hidden" data-clipboard-text="{{module.author}}/{{module.name}}"></i>
-</h2>
+{{#*inline "title" ~}}{{module.author}}/{{module.name}} - {{/inline ~}}
+{{#*inline "og_title" ~}}{{module.author}}/{{module.name}}{{/inline ~}}
+{{#*inline "og_description" ~}}{{module.description}}{{/inline ~}}
+{{#*inline "og_url" ~}}r/{{module.author}}/{{module.name}}{{/inline ~}}
+{{#*inline "og_type" ~}}<meta property="og:type" content="object">{{/inline ~}}
+{{#*inline "page" ~}}
+<main>
+    <h2>
+        {{module.author}}/{{module.name}}
+        <i class="fas fa-paste copy noscript-hidden" data-clipboard-text="{{module.author}}/{{module.name}}"></i>
+    </h2>
 
-<pre class="code">{{{code_html}}}</pre>
-{{/inline}}
+    <pre class="code">{{{code_html}}}</pre>
+</main>
+{{/inline ~}}
 {{~> base }}
