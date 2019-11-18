@@ -3,8 +3,6 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 use ipnetwork;
 
 
@@ -254,10 +252,10 @@ pub struct InsertNetblock {
     pub description: Option<String>,
 }
 
-impl LuaInsertToNew for InsertNetblock {
+impl InsertToNew for InsertNetblock {
     type Target = NewNetblock;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewNetblock> {
+    fn try_into_new(self) -> Result<NewNetblock> {
         let ipnet = self.value.parse::<ipnetwork::IpNetwork>()
             .context("Failed to parse ip network")?;
 

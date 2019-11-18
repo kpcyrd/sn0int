@@ -341,7 +341,22 @@ macro_rules! display_detailed {
 pub trait LuaInsertToNew {
     type Target;
 
-    fn try_into_new(self, state: &Arc<dyn State>) -> Result<Self::Target>;
+    fn lua_try_into_new(self, state: &Arc<dyn State>) -> Result<Self::Target>;
+}
+
+pub trait InsertToNew {
+    type Target;
+
+    fn try_into_new(self) -> Result<Self::Target>;
+}
+
+impl<T: InsertToNew> LuaInsertToNew for T {
+    type Target = T::Target;
+
+    #[inline]
+    fn lua_try_into_new(self, _state: &Arc<dyn State>) -> Result<Self::Target> {
+        self.try_into_new()
+    }
 }
 
 mod domain;

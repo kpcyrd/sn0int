@@ -1,6 +1,6 @@
-use crate::errors::*;
-use crate::models::AuthToken;
-use crate::db::Connection;
+use sn0int_registry::errors::*;
+use sn0int_registry::models::AuthToken;
+use sn0int_registry::db::Connection;
 use rocket::http::Status;
 use rocket::{Request, Outcome};
 use rocket::request::{self, FromRequest};

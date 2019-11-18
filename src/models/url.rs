@@ -6,8 +6,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::ser;
 use crate::url;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -223,7 +221,7 @@ impl Detailed for Url {
     }
 }
 
-#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Insertable, Serialize, Deserialize)]
 #[table_name="urls"]
 pub struct NewUrl {
     pub subdomain_id: i32,
@@ -292,12 +290,19 @@ pub struct InsertUrl {
     pub redirect: Option<String>,
 }
 
-impl LuaInsertToNew for InsertUrl {
+impl InsertToNew for InsertUrl {
     type Target = NewUrl;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewUrl> {
+    fn try_into_new(self) -> Result<NewUrl> {
         let url = url::Url::parse(&self.value)?;
         let path = url.path().to_string();
+
+        let redirect = if let Some(redirect) = self.redirect {
+            let redirect = url.join(&redirect)?;
+            Some(redirect.to_string())
+        } else {
+            None
+        };
 
         Ok(NewUrl {
             subdomain_id: self.subdomain_id,
@@ -307,7 +312,7 @@ impl LuaInsertToNew for InsertUrl {
             body: self.body,
             online: self.online,
             title: self.title,
-            redirect: self.redirect,
+            redirect,
             unscoped: false,
         })
     }
@@ -357,5 +362,120 @@ impl Updateable<Url> for UrlUpdate {
         Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())));
         Self::push_value(updates, "title", &self.title);
         Self::push_value(updates, "redirect", &self.redirect);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_new() {
+        let url = InsertUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: None,
+        };
+        assert_eq!(url.try_into_new().unwrap(), NewUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            path: "/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: None,
+            unscoped: false,
+        });
+    }
+
+    #[test]
+    fn test_to_new_invalid() {
+        let url = InsertUrl {
+            subdomain_id: 1234,
+            value: "asdf".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: None,
+        };
+        assert!(url.try_into_new().is_err());
+    }
+
+    #[test]
+    fn test_to_new_redirect_absolute() {
+        let url = InsertUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("https://github.com/robots.txt".to_string()),
+        };
+        assert_eq!(url.try_into_new().unwrap(), NewUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            path: "/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("https://github.com/robots.txt".to_string()),
+            unscoped: false,
+        });
+    }
+
+    #[test]
+    fn test_to_new_redirect_relative() {
+        let url = InsertUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("/".to_string()),
+        };
+        assert_eq!(url.try_into_new().unwrap(), NewUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            path: "/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("https://example.com/".to_string()),
+            unscoped: false,
+        });
+    }
+
+    #[test]
+    fn test_to_new_redirect_protocol_relative() {
+        let url = InsertUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("//github.com/robots.txt".to_string()),
+        };
+        assert_eq!(url.try_into_new().unwrap(), NewUrl {
+            subdomain_id: 1234,
+            value: "https://example.com/foo/bar".to_string(),
+            path: "/foo/bar".to_string(),
+            status: Some(200),
+            body: None,
+            online: None,
+            title: None,
+            redirect: Some("https://github.com/robots.txt".to_string()),
+            unscoped: false,
+        });
     }
 }

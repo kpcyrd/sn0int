@@ -1,6 +1,6 @@
-use crate::errors::*;
+use sn0int_registry::errors::*;
 use crate::auth::Authenticator;
-use crate::db;
+use sn0int_registry::db;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket_contrib::templates::Template;

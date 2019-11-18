@@ -3,8 +3,6 @@ use crate::fmt::colors::*;
 use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
@@ -240,7 +238,7 @@ impl Detailed for Email {
     }
 }
 
-#[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Insertable, Serialize, Deserialize)]
 #[table_name="emails"]
 pub struct NewEmail {
     pub value: String,
@@ -293,10 +291,10 @@ pub struct InsertEmail {
     pub valid: Option<bool>,
 }
 
-impl LuaInsertToNew for InsertEmail {
+impl InsertToNew for InsertEmail {
     type Target = NewEmail;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewEmail> {
+    fn try_into_new(self) -> Result<NewEmail> {
         let value = self.value.to_lowercase();
         Ok(NewEmail {
             value,
@@ -340,5 +338,25 @@ impl Updateable<Email> for EmailUpdate {
     fn fmt(&self, updates: &mut Vec<String>) {
         Self::push_value(updates, "displayname", &self.displayname);
         Self::push_value(updates, "valid", &self.valid);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_to_new() {
+        let email = InsertEmail {
+            value: "Foo.Bar@Example.com".to_string(),
+            displayname: None,
+            valid: None,
+        };
+        assert_eq!(email.try_into_new().unwrap(), NewEmail {
+            value: "foo.bar@example.com".to_string(),
+            displayname: None,
+            valid: None,
+            unscoped: false,
+        });
     }
 }

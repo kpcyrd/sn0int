@@ -3,8 +3,6 @@ use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::net;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
@@ -136,10 +134,11 @@ impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {
 
 pub type InsertSubdomainIpAddr = NewSubdomainIpAddr;
 
-impl LuaInsertToNew for InsertSubdomainIpAddr {
+impl InsertToNew for InsertSubdomainIpAddr {
     type Target = NewSubdomainIpAddr;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewSubdomainIpAddr> {
+    #[inline]
+    fn try_into_new(self) -> Result<NewSubdomainIpAddr> {
         Ok(self)
     }
 }

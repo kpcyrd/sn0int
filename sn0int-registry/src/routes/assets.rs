@@ -5,13 +5,13 @@ use rocket::http::hyper::header::{CacheControl, CacheDirective};
 
 #[derive(Responder)]
 pub struct CachableResponder {
-    inner: Vec<u8>,
+    inner: &'static [u8],
     content_type: ContentType,
     cache: CacheControl,
 }
 
 impl CachableResponder {
-    pub fn new<I: Into<Vec<u8>>>(inner: I, content_type: ContentType, max_age: u32) -> CachableResponder {
+    pub fn new(inner: &'static [u8], content_type: ContentType, max_age: u32) -> CachableResponder {
         let cache = CacheControl(vec![
             CacheDirective::Public,
             CacheDirective::MaxAge(max_age),
@@ -23,7 +23,7 @@ impl CachableResponder {
         }
     }
 
-    pub fn immutable<I: Into<Vec<u8>>>(inner: I, content_type: ContentType) -> CachableResponder {
+    pub fn immutable(inner: &'static [u8], content_type: ContentType) -> CachableResponder {
         let cache = CacheControl(vec![
             CacheDirective::Public,
             CacheDirective::MaxAge(31536000),
@@ -58,6 +58,11 @@ pub fn javascript(rev: String) -> Result<CachableResponder, Status> {
     } else {
         Err(Status::NotFound)
     }
+}
+
+#[get("/assets/social-card.png")]
+pub fn social_card() -> CachableResponder {
+    CachableResponder::new(SOCIAL_CARD, ContentType::PNG, 3600)
 }
 
 #[get("/assets/<rev>/clipboard.min.js")]

@@ -2,25 +2,43 @@
 <html lang="en">
     <head>
         <meta charset="utf-8">
-        <title>{{~> title}}sn0int registry</title>
+        <title>{{> title}}sn0int registry</title>
         <link rel="preload" as="font" type="font/woff2" crossorigin href="/assets/{{ASSET_REV}}/fontawesome/webfonts/fa-solid-900.woff2">
         <link rel="stylesheet" href="/assets/{{ASSET_REV}}/style.css">
         <link href="/assets/{{ASSET_REV}}/fontawesome/css/all.min.css" rel="stylesheet">
         <script src="/assets/{{ASSET_REV}}/clipboard.min.js"></script>
         <script src="/assets/{{ASSET_REV}}/script.js"></script>
+
+        <meta name="description" content="{{> og_description}} - {{> og_title}}">
+        <link rel="canonical" href="https://sn0int.com/{{> og_url}}">
+
+        <meta name="twitter:image:src" content="https://sn0int.com/assets/social-card.png">
+        <meta name="twitter:site" content="@sn0int">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:title" content="{{> og_title}}">
+        <meta name="twitter:description" content="{{> og_description}}">
+
+        <meta property="og:image" content="https://sn0int.com/assets/social-card.png">
+        <meta property="og:site_name" content="sn0int registry">
+        {{> og_type }}
+        <meta property="og:title" content="{{> og_title}}">
+        <meta property="og:url" content="https://sn0int.com/{{> og_url}}">
+        <meta property="og:description" content="{{> og_description}}">
     </head>
     <body>
-        <h1 class="center"><a href="/">sn0int registry</a></h1>
-        <nav>
-            <p class="center">
-                [ <a href="https://github.com/kpcyrd/sn0int" target="_blank" rel="noopener">github</a> ]
-                [ <a href="https://sn0int.readthedocs.io/" target="_blank" rel="noopener">docs</a> ]
-                [ <a href="https://www.reddit.com/r/sn0int" target="_blank" rel="noopener">reddit</a> ]
-                [ <a href="https://twitter.com/sn0int" target="_blank" rel="noopener">twitter</a> ]
-                [ <a href="https://chaos.social/@sn0int" target="_blank" rel="noopener">mastodon</a> ]
-                [ <a href="https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int" target="_blank" rel="noopener">irc</a> ]
-            </p>
-        </nav>
+        <header>
+            <h1 class="center"><a href="/">sn0int registry</a></h1>
+            <nav>
+                <p class="center">
+                    [ <a href="https://github.com/kpcyrd/sn0int" target="_blank" rel="noopener">github</a> ]
+                    [ <a href="https://sn0int.readthedocs.io/" target="_blank" rel="noopener">docs</a> ]
+                    [ <a href="https://www.reddit.com/r/sn0int" target="_blank" rel="noopener">reddit</a> ]
+                    [ <a href="https://twitter.com/sn0int" target="_blank" rel="noopener">twitter</a> ]
+                    [ <a href="https://chaos.social/@sn0int" target="_blank" rel="noopener">mastodon</a> ]
+                    [ <a href="https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int" target="_blank" rel="noopener">irc</a> ]
+                </p>
+            </nav>
+        </header>
 
         {{~> page}}
     </body>

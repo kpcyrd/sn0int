@@ -39,6 +39,9 @@ pub enum Target {
     /// Insert ip address into the database
     #[structopt(name="ipaddr")]
     IpAddr(AddIpAddr),
+    /// Insert url into the database
+    #[structopt(name="subdomain")]
+    Url(AddUrl),
     /// Insert email into the database
     #[structopt(name="email")]
     Email(AddEmail),
@@ -68,6 +71,7 @@ impl Cmd for Args {
             Target::Domain(args) => args.insert(rl, self.dry_run),
             Target::Subdomain(args) => args.insert(rl, self.dry_run),
             Target::IpAddr(args) => args.insert(rl, self.dry_run),
+            Target::Url(args) => args.insert(rl, self.dry_run),
             Target::Email(args) => args.insert(rl, self.dry_run),
             Target::PhoneNumber(args) => args.insert(rl, self.dry_run),
             Target::Device(args) => args.insert(rl, self.dry_run),
@@ -187,6 +191,55 @@ impl IntoInsert for AddIpAddr {
             reverse_dns: None,
             unscoped: false,
         }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddUrl {
+    url: Option<String>,
+}
+
+impl IntoInsert for AddUrl {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
+        let url = match self.url {
+            Some(url) => url,
+            _ => utils::question("URL")?,
+        };
+
+        let parts = url::Url::parse(&url)?;
+        let subdomain = parts.domain()
+            .ok_or_else(|| format_err!("url doesn't have a domain host"))?;
+
+        let dns_name = rl.psl()?.parse_dns_name(&subdomain)
+            .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
+
+        let domain_id = match rl.db().insert_struct(NewDomain {
+            value: dns_name.root,
+            unscoped: false,
+        }, true)? {
+            Some((_, domain_id)) => domain_id,
+            _ => bail!("Domain is out out of scope"),
+        };
+
+        let subdomain_id = match rl.db().insert_struct(NewSubdomain {
+            value: subdomain.to_string(),
+            domain_id,
+            resolvable: None,
+            unscoped: false,
+        }, true)? {
+            Some((_, subdomain_id)) => subdomain_id,
+            _ => bail!("Subdomain is out out of scope"),
+        };
+
+        Ok(Insert::Url(InsertUrl {
+            subdomain_id,
+            value: url,
+            status: None,
+            body: None,
+            online: None,
+            title: None,
+            redirect: None,
+        }.try_into_new()?))
     }
 }
 

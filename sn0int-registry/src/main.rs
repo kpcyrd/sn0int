@@ -10,8 +10,6 @@
 #[macro_use] extern crate maplit;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate failure;
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_migrations;
 
 use rocket::fairing::AdHoc;
 use rocket::http::Header;
@@ -20,18 +18,14 @@ use rocket_contrib::templates::Template;
 use dotenv::dotenv;
 
 use std::env;
-use crate::errors::*;
+use sn0int_registry::errors::*;
+use sn0int_registry::db;
 
 pub mod assets;
 pub mod auth;
 pub mod auth2;
-pub mod db;
-pub mod errors;
 pub mod github;
-pub mod models;
 pub mod routes;
-#[allow(unused_imports)]
-pub mod schema;
 
 
 #[catch(400)]
@@ -100,6 +94,7 @@ fn run() -> Result<()> {
             routes::assets::favicon,
             routes::assets::style,
             routes::assets::javascript,
+            routes::assets::social_card,
             routes::assets::javascript_clipboard,
             routes::assets::fontawesome_style,
             routes::assets::fontawesome_font,

@@ -6,8 +6,6 @@ use diesel;
 use diesel::prelude::*;
 use std::net;
 use std::result;
-use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
@@ -357,10 +355,10 @@ pub struct InsertIpAddr {
     pub reverse_dns: Option<String>,
 }
 
-impl LuaInsertToNew for InsertIpAddr {
+impl InsertToNew for InsertIpAddr {
     type Target = NewIpAddr;
 
-    fn try_into_new(self, _state: &Arc<dyn State>) -> Result<NewIpAddr> {
+    fn try_into_new(self) -> Result<NewIpAddr> {
         let ipaddr = self.value.parse::<net::IpAddr>()
             .context("Failed to parse ip address")?;
 

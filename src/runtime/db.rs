@@ -11,11 +11,12 @@ use crate::models::*;
 use crate::json::LuaJsonValue;
 
 
+#[inline]
 pub fn try_into_new<T: LuaInsertToNew>(x: LuaJsonValue, state: &Arc<dyn State>) -> Result<T::Target>
     where for<'de> T: serde::Deserialize<'de>
 {
     structs::from_lua::<T>(x)?
-        .try_into_new(state)
+        .lua_try_into_new(state)
 }
 
 fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<dyn State>) -> Result<Insert> {

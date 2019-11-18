@@ -1,5 +1,5 @@
-use crate::errors::*;
-use crate::db;
+use sn0int_registry::errors::*;
+use sn0int_registry::db;
 
 
 #[get("/health")]
