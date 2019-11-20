@@ -49,6 +49,7 @@ table! {
         denominator -> Nullable<Integer>,
         balance -> Nullable<BigInt>,
         received -> Nullable<BigInt>,
+        first_seen -> Nullable<Timestamp>,
         last_withdrawal -> Nullable<Timestamp>,
         unscoped -> Bool,
         description -> Nullable<Text>,

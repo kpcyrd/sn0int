@@ -15,6 +15,7 @@ pub struct CryptoAddr {
     pub denominator: Option<i32>,
     pub balance: Option<i64>,
     pub received: Option<i64>,
+    pub first_seen: Option<NaiveDateTime>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub unscoped: bool,
     pub description: Option<String>,
@@ -157,6 +158,7 @@ pub struct DetailedCryptoAddr {
     denominator: Option<i32>,
     balance: Option<i64>,
     received: Option<i64>,
+    first_seen: Option<NaiveDateTime>,
     last_withdrawal: Option<NaiveDateTime>,
     unscoped: bool,
     description: Option<String>,
@@ -194,6 +196,7 @@ impl DisplayableDetailed for DetailedCryptoAddr {
         w.end_group()?;
 
         w.start_group();
+        w.opt_debug::<Yellow, _>(&self.first_seen)?;
         w.opt_debug::<Yellow, _>(&self.last_withdrawal)?;
         w.opt_debug::<Yellow, _>(&self.description)?;
         w.end_group()?;
@@ -220,6 +223,7 @@ impl Detailed for CryptoAddr {
             denominator: self.denominator.clone(),
             balance: self.balance.clone(),
             received: self.received.clone(),
+            first_seen: self.first_seen.clone(),
             last_withdrawal: self.last_withdrawal.clone(),
             unscoped: self.unscoped,
             description: self.description.clone(),
@@ -235,6 +239,7 @@ pub struct NewCryptoAddr {
     pub denominator: Option<i32>,
     pub balance: Option<i64>,
     pub received: Option<i64>,
+    pub first_seen: Option<NaiveDateTime>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub unscoped: bool,
     pub description: Option<String>,
@@ -267,6 +272,7 @@ impl Upsertable<CryptoAddr> for NewCryptoAddr {
             denominator: Self::upsert_opt(self.denominator, &existing.denominator),
             balance: Self::upsert_opt(self.balance, &existing.balance),
             received: Self::upsert_opt(self.received, &existing.received),
+            first_seen: Self::upsert_opt(self.first_seen, &existing.first_seen),
             last_withdrawal: Self::upsert_opt(self.last_withdrawal, &existing.last_withdrawal),
             description: Self::upsert_opt(self.description, &existing.description),
         }
@@ -300,6 +306,7 @@ pub struct CryptoAddrUpdate {
     pub denominator: Option<i32>,
     pub balance: Option<i64>,
     pub received: Option<i64>,
+    pub first_seen: Option<NaiveDateTime>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub description: Option<String>,
 }
@@ -310,6 +317,7 @@ impl Upsert for CryptoAddrUpdate {
         self.denominator.is_some() ||
         self.balance.is_some() ||
         self.received.is_some() ||
+        self.first_seen.is_some() ||
         self.last_withdrawal.is_some() ||
         self.description.is_some()
     }
@@ -329,6 +337,7 @@ impl Updateable<CryptoAddr> for CryptoAddrUpdate {
         Self::clear_if_equal(&mut self.denominator, &existing.denominator);
         Self::clear_if_equal(&mut self.balance, &existing.balance);
         Self::clear_if_equal(&mut self.received, &existing.received);
+        Self::clear_if_greater_or_equal(&mut self.first_seen, &existing.first_seen);
         Self::clear_if_lower_or_equal(&mut self.last_withdrawal, &existing.last_withdrawal);
         Self::clear_if_equal(&mut self.description, &existing.description);
     }
@@ -338,6 +347,7 @@ impl Updateable<CryptoAddr> for CryptoAddrUpdate {
         Self::push_value(updates, "denominator", &self.denominator);
         Self::push_value(updates, "balance", &self.balance);
         Self::push_value(updates, "received", &self.received);
+        Self::push_value(updates, "first_seen", &self.first_seen);
         Self::push_value(updates, "last_withdrawal", &self.last_withdrawal);
         Self::push_value(updates, "description", &self.description);
     }

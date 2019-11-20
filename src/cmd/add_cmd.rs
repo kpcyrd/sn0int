@@ -574,6 +574,7 @@ impl IntoInsert for AddCryptoAddr {
             denominator: None,
             balance: None,
             received: None,
+            first_seen: None,
             last_withdrawal: None,
             unscoped: false,
             description: None,

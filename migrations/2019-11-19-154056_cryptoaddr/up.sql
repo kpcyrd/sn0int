@@ -5,6 +5,7 @@ CREATE TABLE cryptoaddrs (
     denominator INTEGER,
     balance INTEGER,
     received INTEGER,
+    first_seen DATETIME,
     last_withdrawal DATETIME,
     unscoped BOOLEAN DEFAULT 0 NOT NULL,
     description VARCHAR,
