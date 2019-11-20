@@ -13,8 +13,8 @@ pub struct CryptoAddr {
     pub value: String,
     pub currency: Option<String>,
     pub denominator: Option<i32>,
-    pub balance: Option<i32>,
-    pub received: Option<i32>,
+    pub balance: Option<i64>,
+    pub received: Option<i64>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub unscoped: bool,
     pub description: Option<String>,
@@ -155,15 +155,15 @@ pub struct DetailedCryptoAddr {
     value: String,
     currency: Option<String>,
     denominator: Option<i32>,
-    balance: Option<i32>,
-    received: Option<i32>,
+    balance: Option<i64>,
+    received: Option<i64>,
     last_withdrawal: Option<NaiveDateTime>,
     unscoped: bool,
     description: Option<String>,
 }
 
 #[inline]
-fn add_currency(w: &mut fmt::DetailFormatter, num: &Option<i32>, denominator: &Option<i32>) -> fmt::Result {
+fn add_currency(w: &mut fmt::DetailFormatter, num: &Option<i64>, denominator: &Option<i32>) -> fmt::Result {
     if let Some(&num) = num.as_ref() {
         let denominator = denominator.unwrap_or(0);
         let display = display_currency(num as u64, denominator as usize);
@@ -233,8 +233,8 @@ pub struct NewCryptoAddr {
     pub value: String,
     pub currency: Option<String>,
     pub denominator: Option<i32>,
-    pub balance: Option<i32>,
-    pub received: Option<i32>,
+    pub balance: Option<i64>,
+    pub received: Option<i64>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub unscoped: bool,
     pub description: Option<String>,
@@ -298,8 +298,8 @@ pub struct CryptoAddrUpdate {
     pub id: i32,
     pub currency: Option<String>,
     pub denominator: Option<i32>,
-    pub balance: Option<i32>,
-    pub received: Option<i32>,
+    pub balance: Option<i64>,
+    pub received: Option<i64>,
     pub last_withdrawal: Option<NaiveDateTime>,
     pub description: Option<String>,
 }

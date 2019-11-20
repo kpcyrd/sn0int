@@ -8,7 +8,7 @@ pub fn intval(lua: &mut hlua::Lua, state: Arc<dyn State>) {
         match val {
             AnyLuaValue::LuaNil => Ok(AnyLuaValue::LuaNil),
             AnyLuaValue::LuaString(ref x) => {
-                let n = x.parse::<u64>()
+                let n = x.parse::<i64>()
                     .map_err(|e| state.set_error(Error::from(e)))?;
                 Ok(AnyLuaValue::LuaNumber(n as f64))
             },
