@@ -33,9 +33,6 @@ pub enum Target {
     /// Insert subdomain into the database
     #[structopt(name="subdomain")]
     Subdomain(AddSubdomain),
-    /// Insert ip network into the database
-    #[structopt(name="netblock")]
-    Netblock(AddNetblock),
     /// Insert ip address into the database
     #[structopt(name="ipaddr")]
     IpAddr(AddIpAddr),
@@ -63,6 +60,12 @@ pub enum Target {
     /// Insert images into the database
     #[structopt(name="image")]
     Image(AddImage),
+    /// Insert ip network into the database
+    #[structopt(name="netblock")]
+    Netblock(AddNetblock),
+    /// Insert a crypto currency address into the database
+    #[structopt(name="cryptoaddr")]
+    CryptoAddr(AddCryptoAddr),
 }
 
 impl Cmd for Args {
@@ -80,6 +83,7 @@ impl Cmd for Args {
             Target::Breach(args) => args.insert(rl, self.dry_run),
             Target::Image(args) => args.insert(rl, self.dry_run),
             Target::Netblock(args) => args.insert(rl, self.dry_run),
+            Target::CryptoAddr(args) => args.insert(rl, self.dry_run),
         }
     }
 }
@@ -547,6 +551,32 @@ impl IntoInsert for AddNetblock {
             as_org: None,
             description: None,
             unscoped: false,
+        }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddCryptoAddr {
+    address: Option<String>,
+}
+
+impl IntoInsert for AddCryptoAddr {
+    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
+        let address = if let Some(address) = self.address {
+            address
+        } else {
+            utils::question("Address")?
+        };
+
+        Ok(Insert::CryptoAddr(NewCryptoAddr {
+            value: address,
+            currency: None,
+            denominator: None,
+            balance: None,
+            received: None,
+            last_withdrawal: None,
+            unscoped: false,
+            description: None,
         }))
     }
 }

@@ -32,6 +32,7 @@ impl Cmd for Args {
             Target::Images(filter) => noscope::<Image>(rl, &filter),
             Target::Ports(filter) => noscope::<Port>(rl, &filter),
             Target::Netblocks(filter) => noscope::<Netblock>(rl, &filter),
+            Target::CryptoAddrs(filter) => noscope::<CryptoAddr>(rl, &filter),
         }?;
         term::info(&format!("Updated {} rows", rows));
         Ok(())

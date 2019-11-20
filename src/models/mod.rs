@@ -24,6 +24,7 @@ pub enum Insert {
     Image(NewImage),
     Port(NewPort),
     Netblock(NewNetblock),
+    CryptoAddr(NewCryptoAddr),
 }
 
 impl Insert {
@@ -57,6 +58,7 @@ impl Insert {
             Insert::Image(x) => format!("{:?}", x.value),
             Insert::Port(x) => format!("{:?}", x.value),
             Insert::Netblock(x) => format!("{:?}", x.value),
+            Insert::CryptoAddr(x) => format!("{:?}", x.value),
         };
         Ok(label)
     }
@@ -84,6 +86,7 @@ impl Insert {
             Insert::Image(x) => format!("Image: {}", x.printable(db)?),
             Insert::Port(x) => format!("Port: {}", x.printable(db)?),
             Insert::Netblock(x) => format!("Netblock: {}", x.printable(db)?),
+            Insert::CryptoAddr(x) => format!("CryptoAddr: {}", x.printable(db)?),
         })
     }
 }
@@ -107,6 +110,7 @@ impl From<&Insert> for Table {
             Insert::Image(_) => Table::Images,
             Insert::Port(_) => Table::Ports,
             Insert::Netblock(_) => Table::Netblocks,
+            Insert::CryptoAddr(_) => Table::Cryptoaddrs,
         }
     }
 }
@@ -126,6 +130,7 @@ pub enum Update {
     Image(ImageUpdate),
     Port(PortUpdate),
     Netblock(NetblockUpdate),
+    CryptoAddr(CryptoAddrUpdate),
 }
 
 impl Update {
@@ -144,6 +149,7 @@ impl Update {
             Update::Image(update)         => update.is_dirty(),
             Update::Port(update)          => update.is_dirty(),
             Update::Netblock(update)      => update.is_dirty(),
+            Update::CryptoAddr(update)    => update.is_dirty(),
         }
     }
 }
@@ -164,6 +170,7 @@ impl fmt::Display for Update {
             Update::Image(update)         => write!(w, "{}", update.to_string()),
             Update::Port(update)          => write!(w, "{}", update.to_string()),
             Update::Netblock(update)      => write!(w, "{}", update.to_string()),
+            Update::CryptoAddr(update)    => write!(w, "{}", update.to_string()),
         }
     }
 }
@@ -406,3 +413,6 @@ pub use self::image::*;
 
 mod port;
 pub use self::port::*;
+
+mod cryptoaddr;
+pub use self::cryptoaddr::*;

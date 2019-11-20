@@ -136,6 +136,7 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
         Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
         Some(Source::Ports) => prepare_args::<Port>(rl, &filter, None),
         Some(Source::Netblocks) => prepare_args::<Netblock>(rl, &filter, None),
+        Some(Source::CryptoAddrs(currency)) => prepare_args::<CryptoAddr>(rl, &filter, currency.as_ref()),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {
