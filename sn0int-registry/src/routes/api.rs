@@ -65,11 +65,18 @@ pub fn info(author: String, name: String, connection: db::Connection) -> ApiResu
         .not_found()
         .public_context("Module does not exist")?;
 
+    let redirect = if let Some(redirect) = module.redirect {
+        Some(redirect.parse()?)
+    } else {
+        None
+    };
+
     Ok(ApiResponse::Success(ModuleInfoResponse {
         author: module.author,
         name: module.name,
         description: module.description,
         latest: module.latest,
+        redirect,
     }))
 }
 

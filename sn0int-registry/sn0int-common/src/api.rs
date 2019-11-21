@@ -1,3 +1,5 @@
+use crate::id::ModuleID;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WhoamiResponse {
     pub user: String,
@@ -29,6 +31,7 @@ pub struct ModuleInfoResponse {
     pub name: String,
     pub description: String,
     pub latest: Option<String>,
+    pub redirect: Option<ModuleID>,
 }
 
 impl ModuleInfoResponse {

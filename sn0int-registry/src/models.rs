@@ -6,6 +6,7 @@ use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
 use crate::schema::*;
 use std::collections::HashMap;
 use std::time::SystemTime;
+use sn0int_common::ModuleID;
 use sn0int_common::metadata::Metadata;
 
 
@@ -54,6 +55,7 @@ type AllModuleColumns = (
     modules::latest,
     modules::featured,
     modules::source,
+    modules::redirect,
 );
 
 pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
@@ -64,6 +66,7 @@ pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
     modules::latest,
     modules::featured,
     modules::source,
+    modules::redirect,
 );
 
 #[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
@@ -76,6 +79,7 @@ pub struct Module {
     pub latest: Option<String>,
     pub featured: bool,
     pub source: Option<String>,
+    pub redirect: Option<String>,
 }
 
 impl Module {
@@ -120,6 +124,7 @@ impl Module {
                 description,
                 latest: None,
                 source,
+                redirect: None,
             }, connection),
         }
     }
@@ -159,10 +164,18 @@ impl Module {
         Ok(())
     }
 
+    pub fn redirect(&self, redirect: &ModuleID, connection: &PgConnection) -> Result<()> {
+        diesel::update(modules::table.filter(modules::columns::id.eq(self.id)))
+            .set(modules::columns::redirect.eq(redirect.to_string()))
+            .execute(connection)?;
+
+        Ok(())
+    }
+
     pub fn search(query: &str, connection: &PgConnection) -> Result<Vec<(Module, i64)>> {
         let q = plainto_tsquery(query);
 
-        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, i64)> = modules::table.select((
+        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, Option<String>, i64)> = modules::table.select((
                 modules::id,
                 modules::author,
                 modules::name,
@@ -170,6 +183,7 @@ impl Module {
                 modules::latest,
                 modules::featured,
                 modules::source,
+                modules::redirect,
                 diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"),
             ))
             .left_join(releases::table)
@@ -181,7 +195,7 @@ impl Module {
             ))
             .load(connection)?;
 
-        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, source, downloads)| (
+        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, source, redirect, downloads)| (
             Module {
                 id,
                 author,
@@ -190,6 +204,7 @@ impl Module {
                 latest,
                 featured,
                 source,
+                redirect,
             },
             downloads,
         )).collect())
@@ -208,7 +223,7 @@ impl Module {
     }
 
     pub fn start_page(connection: &PgConnection) -> Result<HashMap<String, Vec<Module>>> {
-        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, i64)> = modules::table.select((
+        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, Option<String>, i64)> = modules::table.select((
                 modules::id,
                 modules::author,
                 modules::name,
@@ -216,6 +231,7 @@ impl Module {
                 modules::latest,
                 modules::featured,
                 modules::source,
+                modules::redirect,
                 diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"),
             ))
             .left_join(releases::table)
@@ -229,7 +245,7 @@ impl Module {
 
         let mut categories: HashMap<_, Vec<_>> = HashMap::new();
 
-        for (id, author, name, description, latest, featured, source, _downloads) in x {
+        for (id, author, name, description, latest, featured, source, redirect, _downloads) in x {
             let module = Module {
                 id,
                 author,
@@ -238,6 +254,7 @@ impl Module {
                 latest,
                 featured,
                 source,
+                redirect,
             };
 
             let source = match &module.source {
@@ -273,6 +290,7 @@ pub struct NewModule<'a> {
     description: &'a str,
     latest: Option<&'a str>,
     source: Option<&'a str>,
+    redirect: Option<&'a str>,
 }
 
 #[derive(AsChangeset, Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
