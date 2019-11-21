@@ -6,6 +6,7 @@ use crate::shell::Shell;
 use crate::update::AutoUpdater;
 use crate::worker;
 use colored::Colorize;
+use sn0int_common::ModuleID;
 use std::fmt::Write;
 use std::sync::Arc;
 use structopt::StructOpt;
@@ -36,6 +37,9 @@ pub enum SubCommand {
     /// Update modules
     #[structopt(name="update")]
     Update(Update),
+    /// Uninstall a module
+    #[structopt(name="uninstall")]
+    Uninstall(Uninstall),
 }
 
 #[derive(Debug, StructOpt)]
@@ -54,6 +58,11 @@ pub struct Reload {
 
 #[derive(Debug, StructOpt)]
 pub struct Update {
+}
+
+#[derive(Debug, StructOpt)]
+pub struct Uninstall {
+    module: ModuleID,
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
@@ -86,7 +95,7 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
             }
         },
         SubCommand::Install(install) => {
-            registry::run_install(&install, &config)?;
+            registry::run_install(install, &config)?;
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
         },
@@ -128,6 +137,12 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
 
             autoupdate.save()?;
 
+            // trigger reload
+            run(rl, &[String::from("mod"), String::from("reload")])?;
+        },
+        SubCommand::Uninstall(uninstall) => {
+            let updater = Updater::new(&config)?;
+            updater.uninstall(&uninstall.module)?;
             // trigger reload
             run(rl, &[String::from("mod"), String::from("reload")])?;
         },

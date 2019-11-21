@@ -22,6 +22,7 @@ table! {
         search_vector -> Tsvector,
         featured -> Bool,
         source -> Nullable<Varchar>,
+        redirect -> Nullable<Varchar>,
     }
 }
 
