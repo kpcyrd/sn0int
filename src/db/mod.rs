@@ -52,6 +52,7 @@ pub enum Family {
     Image,
     Port,
     Netblock,
+    Cryptoaddr,
 }
 
 impl Family {
@@ -80,6 +81,7 @@ pub enum Table {
     Images,
     Ports,
     Netblocks,
+    Cryptoaddrs,
 }
 
 impl Table {
@@ -179,6 +181,7 @@ impl Database {
             Insert::Image(object) => self.insert_struct(object, scoped),
             Insert::Port(object) => self.insert_struct(object, scoped),
             Insert::Netblock(object) => self.insert_struct(object, scoped),
+            Insert::CryptoAddr(object) => self.insert_struct(object, scoped),
         }
     }
 
@@ -268,6 +271,7 @@ impl Database {
             Update::Image(update) => self.update_image(update),
             Update::Port(update) => self.update_port(update),
             Update::Netblock(update) => self.update_netblock(update),
+            Update::CryptoAddr(update) => self.update_cryptoaddr(update),
         }
     }
 
@@ -375,6 +379,14 @@ impl Database {
         Ok(netblock_update.id)
     }
 
+    pub fn update_cryptoaddr(&self, cryptoaddr_update: &CryptoAddrUpdate) -> Result<i32> {
+        use crate::schema::cryptoaddrs::columns::*;
+        diesel::update(cryptoaddrs::table.filter(id.eq(cryptoaddr_update.id)))
+            .set(cryptoaddr_update)
+            .execute(&self.db)?;
+        Ok(cryptoaddr_update.id)
+    }
+
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
         match T::get_opt(self, &value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
@@ -400,6 +412,7 @@ impl Database {
             Family::Image => self.get_opt_typed::<Image>(&value),
             Family::Port => self.get_opt_typed::<Port>(&value),
             Family::Netblock => self.get_opt_typed::<Netblock>(&value),
+            Family::Cryptoaddr => self.get_opt_typed::<CryptoAddr>(&value),
         }
     }
 

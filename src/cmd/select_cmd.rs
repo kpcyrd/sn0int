@@ -97,6 +97,7 @@ impl Cmd for Args {
             Target::Images(filter) => printer.select::<Image>(&filter),
             Target::Ports(filter) => printer.select::<Port>(&filter),
             Target::Netblocks(filter) => printer.select::<Netblock>(&filter),
+            Target::CryptoAddrs(filter) => printer.select::<CryptoAddr>(&filter),
         }
     }
 }

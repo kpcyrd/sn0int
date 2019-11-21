@@ -39,6 +39,8 @@ impl CmdCompleter {
                 "breaches",
                 "images",
                 "ports",
+                "netblocks",
+                "cryptoaddrs",
             ], &args[1]))
         }
     }
@@ -106,7 +108,9 @@ impl Completer for CmdCompleter {
                                         "network",
                                         "account",
                                         "breach",
-                                        "image"];
+                                        "image",
+                                        "netblock",
+                                        "cryptoaddr"];
 
                         let results: Vec<String> = options.iter()
                             .filter(|x| x.starts_with(arg))

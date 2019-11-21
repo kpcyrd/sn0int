@@ -429,6 +429,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::img_load(&mut lua, state.clone());
     runtime::img_nudity(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
+    runtime::intval(&mut lua, state.clone());
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());

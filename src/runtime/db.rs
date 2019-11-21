@@ -69,6 +69,9 @@ fn into_insert(family: Family, object: LuaJsonValue, state: &Arc<dyn State>) -> 
         Family::Netblock => {
             Insert::Netblock(try_into_new::<InsertNetblock>(object, state)?)
         },
+        Family::Cryptoaddr => {
+            Insert::CryptoAddr(try_into_new::<InsertCryptoAddr>(object, state)?)
+        },
     };
     Ok(obj)
 }
@@ -168,6 +171,8 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
                 .map(|(id, v, u)| (id, v, Update::Port(u))),
             Family::Netblock => gen_changeset::<Netblock, NetblockUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Netblock(u))),
+            Family::Cryptoaddr => gen_changeset::<CryptoAddr, CryptoAddrUpdate>(object, update)
+                .map(|(id, v, u)| (id, v, Update::CryptoAddr(u))),
         };
 
         let (id, value, update) = update

@@ -17,6 +17,7 @@ import_fns!(hashes);
 import_fns!(hex);
 import_fns!(http);
 import_fns!(html);
+import_fns!(int);
 import_fns!(json);
 import_fns!(keyring);
 import_fns!(logger);

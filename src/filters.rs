@@ -45,6 +45,9 @@ pub enum Target {
     /// On ipnets
     #[structopt(name="netblocks")]
     Netblocks(Filter),
+    /// On crypto currency addresses
+    #[structopt(name="cryptoaddrs")]
+    CryptoAddrs(Filter),
 }
 
 #[derive(Debug, StructOpt)]

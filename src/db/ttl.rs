@@ -117,6 +117,7 @@ impl Ttl {
             Table::Images => Image::delete_id(db, self.key)?,
             Table::Ports => Port::delete_id(db, self.key)?,
             Table::Netblocks => Netblock::delete_id(db, self.key)?,
+            Table::Cryptoaddrs => CryptoAddr::delete_id(db, self.key)?,
         };
 
         diesel::delete(self)

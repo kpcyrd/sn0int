@@ -42,6 +42,21 @@ table! {
 }
 
 table! {
+    cryptoaddrs (id) {
+        id -> Integer,
+        value -> Text,
+        currency -> Nullable<Text>,
+        denominator -> Nullable<Integer>,
+        balance -> Nullable<BigInt>,
+        received -> Nullable<BigInt>,
+        first_seen -> Nullable<Timestamp>,
+        last_withdrawal -> Nullable<Timestamp>,
+        unscoped -> Bool,
+        description -> Nullable<Text>,
+    }
+}
+
+table! {
     devices (id) {
         id -> Integer,
         value -> Text,
@@ -234,6 +249,7 @@ allow_tables_to_appear_in_same_query!(
     autonoscope,
     breach_emails,
     breaches,
+    cryptoaddrs,
     devices,
     domains,
     emails,

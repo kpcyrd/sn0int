@@ -43,6 +43,7 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
             Source::Images => select::<Image>(rl, None)?,
             Source::Ports => select::<Port>(rl, None)?,
             Source::Netblocks => select::<Netblock>(rl, None)?,
+            Source::CryptoAddrs(currency) => select::<CryptoAddr>(rl, currency.as_ref())?,
             Source::KeyRing(namespace) => {
                 for key in rl.keyring().list_for(&namespace) {
                     println!("{}:{}", key.namespace, key.name);
@@ -77,6 +78,7 @@ fn count_selected(rl: &mut Shell, source: &Source) -> Result<usize> {
         Source::Images => db.filter::<Image>(&filter)?.len(),
         Source::Ports => db.filter::<Port>(&filter)?.len(),
         Source::Netblocks => db.filter::<Netblock>(&filter)?.len(),
+        Source::CryptoAddrs(currency) => db.filter_with_param::<CryptoAddr>(&filter, currency.as_ref())?.len(),
         Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
     };
     Ok(num)
