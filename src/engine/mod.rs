@@ -110,6 +110,11 @@ impl<'a> Engine<'a> {
                                     .into_string()
                                     .map_err(|_| format_err!("Failed to decode filename"))?;
 
+            // skip if the namespace has an explicit path configured
+            if self.config.namespaces.contains_key(&author_name) {
+                continue;
+            }
+
             self.load_module_folder(&path, &author_name, private_modules)?;
         }
 
