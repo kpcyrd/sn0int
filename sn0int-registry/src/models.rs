@@ -114,7 +114,10 @@ impl Module {
 
         match Self::find_opt(author, name, connection)? {
             Some(module) => diesel::update(modules::table.filter(modules::columns::id.eq(module.id)))
-                            .set(modules::columns::description.eq(description))
+                            .set(&BumpModule {
+                                description: Some(description),
+                                redirect: Some(None),
+                            })
                             .returning(ALL_MODULE_COLUMNS)
                             .get_result(connection)
                             .map_err(Error::from),
@@ -291,6 +294,13 @@ pub struct NewModule<'a> {
     latest: Option<&'a str>,
     source: Option<&'a str>,
     redirect: Option<&'a str>,
+}
+
+#[derive(AsChangeset)]
+#[table_name="modules"]
+pub struct BumpModule<'a> {
+    description: Option<&'a str>,
+    redirect: Option<Option<&'a str>>,
 }
 
 #[derive(AsChangeset, Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
