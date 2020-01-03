@@ -129,7 +129,7 @@ pub struct PrintableNetblock {
 
 impl fmt::Display for PrintableNetblock {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "{:?}", self.value) // TODO: cidr type
+        write!(w, "{}", self.value)
     }
 }
 
