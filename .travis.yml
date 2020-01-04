@@ -37,10 +37,10 @@ matrix:
   #  rust: stable
   #  env:
   #  - BUILD_MODE="windows test"
-  - os: windows
-    rust: stable
-    env:
-    - BUILD_MODE="windows common"
+  #- os: windows
+  #  rust: stable
+  #  env:
+  #  - BUILD_MODE="windows common"
 
 before_install:
 - ci/setup.sh "$TRAVIS_OS_NAME"
