@@ -47,16 +47,12 @@ Docker
 Alpine
 ------
 
-On alpine edge, with enabled testing repositories:
-
 .. code-block:: bash
 
     $ apk add sn0int
 
 OpenBSD
 -------
-
-On -current:
 
 .. code-block:: bash
 

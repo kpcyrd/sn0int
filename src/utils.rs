@@ -1,21 +1,26 @@
 use crate::errors::*;
-
-use std::io::{self, Write};
+use rustyline::error::ReadlineError;
 use std::str::FromStr;
 
 
-pub fn read_line() -> Result<String> {
-    let mut buf = String::new();
-    io::stdin().read_line(&mut buf)?;
-    let buf = buf.trim().to_string();
-    Ok(buf)
+pub fn read_line(prompt: &str) -> Result<String> {
+    let mut rl = rustyline::Editor::<()>::new();
+    let mut line = rl.readline(prompt)
+        .map_err(|err| match err {
+            ReadlineError::Eof => format_err!("Failed to read line from input"),
+            ReadlineError::Interrupted => format_err!("Prompt has been canceled"),
+            err => err.into(),
+        })?;
+    if let Some(idx) = line.find('\n') {
+        line.truncate(idx);
+    }
+    info!("Read from prompt: {:?}", line);
+    Ok(line)
 }
 
 pub fn question(text: &str) -> Result<String> {
-    print!("\x1b[1m[\x1b[34m?\x1b[0;1m]\x1b[0m {}: ", text);
-    io::stdout().flush()?;
-
-    read_line()
+    let prompt = format!("\x1b[1m[\x1b[34m?\x1b[0;1m]\x1b[0m {}: ", text);
+    read_line(&prompt)
 }
 
 pub fn question_opt(text: &str) -> Result<Option<String>> {

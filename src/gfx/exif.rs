@@ -11,11 +11,12 @@ pub struct Location {
 }
 
 impl Location {
-    pub fn try_from(fields: &[exif::Field]) -> Result<Location> {
+    fn try_from_iter<'a, I: IntoIterator<Item=&'a exif::Field>>(iter: I) -> Result<Self> {
         let mut builder = LocationBuilder::default();
-        fields.iter()
-            .map(|f| builder.add_one(f))
-            .collect::<Result<()>>()?;
+        for f in iter {
+            debug!("Exif field: {:?}", f.display_value().to_string());
+            builder.add_one(f)?;
+        }
         builder.build()
     }
 }
@@ -63,9 +64,8 @@ pub fn gps(img: &[u8]) -> Result<Option<Location>> {
     let mut buf = io::BufReader::new(img);
     let reader = exif::Reader::new(&mut buf)?;
     let fields = reader.fields();
-    debug!("Exif fields: {:?}", fields);
 
-    let location = Location::try_from(fields).ok();
+    let location = Location::try_from_iter(fields).ok();
     Ok(location)
 }
 
@@ -115,18 +115,18 @@ mod tests {
     fn verify_exif_location() {
         test_init();
 
-        let location = Location::try_from(&[
+        let location = Location::try_from_iter(&[
             exif::Field {
                 tag: exif::Tag::GPSLatitudeRef,
-                thumbnail: false,
-                value: exif::Value::Ascii(vec![&[b'N']]),
+                ifd_num: exif::In::PRIMARY,
+                value: exif::Value::Ascii(vec![vec![b'N']]),
             }, exif::Field {
                 tag: exif::Tag::GPSLongitudeRef,
-                thumbnail: false,
-                value: exif::Value::Ascii(vec![&[b'E']]),
+                ifd_num: exif::In::PRIMARY,
+                value: exif::Value::Ascii(vec![vec![b'E']]),
             }, exif::Field {
                 tag: exif::Tag::GPSLatitude,
-                thumbnail: false,
+                ifd_num: exif::In::PRIMARY,
                 value: exif::Value::Rational(vec![exif::Rational {
                     num: 43,
                     denom: 1,
@@ -139,7 +139,7 @@ mod tests {
                 }]),
             }, exif::Field {
                 tag: exif::Tag::GPSLongitude,
-                thumbnail: false,
+                ifd_num: exif::In::PRIMARY,
                 value: exif::Value::Rational(vec![exif::Rational {
                     num: 11,
                     denom: 1,

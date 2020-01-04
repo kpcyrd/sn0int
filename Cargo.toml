@@ -74,8 +74,8 @@ bytes = "0.4"
 xml-rs = "0.8"
 bytesize = "1.0"
 ipnetwork = "0.15"
-strum = "0.16"
-strum_macros = "0.16"
+strum = "0.17"
+strum_macros = "0.17"
 
 digest = "0.8.0"
 bs58 = "0.3"
@@ -87,15 +87,15 @@ sha3 = "0.8.0"
 hmac = "0.7"
 
 image = "0.22"
-kamadak-exif = "0.3.1"
+kamadak-exif = "0.4"
 walkdir = "2.2"
 nude = "0.2"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
 #syscallz = { path="../syscallz-rs" }
-syscallz = "0.11"
-nix = "0.15"
+syscallz = "0.12"
+nix = "0.16"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.3.1"
