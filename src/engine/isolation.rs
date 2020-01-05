@@ -206,6 +206,7 @@ pub fn spawn_module(module: Module,
             Event::Log(event) => tx.send(Event2::Log(event)),
             Event::Database(object) => supervisor.send_event_callback(object, &tx),
             Event::Stdio(object) => object.apply(&mut supervisor, tx, &mut reader),
+            Event::Ratelimit(req) => supervisor.send_event_callback(req, &tx),
             Event::Blob(blob) => supervisor.send_event_callback(blob, &tx),
             Event::Exit(event) => {
                 if let ExitEvent::Err(err) = &event {

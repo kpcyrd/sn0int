@@ -643,6 +643,22 @@ Returns the parent domain according to the public suffix list. For
     domain = psl_domain_from_dns_name('www.a.b.c.d.example.co.uk')
     print(domain == 'example.co.uk')
 
+ratelimit_throttle
+------------------
+
+Create a ratelimit that can only be passed x times every y milliseconds. This
+limit is global for a single ``run`` and also works with threads.
+
+.. code-block:: lua
+
+    -- allow this to pass every 250ms
+    ratelimit_throttle('foo', 1, 250)
+    -- allow this to pass not more than 4 times per second
+    ratelimit_throttle('foo', 4, 1000)
+
+This is useful if you need to coordinate your executions to stay below a
+certain request threshold.
+
 regex_find
 ----------
 
