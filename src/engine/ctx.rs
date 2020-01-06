@@ -173,8 +173,8 @@ pub struct LuaState {
     keyring: Vec<KeyRingEntry>, // TODO: maybe hashmap
     dns_config: Resolver,
     psl: Mutex<Lazy<PslReader, Arc<Psl>>>,
-    geoip: Mutex<Lazy<MaxmindReader, Arc<GeoIP>>>,
-    asn: Mutex<Lazy<MaxmindReader, Arc<AsnDB>>>,
+    geoip: Option<Mutex<Lazy<MaxmindReader, Arc<GeoIP>>>>,
+    asn: Option<Mutex<Lazy<MaxmindReader, Arc<AsnDB>>>>,
     proxy: Option<SocketAddr>,
     options: HashMap<String, String>,
 }
@@ -236,15 +236,23 @@ impl State for LuaState {
     }
 
     fn geoip(&self) -> Result<Arc<GeoIP>> {
-        let mut geoip = self.geoip.lock().unwrap();
-        let geoip = geoip.get()?;
-        Ok(geoip.clone())
+        if let Some(mtx) = &self.geoip {
+            let mut geoip = mtx.lock().unwrap();
+            let geoip = geoip.get()?;
+            Ok(geoip.clone())
+        } else {
+            bail!("No geoip database loaded")
+        }
     }
 
     fn asn(&self) -> Result<Arc<AsnDB>> {
-        let mut asn = self.asn.lock().unwrap();
-        let asn = asn.get()?;
-        Ok(asn.clone())
+        if let Some(mtx) = &self.asn {
+            let mut asn = mtx.lock().unwrap();
+            let asn = asn.get()?;
+            Ok(asn.clone())
+        } else {
+            bail!("No asn database loaded")
+        }
     }
 
     fn sock_connect(&self, host: &str, port: u16, options: &SocketOptions) -> Result<String> {
@@ -369,6 +377,9 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     let mut lua = hlua::Lua::new();
     lua.open_string();
 
+    let geoip = env.geoip.map(|db| Mutex::new(Lazy::from(db)));
+    let asn = env.asn.map(|db| Mutex::new(Lazy::from(db)));
+
     let state = Arc::new(LuaState {
         error: Mutex::new(None),
         logger,
@@ -381,8 +392,8 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
         keyring: env.keyring,
         dns_config: env.dns_config,
         psl: Mutex::new(Lazy::from(env.psl)),
-        geoip: Mutex::new(Lazy::from(env.geoip)),
-        asn: Mutex::new(Lazy::from(env.asn)),
+        geoip,
+        asn,
         proxy: env.proxy,
         options: env.options,
     });
@@ -555,8 +566,8 @@ com
 a.prod.fastly.net
 // ===END PRIVATE DOMAINS===
 "#.into());
-        let geoip = GeoIP::open_reader()?;
-        let asn = AsnDB::open_reader()?;
+        let geoip = GeoIP::try_open_reader()?;
+        let asn = AsnDB::try_open_reader()?;
 
         let env = Environment {
             verbose: 0,

@@ -1,10 +1,8 @@
 #![warn(unused_extern_crates)]
-#[macro_use] extern crate failure;
 #[macro_use] extern crate maplit;
 use url;
 use hlua_badtouch as hlua;
 #[macro_use] extern crate serde_derive;
-#[macro_use] extern crate log;
 #[macro_use] extern crate structopt;
 #[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;
@@ -12,7 +10,6 @@ use hlua_badtouch as hlua;
 #[macro_use] extern crate crossbeam_channel as channel;
 
 pub mod api;
-pub mod archive;
 pub mod args;
 pub mod auth;
 pub mod autonoscope;

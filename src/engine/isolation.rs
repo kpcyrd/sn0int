@@ -221,7 +221,7 @@ pub fn spawn_module(module: Module,
     Ok(exit)
 }
 
-pub fn run_worker(geoip: MaxmindReader, asn: MaxmindReader, psl: PslReader) -> Result<()> {
+pub fn run_worker(geoip: Option<MaxmindReader>, asn: Option<MaxmindReader>, psl: PslReader) -> Result<()> {
     let mut reporter = StdioReporter::setup();
     let start = reporter.recv_start()?;
 

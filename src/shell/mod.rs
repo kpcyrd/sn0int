@@ -10,7 +10,6 @@ use crate::worker::VoidSender;
 use colored::Colorize;
 use crate::db::{self, Database};
 use crate::engine::{Engine, Module};
-use crate::geoip::{GeoIP, AsnDB, Maxmind};
 use crate::update::AutoUpdater;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -462,10 +461,6 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
 
     let psl = PslReader::open_or_download()
         .context("Failed to download public suffix list")?;
-    let _geoip = GeoIP::open_or_download()
-        .context("Failed to download GeoIP database")?;
-    let _asndb = AsnDB::open_or_download()
-        .context("Failed to download ASN database")?;
     let engine = Engine::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
 

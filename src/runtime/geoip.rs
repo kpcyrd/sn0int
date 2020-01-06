@@ -49,6 +49,8 @@ pub fn geoip_lookup(lua: &mut hlua::Lua, state: Arc<dyn State>) {
 
 #[cfg(test)]
 mod tests {
+    // You need geoip setup on your system to run this
+    /*
     use crate::engine::ctx::Script;
 
     #[test]
@@ -72,4 +74,5 @@ mod tests {
         "#).expect("Failed to load script");
         script.test().expect("Script failed");
     }
+    */
 }

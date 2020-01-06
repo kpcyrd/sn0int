@@ -1,4 +1,4 @@
-use crate::errors::Result;
+use crate::errors::*;
 
 use kuchiki;
 use kuchiki::traits::TendrilSink;
