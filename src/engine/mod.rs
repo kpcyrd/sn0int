@@ -38,8 +38,8 @@ pub struct Environment {
     pub options: HashMap<String, String>,
     pub blobs: Vec<Blob>,
     pub psl: PslReader,
-    pub geoip: MaxmindReader,
-    pub asn: MaxmindReader,
+    pub geoip: Option<MaxmindReader>,
+    pub asn: Option<MaxmindReader>,
 }
 
 #[derive(Debug)]

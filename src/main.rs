@@ -1,7 +1,3 @@
-#![warn(unused_extern_crates)]
-#[macro_use] extern crate failure;
-#[macro_use] extern crate log;
-
 use env_logger::{self, Env};
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
@@ -21,7 +17,6 @@ use structopt::StructOpt;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
-
 
 fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
@@ -54,8 +49,8 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    let geoip = GeoIP::open_reader()?;
-    let asn = AsnDB::open_reader()?;
+    let geoip = GeoIP::try_open_reader()?;
+    let asn = AsnDB::try_open_reader()?;
     let psl = PslReader::open()?;
 
     sandbox::init()

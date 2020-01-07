@@ -19,8 +19,8 @@ pub fn run(config: &Config) -> Result<()> {
     let dns_config = Resolver::from_system()?;
     let proxy = config.network.proxy;
     let psl = PslReader::open()?;
-    let geoip = GeoIP::open_reader()?;
-    let asn = AsnDB::open_reader()?;
+    let geoip = GeoIP::try_open_reader()?;
+    let asn = AsnDB::try_open_reader()?;
 
     let env = Environment {
         verbose: 0, // this doesn't do anything since we use a dummy reporter
