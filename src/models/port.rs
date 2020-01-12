@@ -17,7 +17,7 @@ pub struct Port {
     pub ip_addr: String,
     pub port: i32,
     pub protocol: String,
-    pub status: String,
+    pub status: Option<String>,
     pub unscoped: bool,
 
     pub banner: Option<String>,
@@ -147,7 +147,7 @@ impl Printable<PrintablePort> for Port {
 pub struct DetailedPort {
     id: i32,
     value: String,
-    status: String,
+    status: Option<String>,
     unscoped: bool,
 
     banner: Option<String>,
@@ -210,7 +210,7 @@ pub struct NewPort {
     pub ip_addr: String,
     pub port: i32,
     pub protocol: String,
-    pub status: String,
+    pub status: Option<String>,
 
     pub banner: Option<String>,
     pub service: Option<String>,
@@ -242,7 +242,7 @@ impl Upsertable<Port> for NewPort {
     fn upsert(self, existing: &Port) -> Self::Update {
         Self::Update {
             id: existing.id,
-            status: Self::upsert_opt(Some(self.status), &Some(existing.status.clone())),
+            status: Self::upsert_opt(self.status, &existing.status),
             banner: Self::upsert_opt(self.banner, &existing.banner),
             service: Self::upsert_opt(self.service, &existing.service),
             version: Self::upsert_opt(self.version, &existing.version),
@@ -264,7 +264,7 @@ pub struct InsertPort {
     pub ip_addr: net::IpAddr,
     pub port: i32,
     pub protocol: String,
-    pub status: String,
+    pub status: Option<String>,
 
     pub banner: Option<String>,
     pub service: Option<String>,
@@ -278,10 +278,11 @@ impl InsertToNew for InsertPort {
         let addr = SocketAddr::new(self.ip_addr, self.port as u16);
         let value = format!("{}/{}", self.protocol, addr);
 
-        match self.status.as_str() {
-            "open" => (),
-            "closed" => (),
-            s => bail!("unsupported port status: {:?}", s),
+        match self.status.as_deref() {
+            Some("open") => (),
+            Some("closed") => (),
+            Some(s) => bail!("unsupported port status: {:?}", s),
+            None => (),
         }
 
         Ok(NewPort {
@@ -330,7 +331,7 @@ impl Upsert for PortUpdate {
 
 impl Updateable<Port> for PortUpdate {
     fn changeset(&mut self, existing: &Port) {
-        Self::clear_if_equal(&mut self.status, &Some(existing.status.clone()));
+        Self::clear_if_equal(&mut self.status, &existing.status);
         Self::clear_if_equal(&mut self.banner, &existing.banner);
         Self::clear_if_equal(&mut self.service, &existing.service);
         Self::clear_if_equal(&mut self.version, &existing.version);

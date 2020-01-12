@@ -208,6 +208,17 @@ impl Database {
         }
     }
 
+    pub fn insert_activity(&self, obj: NewActivity) -> Result<bool> {
+        if let Some(uniq) = &obj.uniq {
+            if Activity::uniq(self, uniq)?.is_some() {
+                // unique tag set and event already logged
+                return Ok(false);
+            }
+        }
+        obj.insert(&self)?;
+        Ok(true)
+    }
+
     pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<Option<(DbChange, i32)>> {
         if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
             Ok(Some((DbChange::None, subdomain_ipaddr_id)))

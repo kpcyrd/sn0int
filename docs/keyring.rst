@@ -58,6 +58,10 @@ If the user granted us access to those keys we can read them with ``keyring``:
 This returns a list of all keys in that namespace. Any empty list is returned
 if the user doesn't have any keys in that namespace.
 
+If you want to allow the user to select a specific script you can introduce an
+option that is set by the user and then filter ``creds`` until the
+``access_key`` matches.
+
 Using access keys as source argument
 ------------------------------------
 

@@ -92,20 +92,20 @@ impl Model for CryptoAddr {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let netblock = cryptoaddrs.filter(value.eq(query))
+        let cryptoaddr = cryptoaddrs.filter(value.eq(query))
             .first::<Self>(db.db())?;
 
-        Ok(netblock)
+        Ok(cryptoaddr)
     }
 
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let netblock = cryptoaddrs.filter(value.eq(query))
+        let cryptoaddr = cryptoaddrs.filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
-        Ok(netblock)
+        Ok(cryptoaddr)
     }
 }
 

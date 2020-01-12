@@ -104,6 +104,18 @@ pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
+pub fn db_activity(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("db_activity", hlua::function1(move |v: AnyLuaValue| -> Result<()> {
+        let v: LuaJsonValue = v.into();
+        let v: serde_json::Value = v.into();
+        let activity: InsertActivity = serde_json::from_value(v)
+            .map_err(|e| state.set_error(e.into()))?;
+
+        state.db_activity(activity)
+            .map_err(|e| state.set_error(e))
+    }))
+}
+
 pub fn db_select(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_select", hlua::function2(move |family: String, value: String| -> Result<Option<i32>> {
         let family = Family::from_str(&family)

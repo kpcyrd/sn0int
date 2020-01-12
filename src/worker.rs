@@ -129,6 +129,7 @@ impl LogEvent {
 pub enum DatabaseEvent {
     Insert(Insert),
     InsertTtl((Insert, i32)),
+    Activity(NewActivity),
     Select((Family, String)),
     Update((String, Update)),
 }
@@ -205,10 +206,45 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
+    pub fn activity<T: SpinLogger>(object: NewActivity, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+        let result = db.insert_activity(object.clone());
+        debug!("{:?} => {:?}", object, result);
+
+        let result = match result {
+            Ok(true) => {
+                let mut log = format!("{:?} ", object.topic);
+                if let Some(uniq) = &object.uniq {
+                    log.push_str(&format!("({:?}) ", uniq));
+                }
+                log.push_str(&format!("@ {}", object.time));
+
+                if let (Some(ref lat), Some(ref lon)) = (object.latitude, object.longitude) {
+                    log.push_str(&format!(" ({}, {})", lat, lon));
+                }
+
+                if verbose > 0 {
+                    log.push_str(&format!(": {}", object.content));
+                }
+
+                spinner.log(&log);
+                Ok(None)
+            },
+            Ok(false) => Ok(None),
+            Err(err) => {
+                let err = err.to_string();
+                spinner.error(&err);
+                Err(err)
+            },
+        };
+
+        tx.send(result).expect("Failed to send db result to channel");
+    }
+
     pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
         match self {
             DatabaseEvent::Insert(object) => Self::insert(object, None, tx, spinner, db, verbose),
             DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(object, Some(ttl), tx, spinner, db, verbose),
+            DatabaseEvent::Activity(object) => Self::activity(object, tx, spinner, db, verbose),
             DatabaseEvent::Select((family, value)) => {
                 let result = db.get_opt(&family, &value)
                     .map_err(|e| e.to_string());
