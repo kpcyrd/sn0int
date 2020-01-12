@@ -9,6 +9,7 @@ use crate::engine::{self, Module};
 use crate::engine::isolation::Supervisor;
 use crate::models::*;
 use serde_json;
+use crate::ratelimits::{Ratelimiter, RatelimitResponse};
 use crate::shell::Shell;
 use std::collections::HashMap;
 use std::result;
@@ -23,12 +24,14 @@ use threadpool::ThreadPool;
 
 type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
 pub type VoidSender = mpsc::Sender<result::Result<(), String>>;
+pub type RatelimitSender = mpsc::Sender<result::Result<RatelimitResponse, String>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Log(LogEvent),
     Database(DatabaseEvent),
     Stdio(StdioEvent),
+    Ratelimit(RatelimitEvent),
     Blob(Blob),
     Exit(ExitEvent),
 }
@@ -38,6 +41,7 @@ pub enum Event2 {
     Start,
     Log(LogEvent),
     Database((DatabaseEvent, DbSender)),
+    Ratelimit((RatelimitEvent, RatelimitSender)),
     Blob((Blob, VoidSender)),
     Exit(ExitEvent),
 }
@@ -283,6 +287,32 @@ impl StdioEvent {
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RatelimitEvent {
+    key: String,
+    passes: u32,
+    time: u32,
+}
+
+impl EventWithCallback for RatelimitEvent {
+    type Payload = RatelimitResponse;
+
+    fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
+        Event2::Ratelimit((self, tx))
+    }
+}
+
+impl RatelimitEvent {
+    #[inline]
+    pub fn new(key: String, passes: u32, time: u32) -> RatelimitEvent {
+        RatelimitEvent {
+            key,
+            passes,
+            time,
+        }
+    }
+}
+
 pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
@@ -328,6 +358,8 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
         expected += 1;
     }
 
+    let mut ratelimit = Ratelimiter::new();
+
     let mut errors = 0;
     let mut failed = Vec::new();
     let timeout = Duration::from_millis(100);
@@ -344,6 +376,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
                         Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db(), verbose),
+                        Event2::Ratelimit((req, tx)) => ratelimit.pass(tx, &req.key, req.passes, req.time),
                         Event2::Blob((blob, tx)) => rl.store_blob(tx, &blob),
                         Event2::Exit(event) => {
                             debug!("Received exit: {:?} -> {:?}", name, event);
@@ -399,6 +432,7 @@ pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
                     Some(Event::Log(log)) => log.apply(&mut *spinner),
                     Some(Event::Database(_)) => (),
                     Some(Event::Stdio(_)) => (),
+                    Some(Event::Ratelimit(_)) => (),
                     Some(Event::Blob(_)) => (),
                     // TODO: refactor
                     Some(Event::Exit(ExitEvent::Ok)) => break,
@@ -491,6 +525,7 @@ pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) ->
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(&name)),
                         Event2::Database(_) => (),
+                        Event2::Ratelimit(_) => (),
                         Event2::Blob(_) => (),
                         Event2::Exit(event) => {
                             debug!("Received exit: {:?} -> {:?}", name, event);

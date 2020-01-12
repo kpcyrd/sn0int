@@ -12,13 +12,15 @@ use crate::lazy::Lazy;
 use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
-use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent};
+use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent, RatelimitEvent};
+use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
 use serde_json;
 use std::collections::HashMap;
 use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use std::thread;
 use rand::prelude::*;
 use rand::distributions::Alphanumeric;
 
@@ -112,6 +114,21 @@ pub trait State {
         let reply = self.recv()?;
         let reply: result::Result<Option<String>, String> = serde_json::from_value(reply)?;
         reply.map_err(|err| format_err!("Failed to read stdin: {:?}", err))
+    }
+
+    fn ratelimit(&self, key: String, passes: u32, time: u32) -> Result<()> {
+        let ratelimit = Event::Ratelimit(RatelimitEvent::new(key, passes, time));
+        loop {
+            self.send(&ratelimit);
+            let reply = self.recv()?;
+            let reply: result::Result<RatelimitResponse, String> = serde_json::from_value(reply)?;
+            match reply {
+                Ok(RatelimitResponse::Retry(delay)) => thread::sleep(delay),
+                Ok(RatelimitResponse::Pass) => break,
+                Err(err) => bail!("Unexpected error case for ratelimit: {}", err),
+            }
+        }
+        Ok(())
     }
 
     #[inline]
@@ -451,6 +468,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());
     runtime::psl_domain_from_dns_name(&mut lua, state.clone());
+    runtime::ratelimit_throttle(&mut lua, state.clone());
     runtime::regex_find(&mut lua, state.clone());
     runtime::regex_find_all(&mut lua, state.clone());
     runtime::semver_match(&mut lua, state.clone());

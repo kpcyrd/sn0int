@@ -33,6 +33,7 @@ pub mod models;
 pub mod paths;
 pub mod psl;
 pub mod options;
+pub mod ratelimits;
 pub mod registry;
 pub mod repl;
 pub mod runtime;

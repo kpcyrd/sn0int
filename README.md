@@ -180,6 +180,7 @@ For everything else please have a look at the [detailed list][1].
   - [pgp_pubkey_armored](https://sn0int.readthedocs.io/en/latest/reference.html#pgp-pubkey-armored)
   - [print](https://sn0int.readthedocs.io/en/latest/reference.html#print)
   - [psl_domain_from_dns_name](https://sn0int.readthedocs.io/en/latest/reference.html#psl-domain-from-dns-name)
+  - [ratelimit_throttle](https://sn0int.readthedocs.io/en/latest/reference.html#ratelimit-throttle)
   - [regex_find](https://sn0int.readthedocs.io/en/latest/reference.html#regex-find)
   - [regex_find_all](https://sn0int.readthedocs.io/en/latest/reference.html#regex-find-all)
   - [semver_match](https://sn0int.readthedocs.io/en/latest/reference.html#semver-match)

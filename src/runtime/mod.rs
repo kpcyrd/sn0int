@@ -24,6 +24,7 @@ import_fns!(logger);
 import_fns!(options);
 import_fns!(pgp);
 import_fns!(psl);
+import_fns!(ratelimits);
 import_fns!(regex);
 import_fns!(semver);
 import_fns!(sleep);
