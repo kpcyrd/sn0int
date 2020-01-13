@@ -11,6 +11,7 @@ use crate::utils;
 use crate::term;
 use std::fs;
 use std::net;
+use std::net::SocketAddr;
 use ipnetwork;
 use std::path::Path;
 use walkdir::WalkDir;
@@ -37,7 +38,7 @@ pub enum Target {
     #[structopt(name="ipaddr")]
     IpAddr(AddIpAddr),
     /// Insert url into the database
-    #[structopt(name="subdomain")]
+    #[structopt(name="url")]
     Url(AddUrl),
     /// Insert email into the database
     #[structopt(name="email")]
@@ -63,6 +64,9 @@ pub enum Target {
     /// Insert ip network into the database
     #[structopt(name="netblock")]
     Netblock(AddNetblock),
+    /// Insert port into the database
+    #[structopt(name="port")]
+    Port(AddPort),
     /// Insert a crypto currency address into the database
     #[structopt(name="cryptoaddr")]
     CryptoAddr(AddCryptoAddr),
@@ -83,6 +87,7 @@ impl Cmd for Args {
             Target::Breach(args) => args.insert(rl, self.dry_run),
             Target::Image(args) => args.insert(rl, self.dry_run),
             Target::Netblock(args) => args.insert(rl, self.dry_run),
+            Target::Port(args) => args.insert(rl, self.dry_run),
             Target::CryptoAddr(args) => args.insert(rl, self.dry_run),
         }
     }
@@ -550,6 +555,71 @@ impl IntoInsert for AddNetblock {
             asn: None,
             as_org: None,
             description: None,
+            unscoped: false,
+        }))
+    }
+}
+
+#[derive(Debug, StructOpt)]
+pub struct AddPort {
+    protocol: Option<String>,
+    addr: Option<SocketAddr>,
+}
+
+impl IntoInsert for AddPort {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
+        let protocol = if let Some(protocol) = self.protocol {
+            protocol
+        } else {
+            utils::question("Protocol (tcp/udp)")?
+        };
+
+        let addr = if let Some(addr) = self.addr {
+            addr
+        } else {
+            let addr = utils::question("IP:Port")?;
+            addr.parse()?
+        };
+
+        let family = match addr.ip() {
+            net::IpAddr::V4(_) => "4",
+            net::IpAddr::V6(_) => "6",
+        };
+
+        let ip_addr_id = match rl.db().insert_struct(NewIpAddr {
+            family: family.to_string(),
+            value: addr.ip().to_string(),
+            continent: None,
+            continent_code: None,
+            country: None,
+            country_code: None,
+            city: None,
+            latitude: None,
+            longitude: None,
+            asn: None,
+            as_org: None,
+            description: None,
+            reverse_dns: None,
+            unscoped: false,
+        }, true)? {
+            Some((_, ip_addr_id)) => ip_addr_id,
+            _ => bail!("IpAddr is out out of scope"),
+        };
+
+        let value = format!("{}/{}", protocol, addr);
+
+        Ok(Insert::Port(NewPort {
+            ip_addr_id,
+            value,
+            ip_addr: addr.ip().to_string(),
+            port: addr.port() as i32,
+            protocol,
+            status: None,
+
+            banner: None,
+            service: None,
+            version: None,
+
             unscoped: false,
         }))
     }

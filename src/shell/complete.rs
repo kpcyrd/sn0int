@@ -102,6 +102,7 @@ impl Completer for CmdCompleter {
                                         "subdomain",
                                         "ipnet",
                                         "ipaddr",
+                                        "url",
                                         "email",
                                         "phonenumber",
                                         "device",
@@ -110,6 +111,7 @@ impl Completer for CmdCompleter {
                                         "breach",
                                         "image",
                                         "netblock",
+                                        "port",
                                         "cryptoaddr"];
 
                         let results: Vec<String> = options.iter()
