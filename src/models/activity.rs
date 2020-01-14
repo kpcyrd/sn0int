@@ -45,6 +45,12 @@ impl Activity {
             query = query.filter(time.le(until));
         }
 
+        if filter.location {
+            query = query
+                .filter(latitude.is_not_null())
+                .filter(longitude.is_not_null());
+        }
+
         query
             .order_by(time.asc())
             .load::<Self>(db.db())
@@ -56,6 +62,7 @@ pub struct ActivityFilter {
     pub topic: Option<String>,
     pub since: Option<NaiveDateTime>,
     pub until: Option<NaiveDateTime>,
+    pub location: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -29,6 +29,7 @@ use self::readline::{Readline, ReadlineError};
 
 #[derive(Debug)]
 pub enum Command {
+    Activity,
     Add,
     Autonoscope,
     Autoscope,
@@ -53,6 +54,7 @@ pub enum Command {
 impl Command {
     pub fn as_str(&self) -> &'static str {
         match *self {
+            Command::Activity => "activity",
             Command::Add => "add",
             Command::Autonoscope => "autonoscope",
             Command::Autoscope => "autoscope",
@@ -77,6 +79,7 @@ impl Command {
     pub fn list_all() -> &'static [&'static str] {
         lazy_static! {
             static ref COMMANDS: Vec<&'static str> = vec![
+                Command::Activity.as_str(),
                 Command::Add.as_str(),
                 Command::Autonoscope.as_str(),
                 Command::Autoscope.as_str(),
@@ -106,6 +109,7 @@ impl FromStr for Command {
 
     fn from_str(s: &str) -> Result<Self> {
         match s {
+            "activity" => Ok(Command::Activity),
             "add" => Ok(Command::Add),
             "autonoscope" => Ok(Command::Autonoscope),
             "autoscope" => Ok(Command::Autoscope),
@@ -419,6 +423,7 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
     let line = rl.readline();
     debug!("Received line: {:?}", line);
     match line {
+        Some((Command::Activity, args)) => cmd::<activity_cmd::Args>(rl, &args)?,
         Some((Command::Add, args)) => cmd::<add_cmd::Args>(rl, &args)?,
         Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
         Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,

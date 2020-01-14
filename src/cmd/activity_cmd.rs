@@ -37,12 +37,18 @@ impl FromStr for TimeSpec {
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
+    /// Only query events for a given topic
     #[structopt(short="t", long="topic")]
     topic: Option<String>,
+    /// Only query events starting from that datetime
     #[structopt(long="since")]
     since: Option<TimeSpec>,
+    /// Only query events until this datetime
     #[structopt(long="until")]
     until: Option<TimeSpec>,
+    /// Only query events that are tied to a location
+    #[structopt(short="l", long="location")]
+    location: bool,
 }
 
 impl Cmd for Args {
@@ -54,6 +60,7 @@ impl Cmd for Args {
             topic: self.topic,
             since,
             until,
+            location: self.location,
         })?;
         for activity in events {
             let activity = JsonActivity::try_from(activity)?;
