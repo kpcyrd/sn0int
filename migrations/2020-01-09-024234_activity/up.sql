@@ -7,7 +7,7 @@ CREATE TABLE activity (
     longitude FLOAT,
     content VARCHAR NOT NULL
 );
-CREATE UNIQUE INDEX activity_uniq ON activity(uniq);
+CREATE UNIQUE INDEX activity_uniq ON activity(topic, uniq);
 CREATE INDEX activity_topic ON activity(topic);
 CREATE INDEX activity_time ON activity(time);
 CREATE INDEX activity_topic_time ON activity(topic, time);
