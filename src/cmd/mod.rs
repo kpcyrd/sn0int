@@ -11,6 +11,7 @@ pub trait Cmd: structopt::StructOpt + Sized {
     }
 }
 
+pub mod activity_cmd;
 pub mod add_cmd;
 pub mod autonoscope_cmd;
 pub mod autoscope_cmd;

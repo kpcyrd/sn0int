@@ -57,6 +57,9 @@ pub enum SubCommand {
     /// Delete from the database
     #[structopt(name="delete")]
     Delete(cmd::delete_cmd::Args),
+    /// Query logged activity (EXPERIMENTAL INTERFACE)
+    #[structopt(name="activity")]
+    Activity(cmd::activity_cmd::Args),
     /// Include entities in the scope
     #[structopt(name="scope")]
     Scope(cmd::scope_cmd::Args),
