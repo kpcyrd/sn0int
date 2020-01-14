@@ -5,6 +5,7 @@ use crate::shell::Shell;
 use crate::models::*;
 use chrono::{Utc, NaiveDateTime, NaiveTime, Duration};
 use std::convert::TryFrom;
+use std::io;
 use std::str::FromStr;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -46,6 +47,9 @@ pub struct Args {
     /// Only query events until this datetime
     #[structopt(long="until")]
     until: Option<TimeSpec>,
+    /// Try to select the previous event before --since as an initial state
+    #[structopt(short="i", long="initial")]
+    initial: bool,
     /// Only query events that are tied to a location
     #[structopt(short="l", long="location")]
     location: bool,
@@ -53,19 +57,30 @@ pub struct Args {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
-        let since = self.since.map(|t| t.datetime);
-        let until = self.until.map(|t| t.datetime);
-
-        let events = Activity::query(rl.db(), &ActivityFilter {
+        let filter = ActivityFilter {
             topic: self.topic,
-            since,
-            until,
+            since: self.since.map(|t| t.datetime),
+            until: self.until.map(|t| t.datetime),
             location: self.location,
-        })?;
+        };
+
+        let mut stdout = io::stdout();
+        let events = Activity::query(rl.db(), &filter)?;
+
+        if self.initial {
+            if let Some(first) = events.get(0) {
+                let previous = Activity::previous(rl.db(), first, &filter)?;
+                if let Some(previous) = previous {
+                    let mut previous = JsonActivity::try_from(previous)?;
+                    previous.initial = true;
+                    previous.write_to(&mut stdout)?;
+                }
+            }
+        }
+
         for activity in events {
             let activity = JsonActivity::try_from(activity)?;
-            let s = serde_json::to_string(&activity)?;
-            println!("{}", s);
+            activity.write_to(&mut stdout)?;
         }
 
         Ok(())
