@@ -8,6 +8,9 @@ CREATE TABLE activity (
     content VARCHAR NOT NULL
 );
 CREATE UNIQUE INDEX activity_uniq ON activity(uniq);
+CREATE INDEX activity_topic ON activity(topic);
+CREATE INDEX activity_time ON activity(time);
+CREATE INDEX activity_topic_time ON activity(topic, time);
 
 PRAGMA foreign_keys=off;
 
