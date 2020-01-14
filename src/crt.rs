@@ -11,6 +11,7 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 #[derive(Debug, PartialEq)]
 pub enum AlternativeName {
     DnsName(String),
+    Email(String),
     IpAddr(IpAddr),
 }
 
@@ -37,6 +38,7 @@ pub fn san_value(o: DerObject) -> Result<AlternativeName> {
 
     match (o.class, o.tag, &o.content) {
         (2, BerTag::Integer, BerObjectContent::Unknown(BerTag::Integer, value)) => san_value_dns(value),
+        (2, BerTag::Boolean, BerObjectContent::Unknown(BerTag::Boolean, value)) => san_value_email(value),
         (2, BerTag::ObjDescriptor, BerObjectContent::Unknown(BerTag::ObjDescriptor, value)) => san_value_ipaddr(value),
         _ => bail!("Unexpected object: {:?}", o),
     }
@@ -46,6 +48,13 @@ pub fn san_value_dns(v: &[u8]) -> Result<AlternativeName> {
     debug!("Reading as dns name: {:?}", v);
     String::from_utf8(v.to_vec())
         .map(AlternativeName::DnsName)
+        .map_err(Error::from)
+}
+
+pub fn san_value_email(v: &[u8]) -> Result<AlternativeName> {
+    debug!("Reading as email: {:?}", v);
+    String::from_utf8(v.to_vec())
+        .map(AlternativeName::Email)
         .map_err(Error::from)
 }
 
@@ -68,7 +77,8 @@ pub fn san_value_ipaddr(v: &[u8]) -> Result<AlternativeName> {
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
     pub valid_names: Vec<String>,
-    pub valid_ipaddrs: Vec<IpAddr>
+    pub valid_emails: Vec<String>,
+    pub valid_ipaddrs: Vec<IpAddr>,
 }
 
 impl Certificate {
@@ -103,6 +113,7 @@ impl Certificate {
         };
 
         let mut valid_names = HashSet::new();
+        let mut valid_emails = HashSet::new();
         let mut valid_ipaddrs = HashSet::new();
 
         for x in crt.tbs_certificate.subject.rdn_seq {
@@ -131,15 +142,18 @@ impl Certificate {
             for v in values {
                 match v {
                     AlternativeName::DnsName(v) => valid_names.insert(v),
+                    AlternativeName::Email(v) => valid_emails.insert(v),
                     AlternativeName::IpAddr(v) => valid_ipaddrs.insert(v),
                 };
             }
         }
 
         let valid_names = valid_names.into_iter().collect();
+        let valid_emails = valid_emails.into_iter().collect();
         let valid_ipaddrs = valid_ipaddrs.into_iter().collect();
         Ok(Certificate {
             valid_names,
+            valid_emails,
             valid_ipaddrs,
         })
     }
@@ -197,6 +211,7 @@ WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
         x.valid_names.sort();
         assert_eq!(x, Certificate {
             valid_names: vec!["github.com".into(), "www.github.com".into()],
+            valid_emails: vec![],
             valid_ipaddrs: vec![],
         });
     }
@@ -235,6 +250,7 @@ ZkZZmqNn2Q8=
                 "*.cloudflare-dns.com".into(),
                 "cloudflare-dns.com".into(),
             ],
+            valid_emails: vec![],
             valid_ipaddrs: vec![
                 "1.0.0.1".parse().unwrap(),
                 "1.1.1.1".parse().unwrap(),
@@ -351,6 +367,7 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
                 "witt-weiden.dam.staging.aboutyou.cloud".into(),
                 "www.aboutyou.de".into(),
             ],
+            valid_emails: vec![],
             valid_ipaddrs: vec![],
         });
     }
@@ -395,5 +412,51 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
         let v = san_value_ipaddr(content)
             .expect("Failed to process san value");
         assert_eq!(v, AlternativeName::IpAddr("1.1.1.1".parse().unwrap()));
+    }
+
+    #[test]
+    fn test_san_email() {
+        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+MIIE5zCCA8+gAwIBAgIQBvsKfZ5AGSW3Vc8Ldto1hTANBgkqhkiG9w0BAQUFADBp
+MSQwIgYJKoZIhvcNAQkBFhVwa2lfYWRtaW5Ac3VuZ2FyZC5jb20xJjAkBgNVBAoT
+HVN1bkdhcmQgQXZhaWxhYmlsaXR5IFNlcnZpY2VzMRkwFwYDVQQDExBTQVMgUHVi
+bGljIENBIHYxMB4XDTEwMDkwMjE2MzY0OVoXDTExMTAwMTE2MzEwMFowgbQxCzAJ
+BgNVBAYTAlVTMQswCQYDVQQIEwJPUjERMA8GA1UEBxMIUG9ydGxhbmQxEzARBgoJ
+kiaJk/IsZAEZFgNjb20xHDAaBgoJkiaJk/IsZAEZFgxqaXZlc29mdHdhcmUxHDAa
+BgNVBAoTE0ppdmUgU29mdHdhcmUsIEluYy4xEDAOBgNVBAsTB0hvc3RpbmcxIjAg
+BgNVBAMTGSouaG9zdGVkLmppdmVzb2Z0d2FyZS5jb20wggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQC0oornTIyL5YjZMpNwy+V2YJbLqaLrbPrbWFCsNJDx
+dnubjfR71aW+YYlUZF8zoq4jFetkblCehyvPEb5tD/l3/WZhiXYOziPDrsEVCngF
+3/b0H3Dyk6mNWBZcNpJkdpOx1YB6Zer8eKzFOr7Qj3aevOR/bEe2NARJIaO0Rjwe
+YIWY0arKRm6z4nJD8fYAvFV6wRWmHsZO9ci7hiGeW3YL6jQYJqLeuwXm64l0jptb
+Qg8r8c1V5BXETlvQJL34gUozEl9jDpzR7KoXtErhlU2ytl9Wg+fOxYuWgx8vER0/
+7Hqc/qD5e7B+NtwgfEio7SvNGA/HhjNxW2Wbrx4qooJRAgMBAAGjggE9MIIBOTAO
+BgNVHQ8BAf8EBAMCA6gwEQYJYIZIAYb4QgEBBAQDAgbAMCIGA1UdEQQbMBmBF3N1
+YmplY3RuYW1lQGV4YW1wbGUuY29tMB8GA1UdIwQYMBaAFDhBxvKFgYP96+IaNpI7
+JmEWgRESMFQGA1UdIARNMEswSQYJKoZIhvcNBQYBMDwwOgYIKwYBBQUHAgEWLmh0
+dHBzOi8vY2VydGlmaWNhdGUuc3VuZ2FyZC5jb20vU0FTX0NBX0NQUy5wZGYwRQYD
+VR0fBD4wPDA6oDigNoY0aHR0cHM6Ly9jZXJ0aWZpY2F0ZS5zdW5nYXJkLmNvbS9T
+QVNfUHVibGljX0NBX3YxLmNybDATBgNVHSUEDDAKBggrBgEFBQcDATAdBgNVHQ4E
+FgQUhJ99py6oeCYBzcePPjhOxHVDBvwwDQYJKoZIhvcNAQEFBQADggEBAF/DAJgX
+f50x8t8Im96AUn4DqC+T0QZIYHihpj2uCwWDbdp5efppqTrk6FrpFOzQy0TRkstb
+Q3zKSgduedQiwii9qh88O1h2gbSTqfi55ApOIGoCiiRCqio2p4tbKyqPV3Q0eyYw
+K4f9GAOcawvNsI//mx99ol/ZGEamydeL9G0qiKrhqSxd2TGmFaIVJdu9fh59hos4
+6t9c4FVyYygdsIeGHkHjpB2bKjZhnJpKRh9dGWctcjdHMITBBqgiRH9OZa/w6SPE
+UT+11L6q7MSIXSIMV8kJSUUYE92P7bnAqViTIuu/hHnfmIhiy6t7AuT2QHEhqDab
+EF4l5MwdUqs8FvM=
+-----END CERTIFICATE-----
+"#).expect("Failed to parse cert");
+        x.valid_names.sort();
+        x.valid_emails.sort();
+        x.valid_ipaddrs.sort();
+        assert_eq!(x, Certificate {
+            valid_names: vec![
+                "*.hosted.jivesoftware.com".into(),
+            ],
+            valid_emails: vec![
+                "subjectname@example.com".into(),
+            ],
+            valid_ipaddrs: vec![],
+        });
     }
 }
