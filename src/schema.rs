@@ -23,6 +23,7 @@ table! {
         uniq -> Nullable<Text>,
         latitude -> Nullable<Float>,
         longitude -> Nullable<Float>,
+        radius -> Nullable<Integer>,
         content -> Text,
     }
 }

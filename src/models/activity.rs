@@ -18,6 +18,7 @@ pub struct Activity {
     pub uniq: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub radius: Option<i32>,
     pub content: String,
 }
 
@@ -30,7 +31,7 @@ impl Activity {
             .map_err(Error::from)
     }
 
-    fn build_query_except_since(filter: &ActivityFilter) -> BoxedSelectStatement<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Timestamp, diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Text), activity::table, diesel::sqlite::Sqlite> {
+    fn build_query_except_since(filter: &ActivityFilter) -> BoxedSelectStatement<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Timestamp, diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Nullable<diesel::sql_types::Integer>, diesel::sql_types::Text), activity::table, diesel::sqlite::Sqlite> {
         use crate::schema::activity::dsl::*;
 
         let mut query = activity.into_boxed();
@@ -100,6 +101,8 @@ pub struct JsonActivity {
     pub latitude: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub longitude: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub radius: Option<i32>,
     pub content: serde_json::Value,
 }
 
@@ -125,6 +128,7 @@ impl TryFrom<Activity> for JsonActivity {
             uniq: a.uniq,
             latitude: a.latitude,
             longitude: a.longitude,
+            radius: a.radius,
             content,
         })
     }
@@ -138,6 +142,7 @@ pub struct NewActivity {
     pub uniq: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub radius: Option<i32>,
     pub content: String,
 }
 
@@ -157,6 +162,7 @@ pub struct InsertActivity {
     pub uniq: Option<String>,
     pub latitude: Option<f32>,
     pub longitude: Option<f32>,
+    pub radius: Option<i32>,
     pub content: serde_json::Value,
 }
 
@@ -172,6 +178,7 @@ impl InsertToNew for InsertActivity {
             uniq: self.uniq,
             latitude: self.latitude,
             longitude: self.longitude,
+            radius: self.radius,
             content,
         })
     }

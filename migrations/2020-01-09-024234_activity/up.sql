@@ -5,6 +5,7 @@ CREATE TABLE activity (
     uniq VARCHAR,
     latitude FLOAT,
     longitude FLOAT,
+    radius INTEGER,
     content VARCHAR NOT NULL
 );
 CREATE UNIQUE INDEX activity_uniq ON activity(topic, uniq);
