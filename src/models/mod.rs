@@ -424,3 +424,6 @@ pub use self::port::*;
 
 mod cryptoaddr;
 pub use self::cryptoaddr::*;
+
+mod activity;
+pub use self::activity::*;

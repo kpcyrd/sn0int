@@ -16,6 +16,19 @@ table! {
 }
 
 table! {
+    activity (id) {
+        id -> Integer,
+        topic -> Text,
+        time -> Timestamp,
+        uniq -> Nullable<Text>,
+        latitude -> Nullable<Float>,
+        longitude -> Nullable<Float>,
+        radius -> Nullable<Integer>,
+        content -> Text,
+    }
+}
+
+table! {
     autonoscope (id) {
         id -> Integer,
         object -> Text,
@@ -184,7 +197,7 @@ table! {
         ip_addr -> Text,
         port -> Integer,
         protocol -> Text,
-        status -> Text,
+        status -> Nullable<Text>,
         unscoped -> Bool,
         banner -> Nullable<Text>,
         service -> Nullable<Text>,
@@ -246,6 +259,7 @@ joinable!(urls -> subdomains (subdomain_id));
 
 allow_tables_to_appear_in_same_query!(
     accounts,
+    activity,
     autonoscope,
     breach_emails,
     breaches,

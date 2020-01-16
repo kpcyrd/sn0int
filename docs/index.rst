@@ -41,6 +41,7 @@ Getting Started
    scripting
    database
    structs
+   activity
    keyring
    config
    sandbox

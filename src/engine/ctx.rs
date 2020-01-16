@@ -6,7 +6,7 @@ use crate::engine::{Environment, Reporter};
 use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
-use crate::models::{Insert, Update};
+use crate::models::*;
 use crate::psl::{Psl, PslReader};
 use crate::lazy::Lazy;
 use crate::runtime;
@@ -84,6 +84,18 @@ pub trait State {
         let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
 
         reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+    }
+
+    fn db_activity(&self, activity: InsertActivity) -> Result<()> {
+        let activity = activity.try_into_new()?;
+
+        self.send(&Event::Database(DatabaseEvent::Activity(activity)));
+        let reply = self.recv()?;
+        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
+
+        reply
+            .map(|_| ())
+            .map_err(|err| format_err!("Failed to add to database: {:?}", err))
     }
 
     fn db_select(&self, family: Family, value: String) -> Result<Option<i32>> {
@@ -432,6 +444,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::datetime(&mut lua, state.clone());
     runtime::db_add(&mut lua, state.clone());
     runtime::db_add_ttl(&mut lua, state.clone());
+    runtime::db_activity(&mut lua, state.clone());
     runtime::db_select(&mut lua, state.clone());
     runtime::db_update(&mut lua, state.clone());
     runtime::debug(&mut lua, state.clone());
