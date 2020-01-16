@@ -259,6 +259,35 @@ is ``140.82.112.0/20``.
     This field isn't strictly defined and meant to be used as a human
     meaningful name if available.
 
+CryptoAddrs
+-----------
+
+A cryptoaddr is any cryptocurrency address and not tied to a specific currency.
+
+``value``
+    The address string. This looks like ``1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2``.
+``currency``
+    The identifier for a specific currency. This is usually the ticker symbols,
+    like ``xbt``, ``zec`` or ``xmr``.
+``denominator``
+    Balance is tracked internally using 64 bit integers (signed, for technical reasons). Balance is supposed to be the lowest unit, so in case of bitcoin you'd write ``100,000,000`` satoshi instead of ``1`` bitcoin. Since this value is inconvinient to work with we're using the denominator to display values. In case of bitcoin you'd set it to ``8``.
+``balance``
+    The current balance of the address, in the lowest possible unit. In case of bitcoin this would be satoshis.
+``received``
+    The total amount of currency received by this address.
+``first_seen``
+    The first time currency was sent to this address.
+``last_withdrawal``
+    The last time a transaction signed by this address was observed.
+``description``
+    A human readable note for this address.
+
+Activity
+--------
+
+Activity is different from all other structs, have a look at the `Activity
+Section <activity.html>`_.
+
 Relations
 ---------
 
