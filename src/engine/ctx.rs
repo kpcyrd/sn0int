@@ -520,6 +520,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::sn0int_version(&mut lua, state.clone());
     runtime::sock_connect(&mut lua, state.clone());
     runtime::sock_upgrade_tls(&mut lua, state.clone());
+    runtime::sock_options(&mut lua, state.clone());
     runtime::sock_send(&mut lua, state.clone());
     runtime::sock_recv(&mut lua, state.clone());
     runtime::sock_sendline(&mut lua, state.clone());

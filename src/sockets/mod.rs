@@ -16,6 +16,7 @@ use std::io::BufRead;
 use std::net::SocketAddr;
 use std::net::TcpStream;
 use std::net::{IpAddr, Ipv4Addr};
+use std::time::Duration;
 
 mod tls;
 pub use self::tls::TlsData;
@@ -45,8 +46,15 @@ pub struct SocketOptions {
     pub proxy: Option<SocketAddr>,
 
     // TODO: enable_sni (default to true)
+    // TODO: sni_name
     // TODO: cacert
-    // TODO: timeout
+
+    #[serde(default)]
+    pub connect_timeout: u64,
+    #[serde(default)]
+    pub read_timeout: u64,
+    #[serde(default)]
+    pub write_timeout: u64,
 }
 
 impl SocketOptions {
@@ -54,6 +62,22 @@ impl SocketOptions {
         let x = LuaJsonValue::from(x);
         let x = serde_json::from_value(x.into())?;
         Ok(x)
+    }
+}
+
+impl SocketOptions {
+    fn apply(&self, socket: &TcpStream) -> Result<()> {
+        let read_timeout = self.read_timeout;
+        if read_timeout > 0 {
+            socket.set_read_timeout(Some(Duration::from_secs(read_timeout)))?;
+        }
+
+        let write_timeout = self.write_timeout;
+        if write_timeout > 0 {
+            socket.set_write_timeout(Some(Duration::from_secs(write_timeout)))?;
+        }
+
+        Ok(())
     }
 }
 
@@ -74,11 +98,9 @@ impl Stream {
         let mut errors = Vec::new();
 
         for addr in addrs {
-            debug!("connecting to {}:{}", addr, port);
-            match TcpStream::connect((addr, port)) {
+            match Stream::connect_addr(host, (addr, port).into(), &options) {
                 Ok(socket) => {
-                    debug!("successfully connected to {:?}", addr);
-                    return tls::wrap_if_enabled(socket, host, options);
+                    return Ok(socket);
                 },
                 Err(err) => errors.push((addr, err)),
             }
@@ -89,6 +111,22 @@ impl Stream {
         } else {
             bail!("couldn't connect: {:?}", errors);
         }
+    }
+
+    fn connect_addr(host: &str, addr: SocketAddr, options: &SocketOptions) -> Result<Stream> {
+        debug!("connecting to {}", addr);
+
+        let connect_timeout = options.connect_timeout;
+        let socket = if connect_timeout > 0 {
+            TcpStream::connect_timeout(&addr, Duration::from_secs(connect_timeout))?
+        } else {
+            TcpStream::connect(&addr)?
+        };
+        debug!("successfully connected to {:?}", addr);
+
+        options.apply(&socket)?;
+
+        tls::wrap_if_enabled(socket, host, options)
     }
 
     pub fn connect_socks5_stream(proxy: &SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
@@ -181,6 +219,14 @@ impl Socket {
         }
     }
 
+    pub fn options(&self, options: &SocketOptions) -> Result<()> {
+        match self.stream.get_ref() {
+            Stream::Tcp(s) => options.apply(s)?,
+            Stream::Tls(s) => options.apply(s.get_ref())?,
+        }
+        Ok(())
+    }
+
     pub fn send(&mut self, data: &[u8]) -> Result<()> {
         match str::from_utf8(&data) {
             Ok(data) => debug!("send: {:?}", data),
@@ -193,7 +239,12 @@ impl Socket {
 
     pub fn recv(&mut self) -> Result<Vec<u8>> {
         let mut buf = [0; 4096];
-        let n = self.stream.read(&mut buf)?;
+        let n = match self.stream.read(&mut buf) {
+            Ok(n) if n == 0 => bail!("Connection closed"),
+            Ok(n) => n,
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => 0,
+            Err(err) => return Err(err.into()),
+        };
         let data = buf[..n].to_vec();
         match str::from_utf8(&data) {
             Ok(data) => debug!("recv: {:?}", data),

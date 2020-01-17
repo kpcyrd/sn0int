@@ -69,6 +69,10 @@ impl WebSocket {
             sni_value: None,
             disable_tls_verify: false,
             proxy: options.proxy,
+
+            connect_timeout: 0,
+            read_timeout: 0,
+            write_timeout: 0,
         })?;
         Self::negotiate(stream, url, options.headers.as_ref())
     }
