@@ -21,10 +21,11 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=docker
-  - os: linux
-    rust: stable
-    env:
-    - BUILD_MODE=docker-registry
+  # https://github.com/rust-lang/rust/issues/68264
+  #- os: linux
+  #  rust: stable
+  #  env:
+  #  - BUILD_MODE=docker-registry
   - os: osx
     rust: stable
     env:
