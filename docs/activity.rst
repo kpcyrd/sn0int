@@ -67,8 +67,8 @@ Logging an event that has a location attached could look like this:
     db_activity({
         topic='harness/activity-ping:dummy',
         time=sn0int_time(),
-        latitude=40.727296,
-        longitude=-74.036619,
+        latitude=40.726662,
+        longitude=-74.036677
         radius=50,
         content={
             a='b',
@@ -99,7 +99,7 @@ Making sure an event is not logged twice can be done with ``uniq``:
         content='ohai',
     })
 
-    -- this create a new event because uniq is different
+    -- this creates a new event because uniq is different
     db_activity({
         topic='harness/activity-ping:dummy',
         time=sn0int_time(),
