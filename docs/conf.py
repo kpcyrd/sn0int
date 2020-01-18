@@ -20,7 +20,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'sn0int'
-copyright = '2018, kpcyrd'
+copyright = '2018-2020, kpcyrd'
 author = 'kpcyrd'
 
 # The short X.Y version
