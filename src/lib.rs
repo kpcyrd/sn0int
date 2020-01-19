@@ -46,6 +46,7 @@ pub mod term;
 pub mod update;
 pub mod utils;
 pub mod web;
+pub mod websockets;
 pub mod worker;
 pub mod workspaces;
 pub mod xml;

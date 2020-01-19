@@ -9,7 +9,7 @@ use std::result;
 use std::sync::Arc;
 use std::net::TcpStream;
 
-use super::{Socket, Stream, SocketOptions};
+use super::{Stream, SocketOptions};
 
 
 #[derive(Debug, Serialize)]
@@ -26,17 +26,17 @@ impl TlsData {
     }
 }
 
-pub fn wrap_if_enabled(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<Socket> {
+pub fn wrap_if_enabled(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<Stream> {
     if !options.tls {
         let stream = Stream::Tcp(stream);
-        return Ok(Socket::new(stream));
+        Ok(stream)
     } else {
         let (socket, _) = wrap(stream, host, options)?;
         Ok(socket)
     }
 }
 
-pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(Socket, TlsData)> {
+pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(Stream, TlsData)> {
     let mut anchors = RootCertStore::empty();
     anchors.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
 
@@ -73,7 +73,7 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
     }
 }
 
-fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, TlsData)> {
+fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, TlsData)> {
     info!("starting tls handshake");
     if session.is_handshaking() {
         session.complete_io(&mut stream)?;
@@ -106,7 +106,7 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, T
     info!("successfully established tls connection");
     let stream = rustls::StreamOwned::new(session, stream);
     let stream = Stream::Tls(stream);
-    Ok((Socket::new(stream), tls))
+    Ok((stream, tls))
 }
 
 pub struct NoCertificateVerification {}

@@ -1,0 +1,75 @@
+use crate::errors::*;
+
+use crate::engine::ctx::State;
+use crate::engine::structs::{byte_array, lua_bytes};
+use crate::hlua::{self, AnyLuaValue};
+use crate::websockets::WebSocketOptions;
+use std::sync::Arc;
+use url::Url;
+
+pub fn ws_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_connect", hlua::function2(move |url: String, options: AnyLuaValue| -> Result<String> {
+        let options = WebSocketOptions::try_from(options)
+            .context("Invalid websocket options")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        let url = Url::parse(&url)
+            .context("Failed to parse url")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        state.ws_connect(url, &options)
+            .map_err(|err| state.set_error(err))
+    }))
+}
+
+pub fn ws_read_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_read_text", hlua::function1(move |sock: String| -> Result<Option<String>> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        let text = sock.read_text()
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(text)
+    }))
+}
+
+pub fn ws_read_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_read_binary", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        let bytes = sock.read_binary()
+            .map_err(|err| state.set_error(err))?
+            .map(|bytes| lua_bytes(&bytes));
+
+        Ok(bytes)
+    }))
+}
+
+pub fn ws_write_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_write_text", hlua::function2(move |sock: String, text: String| -> Result<()> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        sock.write_text(text)
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(())
+    }))
+}
+
+pub fn ws_write_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_write_binary", hlua::function2(move |sock: String, bytes: AnyLuaValue| -> Result<()> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        let bytes = byte_array(bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        sock.write_binary(bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(())
+    }))
+}

@@ -12,6 +12,7 @@ use crate::lazy::Lazy;
 use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
+use crate::websockets::{WebSocket, WebSocketOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent, RatelimitEvent};
 use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
@@ -168,6 +169,10 @@ pub trait State {
 
     fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData>;
 
+    fn ws_connect(&self, url: url::Url, options: &WebSocketOptions) -> Result<String>;
+
+    fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>>;
+
     fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>>;
 
     fn http_mksession(&self) -> String;
@@ -194,6 +199,7 @@ pub struct LuaState {
     error: Mutex<Option<Error>>,
     logger: Arc<Mutex<Box<dyn Reporter>>>,
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
+    ws_sessions: Mutex<HashMap<String, Arc<Mutex<WebSocket>>>>,
     blobs: Mutex<HashMap<String, Arc<Blob>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
     http_clients: Mutex<HashMap<String, Arc<chrootable_https::Client<Resolver>>>>,
@@ -301,13 +307,13 @@ impl State for LuaState {
 
     fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>> {
         let mtx = self.socket_sessions.lock().unwrap();
-        let sock = mtx.get(id).expect("invalid session reference"); // TODO
+        let sock = mtx.get(id).expect("Invalid socket reference"); // TODO
         sock.clone()
     }
 
     fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData> {
         let mut mtx = self.socket_sessions.lock().unwrap();
-        let sock = mtx.remove(id).expect("invalid session reference"); // TODO
+        let sock = mtx.remove(id).expect("Invalid socket reference"); // TODO
 
         let sock = Arc::try_unwrap(sock).unwrap();
         let sock = sock.into_inner().unwrap();
@@ -317,6 +323,22 @@ impl State for LuaState {
         mtx.insert(id.to_string(), Arc::new(Mutex::new(sock)));
 
         Ok(tls)
+    }
+
+    fn ws_connect(&self, url: url::Url, options: &WebSocketOptions) -> Result<String> {
+        let mut mtx = self.ws_sessions.lock().unwrap();
+        let id = self.random_id();
+
+        let sock = WebSocket::connect(&self.dns_config, url, options)?;
+        mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
+
+        Ok(id)
+    }
+
+    fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>> {
+        let mtx = self.ws_sessions.lock().unwrap();
+        let sock = mtx.get(id).expect("Invalid ws reference"); // TODO
+        sock.clone()
     }
 
     fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>> {
@@ -354,7 +376,7 @@ impl State for LuaState {
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
         let mtx = self.http_sessions.lock().unwrap();
-        let session = mtx.get(session_id).expect("invalid session reference"); // TODO
+        let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
 
         HttpRequest::new(&session, method, url, options)
     }
@@ -413,6 +435,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
         error: Mutex::new(None),
         logger,
         socket_sessions: Mutex::new(HashMap::new()),
+        ws_sessions: Mutex::new(HashMap::new()),
         blobs: Mutex::new(HashMap::new()),
         http_sessions: Mutex::new(HashMap::new()),
         http_clients: Mutex::new(HashMap::new()),
@@ -523,6 +546,11 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::utf8_decode(&mut lua, state.clone());
     runtime::warn(&mut lua, state.clone());
     runtime::warn_once(&mut lua, state.clone());
+    runtime::ws_connect(&mut lua, state.clone());
+    runtime::ws_read_text(&mut lua, state.clone());
+    runtime::ws_read_binary(&mut lua, state.clone());
+    runtime::ws_write_text(&mut lua, state.clone());
+    runtime::ws_write_binary(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
     runtime::xml_decode(&mut lua, state.clone());
     runtime::xml_named(&mut lua, state.clone());

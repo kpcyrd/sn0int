@@ -74,6 +74,7 @@ bytesize = "1.0"
 ipnetwork = "0.15"
 strum = "0.17"
 strum_macros = "0.17"
+tungstenite = { version = "0.9", default-features = false }
 
 digest = "0.8.0"
 bs58 = "0.3"
