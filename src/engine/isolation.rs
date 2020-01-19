@@ -245,10 +245,7 @@ pub fn run_worker(geoip: Option<MaxmindReader>, asn: Option<MaxmindReader>, psl:
     let mut reporter = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
                         .into_inner().expect("Failed to consume Mutex");
 
-    let event = match result {
-        Ok(_) => ExitEvent::Ok,
-        Err(err) => ExitEvent::Err(err.to_string()),
-    };
+    let event = result.into();
     reporter.send(&Event::Exit(event))?;
 
     Ok(())

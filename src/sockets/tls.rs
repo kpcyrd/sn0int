@@ -76,11 +76,13 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
 fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, TlsData)> {
     info!("starting tls handshake");
     if session.is_handshaking() {
-        session.complete_io(&mut stream)?;
+        session.complete_io(&mut stream)
+            .context("is_handshaking->complete_io failed")?;
     }
 
     if session.wants_write() {
-        session.complete_io(&mut stream)?;
+        session.complete_io(&mut stream)
+            .context("wants_write->complete_io failed")?;
     }
 
     let mut tls = TlsData {

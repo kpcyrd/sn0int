@@ -100,6 +100,21 @@ pub enum ExitEvent {
     SetupFailed(String),
 }
 
+impl From<Result<()>> for ExitEvent {
+    fn from(result: Result<()>) -> ExitEvent {
+        match result {
+            Ok(_) => ExitEvent::Ok,
+            Err(err) => {
+                let err = err.iter_chain()
+                    .map(|e| e.to_string())
+                    .collect::<Vec<_>>()
+                    .join(": ");
+                ExitEvent::Err(err.to_string())
+            },
+        }
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub enum LogEvent {
     Info(String),
@@ -531,18 +546,8 @@ pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) ->
 
             tx.send(Event2::Start);
 
-            let exit = match task.run(&tx) {
-                Ok(_) => ExitEvent::Ok,
-                Err(err) => {
-                    let err = err.iter_chain()
-                        .map(|e| e.to_string())
-                        .collect::<Vec<_>>()
-                        .join(": ");
-                    ExitEvent::Err(err.to_string())
-                },
-            };
-
-            tx.send(Event2::Exit(exit));
+            let exit = task.run(&tx);
+            tx.send(Event2::Exit(exit.into()));
         });
         expected += 1;
     }
