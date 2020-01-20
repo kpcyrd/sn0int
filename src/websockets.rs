@@ -3,6 +3,8 @@ use crate::errors::*;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use crate::sockets::{Stream, SocketOptions};
+use std::borrow::Cow;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use tungstenite::handshake::client::Request;
 use tungstenite::protocol::{self, Message};
@@ -10,7 +12,8 @@ use url::Url;
 
 #[derive(Debug, Default, Deserialize)]
 pub struct WebSocketOptions {
-    pub proxy: Option<SocketAddr>
+    pub headers: Option<HashMap<String, String>>,
+    pub proxy: Option<SocketAddr>,
 }
 
 impl WebSocketOptions {
@@ -26,14 +29,19 @@ pub struct WebSocket {
 }
 
 impl WebSocket {
-    pub fn negotiate(stream: Stream, url: Url) -> Result<WebSocket> {
-        let (sock, _resp) = tungstenite::client::client_with_config(
+    pub fn negotiate(stream: Stream, url: Url, headers: Option<&HashMap<String, String>>) -> Result<WebSocket> {
+        let extra_headers = headers.map(|headers| {
+            headers.iter()
+                .map(|(k, v)| (Cow::Borrowed(k.as_str()), Cow::Borrowed(v.as_str())))
+                .collect()
+        });
+
+        let (sock, _resp) = tungstenite::client::client(
             Request {
                 url,
-                extra_headers: None,
+                extra_headers,
             },
             stream,
-            None,
         )?;
         Ok(WebSocket {
             sock,
@@ -62,7 +70,7 @@ impl WebSocket {
             disable_tls_verify: false,
             proxy: options.proxy,
         })?;
-        Self::negotiate(stream, url)
+        Self::negotiate(stream, url, options.headers.as_ref())
     }
 
     fn read_msg(&mut self) -> Result<Option<Message>> {

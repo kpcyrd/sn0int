@@ -5,6 +5,7 @@ use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
 use crate::websockets::WebSocketOptions;
 use std::sync::Arc;
+use crate::json;
 use url::Url;
 
 pub fn ws_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
@@ -47,6 +48,26 @@ pub fn ws_read_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
+pub fn ws_read_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_read_json", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        let json = sock.read_text()
+            .map_err(|err| state.set_error(err))?;
+
+        let json = if let Some(json) = json {
+            let json = json::decode(&json)
+                .map_err(|err| state.set_error(err))?;
+            Some(json)
+        } else {
+            None
+        };
+
+        Ok(json)
+    }))
+}
+
 pub fn ws_write_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("ws_write_text", hlua::function2(move |sock: String, text: String| -> Result<()> {
         let sock = state.get_ws(&sock);
@@ -68,6 +89,21 @@ pub fn ws_write_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             .map_err(|err| state.set_error(err))?;
 
         sock.write_binary(bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(())
+    }))
+}
+
+pub fn ws_write_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_write_json", hlua::function2(move |sock: String, json: AnyLuaValue| -> Result<()> {
+        let sock = state.get_ws(&sock);
+        let mut sock = sock.lock().unwrap();
+
+        let json = json::encode(json)
+            .map_err(|err| state.set_error(err))?;
+
+        sock.write_text(json)
             .map_err(|err| state.set_error(err))?;
 
         Ok(())
