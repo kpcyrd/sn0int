@@ -2,7 +2,7 @@ use crate::errors::*;
 
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
-use rustls::{self, ClientConfig, Session, ClientSession, RootCertStore};
+use rustls::{self, ClientConfig, Session, ClientSession};
 
 use std::str;
 use std::result;
@@ -37,11 +37,11 @@ pub fn wrap_if_enabled(stream: TcpStream, host: &str, options: &SocketOptions) -
 }
 
 pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(Stream, TlsData)> {
-    let mut anchors = RootCertStore::empty();
-    anchors.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-
     let mut config = ClientConfig::new();
-    config.root_store = anchors;
+    config
+        .root_store
+        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+    config.ct_logs = Some(&ct_logs::LOGS);
 
     if options.disable_tls_verify {
         info!("tls verification has been disabled");
@@ -77,7 +77,7 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, T
     info!("starting tls handshake");
     if session.is_handshaking() {
         session.complete_io(&mut stream)
-            .context("is_handshaking->complete_io failed")?;
+            .context("Failed to read reply to tls client hello")?;
     }
 
     if session.wants_write() {

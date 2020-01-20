@@ -44,6 +44,7 @@ chrootable-https = "0.13"
 rustls = { version="0.16", features=["dangerous_configuration"] }
 webpki = "0.21"
 webpki-roots = "0.18"
+ct-logs = "0.6"
 pem = "0.7"
 base64 = "0.11"
 data-encoding = "2.1.2"
