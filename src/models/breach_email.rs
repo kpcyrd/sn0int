@@ -118,11 +118,16 @@ impl BreachEmail {
 pub struct PrintableBreachEmail {
     breach: String,
     email: String,
+    password: Option<String>,
 }
 
 impl fmt::Display for PrintableBreachEmail {
     fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "{:?} -> {:?}", self.breach, self.email)
+        write!(w, "{:?} -> {:?}", self.breach, self.email)?;
+        if let Some(password) = &self.password {
+            write!(w, " ({:?})", password)?;
+        }
+        Ok(())
     }
 }
 
@@ -133,6 +138,7 @@ impl Printable<PrintableBreachEmail> for BreachEmail {
         Ok(PrintableBreachEmail {
             breach: breach.value.to_string(),
             email: email.value.to_string(),
+            password: self.password.clone(),
         })
     }
 }
@@ -163,6 +169,7 @@ impl Printable<PrintableBreachEmail> for NewBreachEmail {
         Ok(PrintableBreachEmail {
             breach: breach.value.to_string(),
             email: email.value.to_string(),
+            password: self.password.clone(),
         })
     }
 }
