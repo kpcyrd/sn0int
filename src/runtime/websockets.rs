@@ -23,6 +23,22 @@ pub fn ws_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
+pub fn ws_options(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_options", hlua::function2(move |sock: String, options: AnyLuaValue| -> Result<()> {
+        let options = WebSocketOptions::try_from(options)
+            .context("Invalid websocket options")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        let sock = state.get_ws(&sock);
+        let sock = sock.lock().unwrap();
+
+        sock.options(&options)
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(())
+    }))
+}
+
 pub fn ws_read_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("ws_read_text", hlua::function1(move |sock: String| -> Result<Option<String>> {
         let sock = state.get_ws(&sock);

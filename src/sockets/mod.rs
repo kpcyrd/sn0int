@@ -66,7 +66,15 @@ impl SocketOptions {
 }
 
 impl SocketOptions {
-    fn apply(&self, socket: &TcpStream) -> Result<()> {
+    pub fn apply(&self, stream: &Stream) -> Result<()> {
+        let socket = match stream {
+            Stream::Tcp(s) => s,
+            Stream::Tls(s) => s.get_ref(),
+        };
+        self.apply_tcp(socket)
+    }
+
+    pub fn apply_tcp(&self, socket: &TcpStream) -> Result<()> {
         let read_timeout = self.read_timeout;
         if read_timeout > 0 {
             socket.set_read_timeout(Some(Duration::from_secs(read_timeout)))?;
@@ -124,7 +132,7 @@ impl Stream {
         };
         debug!("successfully connected to {:?}", addr);
 
-        options.apply(&socket)?;
+        options.apply_tcp(&socket)?;
 
         tls::wrap_if_enabled(socket, host, options)
     }
@@ -220,11 +228,7 @@ impl Socket {
     }
 
     pub fn options(&self, options: &SocketOptions) -> Result<()> {
-        match self.stream.get_ref() {
-            Stream::Tcp(s) => options.apply(s)?,
-            Stream::Tls(s) => options.apply(s.get_ref())?,
-        }
-        Ok(())
+        options.apply(self.stream.get_ref())
     }
 
     pub fn send(&mut self, data: &[u8]) -> Result<()> {

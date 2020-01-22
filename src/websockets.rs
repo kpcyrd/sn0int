@@ -6,6 +6,7 @@ use crate::sockets::{Stream, SocketOptions};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::io;
 use tungstenite::handshake::client::Request;
 use tungstenite::protocol::{self, Message};
 use url::Url;
@@ -14,6 +15,13 @@ use url::Url;
 pub struct WebSocketOptions {
     pub headers: Option<HashMap<String, String>>,
     pub proxy: Option<SocketAddr>,
+
+    #[serde(default)]
+    pub connect_timeout: u64,
+    #[serde(default)]
+    pub read_timeout: u64,
+    #[serde(default)]
+    pub write_timeout: u64,
 }
 
 impl WebSocketOptions {
@@ -22,6 +30,13 @@ impl WebSocketOptions {
         let x = serde_json::from_value(x.into())?;
         Ok(x)
     }
+}
+
+pub enum Event {
+    Text(String),
+    Binary(Vec<u8>),
+    Close,
+    Timeout,
 }
 
 pub struct WebSocket {
@@ -70,46 +85,55 @@ impl WebSocket {
             disable_tls_verify: false,
             proxy: options.proxy,
 
-            connect_timeout: 0,
-            read_timeout: 0,
-            write_timeout: 0,
+            connect_timeout: options.connect_timeout,
+            read_timeout: options.read_timeout,
+            write_timeout: options.write_timeout,
         })?;
         Self::negotiate(stream, url, options.headers.as_ref())
     }
 
-    fn read_msg(&mut self) -> Result<Option<Message>> {
-        let msg = loop {
+    pub fn options(&self, options: &WebSocketOptions) -> Result<()> {
+        let mut o = SocketOptions::default();
+        o.read_timeout = options.read_timeout;
+        o.write_timeout = options.write_timeout;
+        o.apply(self.sock.get_ref())
+    }
+
+    fn read_msg(&mut self) -> Result<Event> {
+        loop {
             let msg = match self.sock.read_message() {
-                Ok(msg) => msg,
-                Err(tungstenite::Error::ConnectionClosed) => break None,
-                Err(tungstenite::Error::AlreadyClosed) => break None,
+                Ok(Message::Text(body)) => Event::Text(body),
+                Ok(Message::Binary(body)) => Event::Binary(body),
+                Ok(Message::Ping(ping)) => {
+                    self.sock.write_message(Message::Pong(ping))?;
+                    continue;
+                },
+                Ok(Message::Pong(_)) => continue, // this should never happen
+                Ok(Message::Close(_)) => Event::Close,
+                Err(tungstenite::Error::ConnectionClosed) => Event::Close,
+                Err(tungstenite::Error::AlreadyClosed) => Event::Close,
+                Err(tungstenite::Error::Io(err)) if err.kind() == io::ErrorKind::WouldBlock => Event::Timeout,
                 Err(err) => return Err(err.into()),
             };
-            match msg {
-                Message::Text(_) | Message::Binary(_) => break Some(msg),
-                Message::Ping(ping) => {
-                    self.sock.write_message(Message::Pong(ping))?;
-                },
-                Message::Pong(_) => (), // this should never happen
-                Message::Close(_) => break None,
-            }
-        };
-        Ok(msg)
+            return Ok(msg);
+        }
     }
 
     pub fn read_text(&mut self) -> Result<Option<String>> {
         match self.read_msg()? {
-            Some(Message::Text(text)) => Ok(Some(text)),
-            Some(_) => bail!("Unexpected message type: binary"),
-            None => Ok(None),
+            Event::Text(text) => Ok(Some(text)),
+            Event::Binary(_) => bail!("Unexpected message type: binary"),
+            Event::Close => bail!("Connection closed"),
+            Event::Timeout => Ok(None),
         }
     }
 
     pub fn read_binary(&mut self) -> Result<Option<Vec<u8>>> {
         match self.read_msg()? {
-            Some(Message::Binary(binary)) => Ok(Some(binary)),
-            Some(_) => bail!("Unexpected message type: text"),
-            None => Ok(None),
+            Event::Text(_) => bail!("Unexpected message type: text"),
+            Event::Binary(body) => Ok(Some(body)),
+            Event::Close => bail!("Connection closed"),
+            Event::Timeout => Ok(None),
         }
     }
 
