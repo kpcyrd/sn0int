@@ -10,7 +10,7 @@ use std::sync::Arc;
 pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_connect", hlua::function3(move |host: String, port: u16, options: AnyLuaValue| -> Result<String> {
         let options = SocketOptions::try_from(options)
-            .context("invalid socket options")
+            .context("Invalid socket options")
             .map_err(|err| state.set_error(Error::from(err)))?;
 
         state.sock_connect(&host, port, &options)
@@ -21,13 +21,29 @@ pub fn sock_connect(lua: &mut hlua::Lua, state: Arc<dyn State>) {
 pub fn sock_upgrade_tls(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sock_upgrade_tls", hlua::function2(move |sock: String, options: AnyLuaValue| -> Result<AnyLuaValue> {
         let options = SocketOptions::try_from(options)
-            .context("invalid socket options")
+            .context("Invalid socket options")
             .map_err(|err| state.set_error(Error::from(err)))?;
 
         let tls = state.sock_upgrade_tls(&sock, &options)
             .map_err(|err| state.set_error(err))?;
 
         tls.to_lua()
+    }))
+}
+
+pub fn sock_options(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("sock_options", hlua::function2(move |sock: String, options: AnyLuaValue| -> Result<()> {
+        let options = SocketOptions::try_from(options)
+            .context("Invalid socket options")
+            .map_err(|err| state.set_error(Error::from(err)))?;
+
+        let sock = state.get_sock(&sock);
+        let sock = sock.lock().unwrap();
+
+        sock.options(&options)
+            .map_err(|err| state.set_error(err))?;
+
+        Ok(())
     }))
 }
 

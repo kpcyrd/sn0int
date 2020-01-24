@@ -834,6 +834,13 @@ The following options are available:
 ``proxy``
   Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
   if it doesn't conflict with the global proxy settings.
+``connect_timeout``
+  Abort tcp connection attempts after ``n`` seconds.
+``read_timeout``
+  Abort read attempts after ``n`` seconds. This can be used to wake up
+  connections periodically.
+``write_timeout``
+  Abort write attempts after ``n`` seconds.
 
 .. code-block:: lua
 
@@ -864,6 +871,23 @@ discarded when using sock_connect_ directly with ``tls=true``.
     if last_err() then return end
 
     info(tls)
+
+sock_options
+------------
+
+Update options of an existing connection:
+
+``read_timeout``
+  Abort read attempts after ``n`` seconds. This can be used to wake up
+  connections periodically.
+``write_timeout``
+  Abort write attempts after ``n`` seconds.
+
+.. code-block:: lua
+
+    sock_options(sock, {
+        read_timeout=3,
+    })
 
 sock_send
 ---------
@@ -1140,6 +1164,111 @@ a ``run`` execution.
 
     warn_once('ohai')
     warn_once('ohai')
+
+ws_connect
+----------
+
+Create a websocket connection. The url format is ``ws://example.com/asdf``,
+``wss://`` is also supported.
+
+The following options are available:
+
+``headers``
+  A map of additional headers that should be set for the request.
+``proxy``
+  Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
+  if it doesn't conflict with the global proxy settings.
+``connect_timeout``
+  Abort tcp connection attempts after ``n`` seconds.
+``read_timeout``
+  Abort read attempts after ``n`` seconds. This can be used to wake up
+  connections periodically.
+``write_timeout``
+  Abort write attempts after ``n`` seconds.
+
+.. code-block:: lua
+
+    sock = ws_connect("wss://example.com/asdf", {})
+
+ws_options
+----------
+
+Update options of an existing connection:
+
+``read_timeout``
+  Abort read attempts after ``n`` seconds. This can be used to wake up
+  connections periodically.
+``write_timeout``
+  Abort write attempts after ``n`` seconds.
+
+.. code-block:: lua
+
+    ws_options(sock, {
+        read_timeout=3,
+    })
+
+ws_read_text
+------------
+
+Wait until the server sends a text frame. A binary frame is considered an
+error. Ping requests are answered automatically.
+
+.. code-block:: lua
+
+    msg = ws_read_text(sock)
+
+ws_read_binary
+--------------
+
+Wait until the server sends a binary frame. A text frame is considered an
+error. Ping requests are answered automatically.
+
+.. code-block:: lua
+
+    msg = ws_read_binary(sock)
+
+ws_read_json
+------------
+
+Identical to ws_write_text_ but automatically runs json_decode_ on the
+response.
+
+.. code-block:: lua
+
+    msg = ws_read_json(sock)
+
+ws_write_text
+-------------
+
+Send a text frame on the websocket connection.
+
+.. code-block:: lua
+
+    ws_write_text(sock, "ohai!")
+
+ws_write_binary
+---------------
+
+Send a binary frame on the websocket connection.
+
+.. code-block:: lua
+
+    ws_write_binary(sock, "\x00\x01\x02")
+
+ws_write_json
+-------------
+
+Encode the object as json string and send it as a text frame on the websocket
+connection.
+
+.. code-block:: lua
+
+    ws_write_text(sock, {
+        foo="ohai!",
+        x={
+            y={1,3,3,7},
+        },
+    })
 
 x509_parse_pem
 --------------

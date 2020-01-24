@@ -2,14 +2,14 @@ use crate::errors::*;
 
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
-use rustls::{self, ClientConfig, Session, ClientSession, RootCertStore};
+use rustls::{self, ClientConfig, Session, ClientSession};
 
 use std::str;
 use std::result;
 use std::sync::Arc;
 use std::net::TcpStream;
 
-use super::{Socket, Stream, SocketOptions};
+use super::{Stream, SocketOptions};
 
 
 #[derive(Debug, Serialize)]
@@ -26,22 +26,22 @@ impl TlsData {
     }
 }
 
-pub fn wrap_if_enabled(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<Socket> {
+pub fn wrap_if_enabled(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<Stream> {
     if !options.tls {
         let stream = Stream::Tcp(stream);
-        return Ok(Socket::new(stream));
+        Ok(stream)
     } else {
         let (socket, _) = wrap(stream, host, options)?;
         Ok(socket)
     }
 }
 
-pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(Socket, TlsData)> {
-    let mut anchors = RootCertStore::empty();
-    anchors.add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-
+pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(Stream, TlsData)> {
     let mut config = ClientConfig::new();
-    config.root_store = anchors;
+    config
+        .root_store
+        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
+    config.ct_logs = Some(&ct_logs::LOGS);
 
     if options.disable_tls_verify {
         info!("tls verification has been disabled");
@@ -73,14 +73,16 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
     }
 }
 
-fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, TlsData)> {
+fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, TlsData)> {
     info!("starting tls handshake");
     if session.is_handshaking() {
-        session.complete_io(&mut stream)?;
+        session.complete_io(&mut stream)
+            .context("Failed to read reply to tls client hello")?;
     }
 
     if session.wants_write() {
-        session.complete_io(&mut stream)?;
+        session.complete_io(&mut stream)
+            .context("wants_write->complete_io failed")?;
     }
 
     let mut tls = TlsData {
@@ -106,7 +108,7 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Socket, T
     info!("successfully established tls connection");
     let stream = rustls::StreamOwned::new(session, stream);
     let stream = Stream::Tls(stream);
-    Ok((Socket::new(stream), tls))
+    Ok((stream, tls))
 }
 
 pub struct NoCertificateVerification {}

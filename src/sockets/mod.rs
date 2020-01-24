@@ -16,6 +16,7 @@ use std::io::BufRead;
 use std::net::SocketAddr;
 use std::net::TcpStream;
 use std::net::{IpAddr, Ipv4Addr};
+use std::time::Duration;
 
 mod tls;
 pub use self::tls::TlsData;
@@ -39,14 +40,21 @@ fn unwrap_socket(socket: tokio::net::TcpStream) -> Result<TcpStream> {
 pub struct SocketOptions {
     #[serde(default)]
     pub tls: bool,
-    sni_value: Option<String>,
+    pub sni_value: Option<String>,
     #[serde(default)]
-    disable_tls_verify: bool,
+    pub disable_tls_verify: bool,
     pub proxy: Option<SocketAddr>,
 
     // TODO: enable_sni (default to true)
+    // TODO: sni_name
     // TODO: cacert
-    // TODO: timeout
+
+    #[serde(default)]
+    pub connect_timeout: u64,
+    #[serde(default)]
+    pub read_timeout: u64,
+    #[serde(default)]
+    pub write_timeout: u64,
 }
 
 impl SocketOptions {
@@ -57,15 +65,95 @@ impl SocketOptions {
     }
 }
 
-#[derive(Debug)]
-pub struct Socket {
-    stream: BufStream<Stream>,
-    newline: String,
+impl SocketOptions {
+    pub fn apply(&self, stream: &Stream) -> Result<()> {
+        let socket = match stream {
+            Stream::Tcp(s) => s,
+            Stream::Tls(s) => s.get_ref(),
+        };
+        self.apply_tcp(socket)
+    }
+
+    pub fn apply_tcp(&self, socket: &TcpStream) -> Result<()> {
+        let read_timeout = self.read_timeout;
+        if read_timeout > 0 {
+            socket.set_read_timeout(Some(Duration::from_secs(read_timeout)))?;
+        }
+
+        let write_timeout = self.write_timeout;
+        if write_timeout > 0 {
+            socket.set_write_timeout(Some(Duration::from_secs(write_timeout)))?;
+        }
+
+        Ok(())
+    }
 }
 
-enum Stream {
+pub enum Stream {
     Tcp(TcpStream),
     Tls(rustls::StreamOwned<rustls::ClientSession, TcpStream>),
+}
+
+impl Stream {
+    pub fn connect_stream<R: DnsResolver>(resolver: &R, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
+        let addrs = match host.parse::<IpAddr>() {
+            Ok(addr) => vec![addr],
+            Err(_) => resolver.resolve(host, RecordType::A)
+                .wait_for_response()?
+                .success()?,
+        };
+
+        let mut errors = Vec::new();
+
+        for addr in addrs {
+            match Stream::connect_addr(host, (addr, port).into(), &options) {
+                Ok(socket) => {
+                    return Ok(socket);
+                },
+                Err(err) => errors.push((addr, err)),
+            }
+        }
+
+        if errors.is_empty() {
+            bail!("no dns records found");
+        } else {
+            bail!("couldn't connect: {:?}", errors);
+        }
+    }
+
+    fn connect_addr(host: &str, addr: SocketAddr, options: &SocketOptions) -> Result<Stream> {
+        debug!("connecting to {}", addr);
+
+        let connect_timeout = options.connect_timeout;
+        let socket = if connect_timeout > 0 {
+            TcpStream::connect_timeout(&addr, Duration::from_secs(connect_timeout))?
+        } else {
+            TcpStream::connect(&addr)?
+        };
+        debug!("successfully connected to {:?}", addr);
+
+        options.apply_tcp(&socket)?;
+
+        tls::wrap_if_enabled(socket, host, options)
+    }
+
+    pub fn connect_socks5_stream(proxy: &SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
+        debug!("connecting to {:?}:{:?} with socks5 on {:?}", host, port, proxy);
+
+        let addr = match host.parse::<Ipv4Addr>() {
+            Ok(ipaddr) => ProxyDest::Ipv4Addr(ipaddr),
+            _ => ProxyDest::Domain(host.to_string()),
+        };
+
+        let fut = socks5::connect(proxy, addr, port);
+
+        let mut rt = Runtime::new()?;
+        let socket = rt.block_on(fut)?;
+
+        let socket = unwrap_socket(socket)?;
+
+        tls::wrap_if_enabled(socket, host, options)
+    }
 }
 
 impl fmt::Debug for Stream {
@@ -102,6 +190,12 @@ impl Write for Stream {
     }
 }
 
+#[derive(Debug)]
+pub struct Socket {
+    stream: BufStream<Stream>,
+    newline: String,
+}
+
 impl Socket {
     fn new(stream: Stream) -> Socket {
         let stream = BufStream::new(stream);
@@ -112,58 +206,29 @@ impl Socket {
     }
 
     pub fn connect<R: DnsResolver>(resolver: &R, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
-        let addrs = match host.parse::<IpAddr>() {
-            Ok(addr) => vec![addr],
-            Err(_) => resolver.resolve(host, RecordType::A)
-                .wait_for_response()?
-                .success()?,
-        };
-
-        let mut errors = Vec::new();
-
-        for addr in addrs {
-            debug!("connecting to {}:{}", addr, port);
-            match TcpStream::connect((addr, port)) {
-                Ok(socket) => {
-                    debug!("successfully connected to {:?}", addr);
-                    return tls::wrap_if_enabled(socket, host, options);
-                },
-                Err(err) => errors.push((addr, err)),
-            }
-        }
-
-        if errors.is_empty() {
-            bail!("no dns records found");
-        } else {
-            bail!("couldn't connect: {:?}", errors);
-        }
+        let stream = Stream::connect_stream(resolver, host, port, options)?;
+        Ok(Socket::new(stream))
     }
 
     pub fn connect_socks5(proxy: &SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
-        debug!("connecting to {:?}:{:?} with socks5 on {:?}", host, port, proxy);
-
-        let addr = match host.parse::<Ipv4Addr>() {
-            Ok(ipaddr) => ProxyDest::Ipv4Addr(ipaddr),
-            _ => ProxyDest::Domain(host.to_string()),
-        };
-
-        let fut = socks5::connect(proxy, addr, port);
-
-        let mut rt = Runtime::new()?;
-        let socket = rt.block_on(fut)?;
-
-        let socket = unwrap_socket(socket)?;
-
-        tls::wrap_if_enabled(socket, host, options)
+        let stream = Stream::connect_socks5_stream(proxy, host, port, options)?;
+        Ok(Socket::new(stream))
     }
 
     pub fn upgrade_to_tls(self, options: &SocketOptions) -> Result<(Socket, TlsData)> {
         let stream = self.stream.into_inner()?;
 
-        match stream {
-            Stream::Tcp(stream) => tls::wrap(stream, "", options),
-            _ => bail!("Only tcp streams can be upgraded"),
+        if let Stream::Tcp(stream) = stream {
+            let (stream, tls) = tls::wrap(stream, "", options)?;
+            let socket = Socket::new(stream);
+            Ok((socket, tls))
+        } else {
+            bail!("Only tcp streams can be upgraded")
         }
+    }
+
+    pub fn options(&self, options: &SocketOptions) -> Result<()> {
+        options.apply(self.stream.get_ref())
     }
 
     pub fn send(&mut self, data: &[u8]) -> Result<()> {
@@ -178,7 +243,12 @@ impl Socket {
 
     pub fn recv(&mut self) -> Result<Vec<u8>> {
         let mut buf = [0; 4096];
-        let n = self.stream.read(&mut buf)?;
+        let n = match self.stream.read(&mut buf) {
+            Ok(n) if n == 0 => bail!("Connection closed"),
+            Ok(n) => n,
+            Err(err) if err.kind() == io::ErrorKind::WouldBlock => 0,
+            Err(err) => return Err(err.into()),
+        };
         let data = buf[..n].to_vec();
         match str::from_utf8(&data) {
             Ok(data) => debug!("recv: {:?}", data),
