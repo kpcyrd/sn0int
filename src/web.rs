@@ -239,6 +239,10 @@ impl HttpRequest {
         }
         resp.insert("headers", headers);
 
+        if let Some(ipaddr) = res.ipaddr {
+            resp.insert_str("ipaddr", ipaddr.to_string());
+        }
+
         if self.into_blob {
             let blob = Blob::create(res.body);
             let id = state.register_blob(blob);

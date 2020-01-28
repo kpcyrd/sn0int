@@ -121,6 +121,8 @@ impl Database {
             .context("Failed to enable write ahead log")?;
         db.execute("PRAGMA foreign_keys = ON")
             .context("Failed to enforce foreign keys")?;
+        db.execute("PRAGMA synchronous = NORMAL")
+            .context("Failed to enforce foreign keys")?;
 
         let autonoscope = RuleSet::load(&db)?;
 
