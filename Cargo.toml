@@ -1,6 +1,6 @@
 [package]
 name = "sn0int"
-version = "0.15.0"
+version = "0.16.0"
 description = "Semi-automatic OSINT framework and package manager"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
