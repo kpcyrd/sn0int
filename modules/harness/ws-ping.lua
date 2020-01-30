@@ -16,7 +16,7 @@ function run()
         local sleep = last_ping + INTERVAL - now
 
         if sleep <= 0 then
-            ws_write_text(sock, sn0int_time() .. ' ping\n')
+            ws_send_text(sock, sn0int_time() .. ' ping\n')
             last_ping = now
             sleep = INTERVAL
         end
@@ -26,7 +26,7 @@ function run()
         })
         if last_err() then return end
 
-        local buf = ws_read_text(sock)
+        local buf = ws_recv_text(sock)
         if last_err() then return end
         info(buf)
     end

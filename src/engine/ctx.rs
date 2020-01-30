@@ -549,12 +549,12 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::warn_once(&mut lua, state.clone());
     runtime::ws_connect(&mut lua, state.clone());
     runtime::ws_options(&mut lua, state.clone());
-    runtime::ws_read_text(&mut lua, state.clone());
-    runtime::ws_read_binary(&mut lua, state.clone());
-    runtime::ws_read_json(&mut lua, state.clone());
-    runtime::ws_write_text(&mut lua, state.clone());
-    runtime::ws_write_binary(&mut lua, state.clone());
-    runtime::ws_write_json(&mut lua, state.clone());
+    runtime::ws_recv_text(&mut lua, state.clone());
+    runtime::ws_recv_binary(&mut lua, state.clone());
+    runtime::ws_recv_json(&mut lua, state.clone());
+    runtime::ws_send_text(&mut lua, state.clone());
+    runtime::ws_send_binary(&mut lua, state.clone());
+    runtime::ws_send_json(&mut lua, state.clone());
     runtime::x509_parse_pem(&mut lua, state.clone());
     runtime::xml_decode(&mut lua, state.clone());
     runtime::xml_named(&mut lua, state.clone());

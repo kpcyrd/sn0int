@@ -10,11 +10,11 @@ function run()
     if last_err() then return end
 
     info('sending')
-    ws_write_text(sock, 'ohai wurld')
+    ws_send_text(sock, 'ohai wurld')
     if last_err() then return end
 
     info('recieving')
-    local msg = ws_read_text(sock)
+    local msg = ws_recv_text(sock)
     if last_err() then return end
 
     if msg ~= 'ohai wurld' then

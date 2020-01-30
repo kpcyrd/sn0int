@@ -11,7 +11,7 @@ function run()
     if last_err() then return end
 
     info('recieving 1/2')
-    local msg = ws_read_text(sock)
+    local msg = ws_recv_text(sock)
     if last_err() then return end
 
     if msg ~= 'o' then
@@ -19,7 +19,7 @@ function run()
     end
 
     info('recieving 2/2')
-    local msg = ws_read_text(sock)
+    local msg = ws_recv_text(sock)
     if last_err() then return end
 
     if msg ~= 'a["{\\"server_id\\":\\"0\\"}"]' then

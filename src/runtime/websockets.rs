@@ -39,8 +39,8 @@ pub fn ws_options(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_read_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_read_text", hlua::function1(move |sock: String| -> Result<Option<String>> {
+pub fn ws_recv_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_recv_text", hlua::function1(move |sock: String| -> Result<Option<String>> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 
@@ -51,8 +51,8 @@ pub fn ws_read_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_read_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_read_binary", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
+pub fn ws_recv_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_recv_binary", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 
@@ -64,8 +64,8 @@ pub fn ws_read_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_read_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_read_json", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
+pub fn ws_recv_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_recv_json", hlua::function1(move |sock: String| -> Result<Option<AnyLuaValue>> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 
@@ -84,8 +84,8 @@ pub fn ws_read_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_write_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_write_text", hlua::function2(move |sock: String, text: String| -> Result<()> {
+pub fn ws_send_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_send_text", hlua::function2(move |sock: String, text: String| -> Result<()> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 
@@ -96,8 +96,8 @@ pub fn ws_write_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_write_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_write_binary", hlua::function2(move |sock: String, bytes: AnyLuaValue| -> Result<()> {
+pub fn ws_send_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_send_binary", hlua::function2(move |sock: String, bytes: AnyLuaValue| -> Result<()> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 
@@ -111,8 +111,8 @@ pub fn ws_write_binary(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn ws_write_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("ws_write_json", hlua::function2(move |sock: String, json: AnyLuaValue| -> Result<()> {
+pub fn ws_send_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("ws_send_json", hlua::function2(move |sock: String, json: AnyLuaValue| -> Result<()> {
         let sock = state.get_ws(&sock);
         let mut sock = sock.lock().unwrap();
 

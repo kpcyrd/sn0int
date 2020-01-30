@@ -1207,7 +1207,7 @@ Update options of an existing connection:
         read_timeout=3,
     })
 
-ws_read_text
+ws_recv_text
 ------------
 
 Wait until the server sends a text frame. A binary frame is considered an
@@ -1215,9 +1215,9 @@ error. Ping requests are answered automatically.
 
 .. code-block:: lua
 
-    msg = ws_read_text(sock)
+    msg = ws_recv_text(sock)
 
-ws_read_binary
+ws_recv_binary
 --------------
 
 Wait until the server sends a binary frame. A text frame is considered an
@@ -1225,45 +1225,45 @@ error. Ping requests are answered automatically.
 
 .. code-block:: lua
 
-    msg = ws_read_binary(sock)
+    msg = ws_recv_binary(sock)
 
-ws_read_json
+ws_recv_json
 ------------
 
-Identical to ws_write_text_ but automatically runs json_decode_ on the
+Identical to ws_send_text_ but automatically runs json_decode_ on the
 response.
 
 .. code-block:: lua
 
-    msg = ws_read_json(sock)
+    msg = ws_recv_json(sock)
 
-ws_write_text
--------------
+ws_send_text
+------------
 
 Send a text frame on the websocket connection.
 
 .. code-block:: lua
 
-    ws_write_text(sock, "ohai!")
+    ws_send_text(sock, "ohai!")
 
-ws_write_binary
----------------
+ws_send_binary
+--------------
 
 Send a binary frame on the websocket connection.
 
 .. code-block:: lua
 
-    ws_write_binary(sock, "\x00\x01\x02")
+    ws_send_binary(sock, "\x00\x01\x02")
 
-ws_write_json
--------------
+ws_send_json
+------------
 
 Encode the object as json string and send it as a text frame on the websocket
 connection.
 
 .. code-block:: lua
 
-    ws_write_text(sock, {
+    ws_send_text(sock, {
         foo="ohai!",
         x={
             y={1,3,3,7},
