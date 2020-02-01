@@ -1,7 +1,8 @@
 use crate::errors::*;
 
 use crate::blobs::BlobStorage;
-use crate::cmd::Cmd;
+use crate::cmd::{Cmd, LiteCmd};
+use crate::config::Config;
 use crate::db::Database;
 use crate::shell::Shell;
 use crate::term;
@@ -66,29 +67,42 @@ fn list() -> Result<()> {
     Ok(())
 }
 
-impl Cmd for Args {
-    fn run(self, rl: &mut Shell) -> Result<()> {
-        if self.delete {
-            if let Some(workspace) = self.workspace {
+fn run(args: Args, rl: Option<&mut Shell>) -> Result<()> {
+    if args.delete {
+        if let Some(workspace) = args.workspace {
+            if let Some(rl) = rl {
                 if *rl.db().workspace() == workspace {
                     bail!("Can't delete current workspace")
                 }
-
-                delete(workspace, self.force)
-            } else {
-                bail!("--delete requires workspace")
             }
-        } else if self.usage {
-            usage(self.workspace)
-        } else if let Some(workspace) = self.workspace {
+
+            delete(workspace, args.force)
+        } else {
+            bail!("--delete requires workspace")
+        }
+    } else if args.usage {
+        usage(args.workspace)
+    } else if let Some(workspace) = args.workspace {
+        if let Some(rl) = rl {
             change(rl, workspace)
         } else {
-            list()
+            Ok(())
         }
+    } else {
+        list()
     }
 }
 
-#[inline]
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    Args::run_str(rl, args)
+impl Cmd for Args {
+    #[inline]
+    fn run(self, rl: &mut Shell) -> Result<()> {
+        run(self, Some(rl))
+    }
+}
+
+impl LiteCmd for Args {
+    #[inline]
+    fn run(self, _config: &Config) -> Result<()> {
+        run(self, None)
+    }
 }

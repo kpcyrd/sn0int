@@ -39,6 +39,7 @@ pub enum Command {
     Keyring,
     Mod,
     Noscope,
+    Pkg,
     Run,
     Scope,
     Set,
@@ -64,6 +65,7 @@ impl Command {
             Command::Keyring => "keyring",
             Command::Mod => "mod",
             Command::Noscope => "noscope",
+            Command::Pkg => "pkg",
             Command::Run => "run",
             Command::Scope => "scope",
             Command::Set => "set",
@@ -89,6 +91,7 @@ impl Command {
                 Command::Keyring.as_str(),
                 Command::Mod.as_str(),
                 Command::Noscope.as_str(),
+                Command::Pkg.as_str(),
                 Command::Run.as_str(),
                 Command::Scope.as_str(),
                 Command::Set.as_str(),
@@ -119,6 +122,7 @@ impl FromStr for Command {
             "keyring" => Ok(Command::Keyring),
             "mod" => Ok(Command::Mod),
             "noscope" => Ok(Command::Noscope),
+            "pkg"  => Ok(Command::Pkg),
             "run"  => Ok(Command::Run),
             "scope"  => Ok(Command::Scope),
             "set"  => Ok(Command::Set),
@@ -318,6 +322,22 @@ impl<'a> Shell<'a> {
         }
     }
 
+    pub fn reload_modules(&mut self) -> Result<()> {
+        let current = self.take_module()
+                        .map(|m| m.canonical());
+
+        self.engine_mut().reload_modules()?;
+        self.reload_module_cache();
+
+        if let Some(module) = current {
+            if let Ok(module) = self.engine().get(&module).map(|x| x.to_owned()) {
+                self.set_module(module);
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn reload_module_cache(&mut self) {
         if let Some(helper) = self.rl.helper_mut() {
             helper.modules.clear();
@@ -433,8 +453,9 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Delete, args)) => delete_cmd::run(rl, &args)?,
         Some((Command::Help, args)) => help_cmd::run(rl, &args)?,
         Some((Command::Keyring, args)) => keyring_cmd::run(rl, &args)?,
-        Some((Command::Mod, args)) => mod_cmd::run(rl, &args)?,
+        Some((Command::Mod, args)) => cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?,
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
+        Some((Command::Pkg, args)) => cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?,
         Some((Command::Run, args)) => cmd::<run_cmd::Args>(rl, &args)?,
         Some((Command::Scope, args)) => scope_cmd::run(rl, &args)?,
         Some((Command::Set, args)) => set_cmd::run(rl, &args)?,
@@ -442,7 +463,7 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
-        Some((Command::Workspace, args)) => workspace_cmd::run(rl, &args)?,
+        Some((Command::Workspace, args)) => cmd::<workspace_cmd::Args>(rl, &args)?,
         Some((Command::Interrupt, _)) => return Ok(true),
         None => (),
     }

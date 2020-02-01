@@ -2,7 +2,6 @@ use crate::errors::*;
 
 use crate::args::Install;
 use crate::api::Client;
-use crate::cmd::mod_cmd;
 use crate::registry::{InstallTask, Updater};
 use crate::shell::Shell;
 use crate::update::AutoUpdater;
@@ -47,7 +46,7 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     autoupdate.save()?;
 
     // trigger reload
-    mod_cmd::run(rl, &[String::from("mod"), String::from("reload")])?;
+    rl.reload_modules()?;
 
     Ok(())
 }

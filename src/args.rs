@@ -48,6 +48,9 @@ pub enum SubCommand {
     /// Search in the registry
     #[structopt(name="search")]
     Search(Search),
+    /// The sn0int package manager
+    #[structopt(name="pkg")]
+    Pkg(cmd::pkg_cmd::Args),
     /// Insert into the database
     #[structopt(name="add")]
     Add(cmd::add_cmd::Args),
