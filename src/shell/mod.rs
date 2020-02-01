@@ -477,6 +477,8 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
         None => Workspace::from_str("default").unwrap(),
     };
 
+    workspace.migrate()?;
+
     let blobs = BlobStorage::workspace(&workspace)?;
     let db = if verbose_init {
         Database::establish(workspace)?

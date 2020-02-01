@@ -26,7 +26,7 @@ pub struct AutoUpdater {
 impl AutoUpdater {
     #[inline]
     fn path() -> Result<PathBuf> {
-        let path = paths::data_dir()?;
+        let path = paths::sn0int_dir()?;
         Ok(path.join("autoupdate.json"))
     }
 

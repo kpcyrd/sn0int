@@ -53,6 +53,8 @@ fn usage(workspace: Option<Workspace>) -> Result<()> {
 }
 
 fn change(rl: &mut Shell, workspace: Workspace) -> Result<()> {
+    workspace.migrate()?;
+
     let blobs = BlobStorage::workspace(&workspace)?;
     let db = Database::establish(workspace)?;
     rl.set_blobstorage(blobs);
