@@ -1,7 +1,7 @@
 use env_logger::{self, Env};
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
-use sn0int::cmd;
+use sn0int::cmd::{self, LiteCmd};
 use sn0int::config::Config;
 use sn0int::db;
 use sn0int::errors::*;
@@ -105,6 +105,7 @@ fn run() -> Result<()> {
             let engine = Engine::new(false, &config)?;
             registry::run_search(&engine, &search, &config)
         },
+        Some(SubCommand::Pkg(pkg)) => pkg.run(&config),
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
         Some(SubCommand::Delete(delete)) => run_cmd(&args, delete, &config),

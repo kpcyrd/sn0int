@@ -1,5 +1,6 @@
 use crate::errors::*;
 use crate::shell::Shell;
+use crate::config::Config;
 
 pub trait Cmd: structopt::StructOpt + Sized {
     fn run(self, rl: &mut Shell) -> Result<()>;
@@ -9,6 +10,10 @@ pub trait Cmd: structopt::StructOpt + Sized {
         let args = Self::from_iter_safe(args)?;
         args.run(rl)
     }
+}
+
+pub trait LiteCmd: structopt::StructOpt + Sized {
+    fn run(self, config: &Config) -> Result<()>;
 }
 
 pub mod activity_cmd;
