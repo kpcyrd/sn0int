@@ -463,7 +463,7 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Target, args)) => target_cmd::run(rl, &args)?,
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
-        Some((Command::Workspace, args)) => workspace_cmd::run(rl, &args)?,
+        Some((Command::Workspace, args)) => cmd::<workspace_cmd::Args>(rl, &args)?,
         Some((Command::Interrupt, _)) => return Ok(true),
         None => (),
     }

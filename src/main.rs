@@ -112,7 +112,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Activity(activity)) => run_cmd(&args, activity, &config),
         Some(SubCommand::Scope(scope)) => run_cmd(&args, scope, &config),
         Some(SubCommand::Noscope(noscope)) => run_cmd(&args, noscope, &config),
-        Some(SubCommand::Workspace(workspace)) => run_cmd(&args, workspace, &config),
+        Some(SubCommand::Workspace(workspace)) => workspace.run(&config),
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
         Some(SubCommand::Export(export)) => run_cmd(&args, export, &config),
         Some(SubCommand::Repl) => repl::run(&config),
