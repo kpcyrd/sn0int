@@ -21,6 +21,13 @@ pub struct Args {
 }
 
 #[derive(Debug, StructOpt)]
+#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+pub struct ArgsInteractive {
+    #[structopt(subcommand)]
+    pub subcommand: SubCommandInteractive,
+}
+
+#[derive(Debug, StructOpt)]
 pub enum SubCommand {
     /// List installed modules
     #[structopt(name="list")]
@@ -31,15 +38,21 @@ pub enum SubCommand {
     /// Search modules in registry
     #[structopt(name="search")]
     Search(args::Search),
-    /// Reload modules
-    #[structopt(name="reload")]
-    Reload(Reload),
     /// Update modules
     #[structopt(name="update")]
     Update(Update),
     /// Uninstall a module
     #[structopt(name="uninstall")]
     Uninstall(Uninstall),
+}
+
+#[derive(Debug, StructOpt)]
+pub enum SubCommandInteractive {
+    #[structopt(flatten)]
+    Base(SubCommand),
+    /// Reload modules
+    #[structopt(name="reload")]
+    Reload(Reload),
 }
 
 #[derive(Debug, StructOpt)]
@@ -65,11 +78,10 @@ pub struct Uninstall {
     module: ModuleID,
 }
 
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+fn run_subcommand(rl: &mut Shell, subcommand: SubCommand) -> Result<()> {
     let config = rl.config().clone();
 
-    match args.subcommand {
+    match subcommand {
         SubCommand::List(list) => {
             let autoupdate = AutoUpdater::load()?;
 
@@ -97,22 +109,9 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
         SubCommand::Install(install) => {
             registry::run_install(install, &config)?;
             // trigger reload
-            run(rl, &[String::from("mod"), String::from("reload")])?;
+            rl.reload_modules()?;
         },
         SubCommand::Search(search) => registry::run_search(rl.engine(), &search, &config)?,
-        SubCommand::Reload(_) => {
-            let current = rl.take_module()
-                            .map(|m| m.canonical());
-
-            rl.engine_mut().reload_modules()?;
-            rl.reload_module_cache();
-
-            if let Some(module) = current {
-                if let Ok(module) = rl.engine().get(&module).map(|x| x.to_owned()) {
-                    rl.set_module(module);
-                }
-            }
-        },
         SubCommand::Update(_) => {
             let mut autoupdate = AutoUpdater::load()?;
             let updater = Arc::new(Updater::new(&config)?);
@@ -138,15 +137,24 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
             autoupdate.save()?;
 
             // trigger reload
-            run(rl, &[String::from("mod"), String::from("reload")])?;
+            rl.reload_modules()?;
         },
         SubCommand::Uninstall(uninstall) => {
             let updater = Updater::new(&config)?;
             updater.uninstall(&uninstall.module)?;
             // trigger reload
-            run(rl, &[String::from("mod"), String::from("reload")])?;
+            rl.reload_modules()?;
         },
     }
 
     Ok(())
+}
+
+pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
+    let args = ArgsInteractive::from_iter_safe(args)?;
+
+    match args.subcommand {
+        SubCommandInteractive::Base(subcommand) => run_subcommand(rl, subcommand),
+        SubCommandInteractive::Reload(_) => rl.reload_modules(),
+    }
 }
