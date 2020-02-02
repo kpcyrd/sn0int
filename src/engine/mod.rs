@@ -43,29 +43,29 @@ pub struct Environment {
 }
 
 #[derive(Debug)]
-pub struct Engine<'a> {
+pub struct Library<'a> {
     path: PathBuf,
     modules: HashMap<String, Vec<Module>>,
     config: &'a Config
 }
 
-impl<'a> Engine<'a> {
-    pub fn new(verbose_init: bool, config: &'a Config) -> Result<Engine> {
+impl<'a> Library<'a> {
+    pub fn new(verbose_init: bool, config: &'a Config) -> Result<Library> {
         let path = paths::module_dir()?;
 
-        let mut engine = Engine {
+        let mut library = Library {
             path,
             modules: HashMap::new(),
             config,
         };
 
         if verbose_init {
-            engine.reload_modules()?;
+            library.reload_modules()?;
         } else {
-            engine.reload_modules_quiet()?;
+            library.reload_modules_quiet()?;
         }
 
-        Ok(engine)
+        Ok(library)
     }
 
     pub fn reload_modules(&mut self) -> Result<usize> {

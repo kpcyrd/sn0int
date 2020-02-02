@@ -9,7 +9,7 @@ use crate::keyring::KeyRing;
 use crate::worker::VoidSender;
 use colored::Colorize;
 use crate::db::{self, Database};
-use crate::engine::{Engine, Module};
+use crate::engine::{Library, Module};
 use crate::update::AutoUpdater;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -143,7 +143,7 @@ pub struct Shell<'a> {
     blobs: BlobStorage,
     psl: Lazy<PslReader, Arc<Psl>>,
     config: &'a Config,
-    engine: Engine<'a>,
+    library: Library<'a>,
     keyring: KeyRing,
     // autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
@@ -151,7 +151,7 @@ pub struct Shell<'a> {
 }
 
 impl<'a> Shell<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, engine: Engine<'a>, keyring: KeyRing) -> Shell<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, library: Library<'a>, keyring: KeyRing) -> Shell<'a> {
         let h = CmdCompleter::default();
         let rl = Readline::with(h);
 
@@ -164,7 +164,7 @@ impl<'a> Shell<'a> {
             blobs,
             psl: Lazy::from(psl),
             config,
-            engine,
+            library,
             keyring,
             options: None,
             signal_register: Arc::new(SignalRegister::new()),
@@ -254,13 +254,13 @@ impl<'a> Shell<'a> {
     }
 
     #[inline(always)]
-    pub fn engine(&self) -> &Engine {
-        &self.engine
+    pub fn library(&self) -> &Library {
+        &self.library
     }
 
     #[inline(always)]
-    pub fn engine_mut(&mut self) -> &mut Engine<'a> {
-        &mut self.engine
+    pub fn library_mut(&mut self) -> &mut Library<'a> {
+        &mut self.library
     }
 
     #[inline(always)]
@@ -326,11 +326,12 @@ impl<'a> Shell<'a> {
         let current = self.take_module()
                         .map(|m| m.canonical());
 
-        self.engine_mut().reload_modules()?;
+        self.library_mut().reload_modules()?;
         self.reload_module_cache();
 
         if let Some(module) = current {
-            if let Ok(module) = self.engine().get(&module).map(|x| x.to_owned()) {
+            if let Ok(module) = self.library().get(&module) {
+                let module = module.clone();
                 self.set_module(module);
             }
         }
@@ -341,7 +342,7 @@ impl<'a> Shell<'a> {
     pub fn reload_module_cache(&mut self) {
         if let Some(helper) = self.rl.helper_mut() {
             helper.modules.clear();
-            for module in self.engine.variants() {
+            for module in self.library.variants() {
                 helper.modules.push(module);
             }
         }
@@ -489,10 +490,10 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
 
     let psl = PslReader::open_or_download()
         .context("Failed to download public suffix list")?;
-    let engine = Engine::new(verbose_init, &config)?;
+    let library = Library::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
 
-    if verbose_init && engine.list().is_empty() {
+    if verbose_init && library.list().is_empty() {
         term::success("No modules found, run quickstart to install default modules");
     }
 
@@ -500,9 +501,9 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     if autoupdate.outdated() > 0 {
         term::warn(&format!("{} modules are outdated, run: mod update", autoupdate.outdated()));
     }
-    autoupdate.check_background(&config, engine.list());
+    autoupdate.check_background(&config, library.list());
 
-    let rl = Shell::new(&config, db, blobs, psl, engine, keyring);
+    let rl = Shell::new(&config, db, blobs, psl, library, keyring);
 
     Ok(rl)
 }
