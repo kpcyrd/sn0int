@@ -3,13 +3,14 @@ use crate::errors::*;
 use crate::blobs::BlobStorage;
 use crate::paths;
 use regex::Regex;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Workspace {
     s: String,
 }
@@ -17,7 +18,8 @@ pub struct Workspace {
 impl Workspace {
     #[inline]
     pub fn db_path(&self) -> Result<PathBuf> {
-        Ok(paths::data_dir()?.join(self.s.to_string() + ".db"))
+        Ok(paths::workspace_dir(&self)?
+            .join("db.sqlite"))
     }
 
     #[inline]
@@ -38,9 +40,40 @@ impl Workspace {
     }
 
     pub fn delete(&self) -> Result<()> {
-        let blobs = BlobStorage::workspace(self)?;
-        fs::remove_dir_all(blobs.path())?;
-        fs::remove_file(self.db_path()?)?;
+        self.migrate()?;
+
+        let path = paths::workspace_dir(&self)?;
+        fs::remove_dir_all(path)?;
+
+        Ok(())
+    }
+
+    pub fn migrate(&self) -> Result<()> {
+        // relocate old paths
+        let old_db = paths::sn0int_dir()?
+            .join(self.to_string() + ".db");
+        if old_db.exists() {
+            let new_db = paths::workspace_dir(self)?
+                .join("db.sqlite");
+
+            fs::rename(old_db, new_db)
+                .context("Failed to migrate old db to new location")?;
+        }
+
+        let old_blobs_parent = paths::sn0int_dir()?
+            .join("blobs");
+        let old_blobs = old_blobs_parent
+            .join(self.as_str());
+        if old_blobs.exists() {
+            let new_blobs = paths::workspace_dir(self)?
+                .join("blobs");
+            fs::rename(old_blobs, new_blobs)
+                .context("Failed to migrate old blob folder to new location")?;
+        }
+
+        // cleanup
+        fs::remove_dir(old_blobs_parent).ok();
+
         Ok(())
     }
 }
@@ -76,9 +109,26 @@ impl Deref for Workspace {
 }
 
 pub fn list() -> Result<Vec<Workspace>> {
-    let mut workspaces = Vec::new();
+    let mut workspaces = HashSet::new();
 
     for entry in fs::read_dir(paths::data_dir()?)? {
+        let entry = entry?;
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let name = path.file_name()
+            .ok_or_else(|| format_err!("read_dir returned file with no name"))?;
+        let name = name.to_str()
+            .ok_or_else(|| format_err!("Workspace has invalid name: {:?}", name))?;
+
+        if let Ok(workspace) = Workspace::from_str(name) {
+            workspaces.insert(workspace);
+        }
+    }
+
+    for entry in fs::read_dir(paths::sn0int_dir()?)? {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
@@ -97,10 +147,12 @@ pub fn list() -> Result<Vec<Workspace>> {
             .ok_or_else(|| format_err!("Workspace has invalid name: {:?}", name))?;
 
         if let Ok(workspace) = Workspace::from_str(name) {
-            workspaces.push(workspace);
+            workspaces.insert(workspace);
         }
     }
 
+    let mut workspaces = workspaces.into_iter().collect::<Vec<_>>();
+    workspaces.sort();
     Ok(workspaces)
 }
 

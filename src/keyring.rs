@@ -74,7 +74,7 @@ pub struct KeyRing {
 
 impl KeyRing {
     pub fn path() -> Result<PathBuf> {
-        let path = paths::data_dir()?;
+        let path = paths::sn0int_dir()?;
         let path = path.join("keyring.json");
         Ok(path)
     }
