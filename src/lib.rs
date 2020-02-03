@@ -22,6 +22,7 @@ pub mod errors;
 pub mod engine;
 pub mod filters;
 pub mod fmt;
+pub mod geo;
 pub mod geoip;
 pub mod gfx;
 pub mod html;
