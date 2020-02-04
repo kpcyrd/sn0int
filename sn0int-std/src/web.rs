@@ -1,17 +1,17 @@
 pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 
-use crate::blobs::Blob;
+use crate::blobs::{Blob, BlobState};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 use std::ops::Deref;
 use crate::errors::*;
 use crate::hlua::AnyLuaValue;
-use crate::engine::ctx::State;
 use serde_json;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use std::fmt;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use serde::Serialize;
 use crate::engine::structs::LuaMap;
 use crate::json::LuaJsonValue;
@@ -35,6 +35,12 @@ pub fn url_set_qs<S: Serialize + fmt::Debug>(url: Uri, query: &S) -> Result<Uri>
 
     Uri::from_parts(parts)
         .map_err(Error::from)
+}
+
+pub trait WebState {
+    fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>>;
+
+    fn register_in_jar(&self, session: &str, key: String, value: String);
 }
 
 #[derive(Debug)]
@@ -134,7 +140,7 @@ impl HttpRequest {
         request
     }
 
-    pub fn send(&self, state: &dyn State) -> Result<Response> {
+    pub fn send(&self, state: &dyn WebState) -> Result<Response> {
         let mut url = self.url.parse::<Uri>()?;
 
         // set query string
@@ -228,7 +234,9 @@ impl HttpRequest {
         Ok(res)
     }
 
-    pub fn response_to_lua(&self, state: &dyn State, res: Response) -> Result<LuaMap> {
+    pub fn response_to_lua<S>(&self, state: &S, res: Response) -> Result<LuaMap>
+        where S: WebState + BlobState
+    {
         // map result to LuaMap
         let mut resp = LuaMap::new();
         resp.insert_num("status", f64::from(res.status));
@@ -254,7 +262,7 @@ impl HttpRequest {
         Ok(resp)
     }
 
-    fn register_cookies_on_state(session: &str, state: &dyn State, cookie: &str) {
+    fn register_cookies_on_state(session: &str, state: &dyn WebState, cookie: &str) {
         let mut key = String::new();
         let mut value = String::new();
         let mut in_key = true;

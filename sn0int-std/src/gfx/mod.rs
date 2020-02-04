@@ -114,7 +114,7 @@ mod tests {
 
     #[test]
     fn verify_gfx_load_ico() {
-        let ico = fs::read("./sn0int-registry/assets/favicon.ico").expect("fs::read");
+        let ico = fs::read("../sn0int-registry/assets/favicon.ico").expect("fs::read");
         let img = load(&ico).expect("gfx::load");
 
         assert_eq!("image/vnd.microsoft.icon", img.mime());

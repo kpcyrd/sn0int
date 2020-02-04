@@ -3,6 +3,8 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::hlua::{self, AnyLuaValue, AnyHashableLuaValue};
 use crate::json;
+use sn0int_std::blobs::BlobState;
+use sn0int_std::web::WebState;
 use std::sync::Arc;
 use std::collections::HashMap;
 use crate::web::{RequestOptions, HttpRequest};
@@ -25,7 +27,9 @@ pub fn http_request(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn http_send(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+pub fn http_send<S>(lua: &mut hlua::Lua, state: Arc<S>)
+    where S: State + WebState + BlobState + 'static
+{
     lua.set("http_send", hlua::function1(move |request: AnyLuaValue| -> Result<HashMap<AnyHashableLuaValue, AnyLuaValue>> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")
@@ -40,7 +44,9 @@ pub fn http_send(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+pub fn http_fetch<S>(lua: &mut hlua::Lua, state: Arc<S>)
+    where S: State + WebState + BlobState + 'static
+{
     lua.set("http_fetch", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")
@@ -59,7 +65,9 @@ pub fn http_fetch(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn http_fetch_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+pub fn http_fetch_json<S>(lua: &mut hlua::Lua, state: Arc<S>)
+    where S: State + WebState + 'static
+{
     lua.set("http_fetch_json", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
         let req = HttpRequest::try_from(request)
             .context("invalid http request object")

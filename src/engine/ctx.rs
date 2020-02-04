@@ -1,6 +1,5 @@
 use crate::errors::*;
 
-use crate::blobs::Blob;
 use crate::db::Family;
 use crate::engine::{Environment, Reporter};
 use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
@@ -17,6 +16,8 @@ use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent, RatelimitEvent};
 use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
 use serde_json;
+use sn0int_std::blobs::{Blob, BlobState};
+use sn0int_std::web::WebState;
 use std::collections::HashMap;
 use std::result;
 use std::net::SocketAddr;
@@ -173,15 +174,9 @@ pub trait State {
 
     fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>>;
 
-    fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>>;
-
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
-
-    fn register_in_jar(&self, session: &str, key: String, value: String);
-
-    fn register_blob(&self, blob: Blob) -> String;
 
     fn get_blob(&self, id: &str) -> Result<Arc<Blob>>;
 
@@ -341,6 +336,29 @@ impl State for LuaState {
         sock.clone()
     }
 
+    fn http_mksession(&self) -> String {
+        let mut mtx = self.http_sessions.lock().unwrap();
+        let (id, session) = HttpSession::new();
+        mtx.insert(id.clone(), session);
+        id
+    }
+
+    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
+        let mtx = self.http_sessions.lock().unwrap();
+        let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
+
+        HttpRequest::new(&session, method, url, options)
+    }
+
+    fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {
+        let mtx = self.blobs.lock().unwrap();
+        let blob = mtx.get(id)
+            .ok_or_else(|| format_err!("Invalid blob reference"))?;
+        Ok(blob.clone())
+    }
+}
+
+impl WebState for LuaState {
     fn http(&self, proxy: &Option<SocketAddr>) -> Result<Arc<chrootable_https::Client<Resolver>>> {
         let proxy = self.resolve_proxy_options(proxy)?;
 
@@ -367,27 +385,15 @@ impl State for LuaState {
         }
     }
 
-    fn http_mksession(&self) -> String {
-        let mut mtx = self.http_sessions.lock().unwrap();
-        let (id, session) = HttpSession::new();
-        mtx.insert(id.clone(), session);
-        id
-    }
-
-    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
-        let mtx = self.http_sessions.lock().unwrap();
-        let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
-
-        HttpRequest::new(&session, method, url, options)
-    }
-
     fn register_in_jar(&self, session: &str, key: String, value: String) {
         let mut mtx = self.http_sessions.lock().unwrap();
         if let Some(session) = mtx.get_mut(session) {
             session.cookies.register_in_jar(key, value);
         }
     }
+}
 
+impl BlobState for LuaState {
     fn register_blob(&self, blob: Blob) -> String {
         let id = blob.id.clone();
 
@@ -396,13 +402,6 @@ impl State for LuaState {
         debug!("Registered blob: {:?}", id);
 
         id
-    }
-
-    fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {
-        let mtx = self.blobs.lock().unwrap();
-        let blob = mtx.get(id)
-            .ok_or_else(|| format_err!("Invalid blob reference"))?;
-        Ok(blob.clone())
     }
 }
 
@@ -619,6 +618,7 @@ impl Script {
     pub fn test(&self) -> Result<()> {
         use crate::engine::DummyReporter;
         use crate::geoip::Maxmind;
+        use crate::paths;
         let keyring = Vec::new();
         let dns_config = Resolver::from_system()?;
         let proxy = None;
@@ -630,8 +630,9 @@ com
 a.prod.fastly.net
 // ===END PRIVATE DOMAINS===
 "#.into());
-        let geoip = GeoIP::try_open_reader()?;
-        let asn = AsnDB::try_open_reader()?;
+        let cache_dir = paths::cache_dir()?;
+        let geoip = GeoIP::try_open_reader(&cache_dir)?;
+        let asn = AsnDB::try_open_reader(&cache_dir)?;
 
         let env = Environment {
             verbose: 0,

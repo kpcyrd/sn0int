@@ -1,7 +1,10 @@
 use chrono::prelude::*;
-use crate::worker::RatelimitSender;
 use std::collections::HashMap;
+use std::result;
+use std::sync::mpsc;
 use std::time::Duration;
+
+pub type RatelimitSender = mpsc::Sender<result::Result<RatelimitResponse, String>>;
 
 pub struct Ratelimiter {
     buckets: HashMap<String, Bucket>,

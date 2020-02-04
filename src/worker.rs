@@ -11,6 +11,7 @@ use crate::models::*;
 use serde_json;
 use crate::ratelimits::{Ratelimiter, RatelimitResponse};
 use crate::shell::Shell;
+use sn0int_std::ratelimits::RatelimitSender;
 use std::collections::HashMap;
 use std::result;
 use std::sync::{mpsc, Arc, Mutex};
@@ -24,7 +25,6 @@ use threadpool::ThreadPool;
 
 type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
 pub type VoidSender = mpsc::Sender<result::Result<(), String>>;
-pub type RatelimitSender = mpsc::Sender<result::Result<RatelimitResponse, String>>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {

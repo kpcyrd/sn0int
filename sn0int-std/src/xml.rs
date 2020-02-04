@@ -124,6 +124,7 @@ fn decode_raw(x: &str) -> Result<XmlDocument> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maplit::hashmap;
 
     #[test]
     fn verify_xml_decode_empty() {

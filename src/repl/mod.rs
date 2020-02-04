@@ -4,6 +4,7 @@ use crate::engine::{ctx, Environment, DummyReporter};
 use crate::engine::ctx::{State, LuaState};
 use crate::geoip::{Maxmind, AsnDB, GeoIP};
 use crate::hlua::{Lua, AnyLuaValue};
+use crate::paths;
 use crate::psl::PslReader;
 use crate::shell::readline::Readline;
 use crate::runtime::format_lua;
@@ -82,9 +83,11 @@ pub fn run(config: &Config) -> Result<()> {
     let keyring = Vec::new();
     let dns_config = Resolver::from_system()?;
     let proxy = config.network.proxy;
-    let psl = PslReader::open()?;
-    let geoip = GeoIP::try_open_reader()?;
-    let asn = AsnDB::try_open_reader()?;
+
+    let cache_dir = paths::cache_dir()?;
+    let psl = PslReader::open(&cache_dir)?;
+    let geoip = GeoIP::try_open_reader(&cache_dir)?;
+    let asn = AsnDB::try_open_reader(&cache_dir)?;
 
     let env = Environment {
         verbose: 0, // this doesn't do anything since we use a dummy reporter

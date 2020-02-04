@@ -3,44 +3,13 @@ use crate::paths;
 use crate::worker::{EventWithCallback, Event2};
 use crate::workspaces::Workspace;
 
-use blake2::VarBlake2b;
-use digest::{Input, VariableOutput};
 use bytes::Bytes;
-use serde::ser::{Serialize, Serializer};
-use serde::de::{self, Deserialize, Deserializer};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::result;
 use std::sync::mpsc;
 
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct Blob {
-    pub id: String,
-    pub bytes: Bytes,
-}
-
-impl Blob {
-    pub fn create(bytes: Bytes) -> Blob {
-        let id = Self::hash(&bytes);
-        Blob {
-            id,
-            bytes,
-        }
-    }
-
-    pub fn hash(bytes: &[u8]) -> String {
-        let mut h = VarBlake2b::new(32).unwrap();
-        h.input(bytes);
-        Self::encode_hash(&h.vec_result())
-    }
-
-    #[inline]
-    fn encode_hash(bytes: &[u8]) -> String {
-        let x = bs58::encode(bytes).into_string();
-        format!("{:0<44}", x)
-    }
-}
+pub use sn0int_std::blobs::Blob;
 
 impl EventWithCallback for Blob {
     type Payload = ();
@@ -48,30 +17,6 @@ impl EventWithCallback for Blob {
     #[inline(always)]
     fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
         Event2::Blob((self, tx))
-    }
-}
-
-impl Serialize for Blob {
-    #[inline]
-    fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let s = base64::encode(&self.bytes);
-        serializer.serialize_str(&s)
-    }
-}
-
-impl<'de> Deserialize<'de> for Blob {
-    #[inline]
-    fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let bytes = base64::decode(&s)
-            .map_err(de::Error::custom)?;
-        Ok(Blob::create(Bytes::from(bytes)))
     }
 }
 
@@ -155,21 +100,11 @@ impl BlobStorage {
 mod tests {
     use super::*;
     use tempfile;
-    use serde_json;
 
     #[inline]
     fn blob() -> (Bytes, Blob) {
         let bytes = Bytes::from(&b"asdf"[..]);
         (bytes.clone(), Blob::create(bytes))
-    }
-
-    #[test]
-    fn verify_create_blob() {
-        let (bytes, blob) = blob();
-        assert_eq!(blob, Blob {
-            id: String::from("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz"),
-            bytes,
-        });
     }
 
     #[test]
@@ -203,39 +138,5 @@ mod tests {
         let result = s.load("../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../../etc/passwd");
 
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_serialize() {
-        let (_, blob) = blob();
-        let json = serde_json::to_string(&blob).unwrap();
-        assert_eq!(&json, "\"YXNkZg==\"");
-    }
-
-    #[test]
-    fn test_deserialize() {
-        let (_, blob1) = blob();
-        let blob2: Blob = serde_json::from_str("\"YXNkZg==\"").unwrap();
-        assert_eq!(blob1, blob2);
-    }
-
-    #[test]
-    fn test_hash_encoding() {
-        let x = bs58::decode("22es54J4FbFtpb5D1MtBazVuum4TcqCQ7M9JkmYdmJ8W")
-            .into_vec()
-            .unwrap();
-        let x = Blob::encode_hash(&x);
-        assert_eq!(x.len(), 44);
-        assert_eq!(x, "22es54J4FbFtpb5D1MtBazVuum4TcqCQ7M9JkmYdmJ8W");
-    }
-
-    #[test]
-    fn test_hash_encoding_padding() {
-        let x = bs58::decode("r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei")
-            .into_vec()
-            .unwrap();
-        let x = Blob::encode_hash(&x);
-        assert_eq!(x.len(), 44);
-        assert_eq!(x, "r6edvU326yvpXLubYacXXSxf2HzqCgzqHUQvpWyNwei0");
     }
 }

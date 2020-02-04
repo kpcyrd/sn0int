@@ -102,6 +102,7 @@ pub fn html_form(html: &str) -> Result<HashMap<String, String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use maplit::hashmap;
 
     #[test]
     fn test_html_select() {

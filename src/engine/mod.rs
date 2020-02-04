@@ -25,7 +25,7 @@ use crate::worker::{self, Event};
 
 pub mod ctx;
 pub mod isolation;
-pub mod structs;
+pub use sn0int_std::engine::structs;
 
 
 /// Data that is passed to every script

@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::lazy::LazyInit;
-use crate::paths;
+// use crate::paths;
 use maxminddb::{self, geoip2};
 use std::fmt;
 use std::fs::{self, File};
@@ -19,7 +19,7 @@ pub trait Maxmind: Sized {
 
     fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self;
 
-    fn cache_path() -> Result<PathBuf> {
+    fn cache_path(cache_dir: &Path) -> Result<PathBuf> {
         // use system path if exists
         for path in &[
             // Archlinux
@@ -36,7 +36,7 @@ pub trait Maxmind: Sized {
         }
 
         // use cache path
-        let path = paths::cache_dir()?
+        let path = cache_dir
             .join(Self::filename());
         Ok(path)
     }
@@ -52,8 +52,8 @@ pub trait Maxmind: Sized {
         Self::from_buf(buf)
     }
 
-    fn try_open_reader() -> Result<Option<MaxmindReader>> {
-        let path = Self::cache_path()?;
+    fn try_open_reader(cache_dir: &Path) -> Result<Option<MaxmindReader>> {
+        let path = Self::cache_path(cache_dir)?;
 
         if path.exists() {
             let db = MaxmindReader::open_path(path)?;
