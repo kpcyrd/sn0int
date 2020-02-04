@@ -190,6 +190,21 @@ impl Completer for CmdCompleter {
                         ], &cmd[1]))
                     }
                 },
+                Command::Pkg => {
+                    // we can only complete the 2nd argument
+                    if args != 2 {
+                        Ok((0, vec![]))
+                    } else {
+                        Ok(filter_options("pkg", &[
+                            "list",
+                            "install",
+                            "search",
+                            "reload",
+                            "update",
+                            "uninstall",
+                        ], &cmd[1]))
+                    }
+                },
                 Command::Noscope => self.filter("noscope", &cmd),
                 Command::Use => {
                     // we can only complete the 2nd argument
