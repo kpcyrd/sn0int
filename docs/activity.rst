@@ -68,7 +68,7 @@ Logging an event that has a location attached could look like this:
         topic='harness/activity-ping:dummy',
         time=sn0int_time(),
         latitude=40.726662,
-        longitude=-74.036677
+        longitude=-74.036677,
         radius=50,
         content={
             a='b',

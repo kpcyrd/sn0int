@@ -3,7 +3,7 @@ use crate::args::{Args, Publish, Install, Search};
 use crate::api::Client;
 use crate::auth;
 use crate::config::Config;
-use crate::engine::{Engine, Module};
+use crate::engine::{Library, Module};
 use colored::Colorize;
 use separator::Separatable;
 use sn0int_common::ModuleID;
@@ -242,7 +242,7 @@ impl Task for UpdateTask {
     }
 }
 
-pub fn run_search(engine: &Engine, search: &Search, config: &Config) -> Result<()> {
+pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result<()> {
     let client = Client::new(&config)?;
 
     let label = format!("Searching {:?}", search.query);
@@ -252,7 +252,7 @@ pub fn run_search(engine: &Engine, search: &Search, config: &Config) -> Result<(
 
     for module in &modules {
         let canonical = module.canonical();
-        let installed = engine.get_opt(&canonical)?;
+        let installed = library.get_opt(&canonical)?;
 
         if search.new && installed.is_some() {
             continue;

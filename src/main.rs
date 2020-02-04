@@ -5,7 +5,7 @@ use sn0int::cmd::{self, LiteCmd};
 use sn0int::config::Config;
 use sn0int::db;
 use sn0int::errors::*;
-use sn0int::engine::{self, Engine, Module};
+use sn0int::engine::{self, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
 use sn0int::psl::PslReader;
@@ -32,7 +32,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         Module::load(&path.to_path_buf(), "anonymous", &filename, true)
             .context(format!("Failed to parse {:?}", path))?
     } else {
-        rl.engine().get(&args.module)?
+        rl.library().get(&args.module)?
             .clone()
     };
 
@@ -100,11 +100,14 @@ fn run() -> Result<()> {
         Some(SubCommand::Login(_)) => auth::run_login(&config),
         Some(SubCommand::New(new)) => run_new(&args, &new),
         Some(SubCommand::Publish(publish)) => registry::run_publish(&args, &publish, &config),
-        Some(SubCommand::Install(install)) => registry::run_install(install, &config),
-        Some(SubCommand::Search(search)) => {
-            let engine = Engine::new(false, &config)?;
-            registry::run_search(&engine, &search, &config)
-        },
+        // TODO: deprecate
+        Some(SubCommand::Install(install)) => cmd::pkg_cmd::Args {
+            subcommand: cmd::pkg_cmd::SubCommand::Install(install),
+        }.run(&config),
+        // TODO: deprecate
+        Some(SubCommand::Search(search)) => cmd::pkg_cmd::Args {
+            subcommand: cmd::pkg_cmd::SubCommand::Search(search),
+        }.run(&config),
         Some(SubCommand::Pkg(pkg)) => pkg.run(&config),
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),

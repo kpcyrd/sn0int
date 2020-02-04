@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::args;
 use crate::config::Config;
 use crate::cmd::{Cmd, LiteCmd};
-use crate::engine::Engine;
+use crate::engine::Library;
 use crate::registry::{self, UpdateTask, Updater};
 use crate::shell::Shell;
 use crate::update::AutoUpdater;
@@ -87,12 +87,12 @@ enum ModuleReload {
     No,
 }
 
-fn run_subcommand(subcommand: SubCommand, engine: &Engine, config: &Config) -> Result<ModuleReload> {
+fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) -> Result<ModuleReload> {
     match subcommand {
         SubCommand::List(list) => {
             let autoupdate = AutoUpdater::load()?;
 
-            for module in engine.list() {
+            for module in library.list() {
                 if let Some(source) = &list.source {
                     if !module.source_equals(&source) {
                         continue;
@@ -120,14 +120,14 @@ fn run_subcommand(subcommand: SubCommand, engine: &Engine, config: &Config) -> R
             Ok(ModuleReload::Yes)
         },
         SubCommand::Search(search) => {
-            registry::run_search(engine, &search, &config)?;
+            registry::run_search(library, &search, &config)?;
             Ok(ModuleReload::No)
         },
         SubCommand::Update(_) => {
             let mut autoupdate = AutoUpdater::load()?;
             let updater = Arc::new(Updater::new(&config)?);
 
-            let modules = engine.list()
+            let modules = library.list()
                 .into_iter()
                 .filter_map(|module| {
                     let canonical = module.canonical();
@@ -161,8 +161,8 @@ fn run_subcommand(subcommand: SubCommand, engine: &Engine, config: &Config) -> R
 
 impl LiteCmd for Args {
     fn run(self, config: &Config) -> Result<()> {
-        let engine = Engine::new(false, &config)?;
-        run_subcommand(self.subcommand, &engine, config)?;
+        let library = Library::new(false, &config)?;
+        run_subcommand(self.subcommand, &library, config)?;
         Ok(())
     }
 }
@@ -170,7 +170,7 @@ impl LiteCmd for Args {
 impl Cmd for ArgsInteractive {
     fn run(self, rl: &mut Shell) -> Result<()> {
         let action = match self.subcommand {
-            SubCommandInteractive::Base(subcommand) => run_subcommand(subcommand, rl.engine(), rl.config())?,
+            SubCommandInteractive::Base(subcommand) => run_subcommand(subcommand, rl.library(), rl.config())?,
             SubCommandInteractive::Reload(_) => ModuleReload::Yes,
         };
         if action == ModuleReload::Yes {
