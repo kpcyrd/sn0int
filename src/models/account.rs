@@ -179,12 +179,14 @@ impl DisplayableDetailed for DetailedAccount {
 
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.displayname)?;
-        w.opt_debug::<Yellow, _>(&self.email)?;
         w.opt_debug::<Yellow, _>(&self.url)?;
-        w.opt_debug::<Yellow, _>(&self.last_seen)?;
-        w.opt_debug::<Yellow, _>(&self.birthday)?;
-        w.opt_debug::<Yellow, _>(&self.phonenumber)?;
-        w.opt_debug::<Yellow, _>(&self.profile_pic)?;
+        w.end_group()?;
+        w.start_group();
+        w.opt_debug_label::<Yellow, _>("last_seen", &self.last_seen)?;
+        w.opt_debug_label::<Yellow, _>("email", &self.email)?;
+        w.opt_debug_label::<Yellow, _>("phonenumber", &self.phonenumber)?;
+        w.opt_debug_label::<Yellow, _>("birthday", &self.birthday)?;
+        w.opt_debug_label::<Yellow, _>("profile_pic", &self.profile_pic)?;
         w.end_group()?;
 
         Ok(())

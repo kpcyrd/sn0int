@@ -171,15 +171,15 @@ impl DisplayableDetailed for DetailedDevice {
         w.debug::<Green, _>(&self.value)?;
 
         w.start_group();
-        w.opt_debug::<Yellow, _>(&self.name)?;
-        w.opt_debug::<Yellow, _>(&self.hostname)?;
-        w.opt_debug::<Yellow, _>(&self.vendor)?;
-        w.opt_debug::<Yellow, _>(&self.last_seen)?;
+        w.opt_debug_label::<Yellow, _>("name", &self.name)?;
+        w.opt_debug_label::<Yellow, _>("hostname", &self.hostname)?;
+        w.opt_debug_label::<Yellow, _>("vendor", &self.vendor)?;
+        w.opt_debug_label::<Yellow, _>("last_seen", &self.last_seen)?;
         w.end_group()?;
 
         w.start_group();
-        w.opt_debug::<Yellow, _>(&self.network)?;
-        w.opt_debug::<Yellow, _>(&self.ipaddr)?;
+        w.opt_debug_label::<Yellow, _>("network", &self.network)?;
+        w.opt_debug_label::<Yellow, _>("ipaddr", &self.ipaddr)?;
         w.end_group()?;
 
         Ok(())

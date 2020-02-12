@@ -141,8 +141,7 @@ impl<'a, 'b> DetailFormatter<'a, 'b> {
     }
 
     #[inline]
-    pub fn display<C: Color, D: fmt::Display>(&mut self, v: D) -> fmt::Result {
-        self.push_into_group()?;
+    pub fn direct_display<C: Color, D: fmt::Display>(&mut self, v: D) -> fmt::Result {
         if self.scoped {
             C::display(self, v)
         } else {
@@ -151,8 +150,19 @@ impl<'a, 'b> DetailFormatter<'a, 'b> {
     }
 
     #[inline]
-    pub fn debug<C: Color, D: fmt::Debug>(&mut self, v: D) -> fmt::Result {
+    pub fn display<C: Color, D: fmt::Display>(&mut self, v: D) -> fmt::Result {
         self.push_into_group()?;
+        self.direct_display::<C, _>(v)
+    }
+
+    pub fn display_label<C: Color, D: fmt::Display>(&mut self, label: &str, v: D) -> fmt::Result {
+        self.push_into_group()?;
+        write!(self, "{}=", label)?;
+        self.direct_display::<C, _>(v)
+    }
+
+    #[inline]
+    pub fn direct_debug<C: Color, D: fmt::Debug>(&mut self, v: D) -> fmt::Result {
         if self.scoped {
             C::debug(self, v)
         } else {
@@ -160,9 +170,24 @@ impl<'a, 'b> DetailFormatter<'a, 'b> {
         }
     }
 
+    #[inline]
+    pub fn debug<C: Color, D: fmt::Debug>(&mut self, v: D) -> fmt::Result {
+        self.push_into_group()?;
+        self.direct_debug::<C, _>(v)
+    }
+
     pub fn opt_debug<C: Color, D: fmt::Debug>(&mut self, v: &Option<D>) -> fmt::Result {
         if let Some(v) = &v {
             self.debug::<C, _>(v)?;
+        }
+        Ok(())
+    }
+
+    pub fn opt_debug_label<C: Color, D: fmt::Debug>(&mut self, label: &str, v: &Option<D>) -> fmt::Result {
+        if let Some(v) = &v {
+            self.push_into_group()?;
+            write!(self, "{}=", label)?;
+            self.direct_debug::<C, _>(v)?;
         }
         Ok(())
     }
