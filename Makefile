@@ -16,8 +16,8 @@ test:
 	(cd sn0int-registry; cargo test)
 	(cd sn0int-std; cargo test)
 	(cd sn0int-std; cargo test -- --ignored)
-	cargo test
-	cargo test -- --ignored
+	cargo test --lib
+	cargo test --lib -- --ignored
 
 update:
 	get-oui -v -u http://standards-oui.ieee.org/oui/oui.txt -f data/ieee-oui.txt

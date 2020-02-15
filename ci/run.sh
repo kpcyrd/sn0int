@@ -35,7 +35,7 @@ case "$1" in
         docker run --rm sn0int --help
         ;;
     docker-registry)
-        docker build -t sn0int-registry sn0int-registry/
+        docker build -t sn0int-registry -f sn0int-registry/Dockerfile .
         docker images
         ;;
 esac
