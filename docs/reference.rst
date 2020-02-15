@@ -1025,6 +1025,32 @@ Read stdin until EOF as a utf-8 string.
 .. note::
    This only works with `sn0int run --stdin`.
 
+str_find
+--------
+
+Returns the byte index of the first character that matches the pattern. This is
+explicitly a literal match instead of a lua pattern.
+
+If no match is found, returns ``nil``.
+
+.. code-block:: lua
+
+    x = str_find('asdf', 'sd')
+    print(x == 2)
+
+str_replace
+-----------
+
+Replaces all matches of a pattern in a string. This is explicitly a literal
+match instead of a lua pattern.
+
+If no match is found, an unmodified copy is returned.
+
+.. code-block:: lua
+
+    x = str_replace('this is old', 'old', 'new')
+    print(x == 'this is new')
+
 strftime
 --------
 

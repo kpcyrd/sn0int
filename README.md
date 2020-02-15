@@ -218,6 +218,8 @@ For everything else please have a look at the [detailed list][1].
   - [status](https://sn0int.readthedocs.io/en/latest/reference.html#status)
   - [stdin_readline](https://sn0int.readthedocs.io/en/latest/reference.html#stdin-readline)
   - [stdin_read_to_end](https://sn0int.readthedocs.io/en/latest/reference.html#stdin-read-to-end)
+  - [str_find](https://sn0int.readthedocs.io/en/latest/reference.html#str-find)
+  - [str_replace](https://sn0int.readthedocs.io/en/latest/reference.html#str-replace)
   - [strftime](https://sn0int.readthedocs.io/en/latest/reference.html#strftime)
   - [strptime](https://sn0int.readthedocs.io/en/latest/reference.html#strptime)
   - [time_unix](https://sn0int.readthedocs.io/en/latest/reference.html#time-unix)
