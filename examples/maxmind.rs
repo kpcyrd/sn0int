@@ -1,16 +1,8 @@
-extern crate sn0int;
-extern crate env_logger;
-extern crate chrootable_https;
-
-// workaround for rustc 1.29.2 support
-#[cfg(not(target_os = "openbsd"))]
-extern crate structopt;
-#[cfg(target_os = "openbsd")]
-#[macro_use] extern crate structopt;
-
 use sn0int::errors::*;
 use sn0int::geoip::{AsnDB, GeoIP, Maxmind};
+use sn0int::paths;
 use std::net::IpAddr;
+use std::path::Path;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -27,8 +19,8 @@ pub struct AsnArgs {
 }
 
 impl AsnArgs {
-    fn run(&self) -> Result<()> {
-        let path = AsnDB::cache_path()?;
+    fn run(&self, cache_dir: &Path) -> Result<()> {
+        let path = AsnDB::cache_path(cache_dir)?;
         let asndb = AsnDB::open(&path)?;
 
         let asn = asndb.lookup(self.ip)?;
@@ -44,8 +36,8 @@ pub struct GeoIPArgs {
 }
 
 impl GeoIPArgs {
-    fn run(&self) -> Result<()> {
-        let path = GeoIP::cache_path()?;
+    fn run(&self, cache_dir: &Path) -> Result<()> {
+        let path = GeoIP::cache_path(cache_dir)?;
         let geoip = GeoIP::open(&path)?;
 
         let lookup = geoip.lookup(self.ip)?;
@@ -59,9 +51,10 @@ impl GeoIPArgs {
 fn run() -> Result<()> {
     let args = Args::from_args();
     debug!("{:?}", args);
+    let cache_dir = paths::cache_dir()?;
     match args {
-        Args::Asn(args) => args.run(),
-        Args::GeoIP(args) => args.run(),
+        Args::Asn(args) => args.run(&cache_dir),
+        Args::GeoIP(args) => args.run(&cache_dir),
     }
 }
 

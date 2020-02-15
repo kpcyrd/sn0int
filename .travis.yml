@@ -16,6 +16,10 @@ matrix:
   - os: linux
     rust: stable
     env:
+    - BUILD_MODE=std
+  - os: linux
+    rust: stable
+    env:
     - BUILD_MODE=boxxy
   - os: linux
     rust: stable
@@ -34,6 +38,10 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=common
+  - os: osx
+    rust: stable
+    env:
+    - BUILD_MODE=std
   #- os: windows
   #  rust: stable
   #  env:
