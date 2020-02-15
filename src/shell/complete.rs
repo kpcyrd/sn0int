@@ -272,6 +272,7 @@ impl Highlighter for CmdCompleter {
 }
 
 impl rustyline::Helper for CmdCompleter {}
+impl rustyline::validate::Validator for CmdCompleter {}
 
 pub fn run_generate(args: &Completions) -> Result<()> {
     Args::clap().gen_completions_to("sn0int", args.shell, &mut stdout());

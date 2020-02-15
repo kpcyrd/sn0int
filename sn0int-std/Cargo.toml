@@ -1,7 +1,10 @@
 [package]
 name = "sn0int-std"
 version = "0.16.0"
+description = "sn0int - stdlib"
 authors = ["kpcyrd <git@rxv.cc>"]
+repository = "https://github.com/kpcyrd/sn0int"
+license = "GPL-3.0"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -19,14 +22,15 @@ serde_derive = "1.0"
 serde_json = "1.0"
 serde_urlencoded = "0.6"
 webpki = "0.21"
-webpki-roots = "0.18"
+webpki-roots = "0.19.0"
 ct-logs = "0.6"
 chrootable-https = "0.14"
+http = "0.2"
 bufstream = "0.1.4"
 pem = "0.7"
 url = "2.0"
-tungstenite = { version = "0.9", default-features = false }
-kuchiki = "0.7.2"
+tungstenite = { version = "0.10.1", default-features = false }
+kuchiki = "0.8.0"
 maxminddb = "0.13"
 x509-parser = "0.6.0"
 der-parser = "3.0"
@@ -37,8 +41,8 @@ bytes = "0.4"
 base64 = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
 
-image = "0.22"
-kamadak-exif = "0.4"
+image = "0.23.0"
+kamadak-exif = "0.5.1"
 
 bs58 = "0.3"
 digest = "0.8.0"

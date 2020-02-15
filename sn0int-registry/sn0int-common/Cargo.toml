@@ -1,7 +1,7 @@
 [package]
 name = "sn0int-common"
 version = "0.9.0"
-description = "Common code for sn0int"
+description = "sn0int - common code"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
 repository = "https://github.com/kpcyrd/sn0int"

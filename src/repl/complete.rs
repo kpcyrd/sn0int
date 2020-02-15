@@ -18,6 +18,7 @@ impl ReplCompleter {
 }
 
 impl rustyline::Helper for ReplCompleter {}
+impl rustyline::validate::Validator for ReplCompleter {}
 
 impl Completer for ReplCompleter {
     type Candidate = String;
