@@ -121,6 +121,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
         Some(SubCommand::Export(export)) => run_cmd(&args, export, &config),
         Some(SubCommand::Repl) => repl::run(&config),
+        Some(SubCommand::Paths) => paths::run(&config),
         Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),
         None => shell::run(&args, &config),
     }
