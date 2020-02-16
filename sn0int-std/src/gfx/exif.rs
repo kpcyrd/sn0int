@@ -61,8 +61,9 @@ impl LocationBuilder {
 }
 
 pub fn gps(img: &[u8]) -> Result<Option<Location>> {
-    let mut buf = io::BufReader::new(img);
-    let reader = exif::Reader::new(&mut buf)?;
+    let mut buf = io::Cursor::new(img);
+    let reader = exif::Reader::new()
+        .read_from_container(&mut buf)?;
     let fields = reader.fields();
 
     let location = Location::try_from_iter(fields).ok();

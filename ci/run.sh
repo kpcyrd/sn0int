@@ -6,13 +6,17 @@ case "$1" in
         cargo build --verbose --examples
         ;;
     test)
-        ci/run.sh build
         cargo test --verbose
         cargo test --verbose -- --ignored
         ;;
     common)
-        cd sn0int-registry/sn0int-common
+        cd sn0int-common
         cargo test --verbose
+        ;;
+    std)
+        cd sn0int-std
+        cargo test --verbose
+        cargo test --verbose -- --ignored
         ;;
     windows)
         cargo build --verbose --features=sqlite-bundled
@@ -31,7 +35,7 @@ case "$1" in
         docker run --rm sn0int --help
         ;;
     docker-registry)
-        docker build -t sn0int-registry sn0int-registry/
+        docker build -t sn0int-registry -f sn0int-registry/Dockerfile .
         docker images
         ;;
 esac

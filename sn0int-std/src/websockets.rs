@@ -3,11 +3,10 @@ use crate::errors::*;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use crate::sockets::{Stream, SocketOptions};
-use std::borrow::Cow;
+use http::Request;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::io;
-use tungstenite::handshake::client::Request;
 use tungstenite::protocol::{self, Message};
 use url::Url;
 
@@ -45,19 +44,17 @@ pub struct WebSocket {
 
 impl WebSocket {
     pub fn negotiate(stream: Stream, url: Url, headers: Option<&HashMap<String, String>>) -> Result<WebSocket> {
-        let extra_headers = headers.map(|headers| {
-            headers.iter()
-                .map(|(k, v)| (Cow::Borrowed(k.as_str()), Cow::Borrowed(v.as_str())))
-                .collect()
-        });
+        let mut req = Request::get(url.to_string()); // TODO: don't re-parse here
 
-        let (sock, _resp) = tungstenite::client::client(
-            Request {
-                url,
-                extra_headers,
-            },
-            stream,
-        )?;
+        if let Some(headers) = headers {
+            for (k, v) in headers {
+                req = req.header(k, v);
+            }
+        }
+
+        let req = req.body(()).unwrap();
+
+        let (sock, _resp) = tungstenite::client::client(req, stream)?;
         Ok(WebSocket {
             sock,
         })

@@ -6,13 +6,13 @@ pub mod exif;
 
 #[derive(Debug)]
 pub enum ImageFormat {
-    PNG,
-    JPEG,
-    GIF,
-    WEBP,
-    TIFF,
-    BMP,
-    ICO,
+    Png,
+    Jpeg,
+    Gif,
+    WebP,
+    Tiff,
+    Bmp,
+    Ico,
 }
 
 impl ImageFormat {
@@ -20,28 +20,27 @@ impl ImageFormat {
         // https://www.iana.org/assignments/media-types/media-types.xhtml#image
         // /etc/nginx/mime.types
         match self {
-            ImageFormat::PNG => "image/png",
-            ImageFormat::JPEG => "image/jpeg",
-            ImageFormat::GIF => "image/gif",
-            ImageFormat::WEBP => "image/webp",
-            ImageFormat::TIFF => "image/tiff",
-            ImageFormat::BMP => "image/bmp",
-            ImageFormat::ICO => "image/vnd.microsoft.icon",
+            ImageFormat::Png => "image/png",
+            ImageFormat::Jpeg => "image/jpeg",
+            ImageFormat::Gif => "image/gif",
+            ImageFormat::WebP => "image/webp",
+            ImageFormat::Tiff => "image/tiff",
+            ImageFormat::Bmp => "image/bmp",
+            ImageFormat::Ico => "image/vnd.microsoft.icon",
         }
     }
 
     pub fn try_from(format: &image::ImageFormat) -> Result<ImageFormat> {
         use image::ImageFormat::*;
         match format {
-            PNG => Ok(ImageFormat::PNG),
-            JPEG => Ok(ImageFormat::JPEG),
-            GIF => Ok(ImageFormat::GIF),
-            WEBP => Ok(ImageFormat::WEBP),
-            TIFF => Ok(ImageFormat::TIFF),
-            BMP => Ok(ImageFormat::BMP),
-            ICO => Ok(ImageFormat::ICO),
-
-            HDR | PNM | TGA => bail!("Unsupported format: {:?}", format),
+            Png => Ok(ImageFormat::Png),
+            Jpeg => Ok(ImageFormat::Jpeg),
+            Gif => Ok(ImageFormat::Gif),
+            WebP => Ok(ImageFormat::WebP),
+            Tiff => Ok(ImageFormat::Tiff),
+            Bmp => Ok(ImageFormat::Bmp),
+            Ico => Ok(ImageFormat::Ico),
+            _ => bail!("Unsupported format: {:?}", format),
         }
     }
 }
@@ -49,13 +48,13 @@ impl ImageFormat {
 impl Into<image::ImageFormat> for ImageFormat {
     fn into(self) -> image::ImageFormat {
         match self {
-            ImageFormat::PNG => image::ImageFormat::PNG,
-            ImageFormat::JPEG => image::ImageFormat::JPEG,
-            ImageFormat::GIF => image::ImageFormat::GIF,
-            ImageFormat::WEBP => image::ImageFormat::WEBP,
-            ImageFormat::TIFF => image::ImageFormat::TIFF,
-            ImageFormat::BMP => image::ImageFormat::BMP,
-            ImageFormat::ICO => image::ImageFormat::ICO,
+            ImageFormat::Png => image::ImageFormat::Png,
+            ImageFormat::Jpeg => image::ImageFormat::Jpeg,
+            ImageFormat::Gif => image::ImageFormat::Gif,
+            ImageFormat::WebP => image::ImageFormat::WebP,
+            ImageFormat::Tiff => image::ImageFormat::Tiff,
+            ImageFormat::Bmp => image::ImageFormat::Bmp,
+            ImageFormat::Ico => image::ImageFormat::Ico,
         }
     }
 }
@@ -114,7 +113,7 @@ mod tests {
 
     #[test]
     fn verify_gfx_load_ico() {
-        let ico = fs::read("./sn0int-registry/assets/favicon.ico").expect("fs::read");
+        let ico = fs::read("../sn0int-registry/assets/favicon.ico").expect("fs::read");
         let img = load(&ico).expect("gfx::load");
 
         assert_eq!("image/vnd.microsoft.icon", img.mime());

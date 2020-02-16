@@ -8,6 +8,7 @@ use sn0int::errors::*;
 use sn0int::engine::{self, Module};
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
 use sn0int::options::Opt;
+use sn0int::paths;
 use sn0int::psl::PslReader;
 use sn0int::registry;
 use sn0int::repl;
@@ -49,9 +50,10 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
 }
 
 fn run_sandbox() -> Result<()> {
-    let geoip = GeoIP::try_open_reader()?;
-    let asn = AsnDB::try_open_reader()?;
-    let psl = PslReader::open()?;
+    let cache_dir = paths::cache_dir()?;
+    let geoip = GeoIP::try_open_reader(&cache_dir)?;
+    let asn = AsnDB::try_open_reader(&cache_dir)?;
+    let psl = PslReader::open(&cache_dir)?;
 
     sandbox::init()
         .context("Failed to init sandbox")?;

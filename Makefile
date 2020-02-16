@@ -1,19 +1,23 @@
 check:
-	(cd sn0int-registry/sn0int-common; cargo check)
+	(cd sn0int-common; cargo check)
 	(cd sn0int-registry; cargo check)
+	(cd sn0int-std; cargo check)
 	cargo check
 
 force-check:
-	(cd sn0int-registry/sn0int-common; touch src/lib.rs; cargo check)
+	(cd sn0int-common; touch src/lib.rs; cargo check)
 	(cd sn0int-registry; touch src/main.rs; cargo check)
+	(cd sn0int-std; touch src/lib.rs; cargo check)
 	touch src/lib.rs
 	cargo check
 
 test:
-	(cd sn0int-registry/sn0int-common; cargo test)
+	(cd sn0int-common; cargo test)
 	(cd sn0int-registry; cargo test)
-	cargo test
-	cargo test -- --ignored
+	(cd sn0int-std; cargo test)
+	(cd sn0int-std; cargo test -- --ignored)
+	cargo test --lib
+	cargo test --lib -- --ignored
 
 update:
 	get-oui -v -u http://standards-oui.ieee.org/oui/oui.txt -f data/ieee-oui.txt

@@ -8,24 +8,27 @@ matrix:
   - os: linux
     rust: stable
     env:
+    - BUILD_MODE=docker
+  - os: linux
+    rust: stable
+    env:
+    - BUILD_MODE=docker-registry
+  - os: linux
+    rust: stable
+    env:
     - BUILD_MODE=test
   - os: linux
     rust: stable
     env:
     - BUILD_MODE=common
+  - os: linux
+    rust: stable
+    env:
+    - BUILD_MODE=std
   - os: linux
     rust: stable
     env:
     - BUILD_MODE=boxxy
-  - os: linux
-    rust: stable
-    env:
-    - BUILD_MODE=docker
-  # https://github.com/rust-lang/rust/issues/68264
-  #- os: linux
-  #  rust: stable
-  #  env:
-  #  - BUILD_MODE=docker-registry
   - os: osx
     rust: stable
     env:
@@ -34,6 +37,10 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=common
+  - os: osx
+    rust: stable
+    env:
+    - BUILD_MODE=std
   #- os: windows
   #  rust: stable
   #  env:

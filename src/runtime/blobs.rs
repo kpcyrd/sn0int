@@ -1,12 +1,14 @@
 use crate::errors::*;
-use crate::blobs::Blob;
 use crate::engine::ctx::State;
 use crate::engine::structs::byte_array;
 use crate::hlua::{self, AnyLuaValue};
+use sn0int_std::blobs::{Blob, BlobState};
 use std::sync::Arc;
 
 
-pub fn create_blob(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+pub fn create_blob<S>(lua: &mut hlua::Lua, state: Arc<S>)
+    where S: State + BlobState + 'static
+{
     lua.set("create_blob", hlua::function1(move |bytes: AnyLuaValue| -> Result<String> {
         let bytes = byte_array(bytes)
             .map_err(|err| state.set_error(err))?;

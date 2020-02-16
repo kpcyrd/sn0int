@@ -6,7 +6,7 @@ use crate::cmd::*;
 use crate::config::Config;
 use crate::db::ttl;
 use crate::keyring::KeyRing;
-use crate::worker::VoidSender;
+use crate::worker::{self, VoidSender};
 use colored::Colorize;
 use crate::db::{self, Database};
 use crate::engine::{Library, Module};
@@ -488,7 +488,9 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     };
     ttl::reap_expired(&db)?;
 
-    let psl = PslReader::open_or_download()
+    let cache_dir = paths::cache_dir()?;
+    let psl = PslReader::open_or_download(&cache_dir,
+            |cb| worker::spawn_fn("Downloading public suffix list", cb, false))
         .context("Failed to download public suffix list")?;
     let library = Library::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;

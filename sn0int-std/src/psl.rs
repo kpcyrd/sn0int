@@ -4,9 +4,7 @@ use chrootable_https::Client;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use crate::paths;
 use crate::lazy::LazyInit;
-use crate::worker;
 
 
 #[derive(Debug, PartialEq)]
@@ -23,22 +21,24 @@ pub enum PslReader {
 }
 
 impl PslReader {
-    pub fn open_or_download() -> Result<PslReader> {
-        let path = Self::path()?;
+    pub fn open_or_download<F>(cache_dir: &Path, indicator: F) -> Result<PslReader>
+        where
+            F: Fn(Box<dyn Fn() -> Result<PslReader>>) -> Result<PslReader>
+    {
+        let path = Self::path(cache_dir)?;
         let reader = match Self::open_from(&path) {
             Ok(r) => r,
-            Err(_) => worker::spawn_fn("Downloading public suffix list", || {
+            Err(_) => indicator(Box::new(move || {
                 PslReader::download(&path, publicsuffix::LIST_URL)?;
                 Self::open_from(&path)
-            }, false)?,
+            }))?,
         };
         Ok(reader)
     }
 
-    pub fn open() -> Result<PslReader> {
-        let path = Self::path()?;
+    pub fn open(cache_dir: &Path) -> Result<PslReader> {
+        let path = Self::path(cache_dir)?;
         Self::open_from(&path)
-
     }
 
     pub fn open_from(path: &Path) -> Result<PslReader> {
@@ -46,7 +46,7 @@ impl PslReader {
         Ok(PslReader::Reader(file))
     }
 
-    pub fn path() -> Result<PathBuf> {
+    pub fn path(cache_dir: &Path) -> Result<PathBuf> {
         // use system path if exists
         let path = Path::new("/usr/share/publicsuffix/public_suffix_list.dat");
         if path.exists() {
@@ -54,7 +54,7 @@ impl PslReader {
         }
 
         // else, use local cache
-        let path = paths::cache_dir()?
+        let path = cache_dir
             .join("public_suffix_list.dat");
         Ok(path)
     }
