@@ -12,7 +12,7 @@ use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::websockets::{WebSocket, WebSocketOptions};
-use crate::worker::{Event, LogEvent, DatabaseEvent, StdioEvent, RatelimitEvent};
+use crate::worker::{Event, LogEvent, DatabaseEvent, DatabaseResponse, StdioEvent, RatelimitEvent};
 use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
 use serde_json;
@@ -72,48 +72,52 @@ pub trait State {
         self.send(&Event::Log(LogEvent::Status(msg)))
     }
 
-    fn db_insert(&self, object: Insert) -> Result<Option<i32>> {
+    fn db_recv(&self) -> Result<DatabaseResponse> {
+        let reply = self.recv()?;
+        let reply: result::Result<DatabaseResponse, String> = serde_json::from_value(reply)?;
+        reply.map_err(|err| format_err!("Database error: {:?}", err))
+    }
+
+    fn db_insert(&self, object: Insert) -> Result<DatabaseResponse> {
         self.send(&Event::Database(DatabaseEvent::Insert(object)));
-        let reply = self.recv()?;
-        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
-
-        reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+        self.db_recv()
+            .context("Failed to add to database")
+            .map_err(Error::from)
     }
 
-    fn db_insert_ttl(&self, object: Insert, ttl: i32) -> Result<Option<i32>> {
+    fn db_insert_ttl(&self, object: Insert, ttl: i32) -> Result<DatabaseResponse> {
         self.send(&Event::Database(DatabaseEvent::InsertTtl((object, ttl))));
-        let reply = self.recv()?;
-        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
-
-        reply.map_err(|err| format_err!("Failed to add to database: {:?}", err))
+        self.db_recv()
+            .context("Failed to add to database")
+            .map_err(Error::from)
     }
 
-    fn db_activity(&self, activity: InsertActivity) -> Result<()> {
+    fn db_activity(&self, activity: InsertActivity) -> Result<bool> {
         let activity = activity.try_into_new()?;
 
         self.send(&Event::Database(DatabaseEvent::Activity(activity)));
-        let reply = self.recv()?;
-        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
+        let r = self.db_recv()
+            .context("Failed to log activity")?;
 
-        reply
-            .map(|_| ())
-            .map_err(|err| format_err!("Failed to add to database: {:?}", err))
+        match r {
+            DatabaseResponse::Inserted(_) => Ok(false),
+            DatabaseResponse::NoChange(_) => Ok(true),
+            _ => bail!("Unexpected database response for db_activity: {:?}", r),
+        }
     }
 
-    fn db_select(&self, family: Family, value: String) -> Result<Option<i32>> {
+    fn db_select(&self, family: Family, value: String) -> Result<DatabaseResponse> {
         self.send(&Event::Database(DatabaseEvent::Select((family, value))));
-        let reply = self.recv()?;
-        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
-
-        reply.map_err(|err| format_err!("Failed to query database: {:?}", err))
+        self.db_recv()
+            .context("Failed to query database")
+            .map_err(Error::from)
     }
 
-    fn db_update(&self, object: String, update: Update) -> Result<Option<i32>> {
+    fn db_update(&self, object: String, update: Update) -> Result<DatabaseResponse> {
         self.send(&Event::Database(DatabaseEvent::Update((object, update))));
-        let reply = self.recv()?;
-        let reply: result::Result<Option<i32>, String> = serde_json::from_value(reply)?;
-
-        reply.map_err(|err| format_err!("Failed to update database: {:?}", err))
+        self.db_recv()
+            .context("Failed to update database")
+            .map_err(Error::from)
     }
 
     fn stdin_read_line(&self) -> Result<Option<String>> {

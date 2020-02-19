@@ -23,8 +23,17 @@ use crate::term::{Spinner, StackedSpinners, SpinLogger};
 use threadpool::ThreadPool;
 
 
-type DbSender = mpsc::Sender<result::Result<Option<i32>, String>>;
+type DbSender = mpsc::Sender<result::Result<DatabaseResponse, String>>;
 pub type VoidSender = mpsc::Sender<result::Result<(), String>>;
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum DatabaseResponse {
+    Inserted(i32),
+    Updated(i32),
+    Found(i32),
+    NoChange(i32),
+    None,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
@@ -150,7 +159,7 @@ pub enum DatabaseEvent {
 }
 
 impl EventWithCallback for DatabaseEvent {
-    type Payload = Option<i32>;
+    type Payload = DatabaseResponse;
 
     fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
         Event2::Database((self, tx))
@@ -176,11 +185,11 @@ impl DatabaseEvent {
 
                 // TODO: replace id with actual object(?)
                 if let Ok(obj) = object.printable(db) {
-                    spinner.log(&obj.to_string());
+                    spinner.log(&obj.to_string()); // TODO: also include fields here
                 } else {
                     spinner.error(&format!("Failed to query necessary fields for {:?}", object));
                 }
-                Ok(Some(id))
+                Ok(DatabaseResponse::Inserted(id))
             },
             Ok(Some((DbChange::Update(update), id))) => {
                 if let Some(ttl) = ttl {
@@ -199,7 +208,7 @@ impl DatabaseEvent {
                         spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
                     },
                 }
-                Ok(Some(id))
+                Ok(DatabaseResponse::Updated(id))
             },
             Ok(Some((DbChange::None, id))) => {
                 if let Some(ttl) = ttl {
@@ -208,9 +217,9 @@ impl DatabaseEvent {
                     }
                 }
 
-                Ok(Some(id))
+                Ok(DatabaseResponse::NoChange(id))
             },
-            Ok(None) => Ok(None),
+            Ok(None) => Ok(DatabaseResponse::None),
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
@@ -242,9 +251,9 @@ impl DatabaseEvent {
                 }
 
                 spinner.log(&log);
-                Ok(None)
+                Ok(DatabaseResponse::Inserted(0))
             },
-            Ok(false) => Ok(None),
+            Ok(false) => Ok(DatabaseResponse::NoChange(0)),
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
@@ -261,8 +270,11 @@ impl DatabaseEvent {
             DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(object, Some(ttl), tx, spinner, db, verbose),
             DatabaseEvent::Activity(object) => Self::activity(object, tx, spinner, db, verbose),
             DatabaseEvent::Select((family, value)) => {
-                let result = db.get_opt(&family, &value)
-                    .map_err(|e| e.to_string());
+                let result = match db.get_opt(&family, &value) {
+                    Ok(Some(id)) => Ok(DatabaseResponse::Found(id)),
+                    Ok(None) => Ok(DatabaseResponse::None),
+                    Err(e) => Err(e.to_string()),
+                };
 
                 tx.send(result).expect("Failed to send db result to channel");
             },
@@ -274,7 +286,7 @@ impl DatabaseEvent {
                 let result = db.update_generic(&update);
                 debug!("{:?}: {:?} => {:?}", object, update, result);
                 let result = result
-                    .map(Some)
+                    .map(DatabaseResponse::Updated)
                     .map_err(|e| e.to_string());
 
                 if let Err(ref err) = result {

@@ -8,6 +8,7 @@ use crate::hlua::{self, AnyLuaValue};
 use std::str::FromStr;
 use std::sync::Arc;
 use crate::models::*;
+use crate::worker::DatabaseResponse;
 use crate::json::LuaJsonValue;
 
 
@@ -85,8 +86,18 @@ pub fn db_add(lua: &mut hlua::Lua, state: Arc<dyn State>) {
         let object = into_insert(family, object, &state)
             .map_err(|e| state.set_error(e))?;
 
-        state.db_insert(object)
-            .map_err(|e| state.set_error(e))
+        let r = state.db_insert(object)
+            .map_err(|e| state.set_error(e))?;
+
+        let r = match r {
+            // Found is technically unreachable
+            DatabaseResponse::Inserted(id) => Some(id),
+            DatabaseResponse::Updated(id) => Some(id),
+            DatabaseResponse::NoChange(id) => Some(id),
+            DatabaseResponse::Found(id) => Some(id),
+            DatabaseResponse::None => None,
+        };
+        Ok(r)
     }))
 }
 
@@ -99,13 +110,23 @@ pub fn db_add_ttl(lua: &mut hlua::Lua, state: Arc<dyn State>) {
         let object = into_insert(family, object, &state)
             .map_err(|e| state.set_error(e))?;
 
-        state.db_insert_ttl(object, ttl)
-            .map_err(|e| state.set_error(e))
+        let r = state.db_insert_ttl(object, ttl)
+            .map_err(|e| state.set_error(e))?;
+
+        let r = match r {
+            // Found is technically unreachable
+            DatabaseResponse::Inserted(id) => Some(id),
+            DatabaseResponse::Updated(id) => Some(id),
+            DatabaseResponse::NoChange(id) => Some(id),
+            DatabaseResponse::Found(id) => Some(id),
+            DatabaseResponse::None => None,
+        };
+        Ok(r)
     }))
 }
 
 pub fn db_activity(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("db_activity", hlua::function1(move |v: AnyLuaValue| -> Result<()> {
+    lua.set("db_activity", hlua::function1(move |v: AnyLuaValue| -> Result<bool> {
         let v: LuaJsonValue = v.into();
         let v: serde_json::Value = v.into();
         let activity: InsertActivity = serde_json::from_value(v)
@@ -121,8 +142,18 @@ pub fn db_select(lua: &mut hlua::Lua, state: Arc<dyn State>) {
         let family = Family::from_str(&family)
             .map_err(|e| state.set_error(e.into()))?;
 
-        state.db_select(family, value)
-            .map_err(|e| state.set_error(e))
+        let r = state.db_select(family, value)
+            .map_err(|e| state.set_error(e))?;
+
+        let r = match r {
+            // Everything except Found and None are technically unreachable
+            DatabaseResponse::Inserted(id) => Some(id),
+            DatabaseResponse::Updated(id) => Some(id),
+            DatabaseResponse::NoChange(id) => Some(id),
+            DatabaseResponse::Found(id) => Some(id),
+            DatabaseResponse::None => None,
+        };
+        Ok(r)
     }))
 }
 
@@ -191,8 +222,18 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             .map_err(|e| state.set_error(e))?;
 
         if update.is_dirty() {
-            state.db_update(value, update)
-                .map_err(|e| state.set_error(e))
+            let r = state.db_update(value, update)
+                .map_err(|e| state.set_error(e))?;
+
+            let r = match r {
+                // Inserted and Found are technically unreachable
+                DatabaseResponse::Inserted(id) => Some(id),
+                DatabaseResponse::Updated(id) => Some(id),
+                DatabaseResponse::NoChange(id) => Some(id),
+                DatabaseResponse::Found(id) => Some(id),
+                DatabaseResponse::None => None,
+            };
+            Ok(r)
         } else {
             Ok(Some(id))
         }
