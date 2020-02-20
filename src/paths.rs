@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::errors::*;
 use crate::workspaces::Workspace;
 
@@ -61,4 +62,21 @@ pub fn cache_dir() -> Result<PathBuf> {
     fs::create_dir_all(&path)
         .context("Failed to create cache directory")?;
     Ok(path)
+}
+
+fn print_path<D: std::fmt::Debug>(k: &str, v: D) {
+    println!("{:30}: {:?}", k, v);
+}
+
+pub fn run(config: &Config) -> Result<()> {
+    print_path("config_file", Config::path()?);
+    print_path("data_dir", data_dir()?);
+    print_path("module_dir", module_dir()?);
+
+    for (k, v) in &config.namespaces {
+        print_path(&format!("modules({})", k), v);
+    }
+
+    print_path("cache_dir", cache_dir()?);
+    Ok(())
 }

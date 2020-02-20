@@ -31,6 +31,7 @@ import_fns!(semver);
 import_fns!(sleep);
 import_fns!(sock);
 import_fns!(stdio);
+import_fns!(str);
 import_fns!(url);
 import_fns!(utf8);
 import_fns!(websockets);

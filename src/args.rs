@@ -81,6 +81,9 @@ pub enum SubCommand {
     /// Run a lua repl
     #[structopt(name="repl")]
     Repl,
+    /// Show paths of various file system locations
+    #[structopt(name="paths")]
+    Paths,
     /// Generate shell completions
     #[structopt(name="completions")]
     Completions(Completions),
