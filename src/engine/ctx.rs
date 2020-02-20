@@ -537,6 +537,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua
     runtime::stdin_read_to_end(&mut lua, state.clone());
     runtime::str_find(&mut lua, state.clone());
     runtime::str_replace(&mut lua, state.clone());
+    runtime::strval(&mut lua, state.clone());
     runtime::strftime(&mut lua, state.clone());
     runtime::strptime(&mut lua, state.clone());
     runtime::time_unix(&mut lua, state.clone());
