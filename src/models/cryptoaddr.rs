@@ -165,14 +165,14 @@ pub struct DetailedCryptoAddr {
 }
 
 #[inline]
-fn add_currency(w: &mut fmt::DetailFormatter, num: &Option<i64>, denominator: &Option<i32>) -> fmt::Result {
+fn add_currency(w: &mut fmt::DetailFormatter, label: &str, num: &Option<i64>, denominator: &Option<i32>) -> fmt::Result {
     if let Some(&num) = num.as_ref() {
         let denominator = denominator.unwrap_or(0);
         let display = display_currency(num as u64, denominator as usize);
         if num > 0 {
-            w.display::<Green, _>(display)?;
+            w.display_label::<Green, _>(label, display)?;
         } else {
-            w.display::<Red, _>(display)?;
+            w.display_label::<Red, _>(label, display)?;
         }
     }
     Ok(())
@@ -191,14 +191,14 @@ impl DisplayableDetailed for DetailedCryptoAddr {
 
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.currency)?;
-        add_currency(w, &self.balance, &self.denominator)?;
-        add_currency(w, &self.received, &self.denominator)?;
+        add_currency(w, "balance", &self.balance, &self.denominator)?;
+        add_currency(w, "received", &self.received, &self.denominator)?;
         w.end_group()?;
 
         w.start_group();
-        w.opt_debug::<Yellow, _>(&self.first_seen)?;
-        w.opt_debug::<Yellow, _>(&self.last_withdrawal)?;
-        w.opt_debug::<Yellow, _>(&self.description)?;
+        w.opt_debug_label::<Yellow, _>("first_seen", &self.first_seen)?;
+        w.opt_debug_label::<Yellow, _>("last_withdrawal", &self.last_withdrawal)?;
+        w.opt_debug_label::<Yellow, _>("description", &self.description)?;
         w.end_group()?;
 
         Ok(())

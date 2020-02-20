@@ -46,6 +46,45 @@ triggered and an db_update is performed instead.
    removed from scope with ``noscope``. Everytime you use ``db_add`` you need
    to make sure that the ID that has been returned is not ``nil``.
 
+db_add_ttl
+----------
+
+Add a temporary entity to the database. This is commonly used to insert
+temporary links that automatically expire over time. If the entity already
+exists and is also marked as temporary the new ttl is going to replace the old
+ttl. If the entity already exists but never expires we are not going to add a
+ttl.
+
+.. code-block:: lua
+
+    -- this link is valid for 2min
+    domain_id = db_add_ttl('network-device', {
+        network_id=1,
+        device_id=13,
+    }, 120)
+
+db_activity
+-----------
+
+Log an activity event. A basic event looks like this:
+
+.. code-block:: lua
+
+    db_activity({
+        topic='harness/activity-ping:dummy',
+        time=sn0int_time(),
+        content={
+            a='b',
+            foo={
+                bar=1337,
+            },
+            msg='ohai',
+        },
+    })
+
+This function is explained in detail in the `activity <activity.html>`_
+section.
+
 db_update
 ---------
 
