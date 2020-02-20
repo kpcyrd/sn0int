@@ -153,6 +153,28 @@ ttl.
         device_id=13,
     }, 120)
 
+db_activity
+-----------
+
+Log an activity event. A basic event looks like this:
+
+.. code-block:: lua
+
+    db_activity({
+        topic='harness/activity-ping:dummy',
+        time=sn0int_time(),
+        content={
+            a='b',
+            foo={
+                bar=1337,
+            },
+            msg='ohai',
+        },
+    })
+
+This function is explained in detail in the `activity <activity.html>`_
+section.
+
 db_select
 ---------
 
