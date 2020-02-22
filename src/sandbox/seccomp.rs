@@ -17,7 +17,10 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::fcntl64)?;
     ctx.allow_syscall(Syscall::uname)?;
     ctx.allow_syscall(Syscall::close)?;
+    #[cfg(not(target_arch = "aarch64"))]
     ctx.allow_syscall(Syscall::poll)?;
+    #[cfg(target_arch = "aarch64")]
+    ctx.allow_syscall(Syscall::ppoll)?;
     ctx.allow_syscall(Syscall::epoll_create1)?;
     ctx.allow_syscall(Syscall::pipe2)?;
     ctx.allow_syscall(Syscall::epoll_ctl)?;
