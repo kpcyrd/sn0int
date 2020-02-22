@@ -27,6 +27,7 @@ pub use sn0int_std::geoip;
 use sn0int_std::gfx;
 use sn0int_std::html;
 use sn0int_std::json;
+pub mod ipc;
 pub mod keyring;
 use sn0int_std::lazy;
 pub mod migrations;

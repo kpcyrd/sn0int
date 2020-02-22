@@ -9,7 +9,6 @@ pub mod geo;
 pub mod geoip;
 pub mod gfx;
 pub mod html;
-pub mod ipc;
 pub mod json;
 pub mod lazy;
 pub mod psl;

@@ -1,7 +1,7 @@
 use crate::errors::*;
 
 use crate::db::Family;
-use crate::engine::{Environment, Reporter};
+use crate::engine::{Environment, IpcChild};
 use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
@@ -196,7 +196,7 @@ pub trait State {
 // #[derive(Debug)]
 pub struct LuaState {
     error: Mutex<Option<Error>>,
-    logger: Arc<Mutex<Box<dyn Reporter>>>,
+    logger: Arc<Mutex<Box<dyn IpcChild>>>,
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
     ws_sessions: Mutex<HashMap<String, Arc<Mutex<WebSocket>>>>,
     blobs: Mutex<HashMap<String, Arc<Blob>>>,
@@ -426,7 +426,7 @@ pub struct Script {
     code: String,
 }
 
-pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn Reporter>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
+pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -592,7 +592,7 @@ impl Script {
     }
 
     pub fn run(&self, env: Environment,
-                      tx: Arc<Mutex<Box<dyn Reporter>>>,
+                      tx: Arc<Mutex<Box<dyn IpcChild>>>,
                       arg: AnyLuaValue,
     ) -> Result<()> {
         let (mut lua, state) = ctx(env, tx);
@@ -623,7 +623,7 @@ impl Script {
 
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
-        use crate::engine::DummyReporter;
+        use crate::ipc::child::DummyIpcChild;
         use crate::geoip::Maxmind;
         use crate::paths;
         let keyring = Vec::new();
@@ -652,6 +652,6 @@ a.prod.fastly.net
             geoip,
             asn,
         };
-        self.run(env, DummyReporter::new(), AnyLuaValue::LuaNil)
+        self.run(env, DummyIpcChild::new(), AnyLuaValue::LuaNil)
     }
 }

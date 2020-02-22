@@ -6,7 +6,7 @@ use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::Cmd;
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
-use crate::engine::isolation::StartCommand;
+use crate::ipc::common::StartCommand;
 use crate::models::*;
 use crate::shell::Shell;
 use crate::keyring::KeyRing;

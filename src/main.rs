@@ -5,8 +5,9 @@ use sn0int::cmd::{self, LiteCmd};
 use sn0int::config::Config;
 use sn0int::db;
 use sn0int::errors::*;
-use sn0int::engine::{self, Module};
+use sn0int::engine::Module;
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
+use sn0int::ipc;
 use sn0int::options::Opt;
 use sn0int::paths;
 use sn0int::psl::PslReader;
@@ -61,7 +62,7 @@ fn run_sandbox() -> Result<()> {
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn, psl)
+    ipc::child::run(geoip, asn, psl)
 }
 
 fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {
