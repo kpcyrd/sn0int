@@ -63,6 +63,7 @@ def main(tempdir, binary):
     print('[*] testing db for subdomains')
     subdomains = sn0int_select(tempdir, binary, ['subdomains'])
     assert {x['value'] for x in subdomains} == {
+        'example.com',
         'www.example.com',
         'm.example.com',
         'dev.example.com',
@@ -91,6 +92,8 @@ def main(tempdir, binary):
     print('[*] testing db for urls')
     urls = sn0int_select(tempdir, binary, ['urls'])
     assert {(x['value'], x['status']) for x in urls} == {
+        ('http://example.com/', 200),
+        ('https://example.com/', 200),
         ('http://www.example.com/', 200),
         ('https://www.example.com/', 200),
     }
