@@ -3045,7 +3045,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sn0int"
-version = "0.17.0"
+version = "0.17.1"
 dependencies = [
  "atty 0.2.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3093,7 +3093,7 @@ dependencies = [
  "shellwords 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sloppy-rfc4880 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "sn0int-common 0.10.0",
- "sn0int-std 0.17.0",
+ "sn0int-std 0.17.1",
  "structopt 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "strum_macros 0.17.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3148,7 +3148,7 @@ dependencies = [
 
 [[package]]
 name = "sn0int-std"
-version = "0.17.0"
+version = "0.17.1"
 dependencies = [
  "base64 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
