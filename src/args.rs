@@ -124,6 +124,9 @@ pub struct Run {
     /// Narrow down targeted entities
     #[structopt(short="t", long="target")]
     pub target: Option<String>,
+    /// Dump the sandbox init message to stdout instead of running a child process
+    #[structopt(long="dump-sandbox-init-msg")]
+    pub dump_sandbox_init_msg: bool,
 }
 
 #[derive(Debug, StructOpt)]

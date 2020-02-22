@@ -46,7 +46,11 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         rl.set_target(Some(target));
     }
 
-    cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
+    if args.dump_sandbox_init_msg {
+        cmd::run_cmd::dump_sandbox_init_msg(&mut rl, args.into(), Opt::collect(&args.options))
+    } else {
+        cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
+    }
 }
 
 fn run_sandbox() -> Result<()> {
