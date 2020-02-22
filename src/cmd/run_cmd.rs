@@ -1,10 +1,12 @@
 use crate::errors::*;
 
+use chrootable_https::dns::Resolver;
 use crate::args;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::Cmd;
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
+use crate::ipc::common::StartCommand;
 use crate::models::*;
 use crate::shell::Shell;
 use crate::keyring::KeyRing;
@@ -113,16 +115,10 @@ fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> R
     Ok(())
 }
 
-pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = rl.module()
-        .map(|m| m.to_owned())
-        .ok_or_else(|| format_err!("No module selected"))?;
-
-    prepare_keyring(rl.keyring_mut(), &module, &params)?;
-
+fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
     let filter = rl.scoped_targets();
 
-    let args = match module.source() {
+    match module.source() {
         Some(Source::Domains) => prepare_args::<Domain>(rl, &filter, None),
         Some(Source::Subdomains) => prepare_args::<Subdomain>(rl, &filter, None),
         Some(Source::IpAddrs) => prepare_args::<IpAddr>(rl, &filter, None),
@@ -152,7 +148,44 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
             }
         },
         None => Ok(vec![(serde_json::Value::Null, None, vec![])]),
-    }?;
+    }
+}
+
+pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
+    let module = rl.module()
+        .map(|m| m.to_owned())
+        .ok_or_else(|| format_err!("No module selected"))?;
+
+    prepare_keyring(rl.keyring_mut(), &module, &params)?;
+    let keyring = rl.keyring().request_keys(&module);
+
+    let dns_config = Resolver::from_system()?;
+    let proxy = rl.config().network.proxy.clone();
+
+    let args = get_args(rl, &module)?;
+    for (arg, _pretty_arg, blobs) in args {
+        let start_cmd = StartCommand::new(params.verbose,
+                                          keyring.clone(),
+                                          dns_config.clone(),
+                                          proxy.clone(),
+                                          options.clone(),
+                                          module.clone(),
+                                          arg,
+                                          blobs);
+        let out = serde_json::to_string(&start_cmd)?;
+        println!("{}", out);
+    }
+
+    Ok(())
+}
+
+pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
+    let module = rl.module()
+        .map(|m| m.to_owned())
+        .ok_or_else(|| format_err!("No module selected"))?;
+
+    prepare_keyring(rl.keyring_mut(), &module, &params)?;
+    let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
     let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);

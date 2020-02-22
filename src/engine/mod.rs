@@ -5,7 +5,6 @@ use crate::config::Config;
 use crate::geoip::MaxmindReader;
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
-use serde_json;
 use std::fs;
 use std::fmt::Debug;
 use std::path::PathBuf;
@@ -13,6 +12,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use crate::engine::ctx::Script;
+use crate::ipc::child::IpcChild;
 use sn0int_common::ModuleID;
 use sn0int_common::metadata::{Metadata, Source};
 use chrootable_https::dns::Resolver;
@@ -21,10 +21,9 @@ use crate::paths;
 use std::cmp::Ordering;
 use std::path::Path;
 use crate::term;
-use crate::worker::{self, Event};
+use crate::worker;
 
 pub mod ctx;
-pub mod isolation;
 pub use sn0int_std::engine::structs;
 
 
@@ -299,9 +298,9 @@ impl Module {
         self.private_module
     }
 
-    pub fn run(&self, env: Environment, reporter: Arc<Mutex<Box<dyn Reporter>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(&self, env: Environment, ipc_child: Arc<Mutex<Box<dyn IpcChild>>>, arg: LuaJsonValue) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
-        self.script.run(env, reporter, arg.into())
+        self.script.run(env, ipc_child, arg.into())
     }
 
     #[inline]
@@ -318,30 +317,5 @@ impl Module {
             Some(source) => source.group_as_str() == other,
             None => other == "",
         }
-    }
-}
-
-pub trait Reporter: Debug {
-    fn send(&mut self, event: &Event) -> Result<()>;
-
-    fn recv(&mut self) -> Result<serde_json::Value>;
-}
-
-#[derive(Debug)]
-pub struct DummyReporter;
-
-impl DummyReporter {
-    pub fn new() -> Arc<Mutex<Box<dyn Reporter>>> {
-        Arc::new(Mutex::new(Box::new(DummyReporter)))
-    }
-}
-
-impl Reporter for DummyReporter {
-    fn send(&mut self, _event: &Event) -> Result<()> {
-        Ok(())
-    }
-
-    fn recv(&mut self) -> Result<serde_json::Value> {
-        unimplemented!("DummyReporter::recv doesn't exist")
     }
 }

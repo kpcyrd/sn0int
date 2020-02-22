@@ -5,8 +5,9 @@ use sn0int::cmd::{self, LiteCmd};
 use sn0int::config::Config;
 use sn0int::db;
 use sn0int::errors::*;
-use sn0int::engine::{self, Module};
+use sn0int::engine::Module;
 use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
+use sn0int::ipc;
 use sn0int::options::Opt;
 use sn0int::paths;
 use sn0int::psl::PslReader;
@@ -46,7 +47,11 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         rl.set_target(Some(target));
     }
 
-    cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
+    if args.dump_sandbox_init_msg {
+        cmd::run_cmd::dump_sandbox_init_msg(&mut rl, args.into(), Opt::collect(&args.options))
+    } else {
+        cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
+    }
 }
 
 fn run_sandbox() -> Result<()> {
@@ -57,7 +62,7 @@ fn run_sandbox() -> Result<()> {
 
     sandbox::init()
         .context("Failed to init sandbox")?;
-    engine::isolation::run_worker(geoip, asn, psl)
+    ipc::child::run(geoip, asn, psl)
 }
 
 fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {

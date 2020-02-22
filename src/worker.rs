@@ -5,8 +5,9 @@ use crate::channel;
 use crate::cmd::run_cmd::Params;
 use crate::db::{Database, DbChange, Family};
 use crate::db::ttl::Ttl;
-use crate::engine::{self, Module};
-use crate::engine::isolation::Supervisor;
+use crate::engine::Module;
+use crate::ipc;
+use crate::ipc::parent::IpcParent;
 use crate::models::*;
 use serde_json;
 use crate::ratelimits::{Ratelimiter, RatelimitResponse};
@@ -340,13 +341,13 @@ impl StdioEvent {
         }
     }
 
-    pub fn apply(self, supervisor: &mut Supervisor, tx: &EventSender, reader: &mut Option<BufReader<Stdin>>) {
+    pub fn apply(self, ipc_parent: &mut IpcParent, tx: &EventSender, reader: &mut Option<BufReader<Stdin>>) {
         let reply = match self {
             StdioEvent::Readline => Self::read_line(reader),
             StdioEvent::ToEnd => Self::read_to_end(reader),
         };
         let reply = reply.map_err(|e| e.to_string());
-        supervisor.send_struct(reply, tx);
+        ipc_parent.send_struct(reply, tx);
     }
 }
 
@@ -412,7 +413,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
             }
 
             tx.send(Event2::Start);
-            let event = match engine::isolation::spawn_module(module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs) {
+            let event = match ipc::parent::run(module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };

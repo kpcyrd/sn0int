@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::errors::*;
-use crate::engine::{ctx, Environment, DummyReporter};
+use crate::engine::{ctx, Environment};
+use crate::ipc::child::DummyIpcChild;
 use crate::engine::ctx::{State, LuaState};
 use crate::geoip::{Maxmind, AsnDB, GeoIP};
 use crate::hlua::{Lua, AnyLuaValue};
@@ -90,7 +91,7 @@ pub fn run(config: &Config) -> Result<()> {
     let asn = AsnDB::try_open_reader(&cache_dir)?;
 
     let env = Environment {
-        verbose: 0, // this doesn't do anything since we use a dummy reporter
+        verbose: 0, // this doesn't do anything since we use a dummy ipc child
         keyring,
         dns_config,
         proxy,
@@ -101,7 +102,7 @@ pub fn run(config: &Config) -> Result<()> {
         asn,
     };
 
-    let tx = DummyReporter::new();
+    let tx = DummyIpcChild::new();
     let (lua, state) = ctx::ctx(env, tx);
     let mut repl = Repl::new(lua, state);
 
