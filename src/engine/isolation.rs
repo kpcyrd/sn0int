@@ -165,8 +165,8 @@ impl Reporter for StdioReporter {
     fn send(&mut self, event: &Event) -> Result<()> {
         let mut event = serde_json::to_string(&event)?;
         event.push('\n');
+        debug!("Reporter sends: {:?}", event);
         self.stdout.write_all(event.as_bytes())?;
-        debug!("Reporter sent: {:?}", event);
         Ok(())
     }
 
