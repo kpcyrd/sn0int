@@ -49,6 +49,9 @@ pub enum Command {
     Quickstart,
     Workspace,
 
+    Exit,
+    Quit,
+
     Interrupt,
 }
 
@@ -61,6 +64,7 @@ impl Command {
             Command::Autoscope => "autoscope",
             Command::Back => "back",
             Command::Delete => "delete",
+            Command::Exit => "exit",
             Command::Help => "help",
             Command::Keyring => "keyring",
             Command::Mod => "mod",
@@ -73,6 +77,7 @@ impl Command {
             Command::Target => "target",
             Command::Use => "use",
             Command::Quickstart => "quickstart",
+            Command::Quit => "quit",
             Command::Workspace => "workspace",
             Command::Interrupt => unreachable!(),
         }
@@ -118,6 +123,7 @@ impl FromStr for Command {
             "autoscope" => Ok(Command::Autoscope),
             "back" => Ok(Command::Back),
             "delete" => Ok(Command::Delete),
+            "exit" => Ok(Command::Exit),
             "help" => Ok(Command::Help),
             "keyring" => Ok(Command::Keyring),
             "mod" => Ok(Command::Mod),
@@ -130,6 +136,7 @@ impl FromStr for Command {
             "target"  => Ok(Command::Target),
             "use"  => Ok(Command::Use),
             "quickstart"  => Ok(Command::Quickstart),
+            "quit" => Ok(Command::Quit),
             "workspace" => Ok(Command::Workspace),
             x => bail!("unknown command: {:?}, try \"help\"", x),
         }
@@ -465,6 +472,9 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
         Some((Command::Workspace, args)) => cmd::<workspace_cmd::Args>(rl, &args)?,
+
+        Some((Command::Exit, _)) => return Ok(true),
+        Some((Command::Quit, _)) => return Ok(true),
         Some((Command::Interrupt, _)) => return Ok(true),
         None => (),
     }
