@@ -517,6 +517,13 @@ Log an info to the terminal.
 
     info('ohai')
 
+intval
+------
+
+Parse a number from a string.
+
+    x = strval('1234')
+
 json_decode
 -----------
 
@@ -1092,6 +1099,13 @@ Parse a date into a unix timestamp, see `strftime rules`_.
     t = strptime('%d/%m/%Y %H:%M', '23/05/2019 04:16')
 
 .. _strftime rules: https://docs.rs/chrono/0.4.6/chrono/format/strftime/index.html
+
+strval
+------
+
+Convert a number into a string.
+
+    x = strval(1234)
 
 time_unix
 ---------
