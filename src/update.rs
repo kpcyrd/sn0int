@@ -9,8 +9,8 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::thread;
 
-// 1 week
-const UPDATE_INTERVAL: u64 = 3600 * 24 * 7;
+// 1 day
+const UPDATE_INTERVAL: u64 = 3600 * 24;
 
 
 #[derive(Debug, Default, Serialize, Deserialize)]
