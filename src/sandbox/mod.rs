@@ -5,7 +5,7 @@ use caps::{self, CapSet};
 use nix;
 
 #[cfg(target_os = "openbsd")]
-use pledge::{pledge, Promise, ToPromiseString};
+use pledge::pledge;
 #[cfg(target_os = "openbsd")]
 use unveil::unveil;
 
@@ -72,7 +72,7 @@ pub fn init_openbsd() -> Result<()> {
     unveil("", "")
         .map_err(|_| format_err!("Failed to call unveil"))?;
 
-    pledge![Stdio, RPath, Dns, Inet]?;
+    pledge![Stdio Rpath Dns Inet,]?;
 
     Ok(())
 }
