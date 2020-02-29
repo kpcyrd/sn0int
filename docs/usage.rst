@@ -149,7 +149,7 @@ some of them in a browser but hold on, there's a more efficient way to approach
 this.
 
 .. hint::
-   You can run the modules concurrently with ``run -j 8``.
+   You can run the modules concurrently with ``run -j3``.
 
 Running followup modules on the results
 ---------------------------------------
