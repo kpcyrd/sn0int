@@ -16,9 +16,8 @@ pub fn run(_rl: &mut Shell, _args: &[String]) -> Result<()> {
     help("autoscope",   "Manage rules to automatically add entities to scope");
     help("delete",      "Delete entities from the database");
     help("keyring",     "Manage saved credentials");
-    help("mod",         "Manage installed modules");
+    help("pkg",         "Manage installed modules");
     help("noscope",     "Exclude entities from scope");
-    help("quickstart",  "Install all featured modules");
     help("run",         "Run the currently selected module");
     help("scope",       "Include entities in the scope again");
     help("select",      "Select entities from the database");
