@@ -507,6 +507,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
 
     if verbose_init && library.list().is_empty() {
         term::success("No modules found, run \x1b[1mpkg quickstart\x1b[0m to install default modules");
+        term::success("New to sn0int? Follow https://sn0int.rtfd.io/en/stable/usage.html");
     }
 
     let autoupdate = AutoUpdater::load()?;
