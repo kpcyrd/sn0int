@@ -22,6 +22,7 @@ import_fns!(int);
 import_fns!(json);
 import_fns!(keyring);
 import_fns!(logger);
+import_fns!(mqtt);
 import_fns!(options);
 import_fns!(pgp);
 import_fns!(psl);

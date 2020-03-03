@@ -17,6 +17,7 @@ use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
 use serde_json;
 use sn0int_std::blobs::{Blob, BlobState};
+use sn0int_std::mqtt::{MqttClient, MqttOptions};
 use sn0int_std::web::WebState;
 use std::collections::HashMap;
 use std::result;
@@ -178,6 +179,10 @@ pub trait State {
 
     fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>>;
 
+    fn mqtt_connect(&self, url: url::Url, options: &MqttOptions) -> Result<String>;
+
+    fn get_mqtt(&self, id: &str)-> Arc<Mutex<MqttClient>>;
+
     fn http_mksession(&self) -> String;
 
     fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
@@ -199,6 +204,7 @@ pub struct LuaState {
     logger: Arc<Mutex<Box<dyn IpcChild>>>,
     socket_sessions: Mutex<HashMap<String, Arc<Mutex<Socket>>>>,
     ws_sessions: Mutex<HashMap<String, Arc<Mutex<WebSocket>>>>,
+    mqtt_sessions: Mutex<HashMap<String, Arc<Mutex<MqttClient>>>>,
     blobs: Mutex<HashMap<String, Arc<Blob>>>,
     http_sessions: Mutex<HashMap<String, HttpSession>>,
     http_clients: Mutex<HashMap<String, Arc<chrootable_https::Client<Resolver>>>>,
@@ -340,6 +346,22 @@ impl State for LuaState {
         sock.clone()
     }
 
+    fn mqtt_connect(&self, url: url::Url, options: &MqttOptions) -> Result<String> {
+        let mut mtx = self.mqtt_sessions.lock().unwrap();
+        let id = self.random_id();
+
+        let sock = MqttClient::connect(&self.dns_config, url, options)?;
+        mtx.insert(id.clone(), Arc::new(Mutex::new(sock)));
+
+        Ok(id)
+    }
+
+    fn get_mqtt(&self, id: &str)-> Arc<Mutex<MqttClient>> {
+        let mtx = self.mqtt_sessions.lock().unwrap();
+        let sock = mtx.get(id).expect("Invalid mqtt reference"); // TODO
+        sock.clone()
+    }
+
     fn http_mksession(&self) -> String {
         let mut mtx = self.http_sessions.lock().unwrap();
         let (id, session) = HttpSession::new();
@@ -439,6 +461,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
         logger,
         socket_sessions: Mutex::new(HashMap::new()),
         ws_sessions: Mutex::new(HashMap::new()),
+        mqtt_sessions: Mutex::new(HashMap::new()),
         blobs: Mutex::new(HashMap::new()),
         http_sessions: Mutex::new(HashMap::new()),
         http_clients: Mutex::new(HashMap::new()),
@@ -504,6 +527,11 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
     runtime::keyring(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
     runtime::md5(&mut lua, state.clone());
+    runtime::mqtt_connect(&mut lua, state.clone());
+    runtime::mqtt_subscribe(&mut lua, state.clone());
+    runtime::mqtt_recv_bin(&mut lua, state.clone());
+    runtime::mqtt_recv_text(&mut lua, state.clone());
+    runtime::mqtt_ping(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());
     runtime::print(&mut lua, state.clone());

@@ -40,6 +40,7 @@ geo = "0.12"
 bytes = "0.4"
 base64 = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
+mqtt-protocol = "0.8.1"
 
 image = "0.23.0"
 kamadak-exif = "0.5.1"
