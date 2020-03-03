@@ -524,6 +524,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
     runtime::json_decode(&mut lua, state.clone());
     runtime::json_decode_stream(&mut lua, state.clone());
     runtime::json_encode(&mut lua, state.clone());
+    runtime::key_trunc_pad(&mut lua, state.clone());
     runtime::keyring(&mut lua, state.clone());
     runtime::last_err(&mut lua, state.clone());
     runtime::md5(&mut lua, state.clone());
@@ -564,6 +565,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
     runtime::sock_recvuntil(&mut lua, state.clone());
     runtime::sock_sendafter(&mut lua, state.clone());
     runtime::sock_newline(&mut lua, state.clone());
+    runtime::sodium_secretbox_open(&mut lua, state.clone());
     runtime::status(&mut lua, state.clone());
     runtime::stdin_read_line(&mut lua, state.clone());
     runtime::stdin_read_to_end(&mut lua, state.clone());

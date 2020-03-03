@@ -3,6 +3,7 @@ use hlua_badtouch as hlua;
 
 pub mod blobs;
 pub mod crt;
+pub mod crypto;
 mod errors;
 pub mod engine;
 pub mod geo;

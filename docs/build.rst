@@ -18,7 +18,7 @@ Archlinux
 
 .. code-block:: bash
 
-    $ pacman -S geoip2-database libseccomp publicsuffix-list sqlite
+    $ pacman -S geoip2-database libseccomp libsodium publicsuffix-list sqlite
 
 Mac OSX
 ~~~~~~~
@@ -30,7 +30,7 @@ Debian/Ubuntu/Kali
 
 .. code-block:: bash
 
-    $ apt install build-essential libsqlite3-dev libseccomp-dev publicsuffix
+    $ apt install build-essential libsqlite3-dev libseccomp-dev libsodium-dev publicsuffix
 
 .. warning::
    On a debian based system make sure you've installed rust with rustup.
@@ -40,21 +40,21 @@ Alpine
 
 .. code-block:: bash
 
-    $ apk add sqlite-dev libseccomp-dev
+    $ apk add sqlite-dev libseccomp-dev libsodium-dev
 
 OpenBSD
 ~~~~~~~
 
 .. code-block:: bash
 
-    $ pkg_add sqlite3 geolite2-city geolite2-asn
+    $ pkg_add sqlite3 geolite2-city geolite2-asn libsodium
 
 Gentoo
 ~~~~~~
 
 .. code-block:: bash
 
-    emerge --ask sys-libs/libseccomp dev-db/sqlite
+    emerge --ask sys-libs/libseccomp dev-db/sqlite dev-libs/libsodium
 
 Windows
 ~~~~~~~

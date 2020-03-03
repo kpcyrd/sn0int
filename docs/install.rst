@@ -32,7 +32,7 @@ at the docker image as an alternative.
 
 .. code-block:: bash
 
-    $ apt install build-essential libsqlite3-dev libseccomp-dev publicsuffix
+    $ apt install build-essential libsqlite3-dev libseccomp-dev libsodium-dev publicsuffix
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
     $ cargo install -f --path .

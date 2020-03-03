@@ -6,6 +6,7 @@ macro_rules! import_fns {
 }
 
 import_fns!(blobs);
+import_fns!(crypto);
 import_fns!(datetime);
 import_fns!(db);
 import_fns!(dns);
