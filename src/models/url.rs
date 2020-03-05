@@ -1,10 +1,10 @@
+use crate::ser::StringOrBytes;
 use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;
 use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::ser;
 use crate::url;
 
 
@@ -228,7 +228,6 @@ pub struct NewUrl {
     pub value: String,
     pub path: String,
     pub status: Option<i32>,
-    #[serde(deserialize_with="ser::opt_string_or_bytes")]
     pub body: Option<Vec<u8>>,
     pub online: Option<bool>,
     pub title: Option<String>,
@@ -254,7 +253,7 @@ impl InsertableStruct<Url> for NewUrl {
 }
 
 impl Upsertable<Url> for NewUrl {
-    type Update = UrlUpdate;
+    type Update = UrlChangeset;
 
     fn upsert(self, existing: &Url) -> Self::Update {
         Self::Update {
@@ -283,8 +282,7 @@ pub struct InsertUrl {
     pub subdomain_id: i32,
     pub value: String,
     pub status: Option<i32>,
-    #[serde(deserialize_with="ser::opt_string_or_bytes")]
-    pub body: Option<Vec<u8>>,
+    pub body: Option<StringOrBytes>,
     pub online: Option<bool>,
     pub title: Option<String>,
     pub redirect: Option<String>,
@@ -309,7 +307,7 @@ impl InsertToNew for InsertUrl {
             value: self.value,
             path,
             status: self.status,
-            body: self.body,
+            body: self.body.map(|x| x.0),
             online: self.online,
             title: self.title,
             redirect,
@@ -320,7 +318,7 @@ impl InsertToNew for InsertUrl {
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
 #[table_name="urls"]
-pub struct UrlUpdate {
+pub struct UrlChangeset {
     pub id: i32,
     pub status: Option<i32>,
     pub body: Option<Vec<u8>>,
@@ -329,7 +327,7 @@ pub struct UrlUpdate {
     pub redirect: Option<String>,
 }
 
-impl Upsert for UrlUpdate {
+impl Upsert for UrlChangeset {
     fn is_dirty(&self) -> bool {
         self.status.is_some() ||
         self.body.is_some() ||
@@ -347,7 +345,7 @@ impl Upsert for UrlUpdate {
     }
 }
 
-impl Updateable<Url> for UrlUpdate {
+impl Updateable<Url> for UrlChangeset {
     fn changeset(&mut self, existing: &Url) {
         Self::clear_if_equal(&mut self.online, &existing.online);
         Self::clear_if_equal(&mut self.status, &existing.status);
@@ -362,6 +360,30 @@ impl Updateable<Url> for UrlUpdate {
         Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())));
         Self::push_value(updates, "title", &self.title);
         Self::push_value(updates, "redirect", &self.redirect);
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UrlUpdate {
+    pub id: i32,
+    pub status: Option<i32>,
+    pub body: Option<StringOrBytes>,
+    pub online: Option<bool>,
+    pub title: Option<String>,
+    pub redirect: Option<String>,
+}
+
+impl UpdateToChangeset<UrlChangeset> for UrlUpdate {
+    fn try_into_changeset(self) -> Result<UrlChangeset> {
+        // TODO: redirect needs pre-processing
+        Ok(UrlChangeset {
+            id: self.id,
+            status: self.status,
+            body: self.body.map(|x| x.0),
+            online: self.online,
+            title: self.title,
+            redirect: self.redirect,
+        })
     }
 }
 

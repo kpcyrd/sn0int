@@ -8,7 +8,7 @@ use std::marker::PhantomData;
 
 
 #[derive(Debug, Serialize, Deserialize)]
-struct StringOrBytes(#[serde(deserialize_with="string_or_bytes")] Vec<u8>);
+pub struct StringOrBytes(#[serde(deserialize_with="string_or_bytes")] pub Vec<u8>);
 
 pub fn string_or_bytes<'de, D>(deserializer: D) -> result::Result<Vec<u8>, D::Error> where D: Deserializer<'de> {
     struct StringOrBytes(PhantomData<fn() -> Vec<u8>>);

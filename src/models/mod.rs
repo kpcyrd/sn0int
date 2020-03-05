@@ -119,7 +119,7 @@ impl From<&Insert> for Table {
 pub enum Update {
     Subdomain(SubdomainUpdate),
     IpAddr(IpAddrUpdate),
-    Url(UrlUpdate),
+    Url(UrlChangeset),
     Email(EmailUpdate),
     PhoneNumber(PhoneNumberUpdate),
     Device(DeviceUpdate),
@@ -372,6 +372,10 @@ impl<T: InsertToNew> LuaInsertToNew for T {
     fn lua_try_into_new(self, _state: &Arc<dyn State>) -> Result<Self::Target> {
         self.try_into_new()
     }
+}
+
+pub trait UpdateToChangeset<T> {
+    fn try_into_changeset(self) -> Result<T>;
 }
 
 mod domain;
