@@ -32,6 +32,7 @@ pub mod keyring;
 use sn0int_std::lazy;
 pub mod migrations;
 pub mod models;
+use sn0int_std::mqtt;
 pub mod paths;
 pub use sn0int_std::psl;
 pub mod options;

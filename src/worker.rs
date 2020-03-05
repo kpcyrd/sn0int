@@ -244,7 +244,11 @@ impl DatabaseEvent {
                 log.push_str(&format!("@ {}", object.time));
 
                 if let (Some(ref lat), Some(ref lon)) = (object.latitude, object.longitude) {
-                    log.push_str(&format!(" ({}, {})", lat, lon));
+                    log.push_str(&format!(" ({}, {}", lat, lon));
+                    if let Some(radius) = &object.radius {
+                        log.push_str(&format!(" | {}m", radius));
+                    }
+                    log.push_str(")");
                 }
 
                 if verbose > 0 {

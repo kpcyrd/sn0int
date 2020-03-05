@@ -3,6 +3,7 @@ use hlua_badtouch as hlua;
 
 pub mod blobs;
 pub mod crt;
+pub mod crypto;
 mod errors;
 pub mod engine;
 pub mod geo;
@@ -11,6 +12,7 @@ pub mod gfx;
 pub mod html;
 pub mod json;
 pub mod lazy;
+pub mod mqtt;
 pub mod psl;
 pub mod ratelimits;
 pub mod sockets;

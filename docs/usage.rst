@@ -27,12 +27,12 @@ number of recommended modules::
     [+] Downloading "GeoLite2-City.mmdb"
     [+] Downloading "GeoLite2-ASN.mmdb"
     [+] Loaded 0 modules
-    [*] No modules found, run quickstart to install default modules
+    [*] No modules found, run pkg quickstart to install default modules
     [sn0int][default] >
 
-Typing ``quickstart`` is going to get you a fair number of featured modules::
+Typing ``pkg quickstart`` is going to get you a fair number of featured modules::
 
-    [sn0int][default] > quickstart
+    [sn0int][default] > pkg quickstart
     [+] Installing kpcyrd/asn
     [+] Installing kpcyrd/ctlogs
     [+] Installing kpcyrd/dns-resolve
@@ -105,7 +105,7 @@ Running a module
 Now that we have something to get started with, we can run our first module.
 First lets list all modules we have::
 
-    [sn0int][demo] > mod list
+    [sn0int][demo] > pkg list
     kpcyrd/asn (0.1.0)
         Run a asn lookup for an ip address
     kpcyrd/ctlogs (0.1.0)
@@ -149,7 +149,7 @@ some of them in a browser but hold on, there's a more efficient way to approach
 this.
 
 .. hint::
-   You can run the modules concurrently with ``run -j 8``.
+   You can run the modules concurrently with ``run -j3``.
 
 Running followup modules on the results
 ---------------------------------------

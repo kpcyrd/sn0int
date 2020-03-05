@@ -202,6 +202,7 @@ impl Completer for CmdCompleter {
                             "reload",
                             "update",
                             "uninstall",
+                            "quickstart",
                         ], &cmd[1]))
                     }
                 },

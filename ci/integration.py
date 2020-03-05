@@ -47,10 +47,10 @@ def main(tempdir, binary):
 
     print('[*] installing modules')
     sn0int(tempdir, binary, [
-        'mod install kpcyrd/ctlogs',
-        'mod install kpcyrd/dns-resolve',
-        'mod install kpcyrd/url-scan',
-        'mod install kpcyrd/geoip',
+        'pkg install kpcyrd/ctlogs',
+        'pkg install kpcyrd/dns-resolve',
+        'pkg install kpcyrd/url-scan',
+        'pkg install kpcyrd/geoip',
     ])
 
     print('[*] running ctlogs')

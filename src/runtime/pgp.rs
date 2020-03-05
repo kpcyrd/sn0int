@@ -158,4 +158,25 @@ vA==
         "#).expect("Failed to load script");
         script.test().expect("Script failed");
     }
+
+    #[test]
+    #[ignore]
+    fn verify_pgp_fetch_wkd() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            url = 'https://openpgpkey.archlinux.org/.well-known/openpgpkey/archlinux.org/hu/in9mwr4s84x7gm51851h343n3at1x61g?l=anthraxx'
+            req = http_request(session, 'GET', url, {
+                binary=true,
+            })
+            r = http_fetch(req)
+            k = pgp_pubkey(r['binary'])
+            info(k)
+            if k['fingerprint'] ~= 'E240B57E2C4630BA768E2F26FC1B547C8D8172C8' then
+                return 'wrong fingerprint: ' .. k['fingerprint']
+            end
+        end
+        "#).expect("Failed to load script");
+        script.test().expect("Script failed");
+    }
 }

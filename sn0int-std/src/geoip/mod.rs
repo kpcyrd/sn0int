@@ -1,6 +1,5 @@
 use crate::errors::*;
 use crate::lazy::LazyInit;
-// use crate::paths;
 use maxminddb::{self, geoip2};
 use std::fmt;
 use std::fs::{self, File};
@@ -26,6 +25,8 @@ pub trait Maxmind: Sized {
             "/usr/share/GeoIP/",
             // OpenBSD
             "/usr/local/share/examples/libmaxminddb/",
+            // geoipupdate
+            "/var/lib/GeoIP/",
         ] {
             let path = Path::new(path);
             let path = path.join(Self::filename());

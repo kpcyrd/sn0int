@@ -1,15 +1,11 @@
 use crate::errors::*;
 
-use crate::args::Install;
-use crate::api::Client;
-use crate::registry::{InstallTask, Updater};
+use crate::cmd::Cmd;
+use crate::cmd::pkg_cmd::{ArgsInteractive as PkgArgs, SubCommand, SubCommandInteractive};
 use crate::shell::Shell;
-use crate::update::AutoUpdater;
-use crate::worker;
-use std::sync::Arc;
+use crate::term;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
-use sn0int_common::ModuleID;
 
 
 #[derive(Debug, StructOpt)]
@@ -19,34 +15,11 @@ pub struct Args {
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let _args = Args::from_iter_safe(args)?;
-    let config = rl.config().clone();
 
-    let client = Client::new(&config)?;
-    let updater = Arc::new(Updater::new(&config)?);
-    let mut autoupdate = AutoUpdater::load()?;
+    term::warn("The \x1b[1mquickstart\x1b[0m command is deprecated, use \x1b[1mpkg quickstart\x1b[0m");
 
-    let modules = client.quickstart()?
-        .into_iter()
-        .map(|module| {
-            InstallTask::new(Install {
-                module: ModuleID {
-                    author: module.author,
-                    name: module.name,
-                },
-                version: None,
-                force: false,
-            }, updater.clone())
-        })
-        .collect::<Vec<_>>();
-
-    worker::spawn_multi(modules, |name| {
-        autoupdate.updated(&name);
-    }, 3)?;
-
-    autoupdate.save()?;
-
-    // trigger reload
-    rl.reload_modules()?;
-
-    Ok(())
+    let args = PkgArgs {
+        subcommand: SubCommandInteractive::Base(SubCommand::Quickstart),
+    };
+    args.run(rl)
 }

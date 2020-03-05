@@ -319,6 +319,7 @@ impl Socket {
                 let available = match self.stream.fill_buf() {
                     Ok(n) => n,
                     Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
+                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(Vec::new()),
                     Err(e) => return Err(e.into())
                 };
 
