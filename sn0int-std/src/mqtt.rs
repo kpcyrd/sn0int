@@ -216,10 +216,13 @@ mod tests {
         connect().expect("Failed to setup connection");
     }
 
+    // this test is too flaky
+    /*
     #[test]
     #[ignore]
     fn test_subscribe() {
         let mut c = connect().unwrap();
         c.subscribe("#", 0).unwrap();
     }
+    */
 }
