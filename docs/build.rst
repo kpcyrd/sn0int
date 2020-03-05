@@ -23,7 +23,9 @@ Archlinux
 Mac OSX
 ~~~~~~~
 
-None.
+.. code-block:: bash
+
+    $ brew install libsodium
 
 Debian/Ubuntu/Kali
 ~~~~~~~~~~~~~~~~~~
