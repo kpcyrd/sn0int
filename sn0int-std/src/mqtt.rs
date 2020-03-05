@@ -8,8 +8,8 @@ use mqtt::{TopicFilter, QualityOfService};
 use mqtt::control::ConnectReturnCode;
 use mqtt::control::fixed_header::FixedHeaderError;
 use mqtt::encodable::{Encodable, Decodable};
-use mqtt::packet::{Packet, VariablePacket, ConnectPacket, SubscribePacket, PublishPacket, PingreqPacket};
-use serde::Serialize;
+use mqtt::packet::{Packet, VariablePacket, ConnectPacket, SubscribePacket, PingreqPacket};
+use std::convert::TryFrom;
 use std::io;
 use std::net::SocketAddr;
 use url::Url;
@@ -33,20 +33,6 @@ impl MqttOptions {
         let x = LuaJsonValue::from(x);
         let x = serde_json::from_value(x.into())?;
         Ok(x)
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Pkt<T> {
-    pub topic: String,
-    pub body: T,
-}
-
-impl<T: Serialize> Pkt<T> {
-    pub fn to_lua(&self) -> Result<AnyLuaValue> {
-        let v = serde_json::to_value(&self)?;
-        let v = LuaJsonValue::from(v).into();
-        Ok(v)
     }
 }
 
@@ -116,13 +102,13 @@ impl MqttClient {
         Self::negotiate(stream, options)
     }
 
-    pub fn send(&mut self, pkt: VariablePacket) -> Result<()> {
+    fn send(&mut self, pkt: VariablePacket) -> Result<()> {
         debug!("Sending mqtt packet: {:?}", pkt);
         pkt.encode(&mut self.stream)?;
         Ok(())
     }
 
-    pub fn recv(&mut self) -> std::result::Result<VariablePacket, VariablePacketError> {
+    fn recv(&mut self) -> std::result::Result<VariablePacket, VariablePacketError> {
         let pkt = VariablePacket::decode(&mut self.stream)?;
         debug!("Received mqtt packet: {:?}", pkt);
         Ok(pkt)
@@ -149,39 +135,12 @@ impl MqttClient {
         }
     }
 
-    pub fn recv_publish(&mut self) -> Result<Option<PublishPacket>> {
-        loop {
-            match self.recv() {
-                Ok(VariablePacket::PublishPacket(pkt)) => return Ok(Some(pkt)),
-                Ok(_) => (),
-                Err(VariablePacketError::IoError(err)) if err.kind() == io::ErrorKind::WouldBlock => return Ok(None),
-                Err(VariablePacketError::FixedHeaderError(FixedHeaderError::IoError(err))) if err.kind() == io::ErrorKind::WouldBlock => return Ok(None),
-                Err(err) => return Err(Error::from(err)),
-            };
-        }
-    }
-
-    pub fn recv_bin(&mut self) -> Result<Option<Pkt<Vec<u8>>>> {
-        match self.recv_publish()? {
-            Some(pkt) => {
-                Ok(Some(Pkt {
-                    topic: pkt.topic_name().to_string(),
-                    body: pkt.payload(),
-                }))
-            },
-            None => Ok(None),
-        }
-    }
-
-    pub fn recv_text(&mut self) -> Result<Option<Pkt<String>>> {
-        match self.recv_publish()? {
-            Some(pkt) => {
-                Ok(Some(Pkt {
-                    topic: pkt.topic_name().to_string(),
-                    body: String::from_utf8(pkt.payload())?,
-                }))
-            },
-            None => Ok(None),
+    pub fn recv_pkt(&mut self) -> Result<Option<Pkt>> {
+        match self.recv() {
+            Ok(pkt) => Ok(Some(Pkt::try_from(pkt)?)),
+            Err(VariablePacketError::IoError(err)) if err.kind() == io::ErrorKind::WouldBlock => Ok(None),
+            Err(VariablePacketError::FixedHeaderError(FixedHeaderError::IoError(err))) if err.kind() == io::ErrorKind::WouldBlock => Ok(None),
+            Err(err) => Err(Error::from(err))
         }
     }
 
@@ -189,6 +148,55 @@ impl MqttClient {
         let pkt = PingreqPacket::new();
         self.send(pkt.into())
     }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum Pkt {
+    #[serde(rename="publish")]
+    Publish(Publish),
+    #[serde(rename="pong")]
+    Pong,
+}
+
+impl Pkt {
+    pub fn to_lua(&self) -> Result<AnyLuaValue> {
+        let v = serde_json::to_value(&self)?;
+        let v = LuaJsonValue::from(v).into();
+        Ok(v)
+    }
+}
+
+impl TryFrom<VariablePacket> for Pkt {
+    type Error = Error;
+
+    fn try_from(pkt: VariablePacket) -> Result<Pkt> {
+        match pkt {
+            VariablePacket::ConnectPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::ConnackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PublishPacket(pkt) => Ok(Pkt::Publish(Publish {
+                topic: pkt.topic_name().to_string(),
+                body: pkt.payload(),
+            })),
+            VariablePacket::PubackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PubrecPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PubrelPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PubcompPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PingreqPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::PingrespPacket(_) => Ok(Pkt::Pong),
+            VariablePacket::SubscribePacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::SubackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::UnsubscribePacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::UnsubackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+            VariablePacket::DisconnectPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Publish {
+    pub topic: String,
+    pub body: Vec<u8>,
 }
 
 #[cfg(test)]

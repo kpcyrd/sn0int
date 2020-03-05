@@ -530,8 +530,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
     runtime::md5(&mut lua, state.clone());
     runtime::mqtt_connect(&mut lua, state.clone());
     runtime::mqtt_subscribe(&mut lua, state.clone());
-    runtime::mqtt_recv_bin(&mut lua, state.clone());
-    runtime::mqtt_recv_text(&mut lua, state.clone());
+    runtime::mqtt_recv(&mut lua, state.clone());
     runtime::mqtt_ping(&mut lua, state.clone());
     runtime::pgp_pubkey(&mut lua, state.clone());
     runtime::pgp_pubkey_armored(&mut lua, state.clone());

@@ -31,29 +31,12 @@ pub fn mqtt_subscribe(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
-pub fn mqtt_recv_bin(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("mqtt_recv_bin", hlua::function1(move |sock: String| -> Result<AnyLuaValue> {
+pub fn mqtt_recv(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("mqtt_recv", hlua::function1(move |sock: String| -> Result<AnyLuaValue> {
         let sock = state.get_mqtt(&sock);
         let mut sock = sock.lock().unwrap();
 
-        let pkt = sock.recv_bin()
-            .map_err(|err| state.set_error(err))?;
-
-        if let Some(pkt) = pkt {
-            pkt.to_lua()
-                .map_err(|err| state.set_error(err))
-        } else {
-            Ok(AnyLuaValue::LuaNil)
-        }
-    }))
-}
-
-pub fn mqtt_recv_text(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("mqtt_recv_text", hlua::function1(move |sock: String| -> Result<AnyLuaValue> {
-        let sock = state.get_mqtt(&sock);
-        let mut sock = sock.lock().unwrap();
-
-        let pkt = sock.recv_text()
+        let pkt = sock.recv_pkt()
             .map_err(|err| state.set_error(err))?;
 
         if let Some(pkt) = pkt {
