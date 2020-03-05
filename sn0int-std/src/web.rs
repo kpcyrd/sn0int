@@ -72,6 +72,8 @@ pub struct RequestOptions {
     #[serde(default)]
     into_blob: bool,
     proxy: Option<SocketAddr>,
+    #[serde(default)]
+    binary: bool,
 }
 
 impl RequestOptions {
@@ -101,6 +103,7 @@ pub struct HttpRequest {
     timeout: Option<Duration>,
     into_blob: bool,
     proxy: Option<SocketAddr>,
+    binary: bool,
 }
 
 impl HttpRequest {
@@ -123,6 +126,7 @@ impl HttpRequest {
             timeout,
             into_blob: options.into_blob,
             proxy: options.proxy,
+            binary: options.binary,
         };
 
         if let Some(json) = options.json {
@@ -255,6 +259,8 @@ impl HttpRequest {
             let blob = Blob::create(res.body);
             let id = state.register_blob(blob);
             resp.insert_str("blob", id);
+        } else if self.binary {
+            resp.insert_serde("binary", &res.body[..])?;
         } else {
             resp.insert_str("text", String::from_utf8_lossy(&res.body));
         }

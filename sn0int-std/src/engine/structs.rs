@@ -41,6 +41,12 @@ impl LuaMap {
     pub fn insert_num<K: Into<String>>(&mut self, k: K, v: f64) {
         self.0.insert(AnyHashableLuaValue::LuaString(k.into()), AnyLuaValue::LuaNumber(v));
     }
+
+    pub fn insert_serde<K: Into<String>, S: serde::Serialize>(&mut self, k: K, v: S) -> Result<()> {
+        let v = serde_json::to_value(v)?;
+        self.0.insert(AnyHashableLuaValue::LuaString(k.into()), LuaJsonValue::from(v).into());
+        Ok(())
+    }
 }
 
 impl IntoIterator for LuaMap {
