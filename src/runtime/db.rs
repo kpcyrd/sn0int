@@ -177,6 +177,28 @@ fn gen_changeset<T: Model, U: Updateable<T>>(object: LuaJsonValue, mut update: L
     Ok((existing.id(), value, update))
 }
 
+fn gen_changeset2<T: Model, U: UpdateToChangeset<C>, C: Updateable<T>>(object: LuaJsonValue, mut update: LuaJsonValue) -> Result<(i32, String, C)>
+    where
+        for<'de> T: serde::Deserialize<'de>,
+        for<'de> U: serde::Deserialize<'de>,
+        for<'de> C: serde::Deserialize<'de>,
+{
+    let existing = structs::from_lua::<T>(object)?;
+
+    // copy the id over to the update struct so we can identify the row
+    if let LuaJsonValue::Object(ref mut update) = update {
+        update.insert("id".into(), LuaJsonValue::Number(existing.id().into()));
+    }
+
+    let update = structs::from_lua::<U>(update)?;
+    let mut update = update.try_into_changeset()?;
+
+    let value = existing.to_string();
+    update.changeset(&existing);
+
+    Ok((existing.id(), value, update))
+}
+
 pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<Option<i32>> {
         let family = Family::from_str(&family)
@@ -191,7 +213,7 @@ pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             Family::Ipaddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::IpAddr(u))),
             Family::SubdomainIpaddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
-            Family::Url => gen_changeset::<Url, UrlUpdate>(object, update)
+            Family::Url => gen_changeset2::<Url, UrlUpdate, UrlChangeset>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Url(u))),
             Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
                 .map(|(id, v, u)| (id, v, Update::Email(u))),

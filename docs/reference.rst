@@ -391,6 +391,8 @@ options are set. The following options are available:
 ``proxy``
   Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
   if it doesn't conflict with the global proxy settings.
+``binary``
+  Set to ``true`` to get the http response as raw bytes.
 
 This function may fail.
 
@@ -418,6 +420,8 @@ the following keys:
   A table of headers
 ``text``
   The response body as string
+``binary``
+  The response body as bytes (if ``binary=true``)
 ``blob``
   If ``into_blob`` was enabled for the request the body is downloaded into blob
   storage with a reference to the body in this field.
@@ -558,6 +562,17 @@ Encode a datastructure into a string.
     })
     print(x)
 
+key_trunc_pad
+-------------
+
+Truncate/pad a key to a given length.
+
+.. code-block:: lua
+
+    -- if longer than 32 bytes: truncate to 32
+    -- if shorter than 32 bytes: pad with \x00
+    local key = key_trunc_pad(password, 32, 0)
+
 keyring
 -------
 
@@ -591,6 +606,64 @@ Hash a byte array with md5 and return the results as bytes.
 .. code-block:: lua
 
     hex(md5("\x00\xff"))
+
+mqtt_connect
+------------
+
+Connect to an mqtt broker.
+
+.. code-block:: lua
+
+    local sock = mqtt_connect('mqtts://mqtt.example.com', {
+        username='foo',
+        password='secret',
+    })
+    if last_err() then return end
+
+mqtt_subscribe
+--------------
+
+Subscribe to a topic. Right now only QoS 0 is supported.
+
+.. code-block:: lua
+
+    mqtt_subscribe(sock, '#', 0)
+    if last_err() then return end
+
+mqtt_recv
+---------
+
+Receive an mqtt packet. This is not necessarily a publish packet and more
+packets might be added in the future, so you need to check the type
+specifically.
+
+If a read timeout has been set with mqtt_connect_ this function returns ``nil``
+in case of a read timeout.
+
+.. code-block:: lua
+
+    local pkt = mqtt_recv(sock)
+    if last_err() then return end
+    if pkt == nil then
+        -- read timeout, consider sending a ping or disconnect if the previous ping failed
+    elseif pkt['type'] == 'pong' then
+        -- broker sent a pong
+    elseif pkt['type'] == 'publish' then
+        local payload = utf8_decode(pkt['body'])
+        if last_err() then return end
+        info(payload)
+    end
+
+mqtt_ping
+---------
+
+Send a pingreq packet, causing the broker to send a pingresp. This is used to
+make sure the connection is still working correctly.
+
+.. code-block:: lua
+
+    mqtt_ping(sock)
+    if last_err() then return end
 
 pgp_pubkey
 ----------
@@ -1018,6 +1091,27 @@ Overwrite the default ``\n`` newline.
 .. code-block:: lua
 
     sock_newline(sock, "\r\n")
+
+sodium_secretbox_open
+---------------------
+
+Use authenticated symetric crypto to decrypt a given message.
+
+Internally this is ``crypto_secretbox_xsalsa20poly1305``.
+
+The key **must** be 32 bytes, see key_trunc_pad_ if necessary.
+
+The first 24 bytes of the encrypted message are expected to be the nonce.
+
+.. code-block:: lua
+
+    plain = sodium_secretbox_open(encrypted, key)
+    if last_err() then return end
+
+    txt = utf8_decode(plain)
+    if last_err() then return end
+
+    info(txt)
 
 status
 ------

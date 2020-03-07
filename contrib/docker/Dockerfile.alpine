@@ -1,7 +1,6 @@
 FROM rust:alpine3.11
 ENV RUSTFLAGS="-C target-feature=-crt-static"
-RUN apk add --no-cache sqlite-dev libseccomp-dev libsodium-dev
-RUN apk add --no-cache --virtual .build-rust rust cargo
+RUN apk add --no-cache musl-dev sqlite-dev libseccomp-dev libsodium-dev
 WORKDIR /usr/src/sn0int
 COPY . .
 RUN cargo build --release --verbose

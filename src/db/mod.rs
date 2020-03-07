@@ -304,7 +304,7 @@ impl Database {
         Ok(ipaddr_update.id)
     }
 
-    pub fn update_url(&self, url_update: &UrlUpdate) -> Result<i32> {
+    pub fn update_url(&self, url_update: &UrlChangeset) -> Result<i32> {
         use crate::schema::urls::columns::*;
         diesel::update(urls::table.filter(id.eq(url_update.id)))
             .set(url_update)
