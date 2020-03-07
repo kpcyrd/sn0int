@@ -596,6 +596,64 @@ Hash a byte array with md5 and return the results as bytes.
 
     hex(md5("\x00\xff"))
 
+mqtt_connect
+------------
+
+Connect to an mqtt broker.
+
+.. code-block:: lua
+
+    local sock = mqtt_connect('mqtts://mqtt.example.com', {
+        username='foo',
+        password='secret',
+    })
+    if last_err() then return end
+
+mqtt_subscribe
+--------------
+
+Subscribe to a topic. Right now only QoS 0 is supported.
+
+.. code-block:: lua
+
+    mqtt_subscribe(sock, '#', 0)
+    if last_err() then return end
+
+mqtt_recv
+---------
+
+Receive an mqtt packet. This is not necessarily a publish packet and more
+packets might be added in the future, so you need to check the type
+specifically.
+
+If a read timeout has been set with mqtt_connect_ this function returns ``nil``
+in case of a read timeout.
+
+.. code-block:: lua
+
+    local pkt = mqtt_recv(sock)
+    if last_err() then return end
+    if pkt == nil then
+        -- read timeout, consider sending a ping or disconnect if the previous ping failed
+    elseif pkt['type'] == 'pong' then
+        -- broker sent a pong
+    elseif pkt['type'] == 'publish' then
+        local payload = utf8_decode(pkt['body'])
+        if last_err() then return end
+        info(payload)
+    end
+
+mqtt_ping
+---------
+
+Send a pingreq packet, causing the broker to send a pingresp. This is used to
+make sure the connection is still working correctly.
+
+.. code-block:: lua
+
+    mqtt_ping(sock)
+    if last_err() then return end
+
 pgp_pubkey
 ----------
 
