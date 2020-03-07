@@ -38,6 +38,7 @@ Getting Started
    install
    build
    usage
+   autonoscope
    scripting
    database
    structs

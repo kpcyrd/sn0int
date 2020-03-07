@@ -391,6 +391,8 @@ options are set. The following options are available:
 ``proxy``
   Use a socks5 proxy in the format ``127.0.0.1:9050``. This option only works
   if it doesn't conflict with the global proxy settings.
+``binary``
+  Set to ``true`` to get the http response as raw bytes.
 
 This function may fail.
 
@@ -418,6 +420,8 @@ the following keys:
   A table of headers
 ``text``
   The response body as string
+``binary``
+  The response body as bytes (if ``binary=true``)
 ``blob``
   If ``into_blob`` was enabled for the request the body is downloaded into blob
   storage with a reference to the body in this field.
