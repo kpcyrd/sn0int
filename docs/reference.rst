@@ -562,6 +562,17 @@ Encode a datastructure into a string.
     })
     print(x)
 
+key_trunc_pad
+-------------
+
+Truncate/pad a key to a given length.
+
+.. code-block:: lua
+
+    -- if longer than 32 bytes: truncate to 32
+    -- if shorter than 32 bytes: pad with \x00
+    local key = key_trunc_pad(password, 32, 0)
+
 keyring
 -------
 
@@ -1080,6 +1091,27 @@ Overwrite the default ``\n`` newline.
 .. code-block:: lua
 
     sock_newline(sock, "\r\n")
+
+sodium_secretbox_open
+---------------------
+
+Use authenticated symetric crypto to decrypt a given message.
+
+Internally this is ``crypto_secretbox_xsalsa20poly1305``.
+
+The key **must** be 32 bytes, see key_trunc_pad_ if necessary.
+
+The first 24 bytes of the encrypted message are expected to be the nonce.
+
+.. code-block:: lua
+
+    plain = sodium_secretbox_open(encrypted, key)
+    if last_err() then return end
+
+    txt = utf8_decode(plain)
+    if last_err() then return end
+
+    info(txt)
 
 status
 ------
