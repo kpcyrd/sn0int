@@ -41,12 +41,20 @@ impl Client {
         thread_rng().sample_iter(&Alphanumeric).take(32).collect()
     }
 
+    #[inline]
+    fn user_agent() -> String {
+        format!("{}, {}",
+            web::default_user_agent(),
+            embedded_triple::get()
+        )
+    }
+
     pub fn request<T: DeserializeOwned + fmt::Debug>(&self, mut request: RequestBuilder, body: Body) -> Result<T> {
         if let Some(session) = &self.session {
             info!("Adding session token to request");
             request.header("Auth", session.as_str());
         }
-        request.header("User-Agent", web::default_user_agent());
+        request.header("User-Agent", Self::user_agent());
 
         let request = request.body(body)?;
 
