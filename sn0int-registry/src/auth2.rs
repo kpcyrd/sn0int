@@ -4,7 +4,7 @@ use sn0int_registry::db::Connection;
 use rocket::http::Status;
 use rocket::{Request, Outcome};
 use rocket::request::{self, FromRequest};
-use crate::github::GithubAuthenticator;
+use crate::github;
 
 
 pub struct AuthHeader(String);
@@ -12,8 +12,7 @@ pub struct AuthHeader(String);
 impl AuthHeader {
     pub fn verify(&self, connection: &Connection) -> Result<String> {
         let session = AuthToken::read(&self.0, &connection)?;
-        let client = GithubAuthenticator::from_env()?;
-        client.get_username(&session.access_token)
+        github::get_username(&session.access_token)
             .map_err(Error::from)
     }
 }
