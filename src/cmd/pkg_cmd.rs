@@ -71,6 +71,9 @@ pub struct List {
     /// List outdated modules
     #[structopt(long="outdated")]
     pub outdated: bool,
+    /// Filter by pattern
+    #[structopt(default_value="*")]
+    pub pattern: String,
 }
 
 #[derive(Debug, StructOpt)]
@@ -97,6 +100,8 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
         SubCommand::List(list) => {
             let autoupdate = AutoUpdater::load()?;
 
+            let filter = glob::Pattern::new(&list.pattern)?;
+
             for module in library.list() {
                 if let Some(source) = &list.source {
                     if !module.source_equals(&source) {
@@ -105,6 +110,9 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
                 }
 
                 let canonical = module.canonical();
+                if !filter.matches(&canonical) {
+                    continue;
+                }
 
                 let mut out = String::new();
                 write!(&mut out, "{} ({})", canonical.green(),

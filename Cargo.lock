@@ -3116,6 +3116,7 @@ dependencies = [
  "embedded-triple 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "hlua-badtouch 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hmac 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ipnetwork 0.16.0 (registry+https://github.com/rust-lang/crates.io-index)",
