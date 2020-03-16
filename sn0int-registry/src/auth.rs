@@ -2,7 +2,7 @@ use diesel::pg::PgConnection;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, TokenUrl, TokenResponse};
-use crate::github::GithubAuthenticator;
+use crate::github;
 use sn0int_registry::errors::*;
 use sn0int_registry::models::AuthToken;
 use url::Url;
@@ -67,8 +67,7 @@ impl Authenticator {
         let access_token = response.access_token();
         let access_token = access_token.secret().to_string();
 
-        let client = GithubAuthenticator::from_env()?;
-        let user = client.get_username(&access_token)?;
+        let user = github::get_username(&access_token)?;
 
         AuthToken::create(&AuthToken {
             id: state,
