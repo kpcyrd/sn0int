@@ -159,7 +159,7 @@ impl DisplayableDetailed for DetailedNetblock {
     #[inline]
     fn print(&self, w: &mut fmt::DetailFormatter) -> fmt::Result {
         w.id(self.id)?;
-        w.debug::<Green, _>(&self.value)?;
+        w.display::<Green, _>(&self.value)?;
 
         w.start_group();
         w.opt_debug::<Yellow, _>(&self.asn)?;

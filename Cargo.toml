@@ -64,6 +64,7 @@ bytesize = "1.0"
 ipnetwork = "0.16"
 strum = "0.17"
 strum_macros = "0.17"
+embedded-triple = "0.1.0"
 
 digest = "0.8.0"
 md-5 = "0.8.0"
@@ -74,6 +75,7 @@ hmac = "0.7"
 
 walkdir = "2.2"
 nude = "0.3"
+glob = "0.3.0"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
