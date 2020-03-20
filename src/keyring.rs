@@ -66,7 +66,7 @@ impl fmt::Display for KeyName {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct KeyRing {
     keys: HashMap<String, HashMap<String, Option<String>>>,
     grants: HashMap<String, HashSet<ModuleID>>,
@@ -82,18 +82,19 @@ impl KeyRing {
     pub fn init() -> Result<KeyRing> {
         let path = Self::path()?;
 
-        if path.exists() {
+        let keyring = if path.exists() {
             Self::load(&path)
+                .context("Failed to load keyring")?
         } else {
-            Ok(KeyRing {
-                keys: HashMap::new(),
-                grants: HashMap::new(),
-            })
-        }
+            KeyRing::default()
+        };
+
+        Ok(keyring)
     }
 
     pub fn load(path: &Path) -> Result<KeyRing> {
-        let buf = fs::read(&path)?;
+        let buf = fs::read(&path)
+            .context("Failed to read keyring file")?;
         serde_json::from_slice(&buf)
             .map_err(Error::from)
     }
@@ -101,7 +102,8 @@ impl KeyRing {
     pub fn save(&self) -> Result<()> {
         let path = Self::path()?;
         let buf = serde_json::to_string(&self)?;
-        fs::write(&path, buf)?;
+        fs::write(&path, buf)
+            .context("Failed to save keyring")?;
         Ok(())
     }
 
