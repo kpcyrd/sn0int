@@ -22,12 +22,17 @@ pub struct Args {
     /// Print paths to blobs
     #[structopt(long="paths", group="output")]
     paths: bool,
+    /// Count rows returned
+    #[structopt(short="c", long="count", group="output")]
+    count: bool,
 }
 
+#[derive(PartialEq)]
 enum Output {
     Normal,
     Json,
     Paths,
+    Count,
 }
 
 struct Printer<'a, 'b> {
@@ -41,6 +46,8 @@ impl<'a, 'b> Printer<'a, 'b> {
             Output::Json
         } else if args.paths {
             Output::Paths
+        } else if args.count {
+            Output::Count
         } else {
             Output::Normal
         };
@@ -52,25 +59,32 @@ impl<'a, 'b> Printer<'a, 'b> {
     }
 
     pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
-        for obj in self.rl.db().filter::<T>(&filter.parse_optional()?)? {
-            match self.output {
-                Output::Normal => println!("{}", obj.detailed(self.rl.db())?),
-                Output::Json => {
-                    let v = serde_json::to_string(&obj)?;
-                    println!("{}", v);
-                },
-                Output::Paths => {
-                    let blob = obj.blob()
-                        .ok_or_else(|| format_err!("This model isn't linked to blob storage"))?;
+        let query = self.rl.db().filter::<T>(&filter.parse_optional()?)?;
 
-                    let path = self.rl.blobs()
-                        .join(blob)?;
+        if self.output == Output::Count {
+            println!("{}", query.len());
+        } else {
+            for obj in query {
+                match self.output {
+                    Output::Normal => println!("{}", obj.detailed(self.rl.db())?),
+                    Output::Json => {
+                        let v = serde_json::to_string(&obj)?;
+                        println!("{}", v);
+                    },
+                    Output::Paths => {
+                        let blob = obj.blob()
+                            .ok_or_else(|| format_err!("This model isn't linked to blob storage"))?;
 
-                    let path = path.to_str()
-                        .ok_or_else(|| format_err!("Path is invalid utf-8"))?;
+                        let path = self.rl.blobs()
+                            .join(blob)?;
 
-                    println!("{}", path);
-                },
+                        let path = path.to_str()
+                            .ok_or_else(|| format_err!("Path is invalid utf-8"))?;
+
+                        println!("{}", path);
+                    },
+                    Output::Count => unreachable!(),
+                }
             }
         }
 
