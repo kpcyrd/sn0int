@@ -159,7 +159,7 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let keyring = rl.keyring().request_keys(&module);
 
-    let dns_config = Resolver::from_system()?;
+    let dns_config = Resolver::from_system_v4()?;
     let proxy = rl.config().network.proxy.clone();
 
     let args = get_args(rl, &module)?;

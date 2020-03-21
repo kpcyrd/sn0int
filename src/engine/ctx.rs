@@ -656,7 +656,7 @@ impl Script {
         use crate::geoip::Maxmind;
         use crate::paths;
         let keyring = Vec::new();
-        let dns_config = Resolver::from_system()?;
+        let dns_config = Resolver::from_system_v4()?;
         let proxy = None;
         let psl = PslReader::String(r#"
 // ===BEGIN ICANN DOMAINS===

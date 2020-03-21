@@ -82,7 +82,7 @@ impl<'a> Repl<'a> {
 
 pub fn run(config: &Config) -> Result<()> {
     let keyring = Vec::new();
-    let dns_config = Resolver::from_system()?;
+    let dns_config = Resolver::from_system_v4()?;
     let proxy = config.network.proxy;
 
     let cache_dir = paths::cache_dir()?;

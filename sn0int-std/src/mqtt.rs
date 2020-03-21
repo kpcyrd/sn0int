@@ -205,7 +205,7 @@ mod tests {
     use chrootable_https::dns::Resolver;
 
     fn connect() -> Result<MqttClient> {
-        let resolver = Resolver::from_system().unwrap();
+        let resolver = Resolver::from_system_v4().unwrap();
         let url = "mqtt://mqtt.winkekatze24.de".parse()?;
         MqttClient::connect(&resolver, url, &MqttOptions::default())
     }
