@@ -60,7 +60,7 @@ impl PslReader {
     }
 
     pub fn download(path: &Path, url: &str) -> Result<()> {
-        let client = Client::with_system_resolver()?;
+        let client = Client::with_system_resolver_v4()?;
         let resp = client.get(url)
             .wait_for_response()
             .context("http request failed")?;

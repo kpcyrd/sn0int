@@ -25,8 +25,7 @@ impl Client {
         let client = if let Some(proxy) = config.network.proxy {
             chrootable_https::Client::with_socks5(proxy)
         } else {
-            chrootable_https::Client::with_system_resolver()
-                .context("Failed to load dns configuration")?
+            chrootable_https::Client::with_system_resolver_v4()?
         };
 
         Ok(Client {
