@@ -1,6 +1,6 @@
 [package]
 name = "sn0int-std"
-version = "0.18.0"
+version = "0.18.1"
 description = "sn0int - stdlib"
 authors = ["kpcyrd <git@rxv.cc>"]
 repository = "https://github.com/kpcyrd/sn0int"
