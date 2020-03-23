@@ -364,7 +364,7 @@ mod tests {
     #[ignore]
     #[test]
     fn verify_tls_good() {
-        let resolver = Resolver::from_system().unwrap();
+        let resolver = Resolver::from_system_v4().unwrap();
         let _sock = Socket::connect(&resolver, "badssl.com", 443, &SocketOptions{
             tls: true,
             ..Default::default()
@@ -374,7 +374,7 @@ mod tests {
     #[test]
     #[ignore]
     fn verify_tls_good_request() {
-        let resolver = Resolver::from_system().unwrap();
+        let resolver = Resolver::from_system_v4().unwrap();
         let mut sock = Socket::connect(&resolver, "badssl.com", 443, &SocketOptions{
             tls: true,
             ..Default::default()
@@ -387,7 +387,7 @@ mod tests {
     #[test]
     #[ignore]
     fn verify_tls_expired() {
-        let resolver = Resolver::from_system().unwrap();
+        let resolver = Resolver::from_system_v4().unwrap();
         let sock = Socket::connect(&resolver, "expired.badssl.com", 443, &SocketOptions{
             tls: true,
             ..Default::default()
@@ -401,7 +401,7 @@ mod tests {
     #[test]
     #[ignore]
     fn verify_tls_1_1_1_1() {
-        let resolver = Resolver::from_system().unwrap();
+        let resolver = Resolver::from_system_v4().unwrap();
         let _sock = Socket::connect(&resolver, "1.1.1.1", 443, &SocketOptions{
             tls: true,
             ..Default::default()

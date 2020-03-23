@@ -65,7 +65,8 @@ impl AutoUpdater {
 
     pub fn save(&self) -> Result<()> {
         let config = serde_json::to_string(&self)?;
-        fs::write(AutoUpdater::path()?, &config)?;
+        fs::write(AutoUpdater::path()?, &config)
+            .context("Failed to write auto-update state")?;
         Ok(())
     }
 
@@ -100,7 +101,8 @@ impl AutoUpdater {
     }
 
     pub fn check_updates(&mut self, client: Client, modules: Vec<engine::Module>) -> Result<()> {
-        let latest = client.latest_release()?;
+        let latest = client.latest_release()
+            .context("Failed to get latest release timestamp")?;
 
         if latest.time != self.registry {
             let mut outdated = HashSet::new();

@@ -24,7 +24,7 @@ serde_urlencoded = "0.6"
 webpki = "0.21"
 webpki-roots = "0.19.0"
 ct-logs = "0.6"
-chrootable-https = "0.14"
+chrootable-https = "0.15"
 http = "0.2"
 bufstream = "0.1.4"
 pem = "0.7"
@@ -38,7 +38,7 @@ publicsuffix = { version="1.5", default-features=false }
 xml-rs = "0.8"
 geo = "0.12"
 bytes = "0.4"
-base64 = "0.11"
+base64 = "0.12"
 chrono = { version = "0.4", features = ["serde"] }
 mqtt-protocol = "0.8.1"
 sodiumoxide = { version="0.2.5", features=["use-pkg-config"] }

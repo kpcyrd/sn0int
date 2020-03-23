@@ -111,7 +111,7 @@ pub fn run(module: Module,
            options: HashMap<String, String>,
            blobs: Vec<Blob>,
 ) -> Result<ExitEvent> {
-    let dns_config = Resolver::from_system()?;
+    let dns_config = Resolver::from_system_v4()?;
 
     let mut reader = if has_stdin {
         Some(BufReader::new(stdin()))

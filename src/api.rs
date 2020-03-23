@@ -22,10 +22,13 @@ pub struct Client {
 
 impl Client {
     pub fn new(config: &Config) -> Result<Client> {
-        let client = match config.network.proxy {
-            Some(proxy) => chrootable_https::Client::with_socks5(proxy),
-            _ => chrootable_https::Client::with_system_resolver()?,
+        let client = if let Some(proxy) = config.network.proxy {
+            chrootable_https::Client::with_socks5(proxy)
+        } else {
+            chrootable_https::Client::with_system_resolver()
+                .context("Failed to load dns configuration")?
         };
+
         Ok(Client {
             server: config.core.registry.clone(),
             client,
