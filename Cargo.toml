@@ -76,6 +76,7 @@ hmac = "0.7"
 walkdir = "2.2"
 nude = "0.3"
 glob = "0.3.0"
+os-version = "0.1.1"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
