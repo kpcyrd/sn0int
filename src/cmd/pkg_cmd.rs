@@ -12,6 +12,7 @@ use crate::update::AutoUpdater;
 use crate::worker;
 use colored::Colorize;
 use sn0int_common::ModuleID;
+use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
 use structopt::StructOpt;
@@ -174,17 +175,30 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
             let updater = Arc::new(Updater::new(&config)?);
             let mut autoupdate = AutoUpdater::load()?;
 
+            let installed = library.list()
+                .into_iter()
+                .map(|module| module.id())
+                .collect::<HashSet<_>>();
+
             let modules = client.quickstart()?
                 .into_iter()
-                .map(|module| {
-                    InstallTask::new(Install {
-                        module: ModuleID {
-                            author: module.author,
-                            name: module.name,
-                        },
-                        version: None,
-                        force: false,
-                    }, updater.clone())
+                .filter_map(|module| {
+                    let id = ModuleID {
+                        author: module.author,
+                        name: module.name,
+                    };
+
+                    if !installed.contains(&id) {
+                        info!("Queueing for install: {}", id);
+                        Some(InstallTask::new(Install {
+                            module: id,
+                            version: None,
+                            force: false,
+                        }, updater.clone()))
+                    } else {
+                        info!("Skipping already installed module: {}", id);
+                        None
+                    }
                 })
                 .collect::<Vec<_>>();
 
