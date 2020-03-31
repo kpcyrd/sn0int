@@ -461,7 +461,10 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Delete, args)) => delete_cmd::run(rl, &args)?,
         Some((Command::Help, args)) => help_cmd::run(rl, &args)?,
         Some((Command::Keyring, args)) => keyring_cmd::run(rl, &args)?,
-        Some((Command::Mod, args)) => cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?,
+        Some((Command::Mod, args)) => {
+            term::warn("The \x1b[1mmod\x1b[0m command is deprecated, use \x1b[1mpkg\x1b[0m");
+            cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?
+        },
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
         Some((Command::Pkg, args)) => cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?,
         Some((Command::Run, args)) => cmd::<run_cmd::Args>(rl, &args)?,
