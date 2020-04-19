@@ -78,4 +78,4 @@ Make sure rust is installed and setup.
 
     $ git clone https://github.com/kpcyrd/sn0int.git
     $ cd sn0int
-    $ cargo install -f --path . --features=sqlite-bundled
+    $ cargo install -f --path .

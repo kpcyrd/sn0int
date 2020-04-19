@@ -73,10 +73,4 @@ After all dependencies have been installed, simply build the binary:
 
     $ cargo build --release
 
-Note that you need a different command on windows:
-
-.. code-block:: bash
-
-    $ cargo build --release --features=sqlite-bundled
-
 After the build finished the binary is located at ``target/release/sn0int``.
