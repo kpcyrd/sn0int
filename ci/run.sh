@@ -19,8 +19,8 @@ case "$1" in
         cargo test --verbose -- --ignored
         ;;
     windows)
-        cargo build --verbose --features=sqlite-bundled
-        cargo build --verbose --examples --features=sqlite-bundled
+        cargo build --verbose
+        cargo build --verbose --examples
         ;;
     boxxy)
         cargo build --verbose --examples

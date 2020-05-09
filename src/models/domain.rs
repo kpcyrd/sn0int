@@ -240,6 +240,9 @@ impl InsertToNew for InsertDomain {
 
     fn try_into_new(self) -> Result<NewDomain> {
         let value = self.value.to_lowercase();
+        if value.contains('*') {
+            bail!("Asterisks inside domains are not valid");
+        }
         Ok(NewDomain {
             value,
             unscoped: false,

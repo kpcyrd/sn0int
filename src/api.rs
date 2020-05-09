@@ -18,6 +18,7 @@ pub struct Client {
     server: String,
     client: chrootable_https::Client<chrootable_https::Resolver>,
     session: Option<String>,
+    os_version: String,
 }
 
 impl Client {
@@ -28,10 +29,16 @@ impl Client {
             chrootable_https::Client::with_system_resolver_v4()?
         };
 
+        let os_version = match os_version::detect() {
+            Ok(v) => v.to_string(),
+            Err(_) => String::from("unknown"),
+        };
+
         Ok(Client {
             server: config.core.registry.clone(),
             client,
             session: None,
+            os_version,
         })
     }
 
@@ -44,10 +51,11 @@ impl Client {
     }
 
     #[inline]
-    fn user_agent() -> String {
-        format!("{}, {}",
+    fn user_agent(&self) -> String {
+        format!("{}, {}, {}",
             web::default_user_agent(),
-            embedded_triple::get()
+            embedded_triple::get(),
+            self.os_version,
         )
     }
 
@@ -56,7 +64,7 @@ impl Client {
             info!("Adding session token to request");
             request.header("Auth", session.as_str());
         }
-        request.header("User-Agent", Self::user_agent());
+        request.header("User-Agent", self.user_agent());
 
         let request = request.body(body)?;
 

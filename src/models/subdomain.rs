@@ -258,6 +258,9 @@ impl InsertToNew for InsertSubdomain {
 
     fn try_into_new(self) -> Result<NewSubdomain> {
         let value = self.value.to_lowercase();
+        if value.contains('*') {
+            bail!("Asterisks inside domains are not valid");
+        }
         Ok(NewSubdomain {
             domain_id: self.domain_id,
             value,
