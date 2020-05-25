@@ -68,6 +68,7 @@ For everything else please have a look at the [detailed list][1].
   - [Archlinux](https://sn0int.readthedocs.io/en/latest/install.html#archlinux)
   - [Mac OSX](https://sn0int.readthedocs.io/en/latest/install.html#mac-osx)
   - [Debian/Ubuntu/Kali](https://sn0int.readthedocs.io/en/latest/install.html#debian-ubuntu-kali)
+  - [Fedora/CentOS/Redhat](https://sn0int.readthedocs.io/en/latest/install.html#fedora-centos-redhat)
   - [Docker](https://sn0int.readthedocs.io/en/latest/install.html#docker)
   - [Alpine](https://sn0int.readthedocs.io/en/latest/install.html#alpine)
   - [OpenBSD](https://sn0int.readthedocs.io/en/latest/install.html#openbsd)
