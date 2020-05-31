@@ -17,6 +17,21 @@ members = ["sn0int-common",
            "sn0int-registry",
            "sn0int-std"]
 
+[package.metadata.deb]
+extended-description = """\
+sn0int (pronounced /snoɪnt/) is a semi-automatic OSINT framework and package
+manager. It was built for IT security professionals and bug hunters to gather
+intelligence about a given target or about yourself. sn0int is enumerating
+attack surface by semi-automatically processing public information and mapping
+the results in a unified format for followup investigations."""
+section = "utils"
+priority = "optional"
+depends = "$auto, publicsuffix"
+build-depends = "pkg-config, libsqlite3-dev, libseccomp-dev, libsodium-dev, publicsuffix"
+assets = [
+    ["target/release/sn0int", "usr/bin/", "755"],
+]
+
 [features]
 sqlite-bundled = ["libsqlite3-sys/bundled"]
 
