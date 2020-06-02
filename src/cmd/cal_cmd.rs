@@ -8,8 +8,8 @@ use crate::cmd::Cmd;
 use crate::shell::Shell;
 // use crate::term;
 // use crate::utils;
+use std::collections::HashMap;
 use std::collections::VecDeque;
-use std::fmt;
 use std::str::FromStr;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -18,6 +18,9 @@ use structopt::clap::AppSettings;
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
+    /// Show additional months for context
+    #[structopt(short="C", long)]
+    context: Option<u32>,
     args: Vec<DateArg>,
 }
 
@@ -67,22 +70,28 @@ impl FromStr for DateArg {
 enum DateSpec {
     Year(i32),
     YearMonth((i32, u32)),
-    // YearMonthContext((i32, u32, u8)),
+    YearMonthContext((i32, u32, u32)),
 }
 
 impl DateSpec {
-    fn from_args(args: &[DateArg]) -> Result<DateSpec> {
+    fn from_args(args: &[DateArg], context: Option<u32>) -> Result<DateSpec> {
         if args.len() > 2 {
             bail!("Too many datespec args");
         }
 
         let today = Utc::today();
-        let ds = match (args.get(0), args.get(1)) {
-            (None, _) => DateSpec::YearMonth((today.year(), today.month())),
-            (Some(DateArg::Month(month)), None) => DateSpec::YearMonth((today.year(), *month)),
-            (Some(DateArg::Num(year)), None) => DateSpec::Year(*year),
-            (Some(DateArg::Month(month)), Some(DateArg::Num(year))) => DateSpec::YearMonth((*year, *month)),
-            (Some(DateArg::Num(year)), Some(DateArg::Month(month))) => DateSpec::YearMonth((*year, *month)),
+        let ds = match (args.get(0), args.get(1), context) {
+            (None, _, None) => DateSpec::YearMonth((today.year(), today.month())),
+            (None, _, Some(context)) => DateSpec::YearMonthContext((today.year(), today.month(), context)),
+
+            (Some(DateArg::Month(month)), None, None) => DateSpec::YearMonth((today.year(), *month)),
+            (Some(DateArg::Num(year)), None, None) => DateSpec::Year(*year),
+            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), None) => DateSpec::YearMonth((*year, *month)),
+            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), None) => DateSpec::YearMonth((*year, *month)),
+
+            (Some(DateArg::Month(month)), None, Some(context)) => DateSpec::YearMonthContext((today.year(), *month, context)),
+            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), Some(context)) => DateSpec::YearMonthContext((*year, *month, context)),
+            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), Some(context)) => DateSpec::YearMonthContext((*year, *month, context)),
             _ => bail!("Combination of datespec args is invalid"),
         };
         Ok(ds)
@@ -91,10 +100,10 @@ impl DateSpec {
 
 const MONTH_LINES: i32 = 7;
 
-fn merge_months(months: &[DateSpec]) -> String {
+fn merge_months(ctx: &Context, months: &[DateSpec]) -> String {
     let mut months = months.iter()
         .map(|ds| {
-            let month = ds.to_string();
+            let month = ds.to_term_string(ctx);
             month.lines()
                 .map(String::from)
                 .collect::<VecDeque<_>>()
@@ -122,62 +131,151 @@ fn merge_months(months: &[DateSpec]) -> String {
     out
 }
 
-impl fmt::Display for DateSpec {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+fn chunk_months(ctx: &Context, months: &[DateSpec]) -> String {
+    months
+        .chunks(3)
+        .map(|m| merge_months(ctx, m))
+        .fold(String::new(), |a, b| {
+            if a.is_empty() {
+                a + &b
+            } else {
+                a + "\n" + &b
+            }
+        })
+}
+
+#[derive(Clone)]
+enum ActivityGrade {
+    None,
+    One,
+    Two,
+    Three,
+    Four,
+}
+
+impl ActivityGrade {
+    fn as_term_str(&self) -> &'static str {
+        match self {
+            ActivityGrade::None => "\x1b[97m\x1b[48;5;238m",
+            ActivityGrade::One => "\x1b[30m\x1b[48;5;148m",
+            ActivityGrade::Two => "\x1b[30m\x1b[48;5;71m",
+            ActivityGrade::Three => "\x1b[97m\x1b[48;5;34m",
+            ActivityGrade::Four => "\x1b[97m\x1b[48;5;22m",
+        }
+    }
+}
+
+struct Context {
+    _events: HashMap<Date<Utc>, ActivityGrade>,
+    today: Date<Utc>,
+}
+
+impl Context {
+    fn new() -> Context {
+        Context {
+            _events: HashMap::new(),
+            today: Utc::today(),
+        }
+    }
+
+    fn is_today(&self, date: &Date<Utc>) -> bool {
+        self.today == *date
+    }
+
+    fn activity_for_day(&self, date: &Date<Utc>) -> ActivityGrade {
+        let _ = date;
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        match rng.gen_range(0, 6) {
+            0 => ActivityGrade::One,
+            1 => ActivityGrade::Two,
+            2 => ActivityGrade::Three,
+            3 => ActivityGrade::Four,
+            _ => ActivityGrade::None,
+        }
+        /*
+        if let Some(activity) = self.events.get(date) {
+            activity.clone()
+        } else {
+            ActivityGrade::None
+        }
+        */
+    }
+}
+
+impl DateSpec {
+    fn to_term_string(&self, ctx: &Context) -> String {
         match self {
             DateSpec::Year(year) => {
                 let months = (1..=12)
                     .map(|month| DateSpec::YearMonth((*year, month)))
                     .collect::<Vec<_>>();
-                let out = months
-                    .chunks(3)
-                    .map(merge_months)
-                    .fold(String::new(), |a, b| {
-                        if a.is_empty() {
-                            a + &b
-                        } else {
-                            a + "\n" + &b
-                        }
-                    });
-                write!(w, "{}", out)?;
-                Ok(())
+                chunk_months(ctx, &months)
             },
             DateSpec::YearMonth((year, month)) => {
-                let start = Utc.ymd(*year, *month, 1);
-                let days = days_in_month(*year, *month);
+                let mut w = String::new();
 
-                write!(w, "{:^20}\n", start.format("%B %Y"))?;
-                write!(w, "Su Mo Tu We Th Fr Sa\n")?;
+                let start = Utc.ymd(*year, *month, 1);
+                let days = days_in_month(*year, *month) as u32;
+
+                w.push_str(&format!("{:^21}\n", start.format("%B %Y")));
+                w.push_str(" Su Mo Tu We Th Fr Sa\n");
 
                 let mut cur_week_day = start.weekday();
                 let week_progress = cur_week_day.num_days_from_sunday() as usize;
-                write!(w, "{}", "   ".repeat(week_progress))?;
+                w.push_str(&"   ".repeat(week_progress));
 
                 let mut week_written = week_progress * 3;
                 for cur_day in 1..=days {
-                    write!(w, "{:2}", cur_day)?;
-                        week_written += 2;
+                    let date = Utc.ymd(*year, *month, cur_day);
+
+                    let activity = ctx.activity_for_day(&date);
+                    w.push_str(activity.as_term_str());
+
+                    if ctx.is_today(&date) {
+                        w.push_str("\x1b[1m#");
+                    } else {
+                        w.push(' ');
+                    }
+                    w.push_str(&format!("{:2}", cur_day));
+                    week_written += 3;
+                    w.push_str("\x1b[0m");
 
                     // detect end of the week
                     if cur_week_day == Weekday::Sat {
                         if cur_day != days {
-                            write!(w, "\n")?;
+                            w.push('\n');
                         }
                         week_written = 0;
-                    } else {
-                        write!(w, " ")?;
-                        week_written += 1;
                     }
 
                     cur_week_day = cur_week_day.succ();
                 }
                 if week_written != 0 {
-                    write!(w, "{}", " ".repeat(20 - week_written))?;
+                    w.push_str(&" ".repeat(20 - week_written));
                 }
 
-                Ok(())
+                w
             }
-            // DateSpec::YearMonthContext((year, month, context)) => todo!(),
+            DateSpec::YearMonthContext((year, month, context)) => {
+                let mut year = *year - (*context / 12) as i32;
+                let mut month = *month - (*context % 12);
+
+                let mut months = Vec::new();
+
+                for _ in 0..=*context {
+                    months.push(DateSpec::YearMonth((year, month)));
+
+                    if month == 12 {
+                        year += 1;
+                        month = 1;
+                    } else {
+                        month += 1;
+                    }
+                }
+
+                chunk_months(ctx, &months)
+            }
         }
     }
 }
@@ -185,9 +283,9 @@ impl fmt::Display for DateSpec {
 impl Cmd for Args {
     #[inline]
     fn run(self, _rl: &mut Shell) -> Result<()> {
-        let ds = DateSpec::from_args(&self.args)
+        let ds = DateSpec::from_args(&self.args, self.context)
             .context("Failed to parse date spec")?;
-        println!("{}", ds);
+        println!("{}", ds.to_term_string(&Context::new()));
         Ok(())
     }
 }
