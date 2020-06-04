@@ -3,11 +3,8 @@ use crate::errors::*;
 use chrono::Utc;
 use chrono::prelude::*;
 use crate::cmd::Cmd;
-// use crate::config::Config;
-// use crate::db::Database;
+use crate::models::*;
 use crate::shell::Shell;
-// use crate::term;
-// use crate::utils;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 use std::str::FromStr;
@@ -120,7 +117,7 @@ fn merge_months(ctx: &Context, months: &[DateSpec]) -> String {
             if let Some(line) = m.pop_front() {
                 out.push_str(&line);
             } else {
-                out.push_str(&" ".repeat(20));
+                out.push_str(&" ".repeat(21));
             }
             first = false;
         }
@@ -166,44 +163,79 @@ impl ActivityGrade {
 }
 
 struct Context {
-    _events: HashMap<Date<Utc>, ActivityGrade>,
-    today: Date<Utc>,
+    events: HashMap<NaiveDate, u64>,
+    max: u64,
+    today: NaiveDate,
 }
 
 impl Context {
-    fn new() -> Context {
-        Context {
-            _events: HashMap::new(),
-            today: Utc::today(),
-        }
-    }
-
-    fn is_today(&self, date: &Date<Utc>) -> bool {
+    #[inline]
+    fn is_today(&self, date: &NaiveDate) -> bool {
         self.today == *date
     }
 
-    fn activity_for_day(&self, date: &Date<Utc>) -> ActivityGrade {
-        let _ = date;
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-        match rng.gen_range(0, 6) {
-            0 => ActivityGrade::One,
-            1 => ActivityGrade::Two,
-            2 => ActivityGrade::Three,
-            3 => ActivityGrade::Four,
-            _ => ActivityGrade::None,
-        }
-        /*
-        if let Some(activity) = self.events.get(date) {
-            activity.clone()
+    #[inline]
+    fn is_future(&self, date: &NaiveDate) -> bool {
+        self.today < *date
+    }
+
+    fn activity_for_day(&self, date: &NaiveDate) -> ActivityGrade {
+        let step = self.max / 4;
+
+        if let Some(events) = self.events.get(date) {
+            match events / step {
+                0 => ActivityGrade::One,
+                1 => ActivityGrade::Two,
+                2 => ActivityGrade::Three,
+                _ => ActivityGrade::Four,
+            }
         } else {
             ActivityGrade::None
         }
-        */
     }
 }
 
 impl DateSpec {
+    fn start(&self) -> NaiveDate {
+        match self {
+            DateSpec::Year(year) => NaiveDate::from_ymd(*year, 1, 1),
+            DateSpec::YearMonth((year, month)) => NaiveDate::from_ymd(*year, *month, 1),
+            DateSpec::YearMonthContext((year, month, context)) => {
+                let mut year = *year - (*context / 12) as i32;
+                let context = context % 12;
+                let month = if context >= *month {
+                    year -= 1;
+                    12 - context + month
+                } else {
+                    month - context
+                };
+                NaiveDate::from_ymd(year, month, 1)
+            },
+        }
+    }
+
+    fn end(&self) -> NaiveDate {
+        match self {
+            DateSpec::Year(year) => NaiveDate::from_ymd(year + 1, 1, 1),
+            DateSpec::YearMonth((year, month)) => {
+                let (year, month) = if *month == 12 {
+                    (*year + 1, 1)
+                } else {
+                    (*year, *month + 1)
+                };
+                NaiveDate::from_ymd(year, month, 1)
+            },
+            DateSpec::YearMonthContext((year, month, _context)) => {
+                let (year, month) = if *month == 12 {
+                    (*year + 1, 1)
+                } else {
+                    (*year, *month + 1)
+                };
+                NaiveDate::from_ymd(year, month, 1)
+            },
+        }
+    }
+
     fn to_term_string(&self, ctx: &Context) -> String {
         match self {
             DateSpec::Year(year) => {
@@ -227,10 +259,12 @@ impl DateSpec {
 
                 let mut week_written = week_progress * 3;
                 for cur_day in 1..=days {
-                    let date = Utc.ymd(*year, *month, cur_day);
+                    let date = NaiveDate::from_ymd(*year, *month, cur_day);
 
-                    let activity = ctx.activity_for_day(&date);
-                    w.push_str(activity.as_term_str());
+                    if !ctx.is_future(&date) {
+                        let activity = ctx.activity_for_day(&date);
+                        w.push_str(activity.as_term_str());
+                    }
 
                     if ctx.is_today(&date) {
                         w.push_str("\x1b[1m#");
@@ -252,14 +286,15 @@ impl DateSpec {
                     cur_week_day = cur_week_day.succ();
                 }
                 if week_written != 0 {
-                    w.push_str(&" ".repeat(20 - week_written));
+                    w.push_str(&" ".repeat(21 - week_written));
                 }
 
                 w
             }
-            DateSpec::YearMonthContext((year, month, context)) => {
-                let mut year = *year - (*context / 12) as i32;
-                let mut month = *month - (*context % 12);
+            DateSpec::YearMonthContext((_year, _month, context)) => {
+                let start = self.start();
+                let mut year = start.year();
+                let mut month = start.month();
 
                 let mut months = Vec::new();
 
@@ -280,12 +315,66 @@ impl DateSpec {
     }
 }
 
+fn setup_graph_map(events: &[Activity]) -> (HashMap<NaiveDate, u64>, u64) {
+    debug!("Found {} events in selected range", events.len());
+
+    let mut cur = None;
+    let mut ctr = 0;
+    let mut max = 0;
+
+    let mut map = HashMap::new();
+    for event in events {
+        let date = event.time.date();
+        if let Some(cur) = cur.as_mut() {
+            if date == *cur {
+                ctr += 1;
+            } else {
+                if ctr > max {
+                    max = ctr;
+                }
+                map.insert(cur.clone(), ctr);
+                *cur = date;
+                ctr = 1;
+            }
+        } else {
+            cur = Some(date);
+            ctr = 1;
+        }
+    }
+
+    if ctr > 0 {
+        if let Some(cur) = cur.take() {
+            if ctr > max {
+                max = ctr;
+            }
+            map.insert(cur, ctr);
+        }
+    }
+
+    debug!("Maximum events per day is {}", max);
+
+    (map, max)
+}
+
 impl Cmd for Args {
     #[inline]
-    fn run(self, _rl: &mut Shell) -> Result<()> {
+    fn run(self, rl: &mut Shell) -> Result<()> {
         let ds = DateSpec::from_args(&self.args, self.context)
             .context("Failed to parse date spec")?;
-        println!("{}", ds.to_term_string(&Context::new()));
+        let filter = ActivityFilter {
+            topic: None,
+            since: Some(ds.start().and_hms(0, 0, 0)),
+            until: Some(ds.end().and_hms(0, 0, 0)),
+            location: false,
+        };
+        let events = Activity::query(rl.db(), &filter)?;
+        let (events, max) = setup_graph_map(&events);
+        let ctx = Context {
+            events,
+            max,
+            today: Utc::today().naive_utc(),
+        };
+        println!("{}", ds.to_term_string(&ctx));
         Ok(())
     }
 }
@@ -293,6 +382,14 @@ impl Cmd for Args {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn context() -> Context {
+        Context {
+            events: HashMap::new(),
+            max: 0,
+            today: NaiveDate::from_ymd(2020, 05, 30),
+        }
+    }
 
     #[test]
     fn test_days_in_month_2020_05() {
@@ -315,65 +412,65 @@ mod tests {
     #[test]
     fn test_datespec_year_month() {
         let ds = DateSpec::YearMonth((2020, 05));
-        let out = ds.to_string();
-        assert_eq!(out, "      May 2020      
-Su Mo Tu We Th Fr Sa
-                1  2
- 3  4  5  6  7  8  9
-10 11 12 13 14 15 16
-17 18 19 20 21 22 23
-24 25 26 27 28 29 30
-31                  ");
+        let out = ds.to_term_string(&context());
+        assert_eq!(out, "      May 2020       
+ Su Mo Tu We Th Fr Sa
+               \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m\u{1b}[1m#30\u{1b}[0m
+ 31\u{1b}[0m                  ");
     }
 
     #[test]
     fn test_datespec_year_month_ends_on_sat() {
         let ds = DateSpec::YearMonth((2020, 10));
-        let out = ds.to_string();
-        assert_eq!(out, "    October 2020    
-Su Mo Tu We Th Fr Sa
-             1  2  3
- 4  5  6  7  8  9 10
-11 12 13 14 15 16 17
-18 19 20 21 22 23 24
-25 26 27 28 29 30 31");
+        let out = ds.to_term_string(&context());
+        assert_eq!(out, "    October 2020     
+ Su Mo Tu We Th Fr Sa
+              1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m
+  4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m
+ 11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m
+ 18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m
+ 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m");
     }
 
     #[test]
     fn test_datespec_year() {
         let ds = DateSpec::Year(2020);
-        let out = ds.to_string();
-        assert_eq!(out, "    January 2020          February 2020            March 2020     
-Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa
-          1  2  3  4                      1    1  2  3  4  5  6  7
- 5  6  7  8  9 10 11    2  3  4  5  6  7  8    8  9 10 11 12 13 14
-12 13 14 15 16 17 18    9 10 11 12 13 14 15   15 16 17 18 19 20 21
-19 20 21 22 23 24 25   16 17 18 19 20 21 22   22 23 24 25 26 27 28
-26 27 28 29 30 31      23 24 25 26 27 28 29   29 30 31            
-                                                                  
-     April 2020              May 2020              June 2020      
-Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa
-          1  2  3  4                   1  2       1  2  3  4  5  6
- 5  6  7  8  9 10 11    3  4  5  6  7  8  9    7  8  9 10 11 12 13
-12 13 14 15 16 17 18   10 11 12 13 14 15 16   14 15 16 17 18 19 20
-19 20 21 22 23 24 25   17 18 19 20 21 22 23   21 22 23 24 25 26 27
-26 27 28 29 30         24 25 26 27 28 29 30   28 29 30            
-                       31                                         
-     July 2020             August 2020           September 2020   
-Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa
-          1  2  3  4                      1          1  2  3  4  5
- 5  6  7  8  9 10 11    2  3  4  5  6  7  8    6  7  8  9 10 11 12
-12 13 14 15 16 17 18    9 10 11 12 13 14 15   13 14 15 16 17 18 19
-19 20 21 22 23 24 25   16 17 18 19 20 21 22   20 21 22 23 24 25 26
-26 27 28 29 30 31      23 24 25 26 27 28 29   27 28 29 30         
-                       30 31                                      
-    October 2020          November 2020          December 2020    
-Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa   Su Mo Tu We Th Fr Sa
-             1  2  3    1  2  3  4  5  6  7          1  2  3  4  5
- 4  5  6  7  8  9 10    8  9 10 11 12 13 14    6  7  8  9 10 11 12
-11 12 13 14 15 16 17   15 16 17 18 19 20 21   13 14 15 16 17 18 19
-18 19 20 21 22 23 24   22 23 24 25 26 27 28   20 21 22 23 24 25 26
-25 26 27 28 29 30 31   29 30                  27 28 29 30 31      
-                                                                  ");
+        let out = ds.to_term_string(&context());
+        assert_eq!(out, "    January 2020            February 2020            March 2020      
+ Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa
+         \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m                     \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 30\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 31\u{1b}[0m      \u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 30\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 31\u{1b}[0m            
+                                                                     
+     April 2020               May 2020                June 2020      
+ Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa
+         \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m                  \u{1b}[97m\u{1b}[48;5;238m  1\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  2\u{1b}[0m        1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m  3\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  4\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  5\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  6\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  7\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  8\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m  9\u{1b}[0m     7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 10\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 11\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 12\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 13\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 14\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 15\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 16\u{1b}[0m    14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m   \u{1b}[97m\u{1b}[48;5;238m 17\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 18\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 19\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 20\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 21\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 22\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 23\u{1b}[0m    21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m
+\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 30\u{1b}[0m         \u{1b}[97m\u{1b}[48;5;238m 24\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 25\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 26\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 27\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 28\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m 29\u{1b}[0m\u{1b}[97m\u{1b}[48;5;238m\u{1b}[1m#30\u{1b}[0m    28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m            
+                         31\u{1b}[0m                                          
+      July 2020              August 2020           September 2020    
+ Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa
+           1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m                       1\u{1b}[0m           1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m  5\u{1b}[0m
+  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m     2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m     6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m 12\u{1b}[0m
+ 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m     9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m    13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m 19\u{1b}[0m
+ 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m    16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m    20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m 26\u{1b}[0m
+ 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m       23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m    27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m         
+                         30\u{1b}[0m 31\u{1b}[0m                                       
+    October 2020            November 2020           December 2020    
+ Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa    Su Mo Tu We Th Fr Sa
+              1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m     1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m           1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m  4\u{1b}[0m  5\u{1b}[0m
+  4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m     8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m     6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m 11\u{1b}[0m 12\u{1b}[0m
+ 11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m    15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m    13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m 18\u{1b}[0m 19\u{1b}[0m
+ 18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m    22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m    20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m 25\u{1b}[0m 26\u{1b}[0m
+ 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m    29\u{1b}[0m 30\u{1b}[0m                   27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m      
+                                                                     ");
     }
 }
