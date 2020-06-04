@@ -58,6 +58,39 @@ Mac OSX
 
     brew install sn0int
 
+Debian/Ubuntu/Kali
+
+There are prebuilt packages signed by a debian maintainer. We can import the
+key for this repository out of the debian keyring.
+
+    apt install debian-keyring
+    gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg git@rxv.cc | apt-key add -
+    apt-key adv --keyserver keyserver.ubuntu.com --refresh-keys git@rxv.cc
+    echo deb http://apt.vulns.sexy stable main > /etc/apt/sources.list.d/apt-vulns-sexy.list
+    apt update
+    apt install sn0int
+
+Docker
+
+    docker run --rm --init -it -v "$PWD/.cache:/cache" -v "$PWD/.data:/data" kpcyrd/sn0int
+
+Alpine
+
+    apk add sn0int
+
+OpenBSD
+
+    pkg_add sn0int
+
+Gentoo
+
+    layman -a pentoo
+    emerge --ask net-analyzer/sn0int
+
+NixOS
+
+    nix-env -i sn0int
+
 For everything else please have a look at the [detailed list][1].
 
 [1]: https://sn0int.readthedocs.io/en/latest/install.html
@@ -73,6 +106,7 @@ For everything else please have a look at the [detailed list][1].
   - [Alpine](https://sn0int.readthedocs.io/en/latest/install.html#alpine)
   - [OpenBSD](https://sn0int.readthedocs.io/en/latest/install.html#openbsd)
   - [Gentoo](https://sn0int.readthedocs.io/en/latest/install.html#gentoo)
+  - [NixOS](https://sn0int.readthedocs.io/en/latest/install.html#nixos)
   - [Windows](https://sn0int.readthedocs.io/en/latest/install.html#windows)
 - [Build from source](https://sn0int.readthedocs.io/en/latest/build.html)
   - [Install dependencies](https://sn0int.readthedocs.io/en/latest/build.html#install-dependencies)
