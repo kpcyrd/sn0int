@@ -141,7 +141,7 @@ fn chunk_months(ctx: &Context, months: &[DateSpec]) -> String {
         })
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 enum ActivityGrade {
     None,
     One,
@@ -180,14 +180,21 @@ impl Context {
     }
 
     fn activity_for_day(&self, date: &NaiveDate) -> ActivityGrade {
-        let step = self.max / 4;
-
         if let Some(events) = self.events.get(date) {
-            match events / step {
-                0 => ActivityGrade::One,
-                1 => ActivityGrade::Two,
-                2 => ActivityGrade::Three,
-                _ => ActivityGrade::Four,
+            let max = self.max as f64;
+            let events = *events as f64;
+            let step = max / 4.0;
+
+            let x = events / step;
+
+            if x <= 1.0 {
+                ActivityGrade::One
+            } else if x <= 2.0 {
+                ActivityGrade::Two
+            } else if x <= 3.0 {
+                ActivityGrade::Three
+            } else {
+                ActivityGrade::Four
             }
         } else {
             ActivityGrade::None
@@ -407,6 +414,113 @@ mod tests {
     fn test_days_in_month_2020_02() {
         let days = days_in_month(2020, 02);
         assert_eq!(days, 29);
+    }
+
+    fn calc_activity_grade(cur: u64, max: u64) -> ActivityGrade {
+        let mut events = HashMap::new();
+        events.insert(NaiveDate::from_ymd(2020, 06, 06), cur);
+        let ctx = Context {
+            events,
+            max,
+            today: NaiveDate::from_ymd(2020, 06, 06),
+        };
+        ctx.activity_for_day(&NaiveDate::from_ymd(2020, 06, 06))
+    }
+
+    #[test]
+    fn small_max_activity_0() {
+        let events = HashMap::new();
+        let ctx = Context {
+            events,
+            max: 0,
+            today: NaiveDate::from_ymd(2020, 06, 06),
+        };
+        let grade = ctx.activity_for_day(&NaiveDate::from_ymd(2020, 06, 06));
+        assert_eq!(grade, ActivityGrade::None);
+    }
+
+    #[test]
+    fn small_max_activity_1() {
+        let grade = calc_activity_grade(1, 1);
+        assert_eq!(grade, ActivityGrade::Four);
+    }
+
+    #[test]
+    fn small_max_activity_2() {
+        let grade = calc_activity_grade(2, 2);
+        assert_eq!(grade, ActivityGrade::Four);
+    }
+
+    #[test]
+    fn small_max_activity_3() {
+        let grade = calc_activity_grade(3, 3);
+        assert_eq!(grade, ActivityGrade::Four);
+    }
+
+    #[test]
+    fn small_max_activity_4() {
+        let grade = calc_activity_grade(4, 4);
+        assert_eq!(grade, ActivityGrade::Four);
+    }
+
+    #[test]
+    fn small_max_activity_2_but_is_1() {
+        let grade = calc_activity_grade(1, 2);
+        assert_eq!(grade, ActivityGrade::Two);
+    }
+
+    #[test]
+    fn small_max_activity_3_but_is_2() {
+        let grade = calc_activity_grade(2, 3);
+        assert_eq!(grade, ActivityGrade::Three);
+    }
+
+    #[test]
+    fn small_max_activity_3_but_is_1() {
+        let grade = calc_activity_grade(1, 3);
+        assert_eq!(grade, ActivityGrade::Two);
+    }
+
+    #[test]
+    fn small_max_activity_4_but_is_3() {
+        let grade = calc_activity_grade(3, 4);
+        assert_eq!(grade, ActivityGrade::Three);
+    }
+
+    #[test]
+    fn small_max_activity_4_but_is_2() {
+        let grade = calc_activity_grade(2, 4);
+        assert_eq!(grade, ActivityGrade::Two);
+    }
+
+    #[test]
+    fn small_max_activity_4_but_is_1() {
+        let grade = calc_activity_grade(1, 4);
+        assert_eq!(grade, ActivityGrade::One);
+    }
+
+    #[test]
+    fn small_max_activity_5_but_is_4() {
+        let grade = calc_activity_grade(4, 5);
+        assert_eq!(grade, ActivityGrade::Four);
+    }
+
+    #[test]
+    fn small_max_activity_5_but_is_3() {
+        let grade = calc_activity_grade(3, 5);
+        assert_eq!(grade, ActivityGrade::Three);
+    }
+
+    #[test]
+    fn small_max_activity_5_but_is_2() {
+        let grade = calc_activity_grade(2, 5);
+        assert_eq!(grade, ActivityGrade::Two);
+    }
+
+    #[test]
+    fn small_max_activity_5_but_is_1() {
+        let grade = calc_activity_grade(1, 5);
+        assert_eq!(grade, ActivityGrade::One);
     }
 
     #[test]
