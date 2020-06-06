@@ -37,6 +37,20 @@ at the docker image as an alternative.
     $ cd sn0int
     $ cargo install -f --path .
 
+Fedora/CentOS/Redhat
+--------------------
+
+Using rust+cargo from the repos might work for you, but we only officially
+support rust+cargo installed with `rustup <https://rustup.rs/>`_. Have a look
+at the docker image as an alternative.
+
+.. code-block:: bash
+
+    $ dnf install @development-tools libsq3-devel libseccomp-devel libsodium-devel publicsuffix-list
+    $ git clone https://github.com/kpcyrd/sn0int.git
+    $ cd sn0int
+    $ cargo install -f --path .
+
 Docker
 ------
 
