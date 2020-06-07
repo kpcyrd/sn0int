@@ -37,16 +37,19 @@ impl Activity {
         let mut query = activity.into_boxed();
 
         if let Some(my_topic) = &filter.topic {
+            debug!("Filtering topic to be {:?}", my_topic);
             query = query.filter(topic.eq(my_topic));
         }
 
         // "since" filter is not applied
 
         if let Some(until) = &filter.until {
+            debug!("Filtering until <= {}", until);
             query = query.filter(time.le(until));
         }
 
         if filter.location {
+            debug!("Filtering latitude and longitude != null");
             query = query
                 .filter(latitude.is_not_null())
                 .filter(longitude.is_not_null());
@@ -61,6 +64,7 @@ impl Activity {
         let mut query = Self::build_query_except_since(filter);
 
         if let Some(since) = &filter.since {
+            debug!("Filtering since >= {}", since);
             query = query.filter(time.ge(since));
         }
 
