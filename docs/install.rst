@@ -22,20 +22,17 @@ Mac OSX
 Debian/Ubuntu/Kali
 ------------------
 
-Note that debian `doesn't ship the geoip2-database
-<https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=757723>`_ so we're going to
-download them automatically during the first run.
-
-Using rust+cargo from the repos might work for you, but we only officially
-support rust+cargo installed with `rustup <https://rustup.rs/>`_. Have a look
-at the docker image as an alternative.
+There are prebuilt packages signed by a debian maintainer. We can import the
+key for this repository out of the debian keyring.
 
 .. code-block:: bash
 
-    $ apt install build-essential libsqlite3-dev libseccomp-dev libsodium-dev publicsuffix
-    $ git clone https://github.com/kpcyrd/sn0int.git
-    $ cd sn0int
-    $ cargo install -f --path .
+    $ apt install debian-keyring
+    $ gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg git@rxv.cc | apt-key add -
+    $ apt-key adv --keyserver keyserver.ubuntu.com --refresh-keys git@rxv.cc
+    $ echo deb http://apt.vulns.sexy stable main > /etc/apt/sources.list.d/apt-vulns-sexy.list
+    $ apt update
+    $ apt install sn0int
 
 Fedora/CentOS/Redhat
 --------------------
@@ -77,8 +74,15 @@ Gentoo
 
 .. code-block:: bash
 
-    layman -f -o https://raw.githubusercontent.com/kpcyrd/overlay/master/overlay.xml -a kpcyrd-overlay
-    emerge --ask net-analyzer/sn0int
+    $ layman -a pentoo
+    $ emerge --ask net-analyzer/sn0int
+
+NixOS
+-----
+
+.. code-block:: bash
+
+    $ nix-env -i sn0int
 
 Windows
 -------

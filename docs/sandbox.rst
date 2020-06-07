@@ -6,7 +6,7 @@ child process. It's important to note that there's a basic sandbox that's
 active on every operating system, and there's a second line of defense on
 supported operating systems.
 
-The first line of defense is the restrictive stdlib. It's assumed that and
+The first line of defense is the restrictive stdlib. It's assumed that an
 attacker gains full control over the lua code and is able to call any function
 with arbitrary arguments. The stdlib only provides functions that are
 considered safe, so for example it's not possible to start a process or open a
