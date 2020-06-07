@@ -3,14 +3,8 @@ use maxminddb::geoip2;
 use std::collections::BTreeMap;
 
 
-fn from_geoip_model_names(names: Option<BTreeMap<String, String>>) -> Option<String> {
-    let names = match names {
-        Some(names) => names,
-        _ => return None,
-    };
-
-    names.get("en")
-        .map(|x| x.to_owned())
+fn from_geoip_model_names(names: Option<BTreeMap<&str, &str>>) -> Option<String> {
+    names?.get("en").map(|x| x.to_string())
 }
 
 #[derive(Debug, Serialize)]
@@ -24,7 +18,7 @@ pub struct GeoLookup {
     pub longitude: Option<f64>,
 }
 
-impl From<geoip2::City> for GeoLookup {
+impl<'a> From<geoip2::City<'a>> for GeoLookup {
     fn from(lookup: geoip2::City) -> GeoLookup {
         // parse maxminddb lookup
         let continent = match lookup.continent {
@@ -79,17 +73,11 @@ pub struct Continent {
 
 impl Continent {
     fn from_maxmind(continent: geoip2::model::Continent) -> Option<Self> {
-        let code = match continent.code {
-            Some(code) => code,
-            _ => return None,
-        };
-        let name = match from_geoip_model_names(continent.names) {
-            Some(name) => name,
-            _ => return None,
-        };
+        let code = continent.code?;
+        let name = from_geoip_model_names(continent.names)?;
 
         Some(Continent {
-            code,
+            code: code.to_string(),
             name,
         })
     }
@@ -103,17 +91,11 @@ pub struct Country {
 
 impl Country {
     fn from_maxmind(country: geoip2::model::Country) -> Option<Self> {
-        let code = match country.iso_code {
-            Some(code) => code,
-            _ => return None,
-        };
-        let name = match from_geoip_model_names(country.names) {
-            Some(name) => name,
-            _ => return None,
-        };
+        let code = country.iso_code?;
+        let name = from_geoip_model_names(country.names)?;
 
         Some(Country {
-            code,
+            code: code.to_string(),
             name,
         })
     }
@@ -152,19 +134,14 @@ pub struct AsnLookup {
 impl AsnLookup {
     pub fn try_from(lookup: geoip2::Isp) -> Result<AsnLookup> {
         // parse maxminddb lookup
-        let asn = match lookup.autonomous_system_number {
-            Some(asn) => asn,
-            _ => bail!("autonomous_system_number not set"),
-        };
-        let as_org = match lookup.autonomous_system_organization {
-            Some(org) => org,
-            _ => bail!("autonomous_system_organization not set"),
-        };
+        let asn = lookup.autonomous_system_number
+            .ok_or_else(|| format_err!("autonomous_system_number not set"))?;
+        let as_org = lookup.autonomous_system_organization
+            .ok_or_else(|| format_err!("autonomous_system_organization not set"))?;
 
-        // return result
         Ok(AsnLookup {
             asn,
-            as_org,
+            as_org: as_org.to_string(),
         })
     }
 }
