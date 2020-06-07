@@ -58,6 +58,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::time)?;
     ctx.allow_syscall(Syscall::clock_gettime)?;
     ctx.allow_syscall(Syscall::nanosleep)?;
+    ctx.allow_syscall(Syscall::clock_nanosleep)?;
     ctx.allow_syscall(Syscall::exit)?;
     ctx.allow_syscall(Syscall::exit_group)?;
     ctx.allow_syscall(Syscall::brk)?;
