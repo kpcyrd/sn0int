@@ -81,7 +81,7 @@ os-version = "0.1.1"
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.3"
 #syscallz = { path="../syscallz-rs" }
-syscallz = "0.13"
+syscallz = "0.14.0"
 nix = "0.17"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
