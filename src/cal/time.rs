@@ -6,18 +6,17 @@ use crate::cal::{ActivityGrade, DateArg};
 use crate::models::*;
 use std::collections::HashMap;
 
-const MIN_PER_SLICE: u32 = 12;
 const MIN_PER_DAY: u32 = 1440;
 
-fn round_to_slice(time: &NaiveDateTime) -> NaiveDateTime {
+fn round_to_slice(time: &NaiveDateTime, slice_duration: u32) -> NaiveDateTime {
     let date = time.date();
     let hour = time.hour();
     let mins = time.minute();
-    let slice = mins - (mins % MIN_PER_SLICE);
+    let slice = mins - (mins % slice_duration);
     date.and_hms(hour, slice, 0)
 }
 
-fn setup_graph_map(events: &[Activity]) -> (HashMap<NaiveDateTime, u64>, u64) {
+fn setup_graph_map(events: &[Activity], slice_duration: u32) -> (HashMap<NaiveDateTime, u64>, u64) {
     debug!("Found {} events in selected range", events.len());
 
     let mut cur = None;
@@ -26,7 +25,7 @@ fn setup_graph_map(events: &[Activity]) -> (HashMap<NaiveDateTime, u64>, u64) {
 
     let mut map = HashMap::new();
     for event in events {
-        let time = round_to_slice(&event.time);
+        let time = round_to_slice(&event.time, slice_duration);
 
         if let Some(cur) = cur.as_mut() {
             if time == *cur {
@@ -63,21 +62,35 @@ pub struct DateTimeContext {
     events: HashMap<NaiveDateTime, u64>,
     max: u64,
     now: NaiveDateTime,
+    pub slice_width: u32,
+    pub slice_duration: u32,
 }
 
 impl DateTimeContext {
-    pub fn new(events: &[Activity], now: NaiveDateTime) -> DateTimeContext {
-        let (events, max) = setup_graph_map(&events);
+    pub fn new(events: &[Activity], now: NaiveDateTime, slice_width: u32, slice_duration: u32) -> DateTimeContext {
+        let (events, max) = setup_graph_map(&events, slice_duration);
         DateTimeContext {
             events,
             max,
-            now: round_to_slice(&now),
+            now: round_to_slice(&now, slice_duration),
+            slice_width,
+            slice_duration,
         }
     }
 
     #[inline]
     fn is_future(&self, time: &NaiveDateTime) -> bool {
         self.now < *time
+    }
+
+    #[inline]
+    fn slices_per_hour(&self) -> u32 {
+        60 / self.slice_duration
+    }
+
+    #[inline]
+    fn hour_width(&self) -> u32 {
+        self.slices_per_hour() * self.slice_width
     }
 
     fn activity_for_slice(&self, time: &NaiveDateTime) -> ActivityGrade {
@@ -128,7 +141,13 @@ impl DateTimeSpec {
         // add legend
         w.push_str(&" ".repeat(11));
         for x in 0..24 {
-            w.push_str(&format!("{:02}   ", x));
+            w.push_str(&format!("{:02}", x));
+
+            for i in 0..ctx.hour_width() {
+                if i >= 2 {
+                    w.push(' ');
+                }
+            }
         }
         w.push('\n');
 
@@ -140,7 +159,7 @@ impl DateTimeSpec {
             let mut hours = 0;
             let mut mins = 0;
 
-            for _ in 0..(MIN_PER_DAY / MIN_PER_SLICE) {
+            for _ in 0..(MIN_PER_DAY / ctx.slice_duration) {
                 let time = date.and_hms(hours, mins, 0);
 
                 if !ctx.is_future(&time) {
@@ -150,9 +169,11 @@ impl DateTimeSpec {
                     w.push_str("\x1b[0m");
                 }
 
-                w.push(' ');
+                for _ in 0..ctx.slice_width {
+                    w.push(' ');
+                }
 
-                mins += MIN_PER_SLICE;
+                mins += ctx.slice_duration;
                 if mins >= 60 {
                     hours += 1;
                     mins = 0;
