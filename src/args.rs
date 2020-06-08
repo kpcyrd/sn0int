@@ -75,6 +75,9 @@ pub enum SubCommand {
     /// Calendar
     #[structopt(name="cal")]
     Cal(cmd::cal_cmd::Args),
+    /// Notify
+    #[structopt(name="notify")]
+    Notify(cmd::notify_cmd::Args),
     /// Verify blob storage for corrupt and dangling blobs
     #[structopt(name="fsck")]
     Fsck(cmd::fsck_cmd::Args),

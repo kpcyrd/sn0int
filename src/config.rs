@@ -1,5 +1,6 @@
 use dirs;
 use crate::errors::*;
+use crate::notify::NotificationConfig;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -15,6 +16,8 @@ pub struct Config {
     pub namespaces: HashMap<String, PathBuf>,
     #[serde(default)]
     pub network: NetworkConfig,
+    #[serde(default)]
+    pub notifications: HashMap<String, NotificationConfig>,
 }
 
 impl Config {
