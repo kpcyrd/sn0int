@@ -14,6 +14,7 @@ pub mod args;
 pub mod auth;
 pub mod autonoscope;
 pub mod blobs;
+pub mod cal;
 pub mod cmd;
 pub mod config;
 use sn0int_std::crt;

@@ -20,6 +20,7 @@ pub mod activity_cmd;
 pub mod add_cmd;
 pub mod autonoscope_cmd;
 pub mod autoscope_cmd;
+pub mod cal_cmd;
 pub mod delete_cmd;
 pub mod export_cmd;
 pub mod fsck_cmd;

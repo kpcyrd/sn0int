@@ -48,6 +48,7 @@ pub enum Command {
     Use,
     Quickstart,
     Workspace,
+    Cal,
 
     Exit,
     Quit,
@@ -79,6 +80,7 @@ impl Command {
             Command::Quickstart => "quickstart",
             Command::Quit => "quit",
             Command::Workspace => "workspace",
+            Command::Cal => "cal",
             Command::Interrupt => unreachable!(),
         }
     }
@@ -105,6 +107,7 @@ impl Command {
                 Command::Target.as_str(),
                 Command::Use.as_str(),
                 Command::Quickstart.as_str(),
+                Command::Cal.as_str(),
             ];
         }
 
@@ -138,6 +141,7 @@ impl FromStr for Command {
             "quickstart"  => Ok(Command::Quickstart),
             "quit" => Ok(Command::Quit),
             "workspace" => Ok(Command::Workspace),
+            "cal" => Ok(Command::Cal),
             x => bail!("unknown command: {:?}, try \"help\"", x),
         }
     }
@@ -475,6 +479,7 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Use, args)) => use_cmd::run(rl, &args)?,
         Some((Command::Quickstart, args)) => quickstart_cmd::run(rl, &args)?,
         Some((Command::Workspace, args)) => cmd::<workspace_cmd::Args>(rl, &args)?,
+        Some((Command::Cal, args)) => cmd::<cal_cmd::Args>(rl, &args)?,
 
         Some((Command::Exit, _)) => return Ok(true),
         Some((Command::Quit, _)) => return Ok(true),

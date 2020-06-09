@@ -72,6 +72,9 @@ pub enum SubCommand {
     /// Manage workspaces
     #[structopt(name="workspace")]
     Workspace(cmd::workspace_cmd::Args),
+    /// Calendar
+    #[structopt(name="cal")]
+    Cal(cmd::cal_cmd::Args),
     /// Verify blob storage for corrupt and dangling blobs
     #[structopt(name="fsck")]
     Fsck(cmd::fsck_cmd::Args),
