@@ -66,7 +66,7 @@ fn print_summary(module: &Module, sent: usize, errors: usize) {
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
     let config = rl.config().notifications.clone();
-    let workspace = "unknown"; // TODO
+    let workspace = rl.workspace().to_string();
     notify::run_router(rl, args.dry_run, &config, &workspace, &args.topic, &args.notification)?;
     Ok(())
 }
@@ -74,7 +74,7 @@ fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
 fn exec(args: ExecArgs, rl: &mut Shell) -> Result<()> {
     let module = rl.library().get(&args.module)?.clone();
     let options = Opt::collect(&args.options);
-    let errors = notify::exec(rl, &args.module, options, &args.notification)?;
+    let errors = notify::exec(rl, &module, options, &args.notification)?;
     print_summary(&module, 1, errors);
     Ok(())
 }

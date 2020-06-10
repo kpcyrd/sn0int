@@ -1,6 +1,7 @@
 use crate::errors::*;
 use crate::cmd::run_cmd::prepare_keyring;
 use crate::cmd::run_cmd::Params;
+use crate::engine::Module;
 use crate::options;
 use crate::shell::Shell;
 use crate::term;
@@ -115,9 +116,7 @@ fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option
     Ok((arg, None, vec![]))
 }
 
-pub fn exec(rl: &mut Shell, module: &str, options: HashMap<String, String>, notification: &Notification) -> Result<usize> {
-    let module = rl.library().get(&module)?.clone();
-
+pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, notification: &Notification) -> Result<usize> {
     if *module.source() != Some(Source::Notifications) {
         bail!("Module doesn't take notifications as source");
     }
@@ -145,22 +144,22 @@ pub fn exec(rl: &mut Shell, module: &str, options: HashMap<String, String>, noti
 pub fn run_router(rl: &mut Shell, dry_run: bool, configs: &HashMap<String, NotificationConfig>, workspace: &str, topic: &str, notification: &Notification) -> Result<()> {
     for (name, config) in configs {
         if config.matches(workspace, topic) {
-            let module = rl.library().get(&config.script)?.canonical();
+            let module = rl.library().get(&config.script)?.clone();
             if dry_run {
-                term::info(&format!("Executed {} {:?} (dry-run)", module, name));
+                term::info(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
             } else {
                 let options = options::Opt::collect(&config.options);
-                match exec(rl, &config.script, options, notification) {
+                match exec(rl, &module, options, notification) {
                     Ok(0) => {
-                        let msg = format!("Executed {} {:?}", module, name);
+                        let msg = format!("Executed {} {:?}", module.canonical(), name);
                         term::info(&msg);
                     },
                     Ok(errors) => {
-                        let msg = format!("Executed {} {:?} ({} errors)", module, name, errors);
+                        let msg = format!("Executed {} {:?} ({} errors)", module.canonical(), name, errors);
                         term::error(&msg);
                     },
                     Err(err) => {
-                        term::error(&format!("Fatal {} {:?}: {}", module, name, err));
+                        term::error(&format!("Fatal {} {:?}: {}", module.canonical(), name, err));
                     },
                 }
             }
