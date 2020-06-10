@@ -4,7 +4,7 @@ use crate::cmd::run_cmd::Params;
 use crate::engine::Module;
 use crate::options;
 use crate::shell::Shell;
-use crate::term;
+use crate::term::SpinLogger;
 use crate::worker;
 use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
@@ -111,6 +111,10 @@ impl NotificationConfig {
     }
 }
 
+pub fn trigger_notify_event<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, notification: &Notification) -> Result<()> {
+    run_router(rl, spinner, false, topic, notification)
+}
+
 fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let arg = serde_json::to_value(notification)?;
     Ok((arg, None, vec![]))
@@ -141,25 +145,27 @@ pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, n
     Ok(errors)
 }
 
-pub fn run_router(rl: &mut Shell, dry_run: bool, configs: &HashMap<String, NotificationConfig>, workspace: &str, topic: &str, notification: &Notification) -> Result<()> {
+pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool, topic: &str, notification: &Notification) -> Result<()> {
+    let configs = rl.config().notifications.clone();
+
     for (name, config) in configs {
-        if config.matches(workspace, topic) {
+        if config.matches(rl.workspace(), topic) {
             let module = rl.library().get(&config.script)?.clone();
             if dry_run {
-                term::info(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
+                spinner.success(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
             } else {
                 let options = options::Opt::collect(&config.options);
                 match exec(rl, &module, options, notification) {
                     Ok(0) => {
                         let msg = format!("Executed {} {:?}", module.canonical(), name);
-                        term::info(&msg);
+                        spinner.success(&msg);
                     },
                     Ok(errors) => {
                         let msg = format!("Executed {} {:?} ({} errors)", module.canonical(), name, errors);
-                        term::error(&msg);
+                        spinner.error(&msg);
                     },
                     Err(err) => {
-                        term::error(&format!("Fatal {} {:?}: {}", module.canonical(), name, err));
+                        spinner.error(&format!("Fatal {} {:?}: {}", module.canonical(), name, err));
                     },
                 }
             }
@@ -167,7 +173,6 @@ pub fn run_router(rl: &mut Shell, dry_run: bool, configs: &HashMap<String, Notif
     }
     Ok(())
 }
-
 
 #[cfg(test)]
 mod tests {

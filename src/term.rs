@@ -221,6 +221,44 @@ pub fn error(line: &str) {
     eprintln!("\x1b[1m[\x1b[31m{}\x1b[0;1m]\x1b[0m {}", '-', line);
 }
 
+pub struct Term;
+
+impl SpinLogger for Term {
+    fn log(&mut self, line: &str) {
+        success(line)
+    }
+
+    fn debug(&mut self, line: &str) {
+        debug(line)
+    }
+
+    fn success(&mut self, line: &str) {
+        info(line)
+    }
+
+    fn error(&mut self, line: &str) {
+        error(line)
+    }
+
+    fn warn(&mut self, line: &str) {
+        warn(line)
+    }
+
+    fn warn_once(&mut self, _line: &str) {
+        unimplemented!()
+    }
+
+    #[inline]
+    fn status(&mut self, _status: String) {
+        unimplemented!()
+    }
+
+    #[inline]
+    fn stacked_status(&mut self, _name: &String, _status: String) {
+        unimplemented!()
+    }
+}
+
 pub struct Prompt {
     pub workspace: String,
     pub module: Option<Module>,

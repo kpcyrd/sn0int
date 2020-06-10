@@ -65,9 +65,7 @@ fn print_summary(module: &Module, sent: usize, errors: usize) {
 }
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
-    let config = rl.config().notifications.clone();
-    let workspace = rl.workspace().to_string();
-    notify::run_router(rl, args.dry_run, &config, &workspace, &args.topic, &args.notification)?;
+    notify::run_router(rl, &mut term::Term, args.dry_run, &args.topic, &args.notification)?;
     Ok(())
 }
 

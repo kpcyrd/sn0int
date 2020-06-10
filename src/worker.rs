@@ -9,6 +9,7 @@ use crate::engine::Module;
 use crate::ipc;
 use crate::ipc::parent::IpcParent;
 use crate::models::*;
+use crate::notify::{self, Notification};
 use serde_json;
 use crate::ratelimits::{Ratelimiter, RatelimitResponse};
 use crate::shell::Shell;
@@ -231,32 +232,52 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn activity<T: SpinLogger>(object: NewActivity, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+    fn spinner_log_new_activity<T: SpinLogger>(object: &NewActivity, spinner: &mut T, verbose: u64) {
+        let mut log = format!("{:?} ", object.topic);
+        if let Some(uniq) = &object.uniq {
+            log.push_str(&format!("({:?}) ", uniq));
+        }
+        log.push_str(&format!("@ {}", object.time));
+
+        if let (Some(ref lat), Some(ref lon)) = (object.latitude, object.longitude) {
+            log.push_str(&format!(" ({}, {}", lat, lon));
+            if let Some(radius) = &object.radius {
+                log.push_str(&format!(" | {}m", radius));
+            }
+            log.push_str(")");
+        }
+
+        if verbose > 0 {
+            log.push_str(&format!(": {}", object.content));
+        }
+
+        spinner.log(&log);
+    }
+
+    pub fn activity<T: SpinLogger>(rl: &mut Shell, object: NewActivity, tx: DbSender, spinner: &mut T, verbose: u64) {
+        let db = rl.db();
         let result = db.insert_activity(object.clone());
         debug!("{:?} => {:?}", object, result);
 
         let result = match result {
             Ok(true) => {
-                let mut log = format!("{:?} ", object.topic);
+                Self::spinner_log_new_activity(&object, spinner, verbose);
+                // TODO: we don't want to copy the match arms everywhere
+                let topic = format!("activity:{}", object.topic);
+                let mut subject = format!("New activity: {:?}", object.topic);
                 if let Some(uniq) = &object.uniq {
-                    log.push_str(&format!("({:?}) ", uniq));
+                    subject += &format!(" ({:?})", uniq);
                 }
-                log.push_str(&format!("@ {}", object.time));
-
-                if let (Some(ref lat), Some(ref lon)) = (object.latitude, object.longitude) {
-                    log.push_str(&format!(" ({}, {}", lat, lon));
-                    if let Some(radius) = &object.radius {
-                        log.push_str(&format!(" | {}m", radius));
-                    }
-                    log.push_str(")");
+                if let Err(err) = notify::trigger_notify_event(rl, spinner, &topic, &Notification {
+                    subject,
+                    body: None,
+                }) {
+                    let err = err.to_string();
+                    spinner.error(&format!("Failed to send notifications: {}", err));
+                    Err(err)
+                } else {
+                    Ok(DatabaseResponse::Inserted(0))
                 }
-
-                if verbose > 0 {
-                    log.push_str(&format!(": {}", object.content));
-                }
-
-                spinner.log(&log);
-                Ok(DatabaseResponse::Inserted(0))
             },
             Ok(false) => Ok(DatabaseResponse::NoChange(0)),
             Err(err) => {
@@ -269,11 +290,12 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn apply<T: SpinLogger>(self, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+    pub fn apply<T: SpinLogger>(self, rl: &mut Shell, tx: DbSender, spinner: &mut T, verbose: u64) {
+        let db = rl.db();
         match self {
             DatabaseEvent::Insert(object) => Self::insert(object, None, tx, spinner, db, verbose),
             DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(object, Some(ttl), tx, spinner, db, verbose),
-            DatabaseEvent::Activity(object) => Self::activity(object, tx, spinner, db, verbose),
+            DatabaseEvent::Activity(object) => Self::activity(rl, object, tx, spinner, verbose),
             DatabaseEvent::Select((family, value)) => {
                 let result = match db.get_opt(&family, &value) {
                     Ok(Some(id)) => Ok(DatabaseResponse::Found(id)),
@@ -443,7 +465,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
                             stack.add(name, label);
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
-                        Event2::Database((db, tx)) => db.apply(tx, &mut stack.prefixed(name), rl.db(), verbose),
+                        Event2::Database((db, tx)) => db.apply(rl, tx, &mut stack.prefixed(name), verbose),
                         Event2::Ratelimit((req, tx)) => ratelimit.pass(tx, &req.key, req.passes, req.time),
                         Event2::Blob((blob, tx)) => rl.store_blob(tx, &blob),
                         Event2::Exit(event) => {
