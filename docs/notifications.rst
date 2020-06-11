@@ -62,6 +62,28 @@ Test your tokens are working correctly by sending yourself a notification:
 
 You should receive ``hello world`` as a push notification.
 
+Discord
+~~~~~~~
+
+Install the pushover notification module from the registry:
+
+.. code-block:: bash
+
+    sn0int pkg install kpcyrd/notify-discord
+
+Decide which channel should receive notifications (or create a new one). Open
+the "Server Settings" of your discord server. Click on "Webhooks". Click
+"Create Webhook". Configure the Name and Channel. Copy the Webhook URL.
+
+
+Test your tokens are working correctly by sending yourself a notification:
+
+.. code-block:: bash
+
+    sn0int notify exec kpcyrd/notify-discord -o url=https://discord.com/api/webhooks/1337/asdf 'hello world'
+
+You should receive ``hello world`` in your discord channel.
+
 Writing your own module
 ~~~~~~~~~~~~~~~~~~~~~~~
 
