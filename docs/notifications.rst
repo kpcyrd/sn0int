@@ -33,13 +33,34 @@ Back on your app, open the t.me link to start a new chat with your bot, then
 send ``/start``. Reload the page in your browser, you should see the new
 message you sent. Copy the ``chat_id``.
 
-Test your tokens are working correctly by sending yourself a notification.
+Test your tokens are working correctly by sending yourself a notification:
 
 .. code-block:: bash
 
     sn0int notify exec kpcyrd/notify-telegram -o bot_token=1337:foobar -o chat_id=1337 'hello world'
 
 You should receive ``hello world`` from your bot on Telegram.
+
+Pushover
+~~~~~~~~
+
+Install the pushover notification module from the registry:
+
+.. code-block:: bash
+
+    sn0int pkg install kpcyrd/notify-pushover
+
+Signup for pushover and configure the app on your device. Copy th user key
+visible on the pushover dashboard. Click "Create an Application/API Token". Set
+"sn0int" as name and set an icon if you want to. Copy the api token.
+
+Test your tokens are working correctly by sending yourself a notification:
+
+.. code-block:: bash
+
+    sn0int notify exec kpcyrd/notify-pushover -o user_key=asdf1337 -o api_token=asdf1337 'hello world'
+
+You should receive ``hello world`` as a push notification.
 
 Writing your own module
 ~~~~~~~~~~~~~~~~~~~~~~~

@@ -167,6 +167,7 @@ For everything else please have a look at the [detailed list][1].
 - [Notifications](https://sn0int.readthedocs.io/en/latest/notifications.html)
   - [Receiving notifications](https://sn0int.readthedocs.io/en/latest/notifications.html#receiving-notifications)
     - [Telegram](https://sn0int.readthedocs.io/en/latest/notifications.html#telegram)
+    - [Pushover](https://sn0int.readthedocs.io/en/latest/notifications.html#pushover)
     - [Writing your own module](https://sn0int.readthedocs.io/en/latest/notifications.html#writing-your-own-module)
   - [Setting up notification rules](https://sn0int.readthedocs.io/en/latest/notifications.html#setting-up-notification-rules)
   - [Testing notifications](https://sn0int.readthedocs.io/en/latest/notifications.html#testing-notifications)
