@@ -44,6 +44,8 @@ pub struct ExecArgs {
     pub module: String,
     #[structopt(short="o", long="option")]
     pub options: Vec<options::Opt>,
+    #[structopt(short="v", long="verbose", parse(from_occurrences))]
+    verbose: u64,
     #[structopt(flatten)]
     pub notification: Notification,
 }
@@ -72,7 +74,7 @@ fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
 fn exec(args: ExecArgs, rl: &mut Shell) -> Result<()> {
     let module = rl.library().get(&args.module)?.clone();
     let options = Opt::collect(&args.options);
-    let errors = notify::exec(rl, &module, options, &args.notification)?;
+    let errors = notify::exec(rl, &module, options, args.verbose, &args.notification)?;
     print_summary(&module, 1, errors);
     Ok(())
 }

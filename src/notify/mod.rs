@@ -120,14 +120,14 @@ fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option
     Ok((arg, None, vec![]))
 }
 
-pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, notification: &Notification) -> Result<usize> {
+pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
     if *module.source() != Some(Source::Notifications) {
         bail!("Module doesn't take notifications as source");
     }
 
     let params = Params {
         threads: 1,
-        verbose: 0, // TODO: args.verbose
+        verbose,
         stdin: false,
         grants: &[],
         grant_full_keyring: false,
@@ -155,7 +155,7 @@ pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool,
                 spinner.success(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
             } else {
                 let options = options::Opt::collect(&config.options);
-                match exec(rl, &module, options, notification) {
+                match exec(rl, &module, options, 0, notification) {
                     Ok(0) => {
                         let msg = format!("Executed {} {:?}", module.canonical(), name);
                         spinner.success(&msg);
