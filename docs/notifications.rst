@@ -77,6 +77,33 @@ Execute your script:
 
     sn0int notify exec notify-custom 'hello world'
 
+You most likely need to pass options to avoid hard-coding keys into your
+script. Options can be fetched like this:
+
+.. code-block:: lua
+
+    -- Description: TODO your description here
+    -- Version: 0.1.0
+    -- License: GPL-3.0
+    -- Source: notifications
+
+    function run(arg)
+        -- TODO your code here
+        -- https://sn0int.readthedocs.io/en/stable/reference.html
+
+        local foo = getopt('foo')
+        if not foo then return 'Missing -o foo= option' end
+
+        info('foo: ' .. foo)
+        info('subject: ' .. arg['subject'])
+    end
+
+And passed like this:
+
+.. code-block:: bash
+
+    sn0int notify exec notify-custom -o "foo=hello world" 'ohai'
+
 Setting up notification rules
 -----------------------------
 
