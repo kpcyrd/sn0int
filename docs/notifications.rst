@@ -247,7 +247,7 @@ Setup the timer like this:
     # /etc/systemd/system/sn0int-your-other-service.timer
 
     [Unit]
-    Description=acme-redirect: renew certs if necessary
+    Description=sn0int: run example/changeme
 
     [Timer]
     OnBootSec=1min
