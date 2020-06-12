@@ -65,7 +65,7 @@ You should receive ``hello world`` as a push notification.
 Discord
 ~~~~~~~
 
-Install the pushover notification module from the registry:
+Install the discord notification module from the registry:
 
 .. code-block:: bash
 
@@ -83,6 +83,34 @@ Test your tokens are working correctly by sending yourself a notification:
     sn0int notify exec kpcyrd/notify-discord -o url=https://discord.com/api/webhooks/1337/asdf 'hello world'
 
 You should receive ``hello world`` in your discord channel.
+
+Signal
+~~~~~~
+
+Install the sn0int notification module from the registry:
+
+.. code-block:: bash
+
+    sn0int pkg install kpcyrd/notify-signal
+
+This module allows end-to-end encrypted notifications, but it's also difficult
+to setup. You need a second phone number and install both `signal-cli
+<https://github.com/AsamK/signal-cli>`_ and `sn0int-signal
+<https://github.com/kpcyrd/sn0int-signal>`_.
+
+After you've registered your second phone number with signal-cli, you can use
+sn0int-signal to expose a minimal api for notify-signal. For more detailed
+instructions and how to start the api at boot, see the `sn0int-signal README
+<https://github.com/kpcyrd/sn0int-signal>`_.
+
+Read the secret key generated at ``/etc/sn0int-signal.key`` and send a
+notification to the signal phone number:
+
+.. code-block:: bash
+
+    sn0int notify exec kpcyrd/notify-signal -o to=+31337 -o secret=asdf 'hello world'
+
+You should receive ``hello world`` from the number signed up with signal-cli.
 
 Writing your own module
 ~~~~~~~~~~~~~~~~~~~~~~~
