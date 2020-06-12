@@ -207,6 +207,11 @@ impl<'a> Shell<'a> {
     }
 
     #[inline(always)]
+    pub fn workspace(&self) -> &str {
+        self.prompt.workspace.as_str()
+    }
+
+    #[inline(always)]
     pub fn options_mut(&mut self) -> Option<&mut HashMap<String, String>> {
         self.options.as_mut()
     }

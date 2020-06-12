@@ -44,6 +44,7 @@ pub enum Source {
     Netblocks,
     CryptoAddrs(Option<String>),
     KeyRing(String),
+    Notifications,
 }
 
 impl Source {
@@ -63,6 +64,7 @@ impl Source {
             Source::Ports => "ports",
             Source::Netblocks => "netblocks",
             Source::CryptoAddrs(_) => "cryptoaddrs",
+            Source::Notifications => "notifications",
             Source::KeyRing(_) => "keyring",
         }
     }
@@ -94,6 +96,7 @@ impl FromStr for Source {
             ("ports", None) => Ok(Source::Ports),
             ("netblocks", None) => Ok(Source::Netblocks),
             ("cryptoaddrs", param) => Ok(Source::CryptoAddrs(param.map(String::from))),
+            ("notifications", None) => Ok(Source::Notifications),
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),

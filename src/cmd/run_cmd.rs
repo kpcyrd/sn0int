@@ -92,7 +92,7 @@ fn prepare_args<T: Scopable + Serialize + Model>(rl: &Shell, filter: &Filter, pa
         .collect()
 }
 
-fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> Result<()> {
+pub fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> Result<()> {
     for namespace in keyring.unauthorized_namespaces(&module) {
         let grant_access = if params.deny_keyring {
             false
@@ -133,6 +133,7 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
         Some(Source::Ports) => prepare_args::<Port>(rl, &filter, None),
         Some(Source::Netblocks) => prepare_args::<Netblock>(rl, &filter, None),
         Some(Source::CryptoAddrs(currency)) => prepare_args::<CryptoAddr>(rl, &filter, currency.as_ref()),
+        Some(Source::Notifications) => bail!("Notification modules can't be executed like this"),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {

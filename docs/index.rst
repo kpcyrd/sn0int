@@ -43,6 +43,7 @@ Getting Started
    database
    structs
    activity
+   notifications
    keyring
    config
    sandbox
