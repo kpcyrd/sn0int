@@ -157,7 +157,7 @@ pub enum DatabaseEvent {
     InsertTtl((Insert, i32)),
     Activity(NewActivity),
     Select((Family, String)),
-    Update((String, Update)),
+    Update((Family, String, Update)),
 }
 
 impl EventWithCallback for DatabaseEvent {
@@ -169,7 +169,7 @@ impl EventWithCallback for DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    pub fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, subject: String) {
+    fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, subject: String) {
         if let Err(err) = notify::trigger_notify_event(rl, spinner, topic, &Notification {
             subject,
             body: None,
@@ -178,79 +178,43 @@ impl DatabaseEvent {
         }
     }
 
-    pub fn insert<T: SpinLogger>(rl: &mut Shell, object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, verbose: u64) {
-        let db = rl.db();
-        if verbose >= 1 {
-            spinner.debug(&format!("Inserting: {:?}", object));
-        }
+    fn on_insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, object: &Insert) {
+        match object.value(rl.db()) {
+            Ok(value) => {
+                // TODO: also include fields, see update
+                let log = format!("Adding {} {:?}", object.family(), value); // TODO: also include fields here
+                spinner.log(&log);
 
-        let result = db.insert_generic(object.clone());
-        debug!("{:?} => {:?}", object, result);
-
-        let result = match result {
-            Ok(Some((DbChange::Insert, id))) => {
-                if let Some(ttl) = ttl {
-                    if let Err(err) = Ttl::create(&object, id, ttl, db) {
-                        spinner.error(&format!("Failed to set ttl: {:?}", err));
-                    }
-                }
-
-                if let Ok(value) = object.value(db) {
-                    // TODO: also include fields, see update
-                    let log = format!("Adding {} {:?}", object.family(), value); // TODO: also include fields here
-                    spinner.log(&log);
-
-                    let subject = format!("Added {} {:?}", object.family(), value);
-                    let topic = format!("db:{}:{}:insert", object.family(), value);
-                    Self::notify(rl, spinner, &topic, subject);
-                } else {
-                    spinner.error(&format!("Failed to query necessary fields for {:?}", object));
-                }
-                Ok(DatabaseResponse::Inserted(id))
-            },
-            Ok(Some((DbChange::Update(update), id))) => {
-                if let Some(ttl) = ttl {
-                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
-                        spinner.error(&format!("Failed to set ttl: {:?}", err));
-                    }
-                }
-
-                // TODO: replace id with actual object(?)
-                match object.value(&db) {
-                    Ok(value) => {
-                        spinner.log(&format!("Updating {} {:?} ({})", object.family(), value, update));
-
-                        // TODO: in the future we could consider firing multiple events, one for each column
-                        // TODO: this would be super noisy if a lot of fields change though
-                        let subject = format!("Updated {} {:?} ({})", object.family(), value, update);
-                        let topic = format!("db:{}:{}:update", object.family(), value);
-                        Self::notify(rl, spinner, &topic, subject);
-                    },
-                    Err(err) => {
-                        // TODO: this should be unreachable
-                        spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
-                    },
-                }
-                Ok(DatabaseResponse::Updated(id))
-            },
-            Ok(Some((DbChange::None, id))) => {
-                if let Some(ttl) = ttl {
-                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
-                        spinner.error(&format!("Failed to set ttl: {:?}", err));
-                    }
-                }
-
-                Ok(DatabaseResponse::NoChange(id))
-            },
-            Ok(None) => Ok(DatabaseResponse::None),
+                let subject = format!("Added {} {:?}", object.family(), value);
+                let topic = format!("db:{}:{}:insert", object.family(), value);
+                Self::notify(rl, spinner, &topic, subject);
+            }
             Err(err) => {
-                let err = err.to_string();
-                spinner.error(&err);
-                Err(err)
-            },
-        };
+                spinner.error(&format!("Failed to query necessary fields for {:?}: {:?}", object, err));
+            }
+        }
+    }
 
-        tx.send(result).expect("Failed to send db result to channel");
+    fn on_update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str, update: &Update) {
+        spinner.log(&format!("Updating {} {:?} ({})", family, value, update.to_term_str()));
+
+        // TODO: in the future we could consider firing multiple events, one for each column
+        // TODO: this would be super noisy if a lot of fields change though
+        let subject = format!("Updated {} {:?} ({})", family, value, update.to_plain_str());
+        let topic = format!("db:{}:{}:update", family, value);
+        Self::notify(rl, spinner, &topic, subject);
+    }
+
+    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, object: &NewActivity, verbose: u64) {
+        Self::spinner_log_new_activity(&object, spinner, verbose);
+
+        // TODO: we don't want to copy the match arms everywhere
+        let mut subject = format!("New activity: {:?}", object.topic);
+        if let Some(uniq) = &object.uniq {
+            subject += &format!(" ({:?})", uniq);
+        }
+        let topic = format!("activity:{}", object.topic);
+        Self::notify(rl, spinner, &topic, subject);
     }
 
     fn spinner_log_new_activity<T: SpinLogger>(object: &NewActivity, spinner: &mut T, verbose: u64) {
@@ -275,6 +239,65 @@ impl DatabaseEvent {
         spinner.log(&log);
     }
 
+    fn insert<T: SpinLogger>(rl: &mut Shell, object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, verbose: u64) {
+        let db = rl.db();
+        if verbose >= 1 {
+            spinner.debug(&format!("Inserting: {:?}", object));
+        }
+
+        let result = db.insert_generic(object.clone());
+        debug!("{:?} => {:?}", object, result);
+
+        let result = match result {
+            Ok(Some((DbChange::Insert, id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::create(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
+                }
+
+                Self::on_insert(rl, spinner, &object);
+
+                Ok(DatabaseResponse::Inserted(id))
+            },
+            Ok(Some((DbChange::Update(update), id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
+                }
+
+                match object.value(rl.db()) {
+                    Ok(value) => Self::on_update(rl, spinner, object.family(), &value, &update),
+                    Err(err) => {
+                        // TODO: this should be unreachable
+                        spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
+                    },
+                }
+
+                Ok(DatabaseResponse::Updated(id))
+            },
+            Ok(Some((DbChange::None, id))) => {
+                if let Some(ttl) = ttl {
+                    if let Err(err) = Ttl::bump(&object, id, ttl, db) {
+                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                    }
+                }
+
+                Ok(DatabaseResponse::NoChange(id))
+            },
+            Ok(None) => Ok(DatabaseResponse::None),
+            Err(err) => {
+                let err = err.to_string();
+                spinner.error(&err);
+                Err(err)
+            },
+        };
+
+        tx.send(result).expect("Failed to send db result to channel");
+    }
+
+
     pub fn activity<T: SpinLogger>(rl: &mut Shell, object: NewActivity, tx: DbSender, spinner: &mut T, verbose: u64) {
         let db = rl.db();
         let result = db.insert_activity(object.clone());
@@ -282,19 +305,34 @@ impl DatabaseEvent {
 
         let result = match result {
             Ok(true) => {
-                Self::spinner_log_new_activity(&object, spinner, verbose);
-
-                // TODO: we don't want to copy the match arms everywhere
-                let mut subject = format!("New activity: {:?}", object.topic);
-                if let Some(uniq) = &object.uniq {
-                    subject += &format!(" ({:?})", uniq);
-                }
-                let topic = format!("activity:{}", object.topic);
-                Self::notify(rl, spinner, &topic, subject);
-
+                Self::on_activity(rl, spinner, &object, verbose);
                 Ok(DatabaseResponse::Inserted(0))
             },
             Ok(false) => Ok(DatabaseResponse::NoChange(0)),
+            Err(err) => {
+                let err = err.to_string();
+                spinner.error(&err);
+                Err(err)
+            },
+        };
+
+        tx.send(result).expect("Failed to send db result to channel");
+    }
+
+    pub fn update<T: SpinLogger>(rl: &mut Shell, family: &str, value: &str, update: &Update, tx: DbSender, spinner: &mut T, verbose: u64) {
+        let db = rl.db();
+        if verbose >= 1 {
+            spinner.debug(&format!("Updating: {:?}", update));
+        }
+
+        let result = db.update_generic(update);
+        debug!("{:?}: {:?} => {:?}", value, update, result);
+
+        let result = match result {
+            Ok(id) => {
+                Self::on_update(rl, spinner, family, &value, &update);
+                Ok(DatabaseResponse::Updated(id))
+            },
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
@@ -320,27 +358,7 @@ impl DatabaseEvent {
 
                 tx.send(result).expect("Failed to send db result to channel");
             },
-            DatabaseEvent::Update((object, update)) => {
-                let db = rl.db();
-                if verbose >= 1 {
-                    spinner.debug(&format!("Updating: {:?}", update));
-                }
-
-                let result = db.update_generic(&update);
-                debug!("{:?}: {:?} => {:?}", object, update, result);
-                let result = result
-                    .map(DatabaseResponse::Updated)
-                    .map_err(|e| e.to_string());
-
-                if let Err(ref err) = result {
-                    spinner.error(&err);
-                } else {
-                    // TODO: bring this somewhat closer to upsert code
-                    spinner.log(&format!("Updating {:?} ({})", object, update));
-                }
-
-                tx.send(result).expect("Failed to send db result to channel");
-            },
+            DatabaseEvent::Update((family, value, update)) => Self::update(rl, family.as_str(), &value, &update, tx, spinner, verbose),
         }
     }
 }

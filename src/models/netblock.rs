@@ -307,9 +307,9 @@ impl Updateable<Netblock> for NetblockUpdate {
         Self::clear_if_equal(&mut self.description, &existing.description);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "asn", &self.asn);
-        Self::push_value(updates, "as_org", &self.as_org);
-        Self::push_value(updates, "description", &self.description);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "asn", &self.asn, colors);
+        Self::push_value(updates, "as_org", &self.as_org, colors);
+        Self::push_value(updates, "description", &self.description, colors);
     }
 }

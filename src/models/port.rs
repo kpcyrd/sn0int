@@ -337,10 +337,10 @@ impl Updateable<Port> for PortUpdate {
         Self::clear_if_equal(&mut self.version, &existing.version);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "status", &self.status);
-        Self::push_value(updates, "banner", &self.banner);
-        Self::push_value(updates, "service", &self.service);
-        Self::push_value(updates, "version", &self.version);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "status", &self.status, colors);
+        Self::push_value(updates, "banner", &self.banner, colors);
+        Self::push_value(updates, "service", &self.service, colors);
+        Self::push_value(updates, "version", &self.version, colors);
     }
 }

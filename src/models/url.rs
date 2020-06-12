@@ -354,12 +354,12 @@ impl Updateable<Url> for UrlChangeset {
         Self::clear_if_equal(&mut self.redirect, &existing.redirect);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "online", &self.online);
-        Self::push_value(updates, "status", &self.status);
-        Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())));
-        Self::push_value(updates, "title", &self.title);
-        Self::push_value(updates, "redirect", &self.redirect);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "online", &self.online, colors);
+        Self::push_value(updates, "status", &self.status, colors);
+        Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())), colors);
+        Self::push_value(updates, "title", &self.title, colors);
+        Self::push_value(updates, "redirect", &self.redirect, colors);
     }
 }
 

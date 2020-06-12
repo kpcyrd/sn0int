@@ -194,8 +194,8 @@ impl Updateable<NetworkDevice> for NetworkDeviceUpdate {
         Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "ipaddr", &self.ipaddr);
-        Self::push_value(updates, "last_seen", &self.last_seen);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "ipaddr", &self.ipaddr, colors);
+        Self::push_value(updates, "last_seen", &self.last_seen, colors);
     }
 }

@@ -342,14 +342,14 @@ impl Updateable<CryptoAddr> for CryptoAddrUpdate {
         Self::clear_if_equal(&mut self.description, &existing.description);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "currency", &self.currency);
-        Self::push_value(updates, "denominator", &self.denominator);
-        Self::push_value(updates, "balance", &self.balance);
-        Self::push_value(updates, "received", &self.received);
-        Self::push_value(updates, "first_seen", &self.first_seen);
-        Self::push_value(updates, "last_withdrawal", &self.last_withdrawal);
-        Self::push_value(updates, "description", &self.description);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "currency", &self.currency, colors);
+        Self::push_value(updates, "denominator", &self.denominator, colors);
+        Self::push_value(updates, "balance", &self.balance, colors);
+        Self::push_value(updates, "received", &self.received, colors);
+        Self::push_value(updates, "first_seen", &self.first_seen, colors);
+        Self::push_value(updates, "last_withdrawal", &self.last_withdrawal, colors);
+        Self::push_value(updates, "description", &self.description, colors);
     }
 }
 

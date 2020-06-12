@@ -154,25 +154,42 @@ impl Update {
             Update::CryptoAddr(update)    => update.is_dirty(),
         }
     }
-}
 
-impl fmt::Display for Update {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+    pub fn to_plain_str(&self) -> String {
         match self {
-            Update::Subdomain(update)     => write!(w, "{}", update.to_string()),
-            Update::IpAddr(update)        => write!(w, "{}", update.to_string()),
-            Update::Url(update)           => write!(w, "{}", update.to_string()),
-            Update::Email(update)         => write!(w, "{}", update.to_string()),
-            Update::PhoneNumber(update)   => write!(w, "{}", update.to_string()),
-            Update::Device(update)        => write!(w, "{}", update.to_string()),
-            Update::Network(update)       => write!(w, "{}", update.to_string()),
-            Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
-            Update::Account(update)       => write!(w, "{}", update.to_string()),
-            Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
-            Update::Image(update)         => write!(w, "{}", update.to_string()),
-            Update::Port(update)          => write!(w, "{}", update.to_string()),
-            Update::Netblock(update)      => write!(w, "{}", update.to_string()),
-            Update::CryptoAddr(update)    => write!(w, "{}", update.to_string()),
+            Update::Subdomain(update)       => update.to_plain_str(),
+            Update::IpAddr(update)          => update.to_plain_str(),
+            Update::Url(update)             => update.to_plain_str(),
+            Update::Email(update)           => update.to_plain_str(),
+            Update::PhoneNumber(update)     => update.to_plain_str(),
+            Update::Device(update)          => update.to_plain_str(),
+            Update::Network(update)         => update.to_plain_str(),
+            Update::NetworkDevice(update)   => update.to_plain_str(),
+            Update::Account(update)         => update.to_plain_str(),
+            Update::BreachEmail(update)     => update.to_plain_str(),
+            Update::Image(update)           => update.to_plain_str(),
+            Update::Port(update)            => update.to_plain_str(),
+            Update::Netblock(update)        => update.to_plain_str(),
+            Update::CryptoAddr(update)      => update.to_plain_str(),
+        }
+    }
+
+    pub fn to_term_str(&self) -> String {
+        match self {
+            Update::Subdomain(update)       => update.to_term_str(),
+            Update::IpAddr(update)          => update.to_term_str(),
+            Update::Url(update)             => update.to_term_str(),
+            Update::Email(update)           => update.to_term_str(),
+            Update::PhoneNumber(update)     => update.to_term_str(),
+            Update::Device(update)          => update.to_term_str(),
+            Update::Network(update)         => update.to_term_str(),
+            Update::NetworkDevice(update)   => update.to_term_str(),
+            Update::Account(update)         => update.to_term_str(),
+            Update::BreachEmail(update)     => update.to_term_str(),
+            Update::Image(update)           => update.to_term_str(),
+            Update::Port(update)            => update.to_term_str(),
+            Update::Netblock(update)        => update.to_term_str(),
+            Update::CryptoAddr(update)      => update.to_term_str(),
         }
     }
 }
@@ -276,9 +293,15 @@ impl Upsert for NullUpdate {
 }
 
 pub trait Updateable<M> {
-    fn to_string(&self) -> String {
+    fn to_plain_str(&self) -> String {
         let mut updates = Vec::new();
-        self.fmt(&mut updates);
+        self.fmt(&mut updates, false);
+        updates.join(", ")
+    }
+
+    fn to_term_str(&self) -> String {
+        let mut updates = Vec::new();
+        self.fmt(&mut updates, true);
         updates.join(", ")
     }
 
@@ -306,20 +329,28 @@ pub trait Updateable<M> {
     fn changeset(&mut self, existing: &M);
 
     #[inline]
-    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>) {
+    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>, colors: bool) {
         if let Some(v) = value {
-            updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
+            if colors {
+                updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
+            } else {
+                updates.push(format!("{} => {:?}", name, v));
+            }
         }
     }
 
     #[inline]
-    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>) {
+    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>, colors: bool) {
         if let Some(v) = value {
-            updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
+            if colors {
+                updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
+            } else {
+                updates.push(format!("{} => {}", name, v.as_ref()));
+            }
         }
     }
 
-    fn fmt(&self, updates: &mut Vec<String>);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool);
 }
 
 // TODO: Printable could probably be dropped

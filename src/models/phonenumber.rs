@@ -377,16 +377,16 @@ impl Updateable<PhoneNumber> for PhoneNumberUpdate {
         Self::clear_if_equal(&mut self.caller_type, &existing.caller_type);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "name", &self.name);
-        Self::push_value(updates, "valid", &self.valid);
-        Self::push_value(updates, "last_online", &self.last_online);
-        Self::push_value(updates, "country", &self.country);
-        Self::push_value(updates, "carrier", &self.carrier);
-        Self::push_value(updates, "line", &self.line);
-        Self::push_value(updates, "is_ported", &self.is_ported);
-        Self::push_value(updates, "last_ported", &self.last_ported);
-        Self::push_value(updates, "caller_name", &self.caller_name);
-        Self::push_value(updates, "caller_type", &self.caller_type);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "name", &self.name, colors);
+        Self::push_value(updates, "valid", &self.valid, colors);
+        Self::push_value(updates, "last_online", &self.last_online, colors);
+        Self::push_value(updates, "country", &self.country, colors);
+        Self::push_value(updates, "carrier", &self.carrier, colors);
+        Self::push_value(updates, "line", &self.line, colors);
+        Self::push_value(updates, "is_ported", &self.is_ported, colors);
+        Self::push_value(updates, "last_ported", &self.last_ported, colors);
+        Self::push_value(updates, "caller_name", &self.caller_name, colors);
+        Self::push_value(updates, "caller_type", &self.caller_type, colors);
     }
 }
