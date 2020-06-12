@@ -122,24 +122,6 @@ impl Domain {
     }
 }
 
-pub struct PrintableDomain {
-    value: String,
-}
-
-impl fmt::Display for PrintableDomain {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
-        write!(w, "{:?}", self.value)
-    }
-}
-
-impl Printable<PrintableDomain> for Domain {
-    fn printable(&self, _db: &Database) -> Result<PrintableDomain> {
-        Ok(PrintableDomain {
-            value: self.value.to_string(),
-        })
-    }
-}
-
 pub struct DetailedDomain {
     id: i32,
     value: String,
@@ -219,14 +201,6 @@ impl Upsertable<Domain> for NewDomain {
         Self::Update {
             id: existing.id,
         }
-    }
-}
-
-impl Printable<PrintableDomain> for NewDomain {
-    fn printable(&self, _db: &Database) -> Result<PrintableDomain> {
-        Ok(PrintableDomain {
-            value: self.value.to_string(),
-        })
     }
 }
 

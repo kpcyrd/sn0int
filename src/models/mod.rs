@@ -1,9 +1,10 @@
+use crate::db::{Database, Table, Filter, Family};
+use crate::engine::ctx::State;
 use crate::errors::*;
-use crate::db::{Database, Table, Filter};
 use crate::fmt;
 use crate::schema::*;
+use std::borrow::Cow;
 use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,39 +29,39 @@ pub enum Insert {
 }
 
 impl Insert {
-    pub fn label(&self, db: &Database) -> Result<String> {
-        let label = match self {
-            Insert::Domain(x) => format!("{:?}", x.value),
-            Insert::Subdomain(x) => format!("{:?}", x.value),
-            Insert::IpAddr(x) => format!("{:?}", x.value),
+    pub fn value(&self, db: &Database) -> Result<Cow<String>> {
+        let value = match self {
+            Insert::Domain(x) => Cow::Borrowed(&x.value),
+            Insert::Subdomain(x) => Cow::Borrowed(&x.value),
+            Insert::IpAddr(x) => Cow::Borrowed(&x.value),
             Insert::SubdomainIpAddr(x) => {
                 let subdomain = Subdomain::by_id(db, x.subdomain_id)?;
                 let ipaddr = IpAddr::by_id(db, x.ip_addr_id)?;
-                format!("{:?}+{:?}", subdomain.value, ipaddr.value)
+                Cow::Owned(format!("{}+{}", subdomain.value, ipaddr.value))
             },
-            Insert::Url(x) => format!("{:?}", x.value),
-            Insert::Email(x) => format!("{:?}", x.value),
-            Insert::PhoneNumber(x) => format!("{:?}", x.value),
-            Insert::Device(x) => format!("{:?}", x.value),
-            Insert::Network(x) => format!("{:?}", x.value),
+            Insert::Url(x) => Cow::Borrowed(&x.value),
+            Insert::Email(x) => Cow::Borrowed(&x.value),
+            Insert::PhoneNumber(x) => Cow::Borrowed(&x.value),
+            Insert::Device(x) => Cow::Borrowed(&x.value),
+            Insert::Network(x) => Cow::Borrowed(&x.value),
             Insert::NetworkDevice(x) => {
                 let network = Network::by_id(db, x.network_id)?;
                 let device = Device::by_id(db, x.device_id)?;
-                format!("{:?}+{:?}", network.value, device.value)
+                Cow::Owned(format!("{}+{}", network.value, device.value))
             },
-            Insert::Account(x) => format!("{:?}", x.value),
-            Insert::Breach(x) => format!("{:?}", x.value),
+            Insert::Account(x) => Cow::Borrowed(&x.value),
+            Insert::Breach(x) => Cow::Borrowed(&x.value),
             Insert::BreachEmail(x) => {
                 let breach = Breach::by_id(db, x.breach_id)?;
                 let email = Email::by_id(db, x.email_id)?;
-                format!("{:?}+{:?}", breach.value, email.value)
+                Cow::Owned(format!("{}+{}", breach.value, email.value))
             }
-            Insert::Image(x) => format!("{:?}", x.value),
-            Insert::Port(x) => format!("{:?}", x.value),
-            Insert::Netblock(x) => format!("{:?}", x.value),
-            Insert::CryptoAddr(x) => format!("{:?}", x.value),
+            Insert::Image(x) => Cow::Borrowed(&x.value),
+            Insert::Port(x) => Cow::Borrowed(&x.value),
+            Insert::Netblock(x) => Cow::Borrowed(&x.value),
+            Insert::CryptoAddr(x) => Cow::Borrowed(&x.value),
         };
-        Ok(label)
+        Ok(value)
     }
 
     #[inline]
@@ -68,26 +69,27 @@ impl Insert {
         Table::from(self).into()
     }
 
-    pub fn printable(&self, db: &Database) -> Result<String> {
-        Ok(match self {
-            Insert::Domain(x) => format!("Domain: {}", x.printable(db)?),
-            Insert::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
-            Insert::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
-            Insert::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
-            Insert::Url(x) => format!("Url: {}", x.printable(db)?),
-            Insert::Email(x) => format!("Email: {}", x.printable(db)?),
-            Insert::PhoneNumber(x) => format!("PhoneNumber: {}", x.printable(db)?),
-            Insert::Device(x) => format!("Device: {}", x.printable(db)?),
-            Insert::Network(x) => format!("Network: {}", x.printable(db)?),
-            Insert::NetworkDevice(x) => x.printable(db)?.to_string(),
-            Insert::Account(x) => format!("Account: {}", x.printable(db)?),
-            Insert::Breach(x) => format!("Breach: {}", x.printable(db)?),
-            Insert::BreachEmail(x) => x.printable(db)?.to_string(),
-            Insert::Image(x) => format!("Image: {}", x.printable(db)?),
-            Insert::Port(x) => format!("Port: {}", x.printable(db)?),
-            Insert::Netblock(x) => format!("Netblock: {}", x.printable(db)?),
-            Insert::CryptoAddr(x) => format!("CryptoAddr: {}", x.printable(db)?),
-        })
+    #[inline]
+    pub fn family(&self) -> &str {
+        match self {
+            Insert::Domain(_) => Family::Domain.as_str(),
+            Insert::Subdomain(_) => Family::Subdomain.as_str(),
+            Insert::IpAddr(_) => Family::Ipaddr.as_str(),
+            Insert::SubdomainIpAddr(_) => Family::SubdomainIpaddr.as_str(),
+            Insert::Url(_) => Family::Url.as_str(),
+            Insert::Email(_) => Family::Email.as_str(),
+            Insert::PhoneNumber(_) => Family::Phonenumber.as_str(),
+            Insert::Device(_) => Family::Device.as_str(),
+            Insert::Network(_) => Family::Network.as_str(),
+            Insert::NetworkDevice(_) => Family::NetworkDevice.as_str(),
+            Insert::Account(_) => Family::Account.as_str(),
+            Insert::Breach(_) => Family::Breach.as_str(),
+            Insert::BreachEmail(_) => Family::BreachEmail.as_str(),
+            Insert::Image(_) => Family::Image.as_str(),
+            Insert::Port(_) => Family::Port.as_str(),
+            Insert::Netblock(_) => Family::Netblock.as_str(),
+            Insert::CryptoAddr(_) => Family::Cryptoaddr.as_str(),
+        }
     }
 }
 
@@ -320,6 +322,7 @@ pub trait Updateable<M> {
     fn fmt(&self, updates: &mut Vec<String>);
 }
 
+// TODO: Printable could probably be dropped
 pub trait Printable<T: Sized> {
     fn printable(&self, db: &Database) -> Result<T>;
 }

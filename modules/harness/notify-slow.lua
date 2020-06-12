@@ -4,5 +4,7 @@
 -- Source: notifications
 
 function run(arg)
+    -- TODO your code here
+    sleep(1)
     info('notication!: ' .. json_encode(arg))
 end

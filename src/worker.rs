@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::blobs::Blob;
 use crate::channel;
 use crate::cmd::run_cmd::Params;
-use crate::db::{Database, DbChange, Family};
+use crate::db::{DbChange, Family};
 use crate::db::ttl::Ttl;
 use crate::engine::Module;
 use crate::ipc;
@@ -169,7 +169,17 @@ impl EventWithCallback for DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    pub fn insert<T: SpinLogger>(object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, db: &Database, verbose: u64) {
+    pub fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, subject: String) {
+        if let Err(err) = notify::trigger_notify_event(rl, spinner, topic, &Notification {
+            subject,
+            body: None,
+        }) {
+            spinner.error(&format!("Failed to send notifications: {}", err));
+        }
+    }
+
+    pub fn insert<T: SpinLogger>(rl: &mut Shell, object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, verbose: u64) {
+        let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Inserting: {:?}", object));
         }
@@ -185,9 +195,14 @@ impl DatabaseEvent {
                     }
                 }
 
-                // TODO: replace id with actual object(?)
-                if let Ok(obj) = object.printable(db) {
-                    spinner.log(&obj.to_string()); // TODO: also include fields here
+                if let Ok(value) = object.value(db) {
+                    // TODO: also include fields, see update
+                    let log = format!("Adding {} {:?}", object.family(), value); // TODO: also include fields here
+                    spinner.log(&log);
+
+                    let subject = format!("Added {} {:?}", object.family(), value);
+                    let topic = format!("db:{}:{}:insert", object.family(), value);
+                    Self::notify(rl, spinner, &topic, subject);
                 } else {
                     spinner.error(&format!("Failed to query necessary fields for {:?}", object));
                 }
@@ -201,9 +216,15 @@ impl DatabaseEvent {
                 }
 
                 // TODO: replace id with actual object(?)
-                match object.label(&db) {
-                    Ok(label) => {
-                        spinner.log(&format!("Updating {} ({})", label, update));
+                match object.value(&db) {
+                    Ok(value) => {
+                        spinner.log(&format!("Updating {} {:?} ({})", object.family(), value, update));
+
+                        // TODO: in the future we could consider firing multiple events, one for each column
+                        // TODO: this would be super noisy if a lot of fields change though
+                        let subject = format!("Updated {} {:?} ({})", object.family(), value, update);
+                        let topic = format!("db:{}:{}:update", object.family(), value);
+                        Self::notify(rl, spinner, &topic, subject);
                     },
                     Err(err) => {
                         // TODO: this should be unreachable
@@ -262,22 +283,16 @@ impl DatabaseEvent {
         let result = match result {
             Ok(true) => {
                 Self::spinner_log_new_activity(&object, spinner, verbose);
+
                 // TODO: we don't want to copy the match arms everywhere
-                let topic = format!("activity:{}", object.topic);
                 let mut subject = format!("New activity: {:?}", object.topic);
                 if let Some(uniq) = &object.uniq {
                     subject += &format!(" ({:?})", uniq);
                 }
-                if let Err(err) = notify::trigger_notify_event(rl, spinner, &topic, &Notification {
-                    subject,
-                    body: None,
-                }) {
-                    let err = err.to_string();
-                    spinner.error(&format!("Failed to send notifications: {}", err));
-                    Err(err)
-                } else {
-                    Ok(DatabaseResponse::Inserted(0))
-                }
+                let topic = format!("activity:{}", object.topic);
+                Self::notify(rl, spinner, &topic, subject);
+
+                Ok(DatabaseResponse::Inserted(0))
             },
             Ok(false) => Ok(DatabaseResponse::NoChange(0)),
             Err(err) => {
@@ -291,12 +306,12 @@ impl DatabaseEvent {
     }
 
     pub fn apply<T: SpinLogger>(self, rl: &mut Shell, tx: DbSender, spinner: &mut T, verbose: u64) {
-        let db = rl.db();
         match self {
-            DatabaseEvent::Insert(object) => Self::insert(object, None, tx, spinner, db, verbose),
-            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(object, Some(ttl), tx, spinner, db, verbose),
+            DatabaseEvent::Insert(object) => Self::insert(rl, object, None, tx, spinner, verbose),
+            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(rl, object, Some(ttl), tx, spinner, verbose),
             DatabaseEvent::Activity(object) => Self::activity(rl, object, tx, spinner, verbose),
             DatabaseEvent::Select((family, value)) => {
+                let db = rl.db();
                 let result = match db.get_opt(&family, &value) {
                     Ok(Some(id)) => Ok(DatabaseResponse::Found(id)),
                     Ok(None) => Ok(DatabaseResponse::None),
@@ -306,6 +321,7 @@ impl DatabaseEvent {
                 tx.send(result).expect("Failed to send db result to channel");
             },
             DatabaseEvent::Update((object, update)) => {
+                let db = rl.db();
                 if verbose >= 1 {
                     spinner.debug(&format!("Updating: {:?}", update));
                 }
