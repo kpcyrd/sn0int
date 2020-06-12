@@ -207,7 +207,7 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
-        ttl::reap_expired(rl.db())?;
+        ttl::reap_expired(rl)?;
         let options = match rl.options_mut() {
             Some(options) => options.clone(),
             _ => HashMap::new(),

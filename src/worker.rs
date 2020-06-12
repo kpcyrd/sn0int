@@ -178,21 +178,14 @@ impl DatabaseEvent {
         }
     }
 
-    fn on_insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, object: &Insert) {
-        match object.value(rl.db()) {
-            Ok(value) => {
-                // TODO: also include fields, see update
-                let log = format!("Adding {} {:?}", object.family(), value); // TODO: also include fields here
-                spinner.log(&log);
+    fn on_insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str) {
+        // TODO: also include fields, see update
+        let log = format!("Adding {} {:?}", family, value);
+        spinner.log(&log);
 
-                let subject = format!("Added {} {:?}", object.family(), value);
-                let topic = format!("db:{}:{}:insert", object.family(), value);
-                Self::notify(rl, spinner, &topic, subject);
-            }
-            Err(err) => {
-                spinner.error(&format!("Failed to query necessary fields for {:?}: {:?}", object, err));
-            }
-        }
+        let subject = format!("Added {} {:?}", family, value);
+        let topic = format!("db:{}:{}:insert", family, value);
+        Self::notify(rl, spinner, &topic, subject);
     }
 
     fn on_update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str, update: &Update) {
@@ -250,13 +243,20 @@ impl DatabaseEvent {
 
         let result = match result {
             Ok(Some((DbChange::Insert, id))) => {
-                if let Some(ttl) = ttl {
-                    if let Err(err) = Ttl::create(&object, id, ttl, db) {
-                        spinner.error(&format!("Failed to set ttl: {:?}", err));
+                match object.value(rl.db()) {
+                    Ok(value) => {
+                        if let Some(ttl) = ttl {
+                            if let Err(err) = Ttl::create(&object, id, value.to_string(), ttl, db) {
+                                spinner.error(&format!("Failed to set ttl: {:?}", err));
+                            }
+                        }
+
+                        Self::on_insert(rl, spinner, object.family(), &value);
+                    }
+                    Err(err) => {
+                        spinner.error(&format!("Failed to query necessary fields for {:?}: {:?}", object, err));
                     }
                 }
-
-                Self::on_insert(rl, spinner, &object);
 
                 Ok(DatabaseResponse::Inserted(id))
             },

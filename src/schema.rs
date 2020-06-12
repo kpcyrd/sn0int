@@ -228,6 +228,7 @@ table! {
         id -> Integer,
         family -> Text,
         key -> Integer,
+        value -> Text,
         expire -> Timestamp,
     }
 }

@@ -94,7 +94,7 @@ impl<'a, 'b> Printer<'a, 'b> {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
-        ttl::reap_expired(rl.db())?;
+        ttl::reap_expired(rl)?;
         let printer = Printer::new(rl, &self);
 
         match &self.subcommand {

@@ -3,6 +3,7 @@ use crate::errors::*;
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
 use crate::db::ttl;
+use crate::models::*;
 use crate::shell::Shell;
 use serde_json;
 use serde::Serialize;
@@ -10,7 +11,6 @@ use std::io::{self, Write};
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use strum_macros::{EnumString, IntoStaticStr};
-use crate::models::*;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
@@ -22,7 +22,7 @@ pub struct Args {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
-        ttl::reap_expired(rl.db())?;
+        ttl::reap_expired(rl)?;
         match self.format {
             Format::Json => export::<JsonFormat>(rl),
             Format::JsonBlobs => export::<JsonBlobsFormat>(rl),
