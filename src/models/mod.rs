@@ -1,9 +1,10 @@
+use crate::db::{Database, Table, Filter, Family};
+use crate::engine::ctx::State;
 use crate::errors::*;
-use crate::db::{Database, Table, Filter};
 use crate::fmt;
 use crate::schema::*;
+use std::borrow::Cow;
 use std::sync::Arc;
-use crate::engine::ctx::State;
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,39 +29,39 @@ pub enum Insert {
 }
 
 impl Insert {
-    pub fn label(&self, db: &Database) -> Result<String> {
-        let label = match self {
-            Insert::Domain(x) => format!("{:?}", x.value),
-            Insert::Subdomain(x) => format!("{:?}", x.value),
-            Insert::IpAddr(x) => format!("{:?}", x.value),
+    pub fn value(&self, db: &Database) -> Result<Cow<String>> {
+        let value = match self {
+            Insert::Domain(x) => Cow::Borrowed(&x.value),
+            Insert::Subdomain(x) => Cow::Borrowed(&x.value),
+            Insert::IpAddr(x) => Cow::Borrowed(&x.value),
             Insert::SubdomainIpAddr(x) => {
                 let subdomain = Subdomain::by_id(db, x.subdomain_id)?;
                 let ipaddr = IpAddr::by_id(db, x.ip_addr_id)?;
-                format!("{:?}+{:?}", subdomain.value, ipaddr.value)
+                Cow::Owned(format!("{}+{}", subdomain.value, ipaddr.value))
             },
-            Insert::Url(x) => format!("{:?}", x.value),
-            Insert::Email(x) => format!("{:?}", x.value),
-            Insert::PhoneNumber(x) => format!("{:?}", x.value),
-            Insert::Device(x) => format!("{:?}", x.value),
-            Insert::Network(x) => format!("{:?}", x.value),
+            Insert::Url(x) => Cow::Borrowed(&x.value),
+            Insert::Email(x) => Cow::Borrowed(&x.value),
+            Insert::PhoneNumber(x) => Cow::Borrowed(&x.value),
+            Insert::Device(x) => Cow::Borrowed(&x.value),
+            Insert::Network(x) => Cow::Borrowed(&x.value),
             Insert::NetworkDevice(x) => {
                 let network = Network::by_id(db, x.network_id)?;
                 let device = Device::by_id(db, x.device_id)?;
-                format!("{:?}+{:?}", network.value, device.value)
+                Cow::Owned(format!("{}+{}", network.value, device.value))
             },
-            Insert::Account(x) => format!("{:?}", x.value),
-            Insert::Breach(x) => format!("{:?}", x.value),
+            Insert::Account(x) => Cow::Borrowed(&x.value),
+            Insert::Breach(x) => Cow::Borrowed(&x.value),
             Insert::BreachEmail(x) => {
                 let breach = Breach::by_id(db, x.breach_id)?;
                 let email = Email::by_id(db, x.email_id)?;
-                format!("{:?}+{:?}", breach.value, email.value)
+                Cow::Owned(format!("{}+{}", breach.value, email.value))
             }
-            Insert::Image(x) => format!("{:?}", x.value),
-            Insert::Port(x) => format!("{:?}", x.value),
-            Insert::Netblock(x) => format!("{:?}", x.value),
-            Insert::CryptoAddr(x) => format!("{:?}", x.value),
+            Insert::Image(x) => Cow::Borrowed(&x.value),
+            Insert::Port(x) => Cow::Borrowed(&x.value),
+            Insert::Netblock(x) => Cow::Borrowed(&x.value),
+            Insert::CryptoAddr(x) => Cow::Borrowed(&x.value),
         };
-        Ok(label)
+        Ok(value)
     }
 
     #[inline]
@@ -68,26 +69,27 @@ impl Insert {
         Table::from(self).into()
     }
 
-    pub fn printable(&self, db: &Database) -> Result<String> {
-        Ok(match self {
-            Insert::Domain(x) => format!("Domain: {}", x.printable(db)?),
-            Insert::Subdomain(x) => format!("Subdomain: {}", x.printable(db)?),
-            Insert::IpAddr(x) => format!("IpAddr: {}", x.printable(db)?),
-            Insert::SubdomainIpAddr(x) => x.printable(db)?.to_string(),
-            Insert::Url(x) => format!("Url: {}", x.printable(db)?),
-            Insert::Email(x) => format!("Email: {}", x.printable(db)?),
-            Insert::PhoneNumber(x) => format!("PhoneNumber: {}", x.printable(db)?),
-            Insert::Device(x) => format!("Device: {}", x.printable(db)?),
-            Insert::Network(x) => format!("Network: {}", x.printable(db)?),
-            Insert::NetworkDevice(x) => x.printable(db)?.to_string(),
-            Insert::Account(x) => format!("Account: {}", x.printable(db)?),
-            Insert::Breach(x) => format!("Breach: {}", x.printable(db)?),
-            Insert::BreachEmail(x) => x.printable(db)?.to_string(),
-            Insert::Image(x) => format!("Image: {}", x.printable(db)?),
-            Insert::Port(x) => format!("Port: {}", x.printable(db)?),
-            Insert::Netblock(x) => format!("Netblock: {}", x.printable(db)?),
-            Insert::CryptoAddr(x) => format!("CryptoAddr: {}", x.printable(db)?),
-        })
+    #[inline]
+    pub fn family(&self) -> &str {
+        match self {
+            Insert::Domain(_) => Family::Domain.as_str(),
+            Insert::Subdomain(_) => Family::Subdomain.as_str(),
+            Insert::IpAddr(_) => Family::Ipaddr.as_str(),
+            Insert::SubdomainIpAddr(_) => Family::SubdomainIpaddr.as_str(),
+            Insert::Url(_) => Family::Url.as_str(),
+            Insert::Email(_) => Family::Email.as_str(),
+            Insert::PhoneNumber(_) => Family::Phonenumber.as_str(),
+            Insert::Device(_) => Family::Device.as_str(),
+            Insert::Network(_) => Family::Network.as_str(),
+            Insert::NetworkDevice(_) => Family::NetworkDevice.as_str(),
+            Insert::Account(_) => Family::Account.as_str(),
+            Insert::Breach(_) => Family::Breach.as_str(),
+            Insert::BreachEmail(_) => Family::BreachEmail.as_str(),
+            Insert::Image(_) => Family::Image.as_str(),
+            Insert::Port(_) => Family::Port.as_str(),
+            Insert::Netblock(_) => Family::Netblock.as_str(),
+            Insert::CryptoAddr(_) => Family::Cryptoaddr.as_str(),
+        }
     }
 }
 
@@ -152,25 +154,42 @@ impl Update {
             Update::CryptoAddr(update)    => update.is_dirty(),
         }
     }
-}
 
-impl fmt::Display for Update {
-    fn fmt(&self, w: &mut fmt::Formatter) -> fmt::Result {
+    pub fn to_plain_str(&self) -> String {
         match self {
-            Update::Subdomain(update)     => write!(w, "{}", update.to_string()),
-            Update::IpAddr(update)        => write!(w, "{}", update.to_string()),
-            Update::Url(update)           => write!(w, "{}", update.to_string()),
-            Update::Email(update)         => write!(w, "{}", update.to_string()),
-            Update::PhoneNumber(update)   => write!(w, "{}", update.to_string()),
-            Update::Device(update)        => write!(w, "{}", update.to_string()),
-            Update::Network(update)       => write!(w, "{}", update.to_string()),
-            Update::NetworkDevice(update) => write!(w, "{}", update.to_string()),
-            Update::Account(update)       => write!(w, "{}", update.to_string()),
-            Update::BreachEmail(update)   => write!(w, "{}", update.to_string()),
-            Update::Image(update)         => write!(w, "{}", update.to_string()),
-            Update::Port(update)          => write!(w, "{}", update.to_string()),
-            Update::Netblock(update)      => write!(w, "{}", update.to_string()),
-            Update::CryptoAddr(update)    => write!(w, "{}", update.to_string()),
+            Update::Subdomain(update)       => update.to_plain_str(),
+            Update::IpAddr(update)          => update.to_plain_str(),
+            Update::Url(update)             => update.to_plain_str(),
+            Update::Email(update)           => update.to_plain_str(),
+            Update::PhoneNumber(update)     => update.to_plain_str(),
+            Update::Device(update)          => update.to_plain_str(),
+            Update::Network(update)         => update.to_plain_str(),
+            Update::NetworkDevice(update)   => update.to_plain_str(),
+            Update::Account(update)         => update.to_plain_str(),
+            Update::BreachEmail(update)     => update.to_plain_str(),
+            Update::Image(update)           => update.to_plain_str(),
+            Update::Port(update)            => update.to_plain_str(),
+            Update::Netblock(update)        => update.to_plain_str(),
+            Update::CryptoAddr(update)      => update.to_plain_str(),
+        }
+    }
+
+    pub fn to_term_str(&self) -> String {
+        match self {
+            Update::Subdomain(update)       => update.to_term_str(),
+            Update::IpAddr(update)          => update.to_term_str(),
+            Update::Url(update)             => update.to_term_str(),
+            Update::Email(update)           => update.to_term_str(),
+            Update::PhoneNumber(update)     => update.to_term_str(),
+            Update::Device(update)          => update.to_term_str(),
+            Update::Network(update)         => update.to_term_str(),
+            Update::NetworkDevice(update)   => update.to_term_str(),
+            Update::Account(update)         => update.to_term_str(),
+            Update::BreachEmail(update)     => update.to_term_str(),
+            Update::Image(update)           => update.to_term_str(),
+            Update::Port(update)            => update.to_term_str(),
+            Update::Netblock(update)        => update.to_term_str(),
+            Update::CryptoAddr(update)      => update.to_term_str(),
         }
     }
 }
@@ -274,9 +293,15 @@ impl Upsert for NullUpdate {
 }
 
 pub trait Updateable<M> {
-    fn to_string(&self) -> String {
+    fn to_plain_str(&self) -> String {
         let mut updates = Vec::new();
-        self.fmt(&mut updates);
+        self.fmt(&mut updates, false);
+        updates.join(", ")
+    }
+
+    fn to_term_str(&self) -> String {
+        let mut updates = Vec::new();
+        self.fmt(&mut updates, true);
         updates.join(", ")
     }
 
@@ -304,22 +329,31 @@ pub trait Updateable<M> {
     fn changeset(&mut self, existing: &M);
 
     #[inline]
-    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>) {
+    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>, colors: bool) {
         if let Some(v) = value {
-            updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
+            if colors {
+                updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
+            } else {
+                updates.push(format!("{} => {:?}", name, v));
+            }
         }
     }
 
     #[inline]
-    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>) {
+    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>, colors: bool) {
         if let Some(v) = value {
-            updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
+            if colors {
+                updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
+            } else {
+                updates.push(format!("{} => {}", name, v.as_ref()));
+            }
         }
     }
 
-    fn fmt(&self, updates: &mut Vec<String>);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool);
 }
 
+// TODO: Printable could probably be dropped
 pub trait Printable<T: Sized> {
     fn printable(&self, db: &Database) -> Result<T>;
 }

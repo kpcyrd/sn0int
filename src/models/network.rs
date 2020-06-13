@@ -310,9 +310,9 @@ impl Updateable<Network> for NetworkUpdate {
         Self::clear_if_equal(&mut self.description, &existing.description);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "latitude", &self.latitude);
-        Self::push_value(updates, "longitude", &self.longitude);
-        Self::push_value(updates, "description", &self.description);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "latitude", &self.latitude, colors);
+        Self::push_value(updates, "longitude", &self.longitude, colors);
+        Self::push_value(updates, "description", &self.description, colors);
     }
 }

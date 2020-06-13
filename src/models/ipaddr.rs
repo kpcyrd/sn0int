@@ -444,17 +444,17 @@ impl Updateable<IpAddr> for IpAddrUpdate {
         Self::clear_if_equal(&mut self.reverse_dns, &existing.reverse_dns);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "continent", &self.continent);
-        Self::push_value(updates, "continent_code", &self.continent_code);
-        Self::push_value(updates, "country", &self.country);
-        Self::push_value(updates, "country_code", &self.country_code);
-        Self::push_value(updates, "city", &self.city);
-        Self::push_value(updates, "latitude", &self.latitude);
-        Self::push_value(updates, "longitude", &self.longitude);
-        Self::push_value(updates, "asn", &self.asn);
-        Self::push_value(updates, "as_org", &self.as_org);
-        Self::push_value(updates, "description", &self.description);
-        Self::push_value(updates, "reverse_dns", &self.reverse_dns);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "continent", &self.continent, colors);
+        Self::push_value(updates, "continent_code", &self.continent_code, colors);
+        Self::push_value(updates, "country", &self.country, colors);
+        Self::push_value(updates, "country_code", &self.country_code, colors);
+        Self::push_value(updates, "city", &self.city, colors);
+        Self::push_value(updates, "latitude", &self.latitude, colors);
+        Self::push_value(updates, "longitude", &self.longitude, colors);
+        Self::push_value(updates, "asn", &self.asn, colors);
+        Self::push_value(updates, "as_org", &self.as_org, colors);
+        Self::push_value(updates, "description", &self.description, colors);
+        Self::push_value(updates, "reverse_dns", &self.reverse_dns, colors);
     }
 }

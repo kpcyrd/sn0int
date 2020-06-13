@@ -332,10 +332,10 @@ impl Updateable<Device> for DeviceUpdate {
         Self::clear_if_equal(&mut self.last_seen, &existing.last_seen);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "name", &self.name);
-        Self::push_value(updates, "hostname", &self.hostname);
-        Self::push_value(updates, "vendor", &self.vendor);
-        Self::push_value(updates, "last_seen", &self.last_seen);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "name", &self.name, colors);
+        Self::push_value(updates, "hostname", &self.hostname, colors);
+        Self::push_value(updates, "vendor", &self.vendor, colors);
+        Self::push_value(updates, "last_seen", &self.last_seen, colors);
     }
 }

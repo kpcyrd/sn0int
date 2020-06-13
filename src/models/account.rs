@@ -358,13 +358,13 @@ impl Updateable<Account> for AccountUpdate {
         Self::clear_if_equal(&mut self.profile_pic, &existing.profile_pic);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "displayname", &self.displayname);
-        Self::push_value(updates, "email", &self.email);
-        Self::push_value(updates, "url", &self.url);
-        Self::push_value(updates, "last_seen", &self.last_seen);
-        Self::push_value(updates, "birthday", &self.birthday);
-        Self::push_value(updates, "phonenumber", &self.phonenumber);
-        Self::push_value(updates, "profile_pic", &self.profile_pic);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "displayname", &self.displayname, colors);
+        Self::push_value(updates, "email", &self.email, colors);
+        Self::push_value(updates, "url", &self.url, colors);
+        Self::push_value(updates, "last_seen", &self.last_seen, colors);
+        Self::push_value(updates, "birthday", &self.birthday, colors);
+        Self::push_value(updates, "phonenumber", &self.phonenumber, colors);
+        Self::push_value(updates, "profile_pic", &self.profile_pic, colors);
     }
 }

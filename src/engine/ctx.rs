@@ -114,8 +114,8 @@ pub trait State {
             .map_err(Error::from)
     }
 
-    fn db_update(&self, object: String, update: Update) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::Update((object, update))));
+    fn db_update(&self, family: Family, value: String, update: Update) -> Result<DatabaseResponse> {
+        self.send(&Event::Database(DatabaseEvent::Update((family, value, update))));
         self.db_recv()
             .context("Failed to update database")
             .map_err(Error::from)

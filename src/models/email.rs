@@ -335,9 +335,9 @@ impl Updateable<Email> for EmailUpdate {
         Self::clear_if_equal(&mut self.valid, &existing.valid);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "displayname", &self.displayname);
-        Self::push_value(updates, "valid", &self.valid);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "displayname", &self.displayname, colors);
+        Self::push_value(updates, "valid", &self.valid, colors);
     }
 }
 

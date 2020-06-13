@@ -509,7 +509,6 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     } else {
         Database::establish_quiet(workspace)?
     };
-    ttl::reap_expired(&db)?;
 
     let cache_dir = paths::cache_dir()?;
     let psl = PslReader::open_or_download(&cache_dir,
@@ -529,7 +528,9 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     }
     autoupdate.check_background(&config, library.list());
 
-    let rl = Shell::new(&config, db, blobs, psl, library, keyring);
+    let mut rl = Shell::new(&config, db, blobs, psl, library, keyring);
+
+    ttl::reap_expired(&mut rl)?;
 
     Ok(rl)
 }

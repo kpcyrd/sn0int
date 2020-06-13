@@ -211,7 +211,7 @@ impl Updateable<BreachEmail> for BreachEmailUpdate {
         Self::clear_if_equal(&mut self.password, &existing.password);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "password", &self.password);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "password", &self.password, colors);
     }
 }

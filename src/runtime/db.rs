@@ -199,65 +199,63 @@ fn gen_changeset2<T: Model, U: UpdateToChangeset<C>, C: Updateable<T>>(object: L
     Ok((existing.id(), value, update))
 }
 
+fn run_update(state: Arc<dyn State>, family: &str, object: AnyLuaValue, update: AnyLuaValue) -> Result<Option<i32>> {
+    let family = Family::from_str(&family)?;
+    let object = LuaJsonValue::from(object);
+    let update = LuaJsonValue::from(update);
+
+    let (id, value, update) = match family {
+        Family::Domain => bail!("Domain doesn't have mutable fields"),
+        Family::Subdomain => gen_changeset::<Subdomain, SubdomainUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Subdomain(u))),
+        Family::Ipaddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::IpAddr(u))),
+        Family::SubdomainIpaddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
+        Family::Url => gen_changeset2::<Url, UrlUpdate, UrlChangeset>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Url(u))),
+        Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Email(u))),
+        Family::Phonenumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::PhoneNumber(u))),
+        Family::Device => gen_changeset::<Device, DeviceUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Device(u))),
+        Family::Network => gen_changeset::<Network, NetworkUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Network(u))),
+        Family::NetworkDevice => gen_changeset::<NetworkDevice, NetworkDeviceUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::NetworkDevice(u))),
+        Family::Account => gen_changeset::<Account, AccountUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Account(u))),
+        Family::Breach => bail!("Breach doesn't have mutable fields"),
+        Family::BreachEmail => gen_changeset::<BreachEmail, BreachEmailUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::BreachEmail(u))),
+        Family::Image => gen_changeset::<Image, ImageUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Image(u))),
+        Family::Port => gen_changeset::<Port, PortUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Port(u))),
+        Family::Netblock => gen_changeset::<Netblock, NetblockUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::Netblock(u))),
+        Family::Cryptoaddr => gen_changeset::<CryptoAddr, CryptoAddrUpdate>(object, update)
+            .map(|(id, v, u)| (id, v, Update::CryptoAddr(u))),
+    }?;
+
+    if update.is_dirty() {
+        let r = match state.db_update(family, value, update)? {
+            // Inserted and Found are technically unreachable
+            DatabaseResponse::Inserted(id) => Some(id),
+            DatabaseResponse::Updated(id) => Some(id),
+            DatabaseResponse::NoChange(id) => Some(id),
+            DatabaseResponse::Found(id) => Some(id),
+            DatabaseResponse::None => None,
+        };
+        Ok(r)
+    } else {
+        Ok(Some(id))
+    }
+}
+
 pub fn db_update(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("db_update", hlua::function3(move |family: String, object: AnyLuaValue, update: AnyLuaValue| -> Result<Option<i32>> {
-        let family = Family::from_str(&family)
-            .map_err(|e| state.set_error(e.into()))?;
-        let object = LuaJsonValue::from(object);
-        let update = LuaJsonValue::from(update);
-
-        let update = match family {
-            Family::Domain => bail!("Domain doesn't have mutable fields"),
-            Family::Subdomain => gen_changeset::<Subdomain, SubdomainUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Subdomain(u))),
-            Family::Ipaddr => gen_changeset::<IpAddr, IpAddrUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::IpAddr(u))),
-            Family::SubdomainIpaddr => bail!("Subdomain-IpAddr doesn't have mutable fields"),
-            Family::Url => gen_changeset2::<Url, UrlUpdate, UrlChangeset>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Url(u))),
-            Family::Email => gen_changeset::<Email, EmailUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Email(u))),
-            Family::Phonenumber => gen_changeset::<PhoneNumber, PhoneNumberUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::PhoneNumber(u))),
-            Family::Device => gen_changeset::<Device, DeviceUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Device(u))),
-            Family::Network => gen_changeset::<Network, NetworkUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Network(u))),
-            Family::NetworkDevice => gen_changeset::<NetworkDevice, NetworkDeviceUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::NetworkDevice(u))),
-            Family::Account => gen_changeset::<Account, AccountUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Account(u))),
-            Family::Breach => bail!("Breach doesn't have mutable fields"),
-            Family::BreachEmail => gen_changeset::<BreachEmail, BreachEmailUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::BreachEmail(u))),
-            Family::Image => gen_changeset::<Image, ImageUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Image(u))),
-            Family::Port => gen_changeset::<Port, PortUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Port(u))),
-            Family::Netblock => gen_changeset::<Netblock, NetblockUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::Netblock(u))),
-            Family::Cryptoaddr => gen_changeset::<CryptoAddr, CryptoAddrUpdate>(object, update)
-                .map(|(id, v, u)| (id, v, Update::CryptoAddr(u))),
-        };
-
-        let (id, value, update) = update
-            .map_err(|e| state.set_error(e))?;
-
-        if update.is_dirty() {
-            let r = state.db_update(value, update)
-                .map_err(|e| state.set_error(e))?;
-
-            let r = match r {
-                // Inserted and Found are technically unreachable
-                DatabaseResponse::Inserted(id) => Some(id),
-                DatabaseResponse::Updated(id) => Some(id),
-                DatabaseResponse::NoChange(id) => Some(id),
-                DatabaseResponse::Found(id) => Some(id),
-                DatabaseResponse::None => None,
-            };
-            Ok(r)
-        } else {
-            Ok(Some(id))
-        }
+        run_update(state.clone(), &family, object, update)
+            .map_err(|e| state.set_error(e))
     }))
 }

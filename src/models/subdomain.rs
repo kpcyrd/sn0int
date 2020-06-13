@@ -297,7 +297,7 @@ impl Updateable<Subdomain> for SubdomainUpdate {
         Self::clear_if_equal(&mut self.resolvable, &existing.resolvable);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "resolvable", &self.resolvable);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "resolvable", &self.resolvable, colors);
     }
 }

@@ -464,19 +464,19 @@ impl Updateable<Image> for ImageUpdate {
         Self::clear_if_equal(&mut self.phash, &existing.phash);
     }
 
-    fn fmt(&self, updates: &mut Vec<String>) {
-        Self::push_value(updates, "filename", &self.filename);
-        Self::push_value(updates, "mime", &self.mime);
-        Self::push_value(updates, "width", &self.width);
-        Self::push_value(updates, "height", &self.height);
-        Self::push_value(updates, "created", &self.created);
+    fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
+        Self::push_value(updates, "filename", &self.filename, colors);
+        Self::push_value(updates, "mime", &self.mime, colors);
+        Self::push_value(updates, "width", &self.width, colors);
+        Self::push_value(updates, "height", &self.height, colors);
+        Self::push_value(updates, "created", &self.created, colors);
 
-        Self::push_value(updates, "latitude", &self.latitude);
-        Self::push_value(updates, "longitude", &self.longitude);
+        Self::push_value(updates, "latitude", &self.latitude, colors);
+        Self::push_value(updates, "longitude", &self.longitude, colors);
 
-        Self::push_value(updates, "nudity", &self.nudity);
-        Self::push_value(updates, "ahash", &self.ahash);
-        Self::push_value(updates, "dhash", &self.dhash);
-        Self::push_value(updates, "phash", &self.phash);
+        Self::push_value(updates, "nudity", &self.nudity, colors);
+        Self::push_value(updates, "ahash", &self.ahash, colors);
+        Self::push_value(updates, "dhash", &self.dhash, colors);
+        Self::push_value(updates, "phash", &self.phash, colors);
     }
 }

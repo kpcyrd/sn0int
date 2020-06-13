@@ -1,7 +1,10 @@
-use crate::errors::*;
 use crate::db::{Database, Table};
-use crate::schema::*;
+use crate::errors::*;
 use crate::models::*;
+use crate::notify::{self, Notification};
+use crate::schema::*;
+use crate::shell::Shell;
+use crate::term::{self, Term};
 use chrono::{NaiveDateTime, Duration, Utc};
 use diesel;
 use diesel::prelude::*;
@@ -13,6 +16,7 @@ pub struct Ttl {
     pub id: i32,
     pub family: String,
     pub key: i32,
+    pub value: String,
     pub expire: NaiveDateTime,
 }
 
@@ -21,14 +25,16 @@ pub struct Ttl {
 pub struct NewTtl<'a> {
     pub family: &'a str,
     pub key: i32,
+    pub value: String,
     pub expire: NaiveDateTime,
 }
 
 impl Ttl {
-    pub fn new(obj: &Insert, key: i32, expire: NaiveDateTime) -> NewTtl {
+    pub fn new(obj: &Insert, key: i32, value: String, expire: NaiveDateTime) -> NewTtl {
         NewTtl {
             family: obj.table(),
             key,
+            value,
             expire,
         }
     }
@@ -59,7 +65,7 @@ impl Ttl {
         expire_at.naive_utc()
     }
 
-    pub fn create(obj: &Insert, key: i32, ttl: i32, db: &Database) -> Result<()> {
+    pub fn create(obj: &Insert, key: i32, value: String, ttl: i32, db: &Database) -> Result<()> {
         debug!("Creating ttl on record");
         let expire = Self::ttl_to_datetime(ttl);
 
@@ -67,6 +73,7 @@ impl Ttl {
             .values(NewTtl {
                 family: obj.table(),
                 key,
+                value,
                 expire,
             })
             .execute(db.db())?;
@@ -127,12 +134,21 @@ impl Ttl {
     }
 }
 
-pub fn reap_expired(db: &Database) -> Result<()> {
+pub fn reap_expired(rl: &mut Shell) -> Result<()> {
     debug!("Reaping expired entities");
 
-    for expired in Ttl::expired(db)? {
+    for expired in Ttl::expired(rl.db())? {
         debug!("Expired: {:?}", expired);
-        expired.delete(db)?;
+        expired.delete(rl.db())?;
+
+        let subject = format!("Deleted {} {:?}", &expired.family, &expired.value);
+        let topic = &format!("db:{}:{}:delete", &expired.family, &expired.value);
+        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &topic, &Notification {
+            subject,
+            body: None,
+        }) {
+            term::error(&format!("Failed to send notifications: {}", err));
+        }
     }
 
     debug!("Finished reaping expired entities");
