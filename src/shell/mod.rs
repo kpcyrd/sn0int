@@ -159,6 +159,7 @@ pub struct Shell<'a> {
     // autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
+    cancel_twice: u8,
 }
 
 impl<'a> Shell<'a> {
@@ -179,6 +180,7 @@ impl<'a> Shell<'a> {
             keyring,
             options: None,
             signal_register: Arc::new(SignalRegister::new()),
+            cancel_twice: 0,
         };
 
         rl.reload_module_cache();
@@ -291,41 +293,56 @@ impl<'a> Shell<'a> {
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
         let readline = self.rl.readline(&self.prompt.to_string());
+
+        if readline.is_ok() {
+            self.cancel_twice = 0;
+        }
+
         match readline {
-            Ok(ref line) if line.is_empty() => None,
             Ok(line) => {
-                debug!("Readline returned {:?}", line);
+                self.cancel_twice = 0;
+                if line.is_empty() {
+                    None
+                } else {
+                    debug!("Readline returned {:?}", line);
 
-                self.rl.add_history_entry(line.as_str());
+                    self.rl.add_history_entry(line.as_str());
 
-                if line.starts_with('#') {
-                    return None;
-                }
-
-                let cmd = match shellwords::split(&line) {
-                    Ok(cmd) => cmd,
-                    Err(err) => {
-                        eprintln!("Error: {:?}", err);
+                    if line.starts_with('#') {
                         return None;
-                    },
-                };
-                debug!("shellwords returned {:?}", cmd);
+                    }
 
-                if cmd.is_empty() {
-                    return None;
-                }
+                    let cmd = match shellwords::split(&line) {
+                        Ok(cmd) => cmd,
+                        Err(err) => {
+                            eprintln!("Error: {:?}", err);
+                            return None;
+                        },
+                    };
+                    debug!("shellwords returned {:?}", cmd);
 
-                match Command::from_str(&cmd[0]) {
-                    Ok(x) => Some((x, cmd)),
-                    Err(err) => {
-                        eprintln!("Error: {}", err);
-                        None
-                    },
+                    if cmd.is_empty() {
+                        return None;
+                    }
+
+                    match Command::from_str(&cmd[0]) {
+                        Ok(x) => Some((x, cmd)),
+                        Err(err) => {
+                            eprintln!("Error: {}", err);
+                            None
+                        },
+                    }
                 }
             }
             Err(ReadlineError::Interrupted) => {
                 // ^C
-                Some((Command::Interrupt, vec![]))
+                self.cancel_twice += 1;
+
+                if self.cancel_twice > 1 {
+                    Some((Command::Interrupt, vec![]))
+                } else {
+                    None
+                }
             }
             Err(ReadlineError::Eof) => {
                 // ^D
