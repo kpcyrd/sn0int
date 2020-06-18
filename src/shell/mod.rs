@@ -94,19 +94,19 @@ impl Command {
                 Command::Autoscope.as_str(),
                 Command::Back.as_str(),
                 Command::Delete.as_str(),
+                Command::Exit.as_str(),
                 Command::Help.as_str(),
                 Command::Keyring.as_str(),
-                Command::Mod.as_str(),
                 Command::Noscope.as_str(),
                 Command::Pkg.as_str(),
                 Command::Run.as_str(),
                 Command::Scope.as_str(),
                 Command::Set.as_str(),
                 Command::Select.as_str(),
-                Command::Workspace.as_str(),
                 Command::Target.as_str(),
                 Command::Use.as_str(),
-                Command::Quickstart.as_str(),
+                Command::Quit.as_str(),
+                Command::Workspace.as_str(),
                 Command::Cal.as_str(),
             ];
         }
@@ -159,6 +159,7 @@ pub struct Shell<'a> {
     // autonoscope: RuleSet,
     options: Option<HashMap<String, String>>,
     signal_register: Arc<SignalRegister>,
+    cancel_twice: u8,
 }
 
 impl<'a> Shell<'a> {
@@ -179,6 +180,7 @@ impl<'a> Shell<'a> {
             keyring,
             options: None,
             signal_register: Arc::new(SignalRegister::new()),
+            cancel_twice: 0,
         };
 
         rl.reload_module_cache();
@@ -291,41 +293,56 @@ impl<'a> Shell<'a> {
 
     pub fn readline(&mut self) -> Option<(Command, Vec<String>)> {
         let readline = self.rl.readline(&self.prompt.to_string());
+
+        if readline.is_ok() {
+            self.cancel_twice = 0;
+        }
+
         match readline {
-            Ok(ref line) if line.is_empty() => None,
             Ok(line) => {
-                debug!("Readline returned {:?}", line);
+                self.cancel_twice = 0;
+                if line.is_empty() {
+                    None
+                } else {
+                    debug!("Readline returned {:?}", line);
 
-                self.rl.add_history_entry(line.as_str());
+                    self.rl.add_history_entry(line.as_str());
 
-                if line.starts_with('#') {
-                    return None;
-                }
-
-                let cmd = match shellwords::split(&line) {
-                    Ok(cmd) => cmd,
-                    Err(err) => {
-                        eprintln!("Error: {:?}", err);
+                    if line.starts_with('#') {
                         return None;
-                    },
-                };
-                debug!("shellwords returned {:?}", cmd);
+                    }
 
-                if cmd.is_empty() {
-                    return None;
-                }
+                    let cmd = match shellwords::split(&line) {
+                        Ok(cmd) => cmd,
+                        Err(err) => {
+                            eprintln!("Error: {:?}", err);
+                            return None;
+                        },
+                    };
+                    debug!("shellwords returned {:?}", cmd);
 
-                match Command::from_str(&cmd[0]) {
-                    Ok(x) => Some((x, cmd)),
-                    Err(err) => {
-                        eprintln!("Error: {}", err);
-                        None
-                    },
+                    if cmd.is_empty() {
+                        return None;
+                    }
+
+                    match Command::from_str(&cmd[0]) {
+                        Ok(x) => Some((x, cmd)),
+                        Err(err) => {
+                            eprintln!("Error: {}", err);
+                            None
+                        },
+                    }
                 }
             }
             Err(ReadlineError::Interrupted) => {
                 // ^C
-                Some((Command::Interrupt, vec![]))
+                self.cancel_twice += 1;
+
+                if self.cancel_twice > 1 {
+                    Some((Command::Interrupt, vec![]))
+                } else {
+                    None
+                }
             }
             Err(ReadlineError::Eof) => {
                 // ^D
