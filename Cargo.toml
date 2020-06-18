@@ -1,6 +1,6 @@
 [package]
 name = "sn0int"
-version = "0.18.2"
+version = "0.19.0"
 description = "Semi-automatic OSINT framework and package manager"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
@@ -36,8 +36,8 @@ assets = [
 sqlite-bundled = ["libsqlite3-sys/bundled"]
 
 [dependencies]
-sn0int-common = { version="0.10.0", path="sn0int-common" }
-sn0int-std = { version="=0.18.2", path="sn0int-std" }
+sn0int-common = { version="0.11.0", path="sn0int-common" }
+sn0int-std = { version="=0.19.0", path="sn0int-std" }
 rustyline = "6.0"
 log = "0.4"
 env_logger = "0.7"
