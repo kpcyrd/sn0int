@@ -1,16 +1,15 @@
 use crate::errors::*;
-use crate::hlua::{AnyHashableLuaValue, AnyLuaValue, AnyLuaString};
-use std::collections::{self, HashMap};
+use crate::hlua::{AnyHashableLuaValue, AnyLuaString, AnyLuaValue};
 use crate::json::LuaJsonValue;
 use serde;
 use serde_json;
-
+use std::collections::{self, HashMap};
 
 pub fn from_lua<T>(x: LuaJsonValue) -> Result<T>
-    where for<'de> T: serde::Deserialize<'de>
+where
+    for<'de> T: serde::Deserialize<'de>,
 {
-    serde_json::from_value(x.into())
-        .map_err(Error::from)
+    serde_json::from_value(x.into()).map_err(Error::from)
 }
 
 #[derive(Debug, Default)]
@@ -29,22 +28,32 @@ impl LuaMap {
 
     #[inline]
     pub fn insert<K: Into<String>, V: Into<AnyLuaValue>>(&mut self, k: K, v: V) {
-        self.0.insert(AnyHashableLuaValue::LuaString(k.into()), v.into());
+        self.0
+            .insert(AnyHashableLuaValue::LuaString(k.into()), v.into());
     }
 
     #[inline]
     pub fn insert_str<K: Into<String>, V: Into<String>>(&mut self, k: K, v: V) {
-        self.0.insert(AnyHashableLuaValue::LuaString(k.into()), AnyLuaValue::LuaString(v.into()));
+        self.0.insert(
+            AnyHashableLuaValue::LuaString(k.into()),
+            AnyLuaValue::LuaString(v.into()),
+        );
     }
 
     #[inline]
     pub fn insert_num<K: Into<String>>(&mut self, k: K, v: f64) {
-        self.0.insert(AnyHashableLuaValue::LuaString(k.into()), AnyLuaValue::LuaNumber(v));
+        self.0.insert(
+            AnyHashableLuaValue::LuaString(k.into()),
+            AnyLuaValue::LuaNumber(v),
+        );
     }
 
     pub fn insert_serde<K: Into<String>, S: serde::Serialize>(&mut self, k: K, v: S) -> Result<()> {
         let v = serde_json::to_value(v)?;
-        self.0.insert(AnyHashableLuaValue::LuaString(k.into()), LuaJsonValue::from(v).into());
+        self.0.insert(
+            AnyHashableLuaValue::LuaString(k.into()),
+            LuaJsonValue::from(v).into(),
+        );
         Ok(())
     }
 }
@@ -105,7 +114,7 @@ impl Into<AnyLuaValue> for LuaMap {
                         _ => None, // TODO: unknown types are discarded
                     }
                 })
-                .collect()
+                .collect(),
         )
     }
 }
@@ -149,17 +158,18 @@ pub fn byte_array(bytes: AnyLuaValue) -> Result<Vec<u8>> {
     match bytes {
         AnyLuaValue::LuaAnyString(bytes) => Ok(bytes.0),
         AnyLuaValue::LuaString(bytes) => Ok(bytes.into_bytes()),
-        AnyLuaValue::LuaArray(bytes) => {
-            Ok(bytes.into_iter()
-                .map(|num| match num.1 {
-                    AnyLuaValue::LuaNumber(num) if num <= 255.0 && num >= 0.0 && (num % 1.0 == 0.0) =>
-                            Ok(num as u8),
-                    AnyLuaValue::LuaNumber(num) =>
-                            Err(format_err!("number is out of range: {:?}", num)),
-                    _ => Err(format_err!("unexpected type: {:?}", num)),
-                })
-                .collect::<Result<_>>()?)
-        },
+        AnyLuaValue::LuaArray(bytes) => Ok(bytes
+            .into_iter()
+            .map(|num| match num.1 {
+                AnyLuaValue::LuaNumber(num) if num <= 255.0 && num >= 0.0 && (num % 1.0 == 0.0) => {
+                    Ok(num as u8)
+                }
+                AnyLuaValue::LuaNumber(num) => {
+                    Err(format_err!("number is out of range: {:?}", num))
+                }
+                _ => Err(format_err!("unexpected type: {:?}", num)),
+            })
+            .collect::<Result<_>>()?),
         _ => Err(format_err!("invalid type: {:?}", bytes)),
     }
 }

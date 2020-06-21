@@ -1,14 +1,14 @@
-use chrootable_https::DnsResolver;
 use crate::errors::*;
 use crate::hlua::AnyLuaValue;
-use mqtt::packet::VariablePacketError;
 use crate::json::LuaJsonValue;
-use crate::sockets::{Stream, SocketOptions};
-use mqtt::{TopicFilter, QualityOfService};
-use mqtt::control::ConnectReturnCode;
+use crate::sockets::{SocketOptions, Stream};
+use chrootable_https::DnsResolver;
 use mqtt::control::fixed_header::FixedHeaderError;
-use mqtt::encodable::{Encodable, Decodable};
-use mqtt::packet::{Packet, VariablePacket, ConnectPacket, SubscribePacket, PingreqPacket};
+use mqtt::control::ConnectReturnCode;
+use mqtt::encodable::{Decodable, Encodable};
+use mqtt::packet::VariablePacketError;
+use mqtt::packet::{ConnectPacket, Packet, PingreqPacket, SubscribePacket, VariablePacket};
+use mqtt::{QualityOfService, TopicFilter};
 use std::convert::TryFrom;
 use std::io;
 use std::net::SocketAddr;
@@ -42,9 +42,7 @@ pub struct MqttClient {
 
 impl MqttClient {
     pub fn negotiate(stream: Stream, options: &MqttOptions) -> Result<MqttClient> {
-        let mut client = MqttClient {
-            stream,
-        };
+        let mut client = MqttClient { stream };
 
         let mut pkt = ConnectPacket::new("MQTT", "sn0int");
         pkt.set_user_name(options.username.clone());
@@ -71,14 +69,19 @@ impl MqttClient {
         }
     }
 
-    pub fn connect<R: DnsResolver>(resolver: &R, url: Url, options: &MqttOptions) -> Result<MqttClient> {
+    pub fn connect<R: DnsResolver>(
+        resolver: &R,
+        url: Url,
+        options: &MqttOptions,
+    ) -> Result<MqttClient> {
         let tls = match url.scheme() {
             "mqtt" => false,
             "mqtts" => true,
             _ => bail!("Invalid mqtt protocol"),
         };
 
-        let host = url.host_str()
+        let host = url
+            .host_str()
             .ok_or_else(|| format_err!("Missing host in url"))?;
 
         let port = match (url.port(), tls) {
@@ -87,17 +90,21 @@ impl MqttClient {
             (None, false) => 1883,
         };
 
+        let stream = Stream::connect_stream(
+            resolver,
+            host,
+            port,
+            &SocketOptions {
+                tls,
+                sni_value: None,
+                disable_tls_verify: false,
+                proxy: options.proxy,
 
-        let stream = Stream::connect_stream(resolver, host, port, &SocketOptions {
-            tls,
-            sni_value: None,
-            disable_tls_verify: false,
-            proxy: options.proxy,
-
-            connect_timeout: options.connect_timeout,
-            read_timeout: options.read_timeout,
-            write_timeout: options.write_timeout,
-        })?;
+                connect_timeout: options.connect_timeout,
+                read_timeout: options.read_timeout,
+                write_timeout: options.write_timeout,
+            },
+        )?;
 
         Self::negotiate(stream, options)
     }
@@ -138,9 +145,15 @@ impl MqttClient {
     pub fn recv_pkt(&mut self) -> Result<Option<Pkt>> {
         match self.recv() {
             Ok(pkt) => Ok(Some(Pkt::try_from(pkt)?)),
-            Err(VariablePacketError::IoError(err)) if err.kind() == io::ErrorKind::WouldBlock => Ok(None),
-            Err(VariablePacketError::FixedHeaderError(FixedHeaderError::IoError(err))) if err.kind() == io::ErrorKind::WouldBlock => Ok(None),
-            Err(err) => Err(Error::from(err))
+            Err(VariablePacketError::IoError(err)) if err.kind() == io::ErrorKind::WouldBlock => {
+                Ok(None)
+            }
+            Err(VariablePacketError::FixedHeaderError(FixedHeaderError::IoError(err)))
+                if err.kind() == io::ErrorKind::WouldBlock =>
+            {
+                Ok(None)
+            }
+            Err(err) => Err(Error::from(err)),
         }
     }
 
@@ -153,9 +166,9 @@ impl MqttClient {
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum Pkt {
-    #[serde(rename="publish")]
+    #[serde(rename = "publish")]
     Publish(Publish),
-    #[serde(rename="pong")]
+    #[serde(rename = "pong")]
     Pong,
 }
 

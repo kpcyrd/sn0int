@@ -1,17 +1,16 @@
-use crate::errors::*;
 use crate::api::Client;
 use crate::config::Config;
 use crate::engine;
+use crate::errors::*;
 use crate::paths;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 // 1 day
 const UPDATE_INTERVAL: u64 = 3600 * 24;
-
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct AutoUpdater {
@@ -54,19 +53,16 @@ impl AutoUpdater {
     }
 
     pub fn load() -> Result<AutoUpdater> {
-        let config = fs::read(AutoUpdater::path()?)
-            .unwrap_or_else(|_| b"{}".to_vec());
+        let config = fs::read(AutoUpdater::path()?).unwrap_or_else(|_| b"{}".to_vec());
 
-        let config = serde_json::from_slice(&config)
-            .unwrap_or_else(|_| AutoUpdater::default());
+        let config = serde_json::from_slice(&config).unwrap_or_else(|_| AutoUpdater::default());
 
         Ok(config)
     }
 
     pub fn save(&self) -> Result<()> {
         let config = serde_json::to_string(&self)?;
-        fs::write(AutoUpdater::path()?, &config)
-            .context("Failed to write auto-update state")?;
+        fs::write(AutoUpdater::path()?, &config).context("Failed to write auto-update state")?;
         Ok(())
     }
 
@@ -81,9 +77,7 @@ impl AutoUpdater {
             return;
         }
 
-        let modules = modules.into_iter()
-            .map(|x| x.clone())
-            .collect();
+        let modules = modules.into_iter().map(|x| x.clone()).collect();
 
         debug!("Checking for outdated modules in the background");
         match Client::new(config) {
@@ -95,13 +89,14 @@ impl AutoUpdater {
                         debug!("AutoUpdater finished");
                     }
                 });
-            },
+            }
             Err(err) => error!("Failed to create client: {}", err),
         }
     }
 
     pub fn check_updates(&mut self, client: Client, modules: Vec<engine::Module>) -> Result<()> {
-        let latest = client.latest_release()
+        let latest = client
+            .latest_release()
             .context("Failed to get latest release timestamp")?;
 
         if latest.time != self.registry {

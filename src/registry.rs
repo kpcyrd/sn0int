@@ -1,21 +1,20 @@
-use crate::errors::*;
-use crate::args::{Args, Publish, Install, Search};
 use crate::api::Client;
+use crate::args::{Args, Install, Publish, Search};
 use crate::auth;
 use crate::config::Config;
 use crate::engine::{Library, Module};
+use crate::errors::*;
+use crate::paths;
+use crate::term;
+use crate::worker::{self, EventSender, LogEvent, Task};
 use colored::Colorize;
 use separator::Separatable;
-use sn0int_common::ModuleID;
 use sn0int_common::api::ModuleInfoResponse;
 use sn0int_common::metadata::Metadata;
+use sn0int_common::ModuleID;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use crate::paths;
-use crate::term;
-use crate::worker::{self, Task, EventSender, LogEvent};
-
 
 pub struct Updater {
     client: Client,
@@ -24,9 +23,7 @@ pub struct Updater {
 impl Updater {
     pub fn new(config: &Config) -> Result<Updater> {
         let client = Client::new(&config)?;
-        Ok(Updater {
-            client,
-        })
+        Ok(Updater { client })
     }
 
     #[inline]
@@ -35,29 +32,28 @@ impl Updater {
     }
 
     fn path(&self, module: &ModuleID) -> Result<PathBuf> {
-        let path = paths::module_dir()?
-            .join(format!("{}/{}.lua", module.author,
-                                       module.name));
+        let path = paths::module_dir()?.join(format!("{}/{}.lua", module.author, module.name));
         Ok(path)
     }
 
     pub fn install(&self, install: Install) -> Result<String> {
         if let Some(version) = install.version {
-            let module = self.client.download_module(&install.module, &version)
+            let module = self
+                .client
+                .download_module(&install.module, &version)
                 .context("Failed to download module")?;
 
             let path = self.path(&install.module)?;
 
-            fs::create_dir_all(path.parent().unwrap())
-                .context("Failed to create folder")?;
+            fs::create_dir_all(path.parent().unwrap()).context("Failed to create folder")?;
 
-            fs::write(&path, module.code)
-                .context(format_err!("Failed to write to {:?}", path))?;
+            fs::write(&path, module.code).context(format_err!("Failed to write to {:?}", path))?;
 
             Ok(version.to_string())
         } else {
-            let infos = self.query_module(&install.module)
-                        .context("Failed to query module infos")?;
+            let infos = self
+                .query_module(&install.module)
+                .context("Failed to query module infos")?;
 
             if !install.force {
                 if let Some(redirect) = infos.redirect {
@@ -70,8 +66,8 @@ impl Updater {
             }
 
             let latest = infos
-                        .latest
-                        .ok_or_else(|| format_err!("Module doesn't have a latest version"))?;
+                .latest
+                .ok_or_else(|| format_err!("Module doesn't have a latest version"))?;
             self.install(Install {
                 module: install.module,
                 version: Some(latest),
@@ -94,42 +90,46 @@ impl Updater {
 }
 
 pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<()> {
-    let session = auth::load_token()
-        .context("Failed to load auth token, login first")?;
+    let session = auth::load_token().context("Failed to load auth token, login first")?;
 
     let mut client = Client::new(&config)?;
     client.authenticate(session);
 
     for path in &publish.paths {
         let path = Path::new(path);
-        let name = path.file_stem().ok_or_else(|| format_err!("Couldn't get file name"))?;
-        let ext = path.extension().ok_or_else(|| format_err!("Couldn't get file extension"))?;
+        let name = path
+            .file_stem()
+            .ok_or_else(|| format_err!("Couldn't get file name"))?;
+        let ext = path
+            .extension()
+            .ok_or_else(|| format_err!("Couldn't get file extension"))?;
 
         if ext != "lua" {
             bail!("File extension has to be .lua");
         }
 
-        let name = name.to_os_string().into_string()
+        let name = name
+            .to_os_string()
+            .into_string()
             .map_err(|_| format_err!("Failed to decode file name"))?;
 
-        let code = fs::read_to_string(path)
-            .context("Failed to read module")?;
+        let code = fs::read_to_string(path).context("Failed to read module")?;
         let metadata = code.parse::<Metadata>()?;
 
         let label = format!("Uploading {} {} ({:?})", name, metadata.version, path);
-        match worker::spawn_fn(&label, || {
-            client.publish_module(&name, code.to_string())
-        }, true) {
-            Ok(result) => term::info(&format!("Published {}/{} {} ({:?})",
-                                              result.author,
-                                              result.name,
-                                              result.version,
-                                              path)),
-            Err(err) => term::error(&format!("Failed to publish {} {} ({:?}): {}",
-                                             name,
-                                             metadata.version,
-                                             path,
-                                             err)),
+        match worker::spawn_fn(
+            &label,
+            || client.publish_module(&name, code.to_string()),
+            true,
+        ) {
+            Ok(result) => term::info(&format!(
+                "Published {}/{} {} ({:?})",
+                result.author, result.name, result.version, path
+            )),
+            Err(err) => term::error(&format!(
+                "Failed to publish {} {} ({:?}): {}",
+                name, metadata.version, path, err
+            )),
         }
     }
 
@@ -143,10 +143,7 @@ pub struct InstallTask {
 
 impl InstallTask {
     pub fn new(install: Install, client: Arc<Updater>) -> InstallTask {
-        InstallTask {
-            install,
-            client,
-        }
+        InstallTask { install, client }
     }
 }
 
@@ -169,14 +166,17 @@ impl Task for InstallTask {
     }
 }
 
-
 pub fn run_install(arg: Install, config: &Config) -> Result<()> {
     let label = format!("Installing {}", arg.module);
-    worker::spawn_fn(&label, || {
-        let client = Updater::new(config)?;
-        client.install(arg)?;
-        Ok(())
-    }, false)
+    worker::spawn_fn(
+        &label,
+        || {
+            let client = Updater::new(config)?;
+            client.install(arg)?;
+            Ok(())
+        },
+        false,
+    )
 }
 
 pub struct UpdateTask {
@@ -186,10 +186,7 @@ pub struct UpdateTask {
 
 impl UpdateTask {
     pub fn new(module: Module, client: Arc<Updater>) -> UpdateTask {
-        UpdateTask {
-            module,
-            client,
-        }
+        UpdateTask { module, client }
     }
 }
 
@@ -209,7 +206,9 @@ impl Task for UpdateTask {
 
         let infos = self.client.query_module(&self.module.id())?;
         debug!("Latest version: {:?}", infos);
-        let latest = infos.latest.ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
+        let latest = infos
+            .latest
+            .ok_or_else(|| format_err!("Module doesn't have any released versions"))?;
 
         if let Some(redirect) = infos.redirect {
             let label = format!("Replacing {}: {}", self.name(), redirect);
@@ -246,9 +245,7 @@ pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result
     let client = Client::new(&config)?;
 
     let label = format!("Searching {:?}", search.query);
-    let modules = worker::spawn_fn(&label, || {
-        client.search(&search.query)
-    }, true)?;
+    let modules = worker::spawn_fn(&label, || client.search(&search.query), true)?;
 
     for module in &modules {
         let canonical = module.canonical();
@@ -258,11 +255,19 @@ pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result
             continue;
         }
 
-        println!("{} ({}) - {} downloads{}{}", canonical.green(),
-                            module.latest.yellow(),
-                            module.downloads.separated_string(),
-                            (if module.featured { " [featured]" } else { "" }).cyan(),
-                            (if installed.is_some() { " [installed]" } else { "" }).green());
+        println!(
+            "{} ({}) - {} downloads{}{}",
+            canonical.green(),
+            module.latest.yellow(),
+            module.downloads.separated_string(),
+            (if module.featured { " [featured]" } else { "" }).cyan(),
+            (if installed.is_some() {
+                " [installed]"
+            } else {
+                ""
+            })
+            .green()
+        );
         println!("\t{}", module.description);
     }
 

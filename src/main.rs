@@ -4,9 +4,9 @@ use sn0int::auth;
 use sn0int::cmd::{self, LiteCmd};
 use sn0int::config::Config;
 use sn0int::db;
-use sn0int::errors::*;
 use sn0int::engine::Module;
-use sn0int::geoip::{GeoIP, AsnDB, Maxmind};
+use sn0int::errors::*;
+use sn0int::geoip::{AsnDB, GeoIP, Maxmind};
 use sn0int::ipc;
 use sn0int::options::Opt;
 use sn0int::paths;
@@ -15,10 +15,10 @@ use sn0int::registry;
 use sn0int::repl;
 use sn0int::sandbox;
 use sn0int::shell::{self, complete};
-use structopt::StructOpt;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
+use structopt::StructOpt;
 
 fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
@@ -26,7 +26,8 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let module = if args.file {
         let path = Path::new(&args.module);
 
-        let filename = path.file_stem()
+        let filename = path
+            .file_stem()
             .ok_or(format_err!("Failed to decode filename"))?
             .to_str()
             .ok_or(format_err!("Failed to decode filename"))?;
@@ -34,15 +35,14 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         Module::load(&path.to_path_buf(), "anonymous", &filename, true)
             .context(format!("Failed to parse {:?}", path))?
     } else {
-        rl.library().get(&args.module)?
-            .clone()
+        rl.library().get(&args.module)?.clone()
     };
 
     rl.set_module(module);
 
     if let Some(target) = &args.target {
-        let target = shellwords::split(&target)
-            .map_err(|_| format_err!("Failed to parse target quotes"))?;
+        let target =
+            shellwords::split(&target).map_err(|_| format_err!("Failed to parse target quotes"))?;
         let target = db::Filter::parse(&target)?;
         rl.set_target(Some(target));
     }
@@ -60,8 +60,7 @@ fn run_sandbox() -> Result<()> {
     let asn = AsnDB::try_open_reader(&cache_dir)?;
     let psl = PslReader::open(&cache_dir)?;
 
-    sandbox::init()
-        .context("Failed to init sandbox")?;
+    sandbox::init().context("Failed to init sandbox")?;
     ipc::child::run(geoip, asn, psl)
 }
 
@@ -96,8 +95,7 @@ fn run() -> Result<()> {
         sandbox::fasten_seatbelt()?;
     }
 
-    let config = Config::load_or_default()
-        .context("Failed to load config")?;
+    let config = Config::load_or_default().context("Failed to load config")?;
 
     debug!("Loaded config: {:?}", config);
 
@@ -110,11 +108,13 @@ fn run() -> Result<()> {
         // TODO: deprecate
         Some(SubCommand::Install(install)) => cmd::pkg_cmd::Args {
             subcommand: cmd::pkg_cmd::SubCommand::Install(install),
-        }.run(&config),
+        }
+        .run(&config),
         // TODO: deprecate
         Some(SubCommand::Search(search)) => cmd::pkg_cmd::Args {
             subcommand: cmd::pkg_cmd::SubCommand::Search(search),
-        }.run(&config),
+        }
+        .run(&config),
         Some(SubCommand::Pkg(pkg)) => pkg.run(&config),
         Some(SubCommand::Add(add)) => run_cmd(&args, add, &config),
         Some(SubCommand::Select(select)) => run_cmd(&args, select, &config),
@@ -135,8 +135,7 @@ fn run() -> Result<()> {
 }
 
 fn main() {
-    env_logger::init_from_env(Env::default()
-        .default_filter_or("off"));
+    env_logger::init_from_env(Env::default().default_filter_or("off"));
 
     if let Err(err) = run() {
         eprintln!("Error: {}", err);

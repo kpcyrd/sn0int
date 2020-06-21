@@ -1,8 +1,7 @@
-use sn0int_registry::errors::*;
-use sn0int_registry::db;
-use sn0int_registry::models::*;
 use rocket_contrib::json::Json;
-
+use sn0int_registry::db;
+use sn0int_registry::errors::*;
+use sn0int_registry::models::*;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

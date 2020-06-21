@@ -1,15 +1,14 @@
 use crate::errors::*;
-use crate::fmt::Write;
 use crate::fmt::colors::*;
+use crate::fmt::Write;
 use crate::models::*;
 use diesel;
 use diesel::prelude::*;
 use std::net::{self, SocketAddr};
 
-
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(IpAddr)]
-#[table_name="ports"]
+#[table_name = "ports"]
 pub struct Port {
     pub id: i32,
     pub ip_addr_id: i32,
@@ -76,8 +75,7 @@ impl Model for Port {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::ports::dsl::*;
 
-        let url = ports.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let url = ports.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(url)
     }
@@ -85,8 +83,7 @@ impl Model for Port {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::ports::dsl::*;
 
-        let url = ports.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let url = ports.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(url)
     }
@@ -94,7 +91,8 @@ impl Model for Port {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::ports::dsl::*;
 
-        let url = ports.filter(value.eq(query))
+        let url = ports
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -203,7 +201,7 @@ impl Detailed for Port {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="ports"]
+#[table_name = "ports"]
 pub struct NewPort {
     pub ip_addr_id: i32,
     pub value: String,
@@ -303,7 +301,7 @@ impl InsertToNew for InsertPort {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="ports"]
+#[table_name = "ports"]
 pub struct PortUpdate {
     pub id: i32,
     pub status: Option<String>,
@@ -314,10 +312,10 @@ pub struct PortUpdate {
 
 impl Upsert for PortUpdate {
     fn is_dirty(&self) -> bool {
-        self.status.is_some() ||
-        self.banner.is_some() ||
-        self.service.is_some() ||
-        self.version.is_some()
+        self.status.is_some()
+            || self.banner.is_some()
+            || self.service.is_some()
+            || self.version.is_some()
     }
 
     fn generic(self) -> Update {

@@ -1,14 +1,12 @@
 use crate::errors::*;
 
-use std::iter::FromIterator;
-use std::collections::HashMap;
 use crate::hlua::AnyLuaValue;
-use serde_json::{self, Deserializer, Value, Number, Map};
-
+use serde_json::{self, Deserializer, Map, Number, Value};
+use std::collections::HashMap;
+use std::iter::FromIterator;
 
 pub fn decode<T: AsRef<[u8]>>(x: T) -> Result<AnyLuaValue> {
-    let v: Value = serde_json::from_slice(x.as_ref())
-                        .context("deserialize failed")?;
+    let v: Value = serde_json::from_slice(x.as_ref()).context("deserialize failed")?;
     let v: LuaJsonValue = v.into();
     Ok(v.into())
 }
@@ -16,8 +14,7 @@ pub fn decode<T: AsRef<[u8]>>(x: T) -> Result<AnyLuaValue> {
 pub fn encode(v: AnyLuaValue) -> Result<String> {
     let v: LuaJsonValue = v.into();
     let v: Value = v.into();
-    let s = serde_json::to_string(&v)
-        .context("serialize failed")?;
+    let s = serde_json::to_string(&v).context("serialize failed")?;
     Ok(s)
 }
 
@@ -64,13 +61,16 @@ impl Into<AnyLuaValue> for LuaJsonValue {
             // TODO: not sure if this might fail
             LuaJsonValue::Number(v) => AnyLuaValue::LuaNumber(v.as_f64().unwrap()),
             LuaJsonValue::String(v) => AnyLuaValue::LuaString(v),
-            LuaJsonValue::Array(v) => AnyLuaValue::LuaArray(v.into_iter().enumerate()
-                .map(|(i, x)| (AnyLuaValue::LuaNumber((i+1) as f64), x.into()))
-                .collect()
+            LuaJsonValue::Array(v) => AnyLuaValue::LuaArray(
+                v.into_iter()
+                    .enumerate()
+                    .map(|(i, x)| (AnyLuaValue::LuaNumber((i + 1) as f64), x.into()))
+                    .collect(),
             ),
-            LuaJsonValue::Object(v) => AnyLuaValue::LuaArray(v.into_iter()
-                .map(|(k, v)| (AnyLuaValue::LuaString(k), v.into()))
-                .collect()
+            LuaJsonValue::Object(v) => AnyLuaValue::LuaArray(
+                v.into_iter()
+                    .map(|(k, v)| (AnyLuaValue::LuaString(k), v.into()))
+                    .collect(),
             ),
         }
     }
@@ -82,9 +82,10 @@ impl From<AnyLuaValue> for LuaJsonValue {
             AnyLuaValue::LuaNil => LuaJsonValue::Null,
             AnyLuaValue::LuaBoolean(v) => LuaJsonValue::Bool(v),
             AnyLuaValue::LuaString(v) => LuaJsonValue::String(v),
-            AnyLuaValue::LuaAnyString(v) => LuaJsonValue::Array(v.0.into_iter()
-                .map(|x| LuaJsonValue::Number(x.into()))
-                .collect()
+            AnyLuaValue::LuaAnyString(v) => LuaJsonValue::Array(
+                v.0.into_iter()
+                    .map(|x| LuaJsonValue::Number(x.into()))
+                    .collect(),
             ),
             AnyLuaValue::LuaNumber(v) => {
                 // this is needed or every number is detected as float
@@ -93,23 +94,21 @@ impl From<AnyLuaValue> for LuaJsonValue {
                 } else {
                     Number::from_f64(v).expect("invalid LuaJson::Number")
                 })
-            },
+            }
             AnyLuaValue::LuaArray(v) => {
                 if lua_array_is_list(&v) {
-                    LuaJsonValue::Array(v.into_iter()
-                        .map(|(_, v)| v.into())
-                        .collect()
-                    )
+                    LuaJsonValue::Array(v.into_iter().map(|(_, v)| v.into()).collect())
                 } else {
-                    LuaJsonValue::Object(v.into_iter()
-                        .filter_map(|(k, v)| match k {
-                            AnyLuaValue::LuaString(k) => Some((k, v.into())),
-                            _ => None,
-                        })
-                        .collect()
+                    LuaJsonValue::Object(
+                        v.into_iter()
+                            .filter_map(|(k, v)| match k {
+                                AnyLuaValue::LuaString(k) => Some((k, v.into())),
+                                _ => None,
+                            })
+                            .collect(),
                     )
                 }
-            },
+            }
             AnyLuaValue::LuaOther => LuaJsonValue::Null,
         }
     }
@@ -122,13 +121,10 @@ impl Into<serde_json::Value> for LuaJsonValue {
             LuaJsonValue::Bool(v) => Value::Bool(v),
             LuaJsonValue::Number(v) => Value::Number(v),
             LuaJsonValue::String(v) => Value::String(v),
-            LuaJsonValue::Array(v) => Value::Array(v.into_iter()
-                .map(|x| x.into())
-                .collect()
-            ),
-            LuaJsonValue::Object(v) => Value::Object(Map::from_iter(v.into_iter()
-                .map(|(k, v)| (k, v.into()))
-            )),
+            LuaJsonValue::Array(v) => Value::Array(v.into_iter().map(|x| x.into()).collect()),
+            LuaJsonValue::Object(v) => {
+                Value::Object(Map::from_iter(v.into_iter().map(|(k, v)| (k, v.into()))))
+            }
         }
     }
 }
@@ -140,12 +136,9 @@ impl From<serde_json::Value> for LuaJsonValue {
             Value::Bool(v) => LuaJsonValue::Bool(v),
             Value::Number(v) => LuaJsonValue::Number(v),
             Value::String(v) => LuaJsonValue::String(v),
-            Value::Array(v) => LuaJsonValue::Array(v.into_iter()
-                .map(|x| x.into())
-                .collect()
-            ),
-            Value::Object(v) => LuaJsonValue::Object(HashMap::from_iter(v.into_iter()
-                .map(|(k, v)| (k, v.into()))
+            Value::Array(v) => LuaJsonValue::Array(v.into_iter().map(|x| x.into()).collect()),
+            Value::Object(v) => LuaJsonValue::Object(HashMap::from_iter(
+                v.into_iter().map(|(k, v)| (k, v.into())),
             )),
         }
     }

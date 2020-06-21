@@ -1,21 +1,20 @@
 use crate::errors::*;
 
-use chrono::Utc;
-use chrono::prelude::*;
 use crate::cal::{ActivityGrade, DateArg};
 use crate::models::*;
+use chrono::prelude::*;
+use chrono::Utc;
 use std::collections::HashMap;
 use std::collections::VecDeque;
 
 const MONTH_LINES: i32 = 7;
 
 fn merge_months(ctx: &DateContext, months: &[DateSpec]) -> String {
-    let mut months = months.iter()
+    let mut months = months
+        .iter()
         .map(|ds| {
             let month = ds.to_term_string(ctx);
-            month.lines()
-                .map(String::from)
-                .collect::<VecDeque<_>>()
+            month.lines().map(String::from).collect::<VecDeque<_>>()
         })
         .collect::<Vec<_>>();
 
@@ -113,11 +112,7 @@ pub struct DateContext {
 impl DateContext {
     pub fn new(events: &[Activity], today: NaiveDate) -> DateContext {
         let (events, max) = setup_graph_map(&events);
-        DateContext {
-            events,
-            max,
-            today,
-        }
+        DateContext { events, max, today }
     }
 
     #[inline]
@@ -154,16 +149,30 @@ impl DateSpec {
         let today = Utc::today();
         let ds = match (args.get(0), args.get(1), context) {
             (None, _, None) => DateSpec::YearMonth((today.year(), today.month())),
-            (None, _, Some(context)) => DateSpec::YearMonthContext((today.year(), today.month(), context)),
+            (None, _, Some(context)) => {
+                DateSpec::YearMonthContext((today.year(), today.month(), context))
+            }
 
-            (Some(DateArg::Month(month)), None, None) => DateSpec::YearMonth((today.year(), *month)),
+            (Some(DateArg::Month(month)), None, None) => {
+                DateSpec::YearMonth((today.year(), *month))
+            }
             (Some(DateArg::Num(year)), None, None) => DateSpec::Year(*year),
-            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), None) => DateSpec::YearMonth((*year, *month)),
-            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), None) => DateSpec::YearMonth((*year, *month)),
+            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), None) => {
+                DateSpec::YearMonth((*year, *month))
+            }
+            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), None) => {
+                DateSpec::YearMonth((*year, *month))
+            }
 
-            (Some(DateArg::Month(month)), None, Some(context)) => DateSpec::YearMonthContext((today.year(), *month, context)),
-            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), Some(context)) => DateSpec::YearMonthContext((*year, *month, context)),
-            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), Some(context)) => DateSpec::YearMonthContext((*year, *month, context)),
+            (Some(DateArg::Month(month)), None, Some(context)) => {
+                DateSpec::YearMonthContext((today.year(), *month, context))
+            }
+            (Some(DateArg::Month(month)), Some(DateArg::Num(year)), Some(context)) => {
+                DateSpec::YearMonthContext((*year, *month, context))
+            }
+            (Some(DateArg::Num(year)), Some(DateArg::Month(month)), Some(context)) => {
+                DateSpec::YearMonthContext((*year, *month, context))
+            }
             _ => bail!("Combination of datespec args is invalid"),
         };
         Ok(ds)
@@ -183,7 +192,7 @@ impl DateSpec {
                     month - context
                 };
                 NaiveDate::from_ymd(year, month, 1)
-            },
+            }
         }
     }
 
@@ -197,7 +206,7 @@ impl DateSpec {
                     (*year, *month + 1)
                 };
                 NaiveDate::from_ymd(year, month, 1)
-            },
+            }
             DateSpec::YearMonthContext((year, month, _context)) => {
                 let (year, month) = if *month == 12 {
                     (*year + 1, 1)
@@ -205,7 +214,7 @@ impl DateSpec {
                     (*year, *month + 1)
                 };
                 NaiveDate::from_ymd(year, month, 1)
-            },
+            }
         }
     }
 
@@ -216,7 +225,7 @@ impl DateSpec {
                     .map(|month| DateSpec::YearMonth((*year, month)))
                     .collect::<Vec<_>>();
                 chunk_months(ctx, &months)
-            },
+            }
             DateSpec::YearMonth((year, month)) => {
                 let mut w = String::new();
 
@@ -348,13 +357,16 @@ mod tests {
     fn test_datespec_year_month_ends_on_sat() {
         let ds = DateSpec::YearMonth((2020, 10));
         let out = ds.to_term_string(&context());
-        assert_eq!(out, "    October 2020     
+        assert_eq!(
+            out,
+            "    October 2020     
  Su Mo Tu We Th Fr Sa
               1\u{1b}[0m  2\u{1b}[0m  3\u{1b}[0m
   4\u{1b}[0m  5\u{1b}[0m  6\u{1b}[0m  7\u{1b}[0m  8\u{1b}[0m  9\u{1b}[0m 10\u{1b}[0m
  11\u{1b}[0m 12\u{1b}[0m 13\u{1b}[0m 14\u{1b}[0m 15\u{1b}[0m 16\u{1b}[0m 17\u{1b}[0m
  18\u{1b}[0m 19\u{1b}[0m 20\u{1b}[0m 21\u{1b}[0m 22\u{1b}[0m 23\u{1b}[0m 24\u{1b}[0m
- 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m");
+ 25\u{1b}[0m 26\u{1b}[0m 27\u{1b}[0m 28\u{1b}[0m 29\u{1b}[0m 30\u{1b}[0m 31\u{1b}[0m"
+        );
     }
 
     #[test]

@@ -5,13 +5,12 @@ use crate::notify::{self, Notification};
 use crate::schema::*;
 use crate::shell::Shell;
 use crate::term::{self, Term};
-use chrono::{NaiveDateTime, Duration, Utc};
+use chrono::{Duration, NaiveDateTime, Utc};
 use diesel;
 use diesel::prelude::*;
 
-
 #[derive(Identifiable, Queryable, AsChangeset, PartialEq, Debug)]
-#[table_name="ttls"]
+#[table_name = "ttls"]
 pub struct Ttl {
     pub id: i32,
     pub family: String,
@@ -21,7 +20,7 @@ pub struct Ttl {
 }
 
 #[derive(Insertable)]
-#[table_name="ttls"]
+#[table_name = "ttls"]
 pub struct NewTtl<'a> {
     pub family: &'a str,
     pub key: i32,
@@ -42,8 +41,7 @@ impl Ttl {
     pub fn find(obj: &Insert, my_key: i32, db: &Database) -> Result<Option<Ttl>> {
         use crate::schema::ttls::dsl::*;
 
-        ttls
-            .filter(family.eq(obj.table()))
+        ttls.filter(family.eq(obj.table()))
             .filter(key.eq(my_key))
             .first::<Self>(db.db())
             .optional()
@@ -53,8 +51,7 @@ impl Ttl {
     pub fn expired(db: &Database) -> Result<Vec<Ttl>> {
         use crate::schema::ttls::dsl::*;
 
-        ttls
-            .filter(expire.lt(Self::ttl_to_datetime(0)))
+        ttls.filter(expire.lt(Self::ttl_to_datetime(0)))
             .load::<Self>(db.db())
             .map_err(Error::from)
     }
@@ -127,8 +124,7 @@ impl Ttl {
             Table::Cryptoaddrs => CryptoAddr::delete_id(db, self.key)?,
         };
 
-        diesel::delete(self)
-                .execute(db.db())?;
+        diesel::delete(self).execute(db.db())?;
 
         Ok(())
     }
@@ -143,10 +139,15 @@ pub fn reap_expired(rl: &mut Shell) -> Result<()> {
 
         let subject = format!("Deleted {} {:?}", &expired.family, &expired.value);
         let topic = &format!("db:{}:{}:delete", &expired.family, &expired.value);
-        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &topic, &Notification {
-            subject,
-            body: None,
-        }) {
+        if let Err(err) = notify::trigger_notify_event(
+            rl,
+            &mut Term,
+            &topic,
+            &Notification {
+                subject,
+                body: None,
+            },
+        ) {
             term::error(&format!("Failed to send notifications: {}", err));
         }
     }

@@ -1,10 +1,9 @@
 use crate::errors::*;
 use nom;
-use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::result;
 use std::str::FromStr;
-
 
 #[inline(always)]
 fn valid_char(c: char) -> bool {
@@ -20,15 +19,15 @@ pub fn valid_name(name: &str) -> Result<()> {
 }
 
 fn module(s: &str) -> nom::IResult<&str, ModuleID> {
-    let (input, (author, _, name)) = nom::sequence::tuple((
-        token,
-        nom::bytes::complete::tag("/"),
-        token,
-    ))(s)?;
-    Ok((input, ModuleID {
-        author: author.to_string(),
-        name: name.to_string(),
-    }))
+    let (input, (author, _, name)) =
+        nom::sequence::tuple((token, nom::bytes::complete::tag("/"), token))(s)?;
+    Ok((
+        input,
+        ModuleID {
+            author: author.to_string(),
+            name: name.to_string(),
+        },
+    ))
 }
 
 #[inline]
@@ -52,8 +51,8 @@ impl FromStr for ModuleID {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<ModuleID> {
-        let (trailing, module) = module(s)
-            .map_err(|err| format_err!("Failed to parse module id: {:?}", err))?;
+        let (trailing, module) =
+            module(s).map_err(|err| format_err!("Failed to parse module id: {:?}", err))?;
         if !trailing.is_empty() {
             bail!("Trailing data in module id");
         }
@@ -72,7 +71,8 @@ impl Serialize for ModuleID {
 
 impl<'de> Deserialize<'de> for ModuleID {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         FromStr::from_str(&s).map_err(de::Error::custom)
@@ -86,10 +86,13 @@ mod tests {
     #[test]
     fn verify_valid() {
         let result = ModuleID::from_str("kpcyrd/foo").expect("parse");
-        assert_eq!(result, ModuleID {
-            author: "kpcyrd".to_string(),
-            name: "foo".to_string(),
-        });
+        assert_eq!(
+            result,
+            ModuleID {
+                author: "kpcyrd".to_string(),
+                name: "foo".to_string(),
+            }
+        );
     }
 
     #[test]

@@ -1,12 +1,11 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="domains"]
+#[table_name = "domains"]
 pub struct Domain {
     pub id: i32,
     pub value: String,
@@ -64,8 +63,7 @@ impl Model for Domain {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::domains::dsl::*;
 
-        let domain = domains.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = domains.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -73,8 +71,7 @@ impl Model for Domain {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::domains::dsl::*;
 
-        let domain = domains.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let domain = domains.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -82,7 +79,8 @@ impl Model for Domain {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::domains::dsl::*;
 
-        let domain = domains.filter(value.eq(query))
+        let domain = domains
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -157,7 +155,9 @@ impl Detailed for Domain {
     type T = DetailedDomain;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let subdomains = self.subdomains(db)?.into_iter()
+        let subdomains = self
+            .subdomains(db)?
+            .into_iter()
             .map(|sd| sd.printable(db))
             .collect::<Result<_>>()?;
 
@@ -171,7 +171,7 @@ impl Detailed for Domain {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="domains"]
+#[table_name = "domains"]
 pub struct NewDomain {
     pub value: String,
     pub unscoped: bool,
@@ -198,9 +198,7 @@ impl Upsertable<Domain> for NewDomain {
     type Update = NullUpdate;
 
     fn upsert(self, existing: &Domain) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-        }
+        Self::Update { id: existing.id }
     }
 }
 

@@ -2,15 +2,13 @@ use crate::errors::*;
 use rustyline::error::ReadlineError;
 use std::str::FromStr;
 
-
 pub fn read_line(prompt: &str) -> Result<String> {
     let mut rl = rustyline::Editor::<()>::new();
-    let mut line = rl.readline(prompt)
-        .map_err(|err| match err {
-            ReadlineError::Eof => format_err!("Failed to read line from input"),
-            ReadlineError::Interrupted => format_err!("Prompt has been canceled"),
-            err => err.into(),
-        })?;
+    let mut line = rl.readline(prompt).map_err(|err| match err {
+        ReadlineError::Eof => format_err!("Failed to read line from input"),
+        ReadlineError::Interrupted => format_err!("Prompt has been canceled"),
+        err => err.into(),
+    })?;
     if let Some(idx) = line.find('\n') {
         line.truncate(idx);
     }
@@ -37,7 +35,8 @@ pub fn question_typed_opt<T: FromStr>(text: &str) -> Result<Option<T>> {
     let answer = question(text)?;
 
     if !answer.is_empty() {
-        let answer = answer.parse()
+        let answer = answer
+            .parse()
             .map_err(|_| format_err!("Failed to parse input"))?;
         Ok(Some(answer))
     } else {

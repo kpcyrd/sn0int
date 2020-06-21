@@ -1,32 +1,30 @@
 use crate::errors::*;
 
 use crate::db;
-use crate::shell::Shell;
-use sn0int_common::metadata::Source;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
-use crate::term;
 use crate::models::*;
-
+use crate::shell::Shell;
+use crate::term;
+use sn0int_common::metadata::Source;
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     // TODO: target -p # print current filter
     // TODO: target -c # clear filter
-
     filter: Vec<String>,
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
     let args = Args::from_iter_safe(args)?;
 
-    let source = rl.module()
+    let source = rl
+        .module()
         .ok_or_else(|| format_err!("No module selected"))
         .map(|x| x.source().clone())?;
 
-    let source = source
-        .ok_or_else(|| format_err!("Module doesn't have sources"))?;
+    let source = source.ok_or_else(|| format_err!("Module doesn't have sources"))?;
 
     if args.filter.is_empty() {
         match source {
@@ -49,13 +47,16 @@ pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
                 for key in rl.keyring().list_for(&namespace) {
                     println!("{}:{}", key.namespace, key.name);
                 }
-            },
+            }
         }
     } else {
         debug!("Setting filter to {:?}", args.filter);
         let filter = db::Filter::parse_optional(&args.filter)?;
         rl.set_target(Some(filter));
-        term::info(&format!("{} entities selected", count_selected(rl, &source)?));
+        term::info(&format!(
+            "{} entities selected",
+            count_selected(rl, &source)?
+        ));
     }
 
     Ok(())
@@ -74,12 +75,16 @@ fn count_selected(rl: &mut Shell, source: &Source) -> Result<usize> {
         Source::PhoneNumbers => db.filter::<PhoneNumber>(&filter)?.len(),
         Source::Networks => db.filter::<Network>(&filter)?.len(),
         Source::Devices => db.filter::<Device>(&filter)?.len(),
-        Source::Accounts(service) => db.filter_with_param::<Account>(&filter, service.as_ref())?.len(),
+        Source::Accounts(service) => db
+            .filter_with_param::<Account>(&filter, service.as_ref())?
+            .len(),
         Source::Breaches => db.filter::<Breach>(&filter)?.len(),
         Source::Images => db.filter::<Image>(&filter)?.len(),
         Source::Ports => db.filter::<Port>(&filter)?.len(),
         Source::Netblocks => db.filter::<Netblock>(&filter)?.len(),
-        Source::CryptoAddrs(currency) => db.filter_with_param::<CryptoAddr>(&filter, currency.as_ref())?.len(),
+        Source::CryptoAddrs(currency) => db
+            .filter_with_param::<CryptoAddr>(&filter, currency.as_ref())?
+            .len(),
         Source::Notifications => bail!("Notifications can't be set as target"),
         Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
     };

@@ -1,21 +1,20 @@
-use crate::errors::*;
-use crate::ipc::common::*;
-use chrootable_https::dns::Resolver;
 use crate::blobs::Blob;
 use crate::engine::Module;
+use crate::errors::*;
+use crate::ipc::common::*;
 use crate::keyring::KeyRingEntry;
+use crate::worker::{Event, Event2, EventSender, EventWithCallback, ExitEvent, LogEvent};
+use chrootable_https::dns::Resolver;
 use serde_json;
-use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
 
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsString;
 use std::io::prelude::*;
-use std::io::{BufReader, BufRead, stdin};
+use std::io::{stdin, BufRead, BufReader};
 use std::net::SocketAddr;
+use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::mpsc;
-use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
-
 
 pub struct IpcParent {
     child: Child,
@@ -66,7 +65,9 @@ impl IpcParent {
     pub fn send_struct<T: serde::Serialize>(&mut self, value: T, tx: &EventSender) {
         let value = serde_json::to_value(value).expect("Failed to serialize reply");
         if let Err(_) = self.send(&value) {
-            tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
+            tx.send(Event2::Log(LogEvent::Error(
+                "Failed to send to child".into(),
+            )));
         }
     }
 
@@ -80,8 +81,7 @@ impl IpcParent {
     }
 
     pub fn wait(&mut self) -> Result<()> {
-        let exit = self.child.wait()
-            .context("Failed to wait for child")?;
+        let exit = self.child.wait().context("Failed to wait for child")?;
 
         if exit.success() {
             Ok(())
@@ -91,7 +91,8 @@ impl IpcParent {
     }
 
     pub fn send_event_callback<T: EventWithCallback>(&mut self, event: T, tx: &EventSender)
-        where <T as EventWithCallback>::Payload: serde::Serialize
+    where
+        <T as EventWithCallback>::Payload: serde::Serialize,
     {
         let (tx2, rx2) = mpsc::channel();
         tx.send(event.with_callback(tx2));
@@ -101,15 +102,16 @@ impl IpcParent {
     }
 }
 
-pub fn run(module: Module,
-           tx: &EventSender,
-           arg: serde_json::Value,
-           keyring: Vec<KeyRingEntry>,
-           verbose: u64,
-           has_stdin: bool,
-           proxy: Option<SocketAddr>,
-           options: HashMap<String, String>,
-           blobs: Vec<Blob>,
+pub fn run(
+    module: Module,
+    tx: &EventSender,
+    arg: serde_json::Value,
+    keyring: Vec<KeyRingEntry>,
+    verbose: u64,
+    has_stdin: bool,
+    proxy: Option<SocketAddr>,
+    options: HashMap<String, String>,
+    blobs: Vec<Blob>,
 ) -> Result<ExitEvent> {
     let dns_config = Resolver::from_system_v4()?;
 
@@ -120,7 +122,9 @@ pub fn run(module: Module,
     };
 
     let mut ipc_parent = IpcParent::setup(&module)?;
-    ipc_parent.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, options, module, arg, blobs))?;
+    ipc_parent.send_start(&StartCommand::new(
+        verbose, keyring, dns_config, proxy, options, module, arg, blobs,
+    ))?;
 
     let exit = loop {
         match ipc_parent.recv()? {
@@ -134,7 +138,7 @@ pub fn run(module: Module,
                     tx.send(Event2::Log(LogEvent::Error(err.clone())));
                 }
                 break event;
-            },
+            }
         }
     };
 

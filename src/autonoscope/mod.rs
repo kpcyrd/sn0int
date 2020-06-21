@@ -1,11 +1,11 @@
 use crate::db::DatabaseSock;
 use crate::errors::*;
+use crate::models::*;
+use crate::schema::*;
 use diesel;
 use diesel::prelude::*;
-use crate::schema::*;
-use crate::models::*;
 use std::cmp::Ordering;
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 use std::str::FromStr;
 
 mod domain;
@@ -16,7 +16,7 @@ mod url;
 pub use self::url::UrlRule;
 
 #[derive(Identifiable, Queryable, PartialEq, Debug)]
-#[table_name="autonoscope"]
+#[table_name = "autonoscope"]
 pub struct Autonoscope {
     pub id: i32,
     pub object: String,
@@ -25,7 +25,7 @@ pub struct Autonoscope {
 }
 
 #[derive(Insertable, PartialEq, Debug)]
-#[table_name="autonoscope"]
+#[table_name = "autonoscope"]
 pub struct NewAutonoscope {
     pub object: String,
     pub value: String,
@@ -41,9 +41,7 @@ pub struct RuleSet {
 
 #[inline(always)]
 fn sort_precision_desc<T: RulePrecision>(a: &T, b: &T) -> Ordering {
-    a.precision()
-        .cmp(&b.precision())
-        .reverse()
+    a.precision().cmp(&b.precision()).reverse()
 }
 
 impl RuleSet {
@@ -72,7 +70,13 @@ impl RuleSet {
         self.urls.sort_by(sort_precision_desc);
     }
 
-    pub fn add_rule(&mut self, db: &DatabaseSock, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
+    pub fn add_rule(
+        &mut self,
+        db: &DatabaseSock,
+        object: &RuleType,
+        value: &str,
+        scoped: bool,
+    ) -> Result<()> {
         self.delete_rule(db, object, value)?;
 
         match object {
@@ -81,19 +85,19 @@ impl RuleSet {
                 let rule = Rule::new(rule, scoped);
                 self.db_add(db, &rule)?;
                 self.domains.push(rule);
-            },
+            }
             RuleType::Ip => {
                 let rule = IpRule::try_from(value)?;
                 let rule = Rule::new(rule, scoped);
                 self.db_add(db, &rule)?;
                 self.ips.push(rule);
-            },
+            }
             RuleType::Url => {
                 let rule = UrlRule::try_from(value)?;
                 let rule = Rule::new(rule, scoped);
                 self.db_add(db, &rule)?;
                 self.urls.push(rule);
-            },
+            }
         }
         self.sort_rules();
 
@@ -113,25 +117,27 @@ impl RuleSet {
             RuleType::Domain => {
                 self.domains.retain(|x| x.to_string().as_str() != rule);
                 self.db_delete(db, obj, &rule)?;
-            },
+            }
             RuleType::Ip => {
                 self.ips.retain(|x| x.to_string().as_str() != rule);
                 self.db_delete(db, obj, &rule)?;
-            },
+            }
             RuleType::Url => {
                 self.urls.retain(|x| x.to_string().as_str() != rule);
                 self.db_delete(db, obj, &rule)?;
-            },
+            }
         }
         Ok(())
     }
 
     fn db_delete(&mut self, db: &DatabaseSock, obj: &RuleType, rule: &str) -> Result<()> {
         use crate::schema::autonoscope::dsl::*;
-        diesel::delete(autonoscope
-            .filter(object.eq(obj.as_str()))
-            .filter(value.eq(rule)))
-            .execute(db)?;
+        diesel::delete(
+            autonoscope
+                .filter(object.eq(obj.as_str()))
+                .filter(value.eq(rule)),
+        )
+        .execute(db)?;
         Ok(())
     }
 
@@ -144,7 +150,10 @@ impl RuleSet {
     }
 
     #[inline]
-    fn push_rules_display<T: IntoRule>(output: &mut Vec<(&'static str, String, bool)>, rules: &[Rule<T>]) {
+    fn push_rules_display<T: IntoRule>(
+        output: &mut Vec<(&'static str, String, bool)>,
+        rules: &[Rule<T>],
+    ) {
         for rule in rules {
             let (object, value) = rule.into_rule();
             output.push((object, value, rule.scoped));
@@ -164,7 +173,7 @@ impl RuleSet {
                 } else {
                     None
                 }
-            },
+            }
             // Insert::Email(email) => unimplemented!(),
             // Insert::Account(account) => unimplemented!(),
             Insert::Port(port) => Self::matches_any(&self.ips, port)?,
@@ -175,8 +184,9 @@ impl RuleSet {
     }
 
     fn matches_any<T1, T2>(rules: &[Rule<T1>], object: &T2) -> Result<Option<bool>>
-        where T1: AutoRule<T2>,
-            T1: IntoRule,
+    where
+        T1: AutoRule<T2>,
+        T1: IntoRule,
     {
         for rule in rules {
             if rule.matches(object)? {
@@ -245,10 +255,7 @@ pub struct Rule<T: IntoRule> {
 
 impl<T: IntoRule> Rule<T> {
     pub fn new(rule: T, scoped: bool) -> Rule<T> {
-        Rule {
-            rule,
-            scoped,
-        }
+        Rule { rule, scoped }
     }
 }
 
@@ -300,15 +307,18 @@ mod tests {
             urls: vec![],
         };
         set.sort_rules();
-        assert_eq!(set, RuleSet {
-            domains: vec![
-                Rule::new(DomainRule::try_from("example.com").unwrap(), true),
-                Rule::new(DomainRule::try_from("com").unwrap(), true),
-                Rule::new(DomainRule::try_from(".").unwrap(), true),
-            ],
-            ips: vec![],
-            urls: vec![],
-        });
+        assert_eq!(
+            set,
+            RuleSet {
+                domains: vec![
+                    Rule::new(DomainRule::try_from("example.com").unwrap(), true),
+                    Rule::new(DomainRule::try_from("com").unwrap(), true),
+                    Rule::new(DomainRule::try_from(".").unwrap(), true),
+                ],
+                ips: vec![],
+                urls: vec![],
+            }
+        );
     }
 
     #[test]
@@ -324,15 +334,18 @@ mod tests {
         };
         set.sort_rules();
         // TODO: add ipv6
-        assert_eq!(set, RuleSet {
-            domains: vec![],
-            ips: vec![
-                Rule::new(IpRule::try_from("10.5.6.0/24").unwrap(), true),
-                Rule::new(IpRule::try_from("10.0.0.0/8").unwrap(), true),
-                Rule::new(IpRule::try_from("0.0.0.0/0").unwrap(), true),
-            ],
-            urls: vec![],
-        });
+        assert_eq!(
+            set,
+            RuleSet {
+                domains: vec![],
+                ips: vec![
+                    Rule::new(IpRule::try_from("10.5.6.0/24").unwrap(), true),
+                    Rule::new(IpRule::try_from("10.0.0.0/8").unwrap(), true),
+                    Rule::new(IpRule::try_from("0.0.0.0/0").unwrap(), true),
+                ],
+                urls: vec![],
+            }
+        );
     }
 
     #[test]
@@ -343,18 +356,27 @@ mod tests {
             urls: vec![
                 Rule::new(UrlRule::try_from("http://example.com/foo/").unwrap(), true),
                 Rule::new(UrlRule::try_from("https://example.com/").unwrap(), true),
-                Rule::new(UrlRule::try_from("https://example.com/foo/bar/?asdf=1").unwrap(), true),
+                Rule::new(
+                    UrlRule::try_from("https://example.com/foo/bar/?asdf=1").unwrap(),
+                    true,
+                ),
             ],
         };
         set.sort_rules();
-        assert_eq!(set, RuleSet {
-            domains: vec![],
-            ips: vec![],
-            urls: vec![
-                Rule::new(UrlRule::try_from("https://example.com/foo/bar/?asdf=1").unwrap(), true),
-                Rule::new(UrlRule::try_from("http://example.com/foo/").unwrap(), true),
-                Rule::new(UrlRule::try_from("https://example.com/").unwrap(), true),
-            ],
-        });
+        assert_eq!(
+            set,
+            RuleSet {
+                domains: vec![],
+                ips: vec![],
+                urls: vec![
+                    Rule::new(
+                        UrlRule::try_from("https://example.com/foo/bar/?asdf=1").unwrap(),
+                        true
+                    ),
+                    Rule::new(UrlRule::try_from("http://example.com/foo/").unwrap(), true),
+                    Rule::new(UrlRule::try_from("https://example.com/").unwrap(), true),
+                ],
+            }
+        );
     }
 }

@@ -1,6 +1,5 @@
 use crate::errors::*;
-use syscallz::{Context, Syscall, Action};
-
+use syscallz::{Action, Context, Syscall};
 
 pub fn init() -> Result<()> {
     let mut ctx = Context::init()?;

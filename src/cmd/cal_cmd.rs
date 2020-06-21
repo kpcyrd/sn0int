@@ -1,27 +1,26 @@
 use crate::errors::*;
 
-use chrono::Utc;
-use crate::cal::DateArg;
 use crate::cal::date::{DateContext, DateSpec};
 use crate::cal::time::{DateTimeContext, DateTimeSpec};
+use crate::cal::DateArg;
 use crate::cmd::Cmd;
 use crate::models::*;
 use crate::shell::Shell;
-use structopt::StructOpt;
+use chrono::Utc;
 use structopt::clap::AppSettings;
-
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Show additional months for context
-    #[structopt(short="C", long)]
+    #[structopt(short = "C", long)]
     context: Option<u32>,
     /// Group events in 12 min slices
-    #[structopt(short="T", long, group = "view")]
+    #[structopt(short = "T", long, group = "view")]
     time: bool,
     /// Group events by hour
-    #[structopt(short="H", long, group = "view")]
+    #[structopt(short = "H", long, group = "view")]
     hourly: bool,
     args: Vec<DateArg>,
 }
@@ -40,13 +39,10 @@ impl Cmd for Args {
             };
             let events = Activity::query(rl.db(), &filter)?;
 
-            let (slice_width, slice_duration) = if self.hourly {
-                (3, 60)
-            } else {
-                (1, 12)
-            };
+            let (slice_width, slice_duration) = if self.hourly { (3, 60) } else { (1, 12) };
 
-            let ctx = DateTimeContext::new(&events, Utc::now().naive_utc(), slice_width, slice_duration);
+            let ctx =
+                DateTimeContext::new(&events, Utc::now().naive_utc(), slice_width, slice_duration);
             println!("{}", dts.to_term_string(&ctx));
         } else {
             let ds = DateSpec::from_args(&self.args, self.context)

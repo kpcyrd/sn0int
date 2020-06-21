@@ -1,13 +1,20 @@
 #![warn(unused_extern_crates)]
-#[macro_use] extern crate maplit;
-use url;
+#[macro_use]
+extern crate maplit;
 use hlua_badtouch as hlua;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate structopt;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate diesel;
-#[macro_use] extern crate diesel_migrations;
-#[macro_use] extern crate crossbeam_channel as channel;
+use url;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate structopt;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate diesel;
+#[macro_use]
+extern crate diesel_migrations;
+#[macro_use]
+extern crate crossbeam_channel as channel;
 
 pub mod api;
 pub mod args;
@@ -19,8 +26,8 @@ pub mod cmd;
 pub mod config;
 use sn0int_std::crt;
 pub mod db;
-pub mod errors;
 pub mod engine;
+pub mod errors;
 pub mod filters;
 pub mod fmt;
 use sn0int_std::geo;

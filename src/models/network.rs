@@ -1,12 +1,11 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="networks"]
+#[table_name = "networks"]
 pub struct Network {
     pub id: i32,
     pub value: String,
@@ -67,8 +66,7 @@ impl Model for Network {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::networks::dsl::*;
 
-        let domain = networks.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = networks.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -76,8 +74,7 @@ impl Model for Network {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::networks::dsl::*;
 
-        let domain = networks.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let domain = networks.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -85,7 +82,8 @@ impl Model for Network {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::networks::dsl::*;
 
-        let domain = networks.filter(value.eq(query))
+        let domain = networks
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -191,7 +189,9 @@ impl Detailed for Network {
     type T = DetailedNetwork;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let devices = self.devices(db)?.into_iter()
+        let devices = self
+            .devices(db)?
+            .into_iter()
             .map(|sd| sd.printable(db))
             .collect::<Result<_>>()?;
 
@@ -208,7 +208,7 @@ impl Detailed for Network {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="networks"]
+#[table_name = "networks"]
 pub struct NewNetwork {
     pub value: String,
     pub latitude: Option<f32>,
@@ -279,7 +279,7 @@ impl InsertToNew for InsertNetwork {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="networks"]
+#[table_name = "networks"]
 pub struct NetworkUpdate {
     pub id: i32,
     pub latitude: Option<f32>,
@@ -289,9 +289,7 @@ pub struct NetworkUpdate {
 
 impl Upsert for NetworkUpdate {
     fn is_dirty(&self) -> bool {
-        self.latitude.is_some() ||
-        self.longitude.is_some() ||
-        self.description.is_some()
+        self.latitude.is_some() || self.longitude.is_some() || self.description.is_some()
     }
 
     fn generic(self) -> Update {

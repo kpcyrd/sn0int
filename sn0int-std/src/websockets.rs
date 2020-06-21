@@ -1,12 +1,12 @@
-use chrootable_https::DnsResolver;
 use crate::errors::*;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
-use crate::sockets::{Stream, SocketOptions};
+use crate::sockets::{SocketOptions, Stream};
+use chrootable_https::DnsResolver;
 use http::Request;
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::io;
+use std::net::SocketAddr;
 use tungstenite::protocol::{self, Message};
 use url::Url;
 
@@ -43,7 +43,11 @@ pub struct WebSocket {
 }
 
 impl WebSocket {
-    pub fn negotiate(stream: Stream, url: Url, headers: Option<&HashMap<String, String>>) -> Result<WebSocket> {
+    pub fn negotiate(
+        stream: Stream,
+        url: Url,
+        headers: Option<&HashMap<String, String>>,
+    ) -> Result<WebSocket> {
         let mut req = Request::get(url.to_string()); // TODO: don't re-parse here
 
         if let Some(headers) = headers {
@@ -55,19 +59,22 @@ impl WebSocket {
         let req = req.body(()).unwrap();
 
         let (sock, _resp) = tungstenite::client::client(req, stream)?;
-        Ok(WebSocket {
-            sock,
-        })
+        Ok(WebSocket { sock })
     }
 
-    pub fn connect<R: DnsResolver>(resolver: &R, url: Url, options: &WebSocketOptions) -> Result<WebSocket> {
+    pub fn connect<R: DnsResolver>(
+        resolver: &R,
+        url: Url,
+        options: &WebSocketOptions,
+    ) -> Result<WebSocket> {
         let tls = match url.scheme() {
             "ws" => false,
             "wss" => true,
             _ => bail!("Invalid websocket protocol"),
         };
 
-        let host = url.host_str()
+        let host = url
+            .host_str()
             .ok_or_else(|| format_err!("Missing host in url"))?;
 
         let port = match (url.port(), tls) {
@@ -76,16 +83,21 @@ impl WebSocket {
             (None, false) => 80,
         };
 
-        let stream = Stream::connect_stream(resolver, host, port, &SocketOptions {
-            tls,
-            sni_value: None,
-            disable_tls_verify: false,
-            proxy: options.proxy,
+        let stream = Stream::connect_stream(
+            resolver,
+            host,
+            port,
+            &SocketOptions {
+                tls,
+                sni_value: None,
+                disable_tls_verify: false,
+                proxy: options.proxy,
 
-            connect_timeout: options.connect_timeout,
-            read_timeout: options.read_timeout,
-            write_timeout: options.write_timeout,
-        })?;
+                connect_timeout: options.connect_timeout,
+                read_timeout: options.read_timeout,
+                write_timeout: options.write_timeout,
+            },
+        )?;
         Self::negotiate(stream, url, options.headers.as_ref())
     }
 
@@ -104,12 +116,14 @@ impl WebSocket {
                 Ok(Message::Ping(ping)) => {
                     self.sock.write_message(Message::Pong(ping))?;
                     continue;
-                },
+                }
                 Ok(Message::Pong(_)) => continue, // this should never happen
                 Ok(Message::Close(_)) => Event::Close,
                 Err(tungstenite::Error::ConnectionClosed) => Event::Close,
                 Err(tungstenite::Error::AlreadyClosed) => Event::Close,
-                Err(tungstenite::Error::Io(err)) if err.kind() == io::ErrorKind::WouldBlock => Event::Timeout,
+                Err(tungstenite::Error::Io(err)) if err.kind() == io::ErrorKind::WouldBlock => {
+                    Event::Timeout
+                }
                 Err(err) => return Err(err.into()),
             };
             return Ok(msg);

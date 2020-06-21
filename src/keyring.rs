@@ -4,13 +4,12 @@ use crate::engine::Module;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use crate::paths;
-use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::fmt;
-use std::str::FromStr;
-use std::path::{Path, PathBuf};
 use sn0int_common::ModuleID;
-
+use std::collections::{HashMap, HashSet};
+use std::fmt;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyName {
@@ -50,10 +49,7 @@ impl FromStr for KeyName {
                 bail!("Name can not be empty");
             }
 
-            Ok(KeyName {
-                namespace,
-                name,
-            })
+            Ok(KeyName { namespace, name })
         } else {
             bail!("Missing namespace")
         }
@@ -83,8 +79,7 @@ impl KeyRing {
         let path = Self::path()?;
 
         let keyring = if path.exists() {
-            Self::load(&path)
-                .context("Failed to load keyring")?
+            Self::load(&path).context("Failed to load keyring")?
         } else {
             KeyRing::default()
         };
@@ -93,23 +88,22 @@ impl KeyRing {
     }
 
     pub fn load(path: &Path) -> Result<KeyRing> {
-        let buf = fs::read(&path)
-            .context("Failed to read keyring file")?;
-        serde_json::from_slice(&buf)
-            .map_err(Error::from)
+        let buf = fs::read(&path).context("Failed to read keyring file")?;
+        serde_json::from_slice(&buf).map_err(Error::from)
     }
 
     pub fn save(&self) -> Result<()> {
         let path = Self::path()?;
         let buf = serde_json::to_string(&self)?;
-        fs::write(&path, buf)
-            .context("Failed to save keyring")?;
+        fs::write(&path, buf).context("Failed to save keyring")?;
         Ok(())
     }
 
     pub fn insert(&mut self, key: KeyName, secret: Option<String>) -> Result<()> {
         // get the namespace or create a new one
-        let mut x = self.keys.remove(&key.namespace)
+        let mut x = self
+            .keys
+            .remove(&key.namespace)
             .unwrap_or_else(HashMap::new);
         // insert key into namespace
         x.insert(key.name, secret);
@@ -137,13 +131,15 @@ impl KeyRing {
     }
 
     pub fn list(&self) -> Vec<KeyName> {
-        self.keys.iter()
+        self.keys
+            .iter()
             .flat_map(|(k, v)| KeyName::for_each(k, v))
             .collect()
     }
 
     pub fn list_for(&self, namespace: &str) -> Vec<KeyName> {
-        self.keys.iter()
+        self.keys
+            .iter()
             .filter(|(k, _)| k.as_str() == namespace)
             .flat_map(|(k, v)| KeyName::for_each(k, v))
             .collect()
@@ -168,14 +164,15 @@ impl KeyRing {
     }
 
     pub fn unauthorized_namespaces<'a>(&self, module: &'a Module) -> Vec<&'a String> {
-        module.keyring_access().iter()
+        module
+            .keyring_access()
+            .iter()
             .filter(|namespace| !self.is_access_granted(&module, &namespace))
             .collect()
     }
 
     pub fn grant_access(&mut self, module: &Module, namespace: String) {
-        let mut grants = self.grants.remove(&namespace)
-            .unwrap_or_else(HashSet::new);
+        let mut grants = self.grants.remove(&namespace).unwrap_or_else(HashSet::new);
         grants.insert(module.id());
         self.grants.insert(namespace, grants);
     }
@@ -190,7 +187,9 @@ impl KeyRing {
 
     pub fn request_keys(&self, module: &Module) -> Vec<KeyRingEntry> {
         // TODO: we probably want to randomize the order
-        module.keyring_access().iter()
+        module
+            .keyring_access()
+            .iter()
             .filter(|namespace| self.is_access_granted(&module, &namespace))
             .flat_map(|namespace| self.list_for(namespace))
             .flat_map(|x| self.get(&x))
@@ -231,10 +230,13 @@ mod tests {
     #[test]
     fn test_valid_keyname() {
         let x = KeyName::from_str("a:b").unwrap();
-        assert_eq!(x, KeyName {
-            namespace: "a".into(),
-            name: "b".into(),
-        });
+        assert_eq!(
+            x,
+            KeyName {
+                namespace: "a".into(),
+                name: "b".into(),
+            }
+        );
     }
 
     #[test]

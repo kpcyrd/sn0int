@@ -1,7 +1,6 @@
 use crate::assets::*;
-use rocket::http::{ContentType, Status};
 use rocket::http::hyper::header::{CacheControl, CacheDirective};
-
+use rocket::http::{ContentType, Status};
 
 #[derive(Responder)]
 pub struct CachableResponder {
@@ -54,7 +53,10 @@ pub fn style(rev: String) -> Result<CachableResponder, Status> {
 #[get("/assets/<rev>/script.js")]
 pub fn javascript(rev: String) -> Result<CachableResponder, Status> {
     if rev == *ASSET_REV {
-        Ok(CachableResponder::immutable(JAVASCRIPT, ContentType::JavaScript))
+        Ok(CachableResponder::immutable(
+            JAVASCRIPT,
+            ContentType::JavaScript,
+        ))
     } else {
         Err(Status::NotFound)
     }
@@ -68,7 +70,10 @@ pub fn social_card() -> CachableResponder {
 #[get("/assets/<rev>/clipboard.min.js")]
 pub fn javascript_clipboard(rev: String) -> Result<CachableResponder, Status> {
     if rev == *ASSET_REV {
-        Ok(CachableResponder::immutable(JAVASCRIPT_CLIPBOARD, ContentType::JavaScript))
+        Ok(CachableResponder::immutable(
+            JAVASCRIPT_CLIPBOARD,
+            ContentType::JavaScript,
+        ))
     } else {
         Err(Status::NotFound)
     }
@@ -77,7 +82,10 @@ pub fn javascript_clipboard(rev: String) -> Result<CachableResponder, Status> {
 #[get("/assets/<rev>/fontawesome/css/all.min.css")]
 pub fn fontawesome_style(rev: String) -> Result<CachableResponder, Status> {
     if rev == *ASSET_REV {
-        Ok(CachableResponder::immutable(FA_STYLESHEET, ContentType::CSS))
+        Ok(CachableResponder::immutable(
+            FA_STYLESHEET,
+            ContentType::CSS,
+        ))
     } else {
         Err(Status::NotFound)
     }
@@ -86,7 +94,7 @@ pub fn fontawesome_style(rev: String) -> Result<CachableResponder, Status> {
 #[get("/assets/<rev>/fontawesome/webfonts/<font>")]
 pub fn fontawesome_font(rev: String, font: String) -> Result<CachableResponder, Status> {
     if rev != *ASSET_REV {
-        return Err(Status::NotFound)
+        return Err(Status::NotFound);
     }
 
     let (content_type, bytes) = match font.as_str() {

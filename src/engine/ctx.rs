@@ -2,31 +2,30 @@ use crate::errors::*;
 
 use crate::db::Family;
 use crate::engine::{Environment, IpcChild};
-use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
+use crate::geoip::{AsnDB, GeoIP, MaxmindReader};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
+use crate::lazy::Lazy;
 use crate::models::*;
 use crate::psl::{Psl, PslReader};
-use crate::lazy::Lazy;
+use crate::ratelimits::RatelimitResponse;
 use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
-use crate::web::{HttpSession, HttpRequest, RequestOptions};
+use crate::web::{HttpRequest, HttpSession, RequestOptions};
 use crate::websockets::{WebSocket, WebSocketOptions};
-use crate::worker::{Event, LogEvent, DatabaseEvent, DatabaseResponse, StdioEvent, RatelimitEvent};
-use crate::ratelimits::RatelimitResponse;
+use crate::worker::{DatabaseEvent, DatabaseResponse, Event, LogEvent, RatelimitEvent, StdioEvent};
 use chrootable_https::{self, Resolver};
+use rand::distributions::Alphanumeric;
+use rand::prelude::*;
 use serde_json;
 use sn0int_std::blobs::{Blob, BlobState};
 use sn0int_std::mqtt::{MqttClient, MqttOptions};
 use sn0int_std::web::WebState;
 use std::collections::HashMap;
-use std::result;
 use std::net::SocketAddr;
+use std::result;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use rand::prelude::*;
-use rand::distributions::Alphanumeric;
-
 
 pub trait State {
     fn clear_error(&self);
@@ -97,8 +96,7 @@ pub trait State {
         let activity = activity.try_into_new()?;
 
         self.send(&Event::Database(DatabaseEvent::Activity(activity)));
-        let r = self.db_recv()
-            .context("Failed to log activity")?;
+        let r = self.db_recv().context("Failed to log activity")?;
 
         match r {
             DatabaseResponse::Inserted(_) => Ok(false),
@@ -115,7 +113,9 @@ pub trait State {
     }
 
     fn db_update(&self, family: Family, value: String, update: Update) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::Update((family, value, update))));
+        self.send(&Event::Database(DatabaseEvent::Update((
+            family, value, update,
+        ))));
         self.db_recv()
             .context("Failed to update database")
             .map_err(Error::from)
@@ -171,21 +171,27 @@ pub trait State {
 
     fn sock_connect(&self, host: &str, port: u16, options: &SocketOptions) -> Result<String>;
 
-    fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>>;
+    fn get_sock(&self, id: &str) -> Arc<Mutex<Socket>>;
 
     fn sock_upgrade_tls(&self, id: &str, options: &SocketOptions) -> Result<TlsData>;
 
     fn ws_connect(&self, url: url::Url, options: &WebSocketOptions) -> Result<String>;
 
-    fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>>;
+    fn get_ws(&self, id: &str) -> Arc<Mutex<WebSocket>>;
 
     fn mqtt_connect(&self, url: url::Url, options: &MqttOptions) -> Result<String>;
 
-    fn get_mqtt(&self, id: &str)-> Arc<Mutex<MqttClient>>;
+    fn get_mqtt(&self, id: &str) -> Arc<Mutex<MqttClient>>;
 
     fn http_mksession(&self) -> String;
 
-    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest;
+    fn http_request(
+        &self,
+        session_id: &str,
+        method: String,
+        url: String,
+        options: RequestOptions,
+    ) -> HttpRequest;
 
     fn get_blob(&self, id: &str) -> Result<Arc<Blob>>;
 
@@ -252,9 +258,7 @@ impl State for LuaState {
     }
 
     fn keyring(&self, query: &str) -> Vec<&KeyRingEntry> {
-        self.keyring.iter()
-            .filter(|x| x.matches(query))
-            .collect()
+        self.keyring.iter().filter(|x| x.matches(query)).collect()
     }
 
     fn dns_config(&self) -> &Resolver {
@@ -310,7 +314,7 @@ impl State for LuaState {
         Ok(id)
     }
 
-    fn get_sock(&self, id: &str)-> Arc<Mutex<Socket>> {
+    fn get_sock(&self, id: &str) -> Arc<Mutex<Socket>> {
         let mtx = self.socket_sessions.lock().unwrap();
         let sock = mtx.get(id).expect("Invalid socket reference"); // TODO
         sock.clone()
@@ -340,7 +344,7 @@ impl State for LuaState {
         Ok(id)
     }
 
-    fn get_ws(&self, id: &str)-> Arc<Mutex<WebSocket>> {
+    fn get_ws(&self, id: &str) -> Arc<Mutex<WebSocket>> {
         let mtx = self.ws_sessions.lock().unwrap();
         let sock = mtx.get(id).expect("Invalid ws reference"); // TODO
         sock.clone()
@@ -356,7 +360,7 @@ impl State for LuaState {
         Ok(id)
     }
 
-    fn get_mqtt(&self, id: &str)-> Arc<Mutex<MqttClient>> {
+    fn get_mqtt(&self, id: &str) -> Arc<Mutex<MqttClient>> {
         let mtx = self.mqtt_sessions.lock().unwrap();
         let sock = mtx.get(id).expect("Invalid mqtt reference"); // TODO
         sock.clone()
@@ -369,7 +373,13 @@ impl State for LuaState {
         id
     }
 
-    fn http_request(&self, session_id: &str, method: String, url: String, options: RequestOptions) -> HttpRequest {
+    fn http_request(
+        &self,
+        session_id: &str,
+        method: String,
+        url: String,
+        options: RequestOptions,
+    ) -> HttpRequest {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
 
@@ -378,7 +388,8 @@ impl State for LuaState {
 
     fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {
         let mtx = self.blobs.lock().unwrap();
-        let blob = mtx.get(id)
+        let blob = mtx
+            .get(id)
             .ok_or_else(|| format_err!("Invalid blob reference"))?;
         Ok(blob.clone())
     }
@@ -432,13 +443,16 @@ impl BlobState for LuaState {
 }
 
 impl LuaState {
-    fn resolve_proxy_options<'a>(&'a self, options: &'a Option<SocketAddr>) -> Result<Option<&'a SocketAddr>> {
+    fn resolve_proxy_options<'a>(
+        &'a self,
+        options: &'a Option<SocketAddr>,
+    ) -> Result<Option<&'a SocketAddr>> {
         match (&self.proxy, options) {
-            (Some(system),  Some(options))  if system == options => Ok(Some(system)),
-            (Some(_),       Some(_))        => bail!("Overriding the system proxy isn't allowed"),
-            (Some(system),  None)           => Ok(Some(system)),
-            (None,          Some(options))  => Ok(Some(options)),
-            (None,          None)           => Ok(None),
+            (Some(system), Some(options)) if system == options => Ok(Some(system)),
+            (Some(_), Some(_)) => bail!("Overriding the system proxy isn't allowed"),
+            (Some(system), None) => Ok(Some(system)),
+            (None, Some(options)) => Ok(Some(options)),
+            (None, None) => Ok(None),
         }
     }
 }
@@ -448,7 +462,10 @@ pub struct Script {
     code: String,
 }
 
-pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua::Lua<'a>, Arc<LuaState>) {
+pub fn ctx<'a>(
+    env: Environment,
+    logger: Arc<Mutex<Box<dyn IpcChild>>>,
+) -> (hlua::Lua<'a>, Arc<LuaState>) {
     debug!("Creating lua context");
     let mut lua = hlua::Lua::new();
     lua.open_string();
@@ -615,26 +632,26 @@ impl Script {
         };
         */
 
-        Ok(Script {
-            code: code.into(),
-        })
+        Ok(Script { code: code.into() })
     }
 
-    pub fn run(&self, env: Environment,
-                      tx: Arc<Mutex<Box<dyn IpcChild>>>,
-                      arg: AnyLuaValue,
+    pub fn run(
+        &self,
+        env: Environment,
+        tx: Arc<Mutex<Box<dyn IpcChild>>>,
+        arg: AnyLuaValue,
     ) -> Result<()> {
         let (mut lua, state) = ctx(env, tx);
 
         debug!("Initializing lua module");
         lua.execute::<()>(&self.code)?;
 
-        let run: Result<_> = lua.get("run")
-            .ok_or_else(|| format_err!( "run undefined"));
+        let run: Result<_> = lua.get("run").ok_or_else(|| format_err!("run undefined"));
         let mut run: hlua::LuaFunction<_> = run?;
 
         debug!("Starting lua script");
-        let result: hlua::AnyLuaValue = run.call_with_args(arg)
+        let result: hlua::AnyLuaValue = run
+            .call_with_args(arg)
             .map_err(|err| format_err!("execution failed: {:?}", err))?;
 
         debug!("Lua script terminated");
@@ -646,26 +663,29 @@ impl Script {
         use crate::hlua::AnyLuaValue::*;
         match result {
             LuaString(x) => bail!("Script returned error: {:?}", x),
-            _ => Ok(())
+            _ => Ok(()),
         }
     }
 
     #[cfg(test)]
     pub fn test(&self) -> Result<()> {
-        use crate::ipc::child::DummyIpcChild;
         use crate::geoip::Maxmind;
+        use crate::ipc::child::DummyIpcChild;
         use crate::paths;
         let keyring = Vec::new();
         let dns_config = Resolver::from_system_v4()?;
         let proxy = None;
-        let psl = PslReader::String(r#"
+        let psl = PslReader::String(
+            r#"
 // ===BEGIN ICANN DOMAINS===
 com
 // ===END ICANN DOMAINS===
 // ===BEGIN PRIVATE DOMAINS===
 a.prod.fastly.net
 // ===END PRIVATE DOMAINS===
-"#.into());
+"#
+            .into(),
+        );
         let cache_dir = paths::cache_dir()?;
         let geoip = GeoIP::try_open_reader(&cache_dir)?;
         let asn = AsnDB::try_open_reader(&cache_dir)?;

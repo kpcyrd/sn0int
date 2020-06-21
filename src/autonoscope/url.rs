@@ -1,5 +1,5 @@
+use crate::autonoscope::{AutoRule, Autonoscope, IntoRule, RulePrecision};
 use crate::errors::*;
-use crate::autonoscope::{Autonoscope, IntoRule, AutoRule, RulePrecision};
 use crate::models::*;
 use std::convert::TryFrom;
 
@@ -32,7 +32,8 @@ impl TryFrom<&str> for UrlRule {
 
         let origin = url.origin();
 
-        let segments = url.path_segments()
+        let segments = url
+            .path_segments()
             .ok_or_else(|| format_err!("url can't have a base"))?
             .filter(|x| !x.is_empty())
             .map(String::from)
@@ -61,7 +62,8 @@ impl AutoRule<str> for UrlRule {
             return Ok(false);
         }
 
-        let segments = url.path_segments()
+        let segments = url
+            .path_segments()
             .ok_or_else(|| format_err!("url can't have a base"))?
             .filter(|x| !x.is_empty())
             .collect::<Vec<_>>();
@@ -163,14 +165,18 @@ mod tests {
     #[test]
     fn test_url_rule_in_folder_implicit_slash() {
         let rule = UrlRule::try_from("https://www.example.com/asset").unwrap();
-        assert!(rule.matches("https://www.example.com/asset/style.css").unwrap());
+        assert!(rule
+            .matches("https://www.example.com/asset/style.css")
+            .unwrap());
         assert_eq!(rule.precision(), 1);
     }
 
     #[test]
     fn test_url_rule_in_folder_explicit_slash() {
         let rule = UrlRule::try_from("https://www.example.com/asset/").unwrap();
-        assert!(rule.matches("https://www.example.com/asset/style.css").unwrap());
+        assert!(rule
+            .matches("https://www.example.com/asset/style.css")
+            .unwrap());
         assert_eq!(rule.precision(), 1);
     }
 }

@@ -1,12 +1,11 @@
 use crate::errors::*;
 
-use x509_parser;
-use der_parser::der::DerObject;
 use der_parser::ber::{BerObjectContent, BerTag};
+use der_parser::der::DerObject;
 use der_parser::oid::Oid;
 use std::collections::HashSet;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-
+use x509_parser;
 
 #[derive(Debug, PartialEq)]
 pub enum AlternativeName {
@@ -25,9 +24,7 @@ pub fn san_extension(i: &[u8]) -> Result<Vec<AlternativeName>> {
 
     debug!("Decoded sequence: {:?}", seq);
     if let BerObjectContent::Sequence(seq) = seq.content {
-        seq.into_iter()
-            .map(san_value)
-            .collect()
+        seq.into_iter().map(san_value).collect()
     } else {
         bail!("Expected der sequence");
     }
@@ -37,9 +34,15 @@ pub fn san_value(o: DerObject) -> Result<AlternativeName> {
     debug!("DER object in SAN extension: {:?}", o);
 
     match (o.class, o.tag, &o.content) {
-        (2, BerTag::Integer, BerObjectContent::Unknown(BerTag::Integer, value)) => san_value_dns(value),
-        (2, BerTag::Boolean, BerObjectContent::Unknown(BerTag::Boolean, value)) => san_value_email(value),
-        (2, BerTag::ObjDescriptor, BerObjectContent::Unknown(BerTag::ObjDescriptor, value)) => san_value_ipaddr(value),
+        (2, BerTag::Integer, BerObjectContent::Unknown(BerTag::Integer, value)) => {
+            san_value_dns(value)
+        }
+        (2, BerTag::Boolean, BerObjectContent::Unknown(BerTag::Boolean, value)) => {
+            san_value_email(value)
+        }
+        (2, BerTag::ObjDescriptor, BerObjectContent::Unknown(BerTag::ObjDescriptor, value)) => {
+            san_value_ipaddr(value)
+        }
         _ => bail!("Unexpected object: {:?}", o),
     }
 }
@@ -61,15 +64,16 @@ pub fn san_value_email(v: &[u8]) -> Result<AlternativeName> {
 pub fn san_value_ipaddr(v: &[u8]) -> Result<AlternativeName> {
     debug!("Reading as ipaddr: {:?}", v);
     match v.len() {
-        4  => Ok(AlternativeName::IpAddr(Ipv4Addr::from([
-            v[0], v[1], v[2], v[3],
-        ]).into())),
-        16 => Ok(AlternativeName::IpAddr(Ipv6Addr::from([
-            v[0],  v[1],  v[2],  v[3],
-            v[4],  v[5],  v[6],  v[7],
-            v[8],  v[9],  v[10], v[11],
-            v[12], v[13], v[14], v[15],
-        ]).into())),
+        4 => Ok(AlternativeName::IpAddr(
+            Ipv4Addr::from([v[0], v[1], v[2], v[3]]).into(),
+        )),
+        16 => Ok(AlternativeName::IpAddr(
+            Ipv6Addr::from([
+                v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9], v[10], v[11], v[12],
+                v[13], v[14], v[15],
+            ])
+            .into(),
+        )),
         _ => Err(format_err!("Invalid ipaddr")),
     }
 }
@@ -92,7 +96,7 @@ impl Certificate {
                     bail!("input is not a certificate");
                 }
                 pem
-            },
+            }
             Err(_) => bail!("Failed to parse pem"),
         };
         Certificate::from_bytes(&pem.contents)
@@ -108,7 +112,7 @@ impl Certificate {
                     bail!("unexpected certificate version");
                 }
                 der
-            },
+            }
             Err(_) => bail!("Failed to parse der"),
         };
 
@@ -166,7 +170,8 @@ mod tests {
 
     #[test]
     fn test_parse_pem_github() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIIHQjCCBiqgAwIBAgIQCgYwQn9bvO1pVzllk7ZFHzANBgkqhkiG9w0BAQsFADB1
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
 d3cuZGlnaWNlcnQuY29tMTQwMgYDVQQDEytEaWdpQ2VydCBTSEEyIEV4dGVuZGVk
@@ -207,18 +212,24 @@ Kqg6LK0Hcq4K0sZnxE8HFxiZ92WpV2AVWjRMEc/2z2shNoDvxvFUYyY1Oe67xINk
 myQKc+ygSBZzyLnXSFVWmHr3u5dcaaQGGAR42v6Ydr4iL38Hd4dOiBma+FXsXBIq
 WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec!["github.com".into(), "www.github.com".into()],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["github.com".into(), "www.github.com".into()],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 
     #[test]
     fn test_parse_pem_1_1_1_1() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIID9DCCA3qgAwIBAgIQBWzetBRl/ycHFsBukRYuGTAKBggqhkjOPQQDAjBMMQsw
 CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMSYwJAYDVQQDEx1EaWdp
 Q2VydCBFQ0MgU2VjdXJlIFNlcnZlciBDQTAeFw0xODAzMzAwMDAwMDBaFw0yMDAz
@@ -242,40 +253,46 @@ ADBlAjEAjoyy2Ogh1i1/Kh9+psMc1OChlQIvQF6AkojZS8yliar6m8q5nqC3qe0h
 HR0fExwLAjAueWRnHX4QJ9loqMhsPk3NB0Cs0mStsNDNG6/DpCYw7XmjoG3y1LS7
 ZkZZmqNn2Q8=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "*.cloudflare-dns.com".into(),
-                "cloudflare-dns.com".into(),
-            ],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![
-                "1.0.0.1".parse().unwrap(),
-                "1.1.1.1".parse().unwrap(),
-                "2606:4700:4700::1001".parse().unwrap(),
-                "2606:4700:4700::1111".parse().unwrap(),
-            ],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["*.cloudflare-dns.com".into(), "cloudflare-dns.com".into(),],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![
+                    "1.0.0.1".parse().unwrap(),
+                    "1.1.1.1".parse().unwrap(),
+                    "2606:4700:4700::1001".parse().unwrap(),
+                    "2606:4700:4700::1111".parse().unwrap(),
+                ],
+            }
+        );
     }
 
     #[test]
     fn test_san_extension() {
-        let ext = san_extension(&[48, 28,
-                130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
-                130, 14, 119, 119, 119, 46, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109
-            ])
-            .expect("Failed to parse extension");
-        assert_eq!(ext, vec![
-            AlternativeName::DnsName(String::from("github.com")),
-            AlternativeName::DnsName(String::from("www.github.com")),
-        ]);
+        let ext = san_extension(&[
+            48, 28, 130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109, 130, 14, 119, 119, 119,
+            46, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
+        ])
+        .expect("Failed to parse extension");
+        assert_eq!(
+            ext,
+            vec![
+                AlternativeName::DnsName(String::from("github.com")),
+                AlternativeName::DnsName(String::from("www.github.com")),
+            ]
+        );
     }
 
     #[test]
     fn test_long_san_extension() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIII3jCCB8agAwIBAgIQAp1dOviF3mpYKKObx4fjxjANBgkqhkiG9w0BAQsFADBe
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
 d3cuZGlnaWNlcnQuY29tMR0wGwYDVQQDExRHZW9UcnVzdCBSU0EgQ0EgMjAxODAe
@@ -325,51 +342,56 @@ mAlnYDoB0Mj2UIPvIeftkDfF6sURmmZb0/+AMbFDCQYHvZFPI8DFgcagy8og5XJZ
 gQ+70UdJdM3RWyrd9R66aZwNGkcS6C2wtKCRhztWDMru/wNuyOsYS6JttoTYxRsh
 z/6Vy8Ga9kigYVsa8ZFMR+Ex
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "aboutyou.de".into(),
-                "assets.aboutyou.de".into(),
-                "cdn.aboutstatic.com".into(),
-                "cdn.aboutyou-staging.de".into(),
-                "cdn.aboutyou.de".into(),
-                "cdn.edited.de".into(),
-                "cdn.mary-paul.de".into(),
-                "cdn.youandidol.de".into(),
-                "cdn1.aboutyou.de".into(),
-                "cdn2.aboutyou.de".into(),
-                "cdn3.aboutyou.de".into(),
-                "cdn4.aboutyou.de".into(),
-                "cdn5.aboutyou.de".into(),
-                "co-m.aboutyou.de".into(),
-                "co-mapp.aboutyou.de".into(),
-                "co-t.aboutyou.de".into(),
-                "co.aboutyou.de".into(),
-                "edited.de".into(),
-                "files.aboutstatic.com".into(),
-                "images.aboutstatic.com".into(),
-                "img.aboutstatic.com".into(),
-                "img.aboutyou.de".into(),
-                "m-assets.aboutyou.de".into(),
-                "m.aboutyou.de".into(),
-                "media.aboutyou.de".into(),
-                "static.aboutyou.de".into(),
-                "static1.aboutyou.de".into(),
-                "static2.aboutyou.de".into(),
-                "static3.aboutyou.de".into(),
-                "static4.aboutyou.de".into(),
-                "static5.aboutyou.de".into(),
-                "staticmail-cdn.aboutyou.de".into(),
-                "t.aboutyou.de".into(),
-                "witt-weiden.dam.acme.aboutyou.cloud".into(),
-                "witt-weiden.dam.staging.aboutyou.cloud".into(),
-                "www.aboutyou.de".into(),
-            ],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec![
+                    "aboutyou.de".into(),
+                    "assets.aboutyou.de".into(),
+                    "cdn.aboutstatic.com".into(),
+                    "cdn.aboutyou-staging.de".into(),
+                    "cdn.aboutyou.de".into(),
+                    "cdn.edited.de".into(),
+                    "cdn.mary-paul.de".into(),
+                    "cdn.youandidol.de".into(),
+                    "cdn1.aboutyou.de".into(),
+                    "cdn2.aboutyou.de".into(),
+                    "cdn3.aboutyou.de".into(),
+                    "cdn4.aboutyou.de".into(),
+                    "cdn5.aboutyou.de".into(),
+                    "co-m.aboutyou.de".into(),
+                    "co-mapp.aboutyou.de".into(),
+                    "co-t.aboutyou.de".into(),
+                    "co.aboutyou.de".into(),
+                    "edited.de".into(),
+                    "files.aboutstatic.com".into(),
+                    "images.aboutstatic.com".into(),
+                    "img.aboutstatic.com".into(),
+                    "img.aboutyou.de".into(),
+                    "m-assets.aboutyou.de".into(),
+                    "m.aboutyou.de".into(),
+                    "media.aboutyou.de".into(),
+                    "static.aboutyou.de".into(),
+                    "static1.aboutyou.de".into(),
+                    "static2.aboutyou.de".into(),
+                    "static3.aboutyou.de".into(),
+                    "static4.aboutyou.de".into(),
+                    "static5.aboutyou.de".into(),
+                    "staticmail-cdn.aboutyou.de".into(),
+                    "t.aboutyou.de".into(),
+                    "witt-weiden.dam.acme.aboutyou.cloud".into(),
+                    "witt-weiden.dam.staging.aboutyou.cloud".into(),
+                    "www.aboutyou.de".into(),
+                ],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 
     #[test]
@@ -378,45 +400,52 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
             .expect("Failed to parse san value");
         assert!(rem.is_empty());
         println!("{:?}", v);
-        assert_eq!(v, DerObject {
-            class: 2,
-            structured: 0,
-            tag: BerTag::Integer,
-            content: BerObjectContent::Unknown(BerTag::Integer, &[103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
-        });
+        assert_eq!(
+            v,
+            DerObject {
+                class: 2,
+                structured: 0,
+                tag: BerTag::Integer,
+                content: BerObjectContent::Unknown(
+                    BerTag::Integer,
+                    &[103, 105, 116, 104, 117, 98, 46, 99, 111, 109]
+                )
+            }
+        );
         let content = match v.content {
             BerObjectContent::Unknown(BerTag::Integer, v) => v,
             _ => panic!("Wrong BerObjectContent"),
         };
-        let v = san_value_dns(content)
-            .expect("Failed to process san value");
+        let v = san_value_dns(content).expect("Failed to process san value");
         assert_eq!(v, AlternativeName::DnsName(String::from("github.com")));
     }
 
     #[test]
     fn test_san_value_ipaddr() {
-        let (rem, v) = parse_der(&[135, 4, 1, 1, 1, 1])
-            .expect("Failed to parse san value");
+        let (rem, v) = parse_der(&[135, 4, 1, 1, 1, 1]).expect("Failed to parse san value");
         assert!(rem.is_empty());
         println!("{:?}", v);
-        assert_eq!(v, DerObject {
-            class: 2,
-            structured: 0,
-            tag: BerTag::ObjDescriptor,
-            content: BerObjectContent::Unknown(BerTag::ObjDescriptor, &[1, 1, 1, 1])
-        });
+        assert_eq!(
+            v,
+            DerObject {
+                class: 2,
+                structured: 0,
+                tag: BerTag::ObjDescriptor,
+                content: BerObjectContent::Unknown(BerTag::ObjDescriptor, &[1, 1, 1, 1])
+            }
+        );
         let content = match v.content {
             BerObjectContent::Unknown(BerTag::ObjDescriptor, v) => v,
             _ => panic!("Wrong BerObjectContent"),
         };
-        let v = san_value_ipaddr(content)
-            .expect("Failed to process san value");
+        let v = san_value_ipaddr(content).expect("Failed to process san value");
         assert_eq!(v, AlternativeName::IpAddr("1.1.1.1".parse().unwrap()));
     }
 
     #[test]
     fn test_san_email() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIIE5zCCA8+gAwIBAgIQBvsKfZ5AGSW3Vc8Ldto1hTANBgkqhkiG9w0BAQUFADBp
 MSQwIgYJKoZIhvcNAQkBFhVwa2lfYWRtaW5Ac3VuZ2FyZC5jb20xJjAkBgNVBAoT
 HVN1bkdhcmQgQXZhaWxhYmlsaXR5IFNlcnZpY2VzMRkwFwYDVQQDExBTQVMgUHVi
@@ -445,18 +474,19 @@ K4f9GAOcawvNsI//mx99ol/ZGEamydeL9G0qiKrhqSxd2TGmFaIVJdu9fh59hos4
 UT+11L6q7MSIXSIMV8kJSUUYE92P7bnAqViTIuu/hHnfmIhiy6t7AuT2QHEhqDab
 EF4l5MwdUqs8FvM=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_emails.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "*.hosted.jivesoftware.com".into(),
-            ],
-            valid_emails: vec![
-                "subjectname@example.com".into(),
-            ],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["*.hosted.jivesoftware.com".into(),],
+                valid_emails: vec!["subjectname@example.com".into(),],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 }

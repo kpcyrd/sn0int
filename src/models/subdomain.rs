@@ -1,14 +1,13 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use std::result;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Domain)]
-#[table_name="subdomains"]
+#[table_name = "subdomains"]
 pub struct Subdomain {
     pub id: i32,
     pub domain_id: i32,
@@ -68,8 +67,7 @@ impl Model for Subdomain {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::subdomains::dsl::*;
 
-        let subdomain = subdomains.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let subdomain = subdomains.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(subdomain)
     }
@@ -77,8 +75,7 @@ impl Model for Subdomain {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::subdomains::dsl::*;
 
-        let subdomain = subdomains.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let subdomain = subdomains.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(subdomain)
     }
@@ -86,7 +83,8 @@ impl Model for Subdomain {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::subdomains::dsl::*;
 
-        let subdomain = subdomains.filter(value.eq(query))
+        let subdomain = subdomains
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -124,11 +122,13 @@ impl Subdomain {
             .select(subdomain_ipaddrs::ip_addr_id)
             .load::<i32>(db.db())?;
 
-        ipaddr_ids.into_iter()
-            .map(|ipaddr_id| ipaddrs::table
-                .filter(ipaddrs::id.eq(ipaddr_id))
-                .first::<IpAddr>(db.db())
-            )
+        ipaddr_ids
+            .into_iter()
+            .map(|ipaddr_id| {
+                ipaddrs::table
+                    .filter(ipaddrs::id.eq(ipaddr_id))
+                    .first::<IpAddr>(db.db())
+            })
             .collect::<result::Result<_, _>>()
             .map_err(Error::from)
     }
@@ -188,7 +188,9 @@ impl Detailed for Subdomain {
     type T = DetailedSubdomain;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let ipaddrs = self.ip_addrs(db)?.into_iter()
+        let ipaddrs = self
+            .ip_addrs(db)?
+            .into_iter()
             .map(|ip| ip.printable(db))
             .collect::<Result<_>>()?;
 
@@ -202,7 +204,7 @@ impl Detailed for Subdomain {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="subdomains"]
+#[table_name = "subdomains"]
 pub struct NewSubdomain {
     pub domain_id: i32,
     pub value: String,
@@ -272,7 +274,7 @@ impl InsertToNew for InsertSubdomain {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="subdomains"]
+#[table_name = "subdomains"]
 pub struct SubdomainUpdate {
     pub id: i32,
     pub resolvable: Option<bool>,

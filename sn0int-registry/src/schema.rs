@@ -42,8 +42,4 @@ table! {
 
 joinable!(releases -> modules (module_id));
 
-allow_tables_to_appear_in_same_query!(
-    auth_tokens,
-    modules,
-    releases,
-);
+allow_tables_to_appear_in_same_query!(auth_tokens, modules, releases,);

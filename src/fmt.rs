@@ -1,7 +1,6 @@
 use std::fmt;
 pub use std::fmt::Write;
-pub use std::fmt::{Result, Formatter, Display, Debug};
-
+pub use std::fmt::{Debug, Display, Formatter, Result};
 
 pub mod colors {
     use std::fmt::{self, Write};
@@ -70,7 +69,6 @@ pub mod colors {
     }
 }
 use self::colors::*;
-
 
 pub struct DetailFormatter<'a, 'b> {
     w: &'a mut fmt::Formatter<'b>,
@@ -183,7 +181,11 @@ impl<'a, 'b> DetailFormatter<'a, 'b> {
         Ok(())
     }
 
-    pub fn opt_debug_label<C: Color, D: fmt::Debug>(&mut self, label: &str, v: &Option<D>) -> fmt::Result {
+    pub fn opt_debug_label<C: Color, D: fmt::Debug>(
+        &mut self,
+        label: &str,
+        v: &Option<D>,
+    ) -> fmt::Result {
         if let Some(v) = &v {
             self.push_into_group()?;
             write!(self, "{}=", label)?;

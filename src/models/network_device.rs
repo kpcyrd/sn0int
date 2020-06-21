@@ -1,14 +1,13 @@
 use crate::errors::*;
-use diesel;
-use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
+use diesel;
+use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Network)]
 #[belongs_to(Device)]
-#[table_name="network_devices"]
+#[table_name = "network_devices"]
 pub struct NetworkDevice {
     pub id: i32,
     pub network_id: i32,
@@ -64,7 +63,8 @@ impl Model for NetworkDevice {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::network_devices::dsl::*;
 
-        let network_device = network_devices.filter(id.eq(my_id))
+        let network_device = network_devices
+            .filter(id.eq(my_id))
             .first::<Self>(db.db())?;
 
         Ok(network_device)
@@ -74,9 +74,10 @@ impl Model for NetworkDevice {
         use crate::schema::network_devices::dsl::*;
 
         let (my_network_id, my_device_id) = query;
-        let network_device = network_devices.filter(network_id.eq(my_network_id))
-                                                   .filter(device_id.eq(my_device_id))
-                                                   .first::<Self>(db.db())?;
+        let network_device = network_devices
+            .filter(network_id.eq(my_network_id))
+            .filter(device_id.eq(my_device_id))
+            .first::<Self>(db.db())?;
 
         Ok(network_device)
     }
@@ -85,10 +86,11 @@ impl Model for NetworkDevice {
         use crate::schema::network_devices::dsl::*;
 
         let (my_network_id, my_device_id) = query;
-        let network_device = network_devices.filter(network_id.eq(my_network_id))
-                                                   .filter(device_id.eq(my_device_id))
-                                                   .first::<Self>(db.db())
-                                                   .optional()?;
+        let network_device = network_devices
+            .filter(network_id.eq(my_network_id))
+            .filter(device_id.eq(my_device_id))
+            .first::<Self>(db.db())
+            .optional()?;
 
         Ok(network_device)
     }
@@ -123,7 +125,7 @@ impl Printable<PrintableNetworkDevice> for NetworkDevice {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="network_devices"]
+#[table_name = "network_devices"]
 pub struct NewNetworkDevice {
     pub network_id: i32,
     pub device_id: i32,
@@ -166,7 +168,7 @@ impl InsertToNew for InsertNetworkDevice {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="network_devices"]
+#[table_name = "network_devices"]
 pub struct NetworkDeviceUpdate {
     pub id: i32,
     pub ipaddr: Option<String>,
@@ -175,8 +177,7 @@ pub struct NetworkDeviceUpdate {
 
 impl Upsert for NetworkDeviceUpdate {
     fn is_dirty(&self) -> bool {
-        self.ipaddr.is_some() ||
-        self.last_seen.is_some()
+        self.ipaddr.is_some() || self.last_seen.is_some()
     }
 
     fn generic(self) -> Update {

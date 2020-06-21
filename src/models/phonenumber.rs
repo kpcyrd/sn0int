@@ -5,9 +5,8 @@ use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
 
-
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="phonenumbers"]
+#[table_name = "phonenumbers"]
 pub struct PhoneNumber {
     pub id: i32,
     pub value: String,
@@ -75,8 +74,7 @@ impl Model for PhoneNumber {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::phonenumbers::dsl::*;
 
-        let domain = phonenumbers.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = phonenumbers.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -84,7 +82,8 @@ impl Model for PhoneNumber {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::phonenumbers::dsl::*;
 
-        let phonenumber = phonenumbers.filter(value.eq(query))
+        let phonenumber = phonenumbers
+            .filter(value.eq(query))
             .first::<Self>(db.db())?;
 
         Ok(phonenumber)
@@ -93,7 +92,8 @@ impl Model for PhoneNumber {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::phonenumbers::dsl::*;
 
-        let phonenumber = phonenumbers.filter(value.eq(query))
+        let phonenumber = phonenumbers
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -216,7 +216,7 @@ impl Detailed for PhoneNumber {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="phonenumbers"]
+#[table_name = "phonenumbers"]
 pub struct NewPhoneNumber {
     pub value: String,
     pub name: Option<String>,
@@ -325,7 +325,7 @@ impl InsertToNew for InsertPhoneNumber {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="phonenumbers"]
+#[table_name = "phonenumbers"]
 pub struct PhoneNumberUpdate {
     pub id: i32,
     pub name: Option<String>,
@@ -342,16 +342,16 @@ pub struct PhoneNumberUpdate {
 
 impl Upsert for PhoneNumberUpdate {
     fn is_dirty(&self) -> bool {
-        self.name.is_some() ||
-        self.valid.is_some() ||
-        self.last_online.is_some() ||
-        self.country.is_some() ||
-        self.carrier.is_some() ||
-        self.line.is_some() ||
-        self.is_ported.is_some() ||
-        self.last_ported.is_some() ||
-        self.caller_name.is_some() ||
-        self.caller_type.is_some()
+        self.name.is_some()
+            || self.valid.is_some()
+            || self.last_online.is_some()
+            || self.country.is_some()
+            || self.carrier.is_some()
+            || self.line.is_some()
+            || self.is_ported.is_some()
+            || self.last_ported.is_some()
+            || self.caller_name.is_some()
+            || self.caller_type.is_some()
     }
 
     fn generic(self) -> Update {

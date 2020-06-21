@@ -1,12 +1,11 @@
-use dirs;
 use crate::errors::*;
 use crate::notify::NotificationConfig;
+use dirs;
 use std::collections::HashMap;
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 use toml;
-
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -27,8 +26,8 @@ impl Config {
     }
 
     pub fn path() -> Result<PathBuf> {
-        let path = dirs::config_dir()
-            .ok_or_else(|| format_err!("Failed to find config directory"))?;
+        let path =
+            dirs::config_dir().ok_or_else(|| format_err!("Failed to find config directory"))?;
         let path = path.join("sn0int.toml");
         Ok(path)
     }
@@ -43,8 +42,7 @@ impl Config {
     }
 
     pub fn load_from<P: AsRef<Path>>(path: P) -> Result<Config> {
-        let config = fs::read(&path)
-            .context("Failed to read config file")?;
+        let config = fs::read(&path).context("Failed to read config file")?;
 
         let config = toml::from_slice(&config)?;
 
@@ -54,9 +52,9 @@ impl Config {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CoreConfig {
-    #[serde(default="default_registry")]
+    #[serde(default = "default_registry")]
     pub registry: String,
-    #[serde(default, rename="no-autoupdate")]
+    #[serde(default, rename = "no-autoupdate")]
     pub no_autoupdate: bool,
 }
 

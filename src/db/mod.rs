@@ -1,20 +1,19 @@
 use crate::errors::*;
 
-use diesel;
-use diesel::expression::SqlLiteral;
-use diesel::expression::sql_literal::sql;
-use diesel::sql_types::Bool;
-use diesel::prelude::*;
-use strum_macros::{EnumString, IntoStaticStr};
 use crate::autonoscope::{RuleSet, RuleType};
+use crate::migrations;
 use crate::models::*;
 use crate::schema::*;
-use crate::migrations;
 use crate::worker;
 use crate::workspaces::Workspace;
+use diesel;
+use diesel::expression::sql_literal::sql;
+use diesel::expression::SqlLiteral;
+use diesel::prelude::*;
+use diesel::sql_types::Bool;
+use strum_macros::{EnumString, IntoStaticStr};
 
 pub mod ttl;
-
 
 #[derive(Debug)]
 pub enum DbChange {
@@ -32,8 +31,7 @@ impl DbChange {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-#[derive(EnumString, IntoStaticStr)]
+#[derive(Debug, Serialize, Deserialize, EnumString, IntoStaticStr)]
 #[strum(serialize_all = "kebab_case")]
 pub enum Family {
     Domain,
@@ -101,22 +99,24 @@ pub type DatabaseSock = diesel::SqliteConnection;
 
 impl Database {
     pub fn establish(workspace: Workspace) -> Result<Database> {
-        let db = worker::spawn_fn("Connecting to database", || {
-            Database::establish_quiet(workspace)
-        }, false)?;
+        let db = worker::spawn_fn(
+            "Connecting to database",
+            || Database::establish_quiet(workspace),
+            false,
+        )?;
 
         Ok(db)
     }
 
     pub fn establish_quiet(workspace: Workspace) -> Result<Database> {
         let path = workspace.db_path()?;
-        let path = path.into_os_string().into_string()
+        let path = path
+            .into_os_string()
+            .into_string()
             .map_err(|_| format_err!("Failed to convert db path to utf-8"))?;
 
-        let db = SqliteConnection::establish(&path)
-            .context("Failed to connect to database")?;
-        migrations::run(&db)
-            .context("Failed to run migrations")?;
+        let db = SqliteConnection::establish(&path).context("Failed to connect to database")?;
+        migrations::run(&db).context("Failed to run migrations")?;
         db.execute("PRAGMA journal_mode = WAL")
             .context("Failed to enable write ahead log")?;
         db.execute("PRAGMA foreign_keys = ON")
@@ -149,7 +149,12 @@ impl Database {
     }
 
     #[inline(always)]
-    pub fn autonoscope_add_rule(&mut self, object: &RuleType, value: &str, scoped: bool) -> Result<()> {
+    pub fn autonoscope_add_rule(
+        &mut self,
+        object: &RuleType,
+        value: &str,
+        scoped: bool,
+    ) -> Result<()> {
         self.autonoscope.add_rule(&self.db, object, value, scoped)
     }
 
@@ -188,7 +193,11 @@ impl Database {
     }
 
     /// Returns true if we didn't have this value yet
-    pub fn insert_struct<T: InsertableStruct<M>, M: Model + Scopable>(&self, mut obj: T, scoped: bool) -> Result<Option<(DbChange, i32)>> {
+    pub fn insert_struct<T: InsertableStruct<M>, M: Model + Scopable>(
+        &self,
+        mut obj: T,
+        scoped: bool,
+    ) -> Result<Option<(DbChange, i32)>> {
         if let Some(existing) = M::get_opt(self, obj.value())? {
             // entity is out of scope
             if !existing.scoped() {
@@ -221,31 +230,51 @@ impl Database {
         Ok(true)
     }
 
-    pub fn insert_subdomain_ipaddr_struct(&self, subdomain_ipaddr: &NewSubdomainIpAddr) -> Result<Option<(DbChange, i32)>> {
-        if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))? {
+    pub fn insert_subdomain_ipaddr_struct(
+        &self,
+        subdomain_ipaddr: &NewSubdomainIpAddr,
+    ) -> Result<Option<(DbChange, i32)>> {
+        if let Some(subdomain_ipaddr_id) = SubdomainIpAddr::get_id_opt(
+            self,
+            &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id),
+        )? {
             Ok(Some((DbChange::None, subdomain_ipaddr_id)))
         } else {
             diesel::insert_into(subdomain_ipaddrs::table)
                 .values(subdomain_ipaddr)
                 .execute(&self.db)?;
-            let id = SubdomainIpAddr::get_id(self, &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id))?;
+            let id = SubdomainIpAddr::get_id(
+                self,
+                &(subdomain_ipaddr.subdomain_id, subdomain_ipaddr.ip_addr_id),
+            )?;
             Ok(Some((DbChange::Insert, id)))
         }
     }
 
-    pub fn insert_network_device_struct(&self, network_device: &NewNetworkDevice) -> Result<Option<(DbChange, i32)>> {
-        if let Some(network_device_id) = NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))? {
+    pub fn insert_network_device_struct(
+        &self,
+        network_device: &NewNetworkDevice,
+    ) -> Result<Option<(DbChange, i32)>> {
+        if let Some(network_device_id) =
+            NetworkDevice::get_id_opt(self, &(network_device.network_id, network_device.device_id))?
+        {
             Ok(Some((DbChange::None, network_device_id)))
         } else {
             diesel::insert_into(network_devices::table)
                 .values(network_device)
                 .execute(&self.db)?;
-            let id = NetworkDevice::get_id(self, &(network_device.network_id, network_device.device_id))?;
+            let id = NetworkDevice::get_id(
+                self,
+                &(network_device.network_id, network_device.device_id),
+            )?;
             Ok(Some((DbChange::Insert, id)))
         }
     }
 
-    pub fn insert_breach_email_struct(&self, obj: NewBreachEmail) -> Result<Option<(DbChange, i32)>> {
+    pub fn insert_breach_email_struct(
+        &self,
+        obj: NewBreachEmail,
+    ) -> Result<Option<(DbChange, i32)>> {
         let value = &(obj.breach_id, obj.email_id, obj.password.clone());
 
         if let Some(existing) = BreachEmail::get_opt(self, value)? {
@@ -344,7 +373,10 @@ impl Database {
         Ok(network_update.id)
     }
 
-    pub fn update_network_device(&self, network_device_update: &NetworkDeviceUpdate) -> Result<i32> {
+    pub fn update_network_device(
+        &self,
+        network_device_update: &NetworkDeviceUpdate,
+    ) -> Result<i32> {
         use crate::schema::network_devices::columns::*;
         diesel::update(network_devices::table.filter(id.eq(network_device_update.id)))
             .set(network_device_update)
@@ -439,7 +471,11 @@ impl Database {
         T::filter(self, filter)
     }
 
-    pub fn filter_with_param<T: Model>(&self, filter: &Filter, param: Option<&String>) -> Result<Vec<T>> {
+    pub fn filter_with_param<T: Model>(
+        &self,
+        filter: &Filter,
+        param: Option<&String>,
+    ) -> Result<Vec<T>> {
         match param {
             Some(param) => T::filter_with_param(self, filter, param),
             _ => T::filter(self, filter),
@@ -541,175 +577,184 @@ impl Filter {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test_filter_simple() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value=1".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&["where".to_string(), "value=1".to_string()]).unwrap();
         assert_eq!(filter, Filter::new(" value = '1'"));
     }
 
     #[test]
     fn test_filter_str1() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value=abc".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&["where".to_string(), "value=abc".to_string()]).unwrap();
         assert_eq!(filter, Filter::new(" value = 'abc'"));
     }
 
     #[test]
     fn test_filter_str2() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "=".to_string(),
-                                     "asdf".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "=".to_string(),
+            "asdf".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value = 'asdf'"));
     }
 
     #[test]
     fn test_filter_and() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "=".to_string(),
-                                     "foobar".to_string(),
-                                     "and".to_string(),
-                                     "id".to_string(),
-                                     "=".to_string(),
-                                     "1".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "=".to_string(),
+            "foobar".to_string(),
+            "and".to_string(),
+            "id".to_string(),
+            "=".to_string(),
+            "1".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value = 'foobar' and id = '1'"));
     }
 
     #[test]
     fn test_filter_like() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "like".to_string(),
-                                     "%foobar".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "like".to_string(),
+            "%foobar".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value like '%foobar'"));
     }
 
     #[test]
     fn test_filter_backslash1() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value=\\".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&["where".to_string(), "value=\\".to_string()]).unwrap();
         assert_eq!(filter, Filter::new(" value = '\\'"));
     }
 
     #[test]
     fn test_filter_backslash2() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "=".to_string(),
-                                     "\\".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "=".to_string(),
+            "\\".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value = '\\'"));
     }
 
     #[test]
     fn test_filter_quote1() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value=a'b".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&["where".to_string(), "value=a'b".to_string()]).unwrap();
         assert_eq!(filter, Filter::new(" value = 'a''b'"));
     }
 
     #[test]
     fn test_filter_quote2() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "=".to_string(),
-                                     "a'b".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "=".to_string(),
+            "a'b".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value = 'a''b'"));
     }
 
     #[test]
     fn test_filter_greater() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     ">".to_string(),
-                                     "123".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            ">".to_string(),
+            "123".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value > '123'"));
     }
 
     #[test]
     fn test_filter_smaller() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "<".to_string(),
-                                     "123".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "<".to_string(),
+            "123".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value < '123'"));
     }
 
     #[test]
     fn test_filter_greater_equal() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     ">=".to_string(),
-                                     "123".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            ">=".to_string(),
+            "123".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value >= '123'"));
     }
 
     #[test]
     fn test_filter_smaller_equal() {
-        let filter = Filter::parse(&["where".to_string(),
-                                     "value".to_string(),
-                                     "<=".to_string(),
-                                     "123".to_string(),
-                                    ]).unwrap();
+        let filter = Filter::parse(&[
+            "where".to_string(),
+            "value".to_string(),
+            "<=".to_string(),
+            "123".to_string(),
+        ])
+        .unwrap();
         assert_eq!(filter, Filter::new(" value <= '123'"));
     }
 
     #[test]
     fn test_family_names() {
-        assert_eq!(Family::Domain.as_str(),             "domain");
-        assert_eq!(Family::Subdomain.as_str(),          "subdomain");
-        assert_eq!(Family::Ipaddr.as_str(),             "ipaddr");
-        assert_eq!(Family::SubdomainIpaddr.as_str(),    "subdomain-ipaddr");
-        assert_eq!(Family::Url.as_str(),                "url");
-        assert_eq!(Family::Email.as_str(),              "email");
-        assert_eq!(Family::Phonenumber.as_str(),        "phonenumber");
-        assert_eq!(Family::Device.as_str(),             "device");
-        assert_eq!(Family::Network.as_str(),            "network");
-        assert_eq!(Family::NetworkDevice.as_str(),      "network-device");
-        assert_eq!(Family::Account.as_str(),            "account");
-        assert_eq!(Family::Breach.as_str(),             "breach");
-        assert_eq!(Family::BreachEmail.as_str(),        "breach-email");
-        assert_eq!(Family::Image.as_str(),              "image");
-        assert_eq!(Family::Port.as_str(),               "port");
-        assert_eq!(Family::Netblock.as_str(),           "netblock");
+        assert_eq!(Family::Domain.as_str(), "domain");
+        assert_eq!(Family::Subdomain.as_str(), "subdomain");
+        assert_eq!(Family::Ipaddr.as_str(), "ipaddr");
+        assert_eq!(Family::SubdomainIpaddr.as_str(), "subdomain-ipaddr");
+        assert_eq!(Family::Url.as_str(), "url");
+        assert_eq!(Family::Email.as_str(), "email");
+        assert_eq!(Family::Phonenumber.as_str(), "phonenumber");
+        assert_eq!(Family::Device.as_str(), "device");
+        assert_eq!(Family::Network.as_str(), "network");
+        assert_eq!(Family::NetworkDevice.as_str(), "network-device");
+        assert_eq!(Family::Account.as_str(), "account");
+        assert_eq!(Family::Breach.as_str(), "breach");
+        assert_eq!(Family::BreachEmail.as_str(), "breach-email");
+        assert_eq!(Family::Image.as_str(), "image");
+        assert_eq!(Family::Port.as_str(), "port");
+        assert_eq!(Family::Netblock.as_str(), "netblock");
     }
 
     #[test]
     fn test_table_names() {
         use super::Table;
-        assert_eq!(Table::Domains.as_str(),             "domains");
-        assert_eq!(Table::Subdomains.as_str(),          "subdomains");
-        assert_eq!(Table::Ipaddrs.as_str(),             "ipaddrs");
-        assert_eq!(Table::SubdomainIpaddrs.as_str(),    "subdomain_ipaddrs");
-        assert_eq!(Table::Urls.as_str(),                "urls");
-        assert_eq!(Table::Emails.as_str(),              "emails");
-        assert_eq!(Table::Phonenumbers.as_str(),        "phonenumbers");
-        assert_eq!(Table::Devices.as_str(),             "devices");
-        assert_eq!(Table::Networks.as_str(),            "networks");
-        assert_eq!(Table::NetworkDevices.as_str(),      "network_devices");
-        assert_eq!(Table::Accounts.as_str(),            "accounts");
-        assert_eq!(Table::Breaches.as_str(),            "breaches");
-        assert_eq!(Table::BreachEmails.as_str(),        "breach_emails");
-        assert_eq!(Table::Images.as_str(),              "images");
-        assert_eq!(Table::Ports.as_str(),               "ports");
-        assert_eq!(Table::Netblocks.as_str(),           "netblocks");
+        assert_eq!(Table::Domains.as_str(), "domains");
+        assert_eq!(Table::Subdomains.as_str(), "subdomains");
+        assert_eq!(Table::Ipaddrs.as_str(), "ipaddrs");
+        assert_eq!(Table::SubdomainIpaddrs.as_str(), "subdomain_ipaddrs");
+        assert_eq!(Table::Urls.as_str(), "urls");
+        assert_eq!(Table::Emails.as_str(), "emails");
+        assert_eq!(Table::Phonenumbers.as_str(), "phonenumbers");
+        assert_eq!(Table::Devices.as_str(), "devices");
+        assert_eq!(Table::Networks.as_str(), "networks");
+        assert_eq!(Table::NetworkDevices.as_str(), "network_devices");
+        assert_eq!(Table::Accounts.as_str(), "accounts");
+        assert_eq!(Table::Breaches.as_str(), "breaches");
+        assert_eq!(Table::BreachEmails.as_str(), "breach_emails");
+        assert_eq!(Table::Images.as_str(), "images");
+        assert_eq!(Table::Ports.as_str(), "ports");
+        assert_eq!(Table::Netblocks.as_str(), "netblocks");
     }
 }

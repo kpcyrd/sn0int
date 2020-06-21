@@ -7,9 +7,9 @@ use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 pub enum Args {
-    #[structopt(name="asn")]
+    #[structopt(name = "asn")]
     Asn(AsnArgs),
-    #[structopt(name="geoip")]
+    #[structopt(name = "geoip")]
     GeoIP(GeoIPArgs),
 }
 
@@ -46,7 +46,6 @@ impl GeoIPArgs {
         Ok(())
     }
 }
-
 
 fn run() -> Result<()> {
     let args = Args::from_args();

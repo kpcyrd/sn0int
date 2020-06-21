@@ -1,13 +1,15 @@
+use crate::github;
 use diesel::pg::PgConnection;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
-use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, TokenUrl, TokenResponse};
-use crate::github;
+use oauth2::{
+    AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, TokenResponse,
+    TokenUrl,
+};
 use sn0int_registry::errors::*;
 use sn0int_registry::models::AuthToken;
-use url::Url;
 use std::env;
-
+use url::Url;
 
 pub struct Authenticator {
     client: BasicClient,
@@ -15,9 +17,9 @@ pub struct Authenticator {
 
 impl Authenticator {
     pub fn new(client_id: String, client_secret: String, redirect_url: Url) -> Authenticator {
-         let auth_url = AuthUrl::new(
+        let auth_url = AuthUrl::new(
             Url::parse("https://github.com/login/oauth/authorize")
-                .expect("Invalid authorization endpoint URL")
+                .expect("Invalid authorization endpoint URL"),
         );
 
         let token_url = TokenUrl::new(
@@ -29,25 +31,18 @@ impl Authenticator {
         let client_secret = ClientSecret::new(client_secret);
 
         // Set up the config for the Github OAuth2 process.
-        let client = BasicClient::new(
-            client_id,
-            Some(client_secret),
-            auth_url, Some(token_url)
-        )
-        .set_redirect_url(RedirectUrl::new(redirect_url));
+        let client = BasicClient::new(client_id, Some(client_secret), auth_url, Some(token_url))
+            .set_redirect_url(RedirectUrl::new(redirect_url));
 
-        Authenticator {
-            client,
-        }
+        Authenticator { client }
     }
 
     pub fn from_env() -> Result<Authenticator> {
-        let client_id = env::var("GITHUB_CLIENT_ID")
-            .context("GITHUB_CLIENT_ID is not set")?;
-        let client_secret = env::var("GITHUB_CLIENT_SECRET")
-            .context("GITHUB_CLIENT_SECRET is not set")?;
-        let redirect_url = env::var("OAUTH_REDIRECT_URL")
-            .context("OAUTH_REDIRECT_URL is not set")?;
+        let client_id = env::var("GITHUB_CLIENT_ID").context("GITHUB_CLIENT_ID is not set")?;
+        let client_secret =
+            env::var("GITHUB_CLIENT_SECRET").context("GITHUB_CLIENT_SECRET is not set")?;
+        let redirect_url =
+            env::var("OAUTH_REDIRECT_URL").context("OAUTH_REDIRECT_URL is not set")?;
         let redirect_url = redirect_url.parse()?;
         Ok(Authenticator::new(client_id, client_secret, redirect_url))
     }
@@ -61,7 +56,9 @@ impl Authenticator {
 
         // TODO: csrf check
 
-        let response = self.client.exchange_code(code)
+        let response = self
+            .client
+            .exchange_code(code)
             .context("Github authentication failed")?;
 
         let access_token = response.access_token();
@@ -69,11 +66,14 @@ impl Authenticator {
 
         let user = github::get_username(&access_token)?;
 
-        AuthToken::create(&AuthToken {
-            id: state,
-            author: user,
-            access_token,
-        }, connection)?;
+        AuthToken::create(
+            &AuthToken {
+                id: state,
+                author: user,
+                access_token,
+            },
+            connection,
+        )?;
 
         Ok(())
     }

@@ -4,7 +4,6 @@ use crate::cmd::autonoscope_cmd;
 use crate::shell::Shell;
 use structopt::StructOpt;
 
-
 pub type Args = autonoscope_cmd::Args;
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {

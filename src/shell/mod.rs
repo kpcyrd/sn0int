@@ -5,27 +5,26 @@ use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::*;
 use crate::config::Config;
 use crate::db::ttl;
-use crate::keyring::KeyRing;
-use crate::worker::{self, VoidSender};
-use colored::Colorize;
 use crate::db::{self, Database};
 use crate::engine::{Library, Module};
-use crate::update::AutoUpdater;
-use std::collections::HashMap;
-use std::str::FromStr;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use crate::term::{self, Prompt};
+use crate::keyring::KeyRing;
+use crate::lazy::Lazy;
 use crate::paths;
 use crate::psl::{Psl, PslReader};
-use crate::lazy::Lazy;
+use crate::term::{self, Prompt};
+use crate::update::AutoUpdater;
+use crate::worker::{self, VoidSender};
 use crate::workspaces::Workspace;
+use colored::Colorize;
+use std::collections::HashMap;
+use std::str::FromStr;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 pub mod complete;
 use self::complete::CmdCompleter;
 pub mod readline;
 use self::readline::{Readline, ReadlineError};
-
 
 #[derive(Debug)]
 pub enum Command {
@@ -131,14 +130,14 @@ impl FromStr for Command {
             "keyring" => Ok(Command::Keyring),
             "mod" => Ok(Command::Mod),
             "noscope" => Ok(Command::Noscope),
-            "pkg"  => Ok(Command::Pkg),
-            "run"  => Ok(Command::Run),
-            "scope"  => Ok(Command::Scope),
-            "set"  => Ok(Command::Set),
+            "pkg" => Ok(Command::Pkg),
+            "run" => Ok(Command::Run),
+            "scope" => Ok(Command::Scope),
+            "set" => Ok(Command::Set),
             "select" => Ok(Command::Select),
-            "target"  => Ok(Command::Target),
-            "use"  => Ok(Command::Use),
-            "quickstart"  => Ok(Command::Quickstart),
+            "target" => Ok(Command::Target),
+            "use" => Ok(Command::Use),
+            "quickstart" => Ok(Command::Quickstart),
             "quit" => Ok(Command::Quit),
             "workspace" => Ok(Command::Workspace),
             "cal" => Ok(Command::Cal),
@@ -163,7 +162,14 @@ pub struct Shell<'a> {
 }
 
 impl<'a> Shell<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, library: Library<'a>, keyring: KeyRing) -> Shell<'a> {
+    pub fn new(
+        config: &'a Config,
+        db: Database,
+        blobs: BlobStorage,
+        psl: PslReader,
+        library: Library<'a>,
+        keyring: KeyRing,
+    ) -> Shell<'a> {
         let h = CmdCompleter::default();
         let rl = Readline::with(h);
 
@@ -317,7 +323,7 @@ impl<'a> Shell<'a> {
                         Err(err) => {
                             eprintln!("Error: {:?}", err);
                             return None;
-                        },
+                        }
                     };
                     debug!("shellwords returned {:?}", cmd);
 
@@ -330,7 +336,7 @@ impl<'a> Shell<'a> {
                         Err(err) => {
                             eprintln!("Error: {}", err);
                             None
-                        },
+                        }
                     }
                 }
             }
@@ -356,8 +362,7 @@ impl<'a> Shell<'a> {
     }
 
     pub fn reload_modules(&mut self) -> Result<()> {
-        let current = self.take_module()
-                        .map(|m| m.canonical());
+        let current = self.take_module().map(|m| m.canonical());
 
         self.library_mut().reload_modules()?;
         self.reload_module_cache();
@@ -382,7 +387,10 @@ impl<'a> Shell<'a> {
     }
 
     pub fn reload_keyring_cache(&mut self) {
-        let keys = self.keyring().list().iter()
+        let keys = self
+            .keyring()
+            .list()
+            .iter()
             .map(|k| k.to_string())
             .collect();
 
@@ -414,7 +422,8 @@ impl<'a> Shell<'a> {
             if prev == 1 {
                 ::std::process::exit(0);
             }
-        }).map_err(Error::from)
+        })
+        .map_err(Error::from)
     }
 
     #[inline(always)]
@@ -423,8 +432,7 @@ impl<'a> Shell<'a> {
     }
 
     pub fn store_blob(&self, tx: VoidSender, blob: &Blob) {
-        let result = self.blobs.save(blob)
-            .map_err(|err| err.to_string());
+        let result = self.blobs.save(blob).map_err(|err| err.to_string());
         tx.send(result).unwrap();
     }
 }
@@ -455,7 +463,8 @@ impl SignalRegister {
 
 #[inline]
 pub fn print_banner() {
-    println!(r#"
+    println!(
+        r#"
                    ___/           .
      ____ , __   .'  /\ ` , __   _/_
     (     |'  `. |  / | | |'  `.  |
@@ -464,8 +473,12 @@ pub fn print_banner() {
 
         {} | {} | {}
       {}
-"#, "osint".green(), "recon".green(), "security".green(),
-"irc.hackint.org:6697/#sn0int".green());
+"#,
+        "osint".green(),
+        "recon".green(),
+        "security".green(),
+        "irc.hackint.org:6697/#sn0int".green()
+    );
 }
 
 #[inline(always)]
@@ -481,16 +494,18 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Add, args)) => cmd::<add_cmd::Args>(rl, &args)?,
         Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
         Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,
-        Some((Command::Back, _)) => if rl.take_module().is_none() {
-            return Ok(true);
-        },
+        Some((Command::Back, _)) => {
+            if rl.take_module().is_none() {
+                return Ok(true);
+            }
+        }
         Some((Command::Delete, args)) => delete_cmd::run(rl, &args)?,
         Some((Command::Help, args)) => help_cmd::run(rl, &args)?,
         Some((Command::Keyring, args)) => keyring_cmd::run(rl, &args)?,
         Some((Command::Mod, args)) => {
             term::warn("The \x1b[1mmod\x1b[0m command is deprecated, use \x1b[1mpkg\x1b[0m");
             cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?
-        },
+        }
         Some((Command::Noscope, args)) => noscope_cmd::run(rl, &args)?,
         Some((Command::Pkg, args)) => cmd::<pkg_cmd::ArgsInteractive>(rl, &args)?,
         Some((Command::Run, args)) => cmd::<run_cmd::Args>(rl, &args)?,
@@ -528,20 +543,26 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     };
 
     let cache_dir = paths::cache_dir()?;
-    let psl = PslReader::open_or_download(&cache_dir,
-            |cb| worker::spawn_fn("Downloading public suffix list", cb, false))
-        .context("Failed to download public suffix list")?;
+    let psl = PslReader::open_or_download(&cache_dir, |cb| {
+        worker::spawn_fn("Downloading public suffix list", cb, false)
+    })
+    .context("Failed to download public suffix list")?;
     let library = Library::new(verbose_init, &config)?;
     let keyring = KeyRing::init()?;
 
     if verbose_init && library.list().is_empty() {
-        term::success("No modules found, run \x1b[1mpkg quickstart\x1b[0m to install default modules");
+        term::success(
+            "No modules found, run \x1b[1mpkg quickstart\x1b[0m to install default modules",
+        );
         term::success("New to sn0int? Follow https://sn0int.rtfd.io/en/stable/usage.html");
     }
 
     let autoupdate = AutoUpdater::load()?;
     if autoupdate.outdated() > 0 {
-        term::warn(&format!("{} modules are outdated, run: \x1b[1mpkg update\x1b[0m", autoupdate.outdated()));
+        term::warn(&format!(
+            "{} modules are outdated, run: \x1b[1mpkg update\x1b[0m",
+            autoupdate.outdated()
+        ));
     }
     autoupdate.check_background(&config, library.list());
 
@@ -570,7 +591,7 @@ pub fn run(args: &Args, config: &Config) -> Result<()> {
                 for cause in err.iter_chain().skip(1) {
                     eprintln!("Because: {}", cause);
                 }
-            },
+            }
         }
     }
 

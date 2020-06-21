@@ -1,11 +1,10 @@
-use crate::db::{Database, Table, Filter, Family};
+use crate::db::{Database, Family, Filter, Table};
 use crate::engine::ctx::State;
 use crate::errors::*;
 use crate::fmt;
 use crate::schema::*;
 use std::borrow::Cow;
 use std::sync::Arc;
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Insert {
@@ -38,7 +37,7 @@ impl Insert {
                 let subdomain = Subdomain::by_id(db, x.subdomain_id)?;
                 let ipaddr = IpAddr::by_id(db, x.ip_addr_id)?;
                 Cow::Owned(format!("{}+{}", subdomain.value, ipaddr.value))
-            },
+            }
             Insert::Url(x) => Cow::Borrowed(&x.value),
             Insert::Email(x) => Cow::Borrowed(&x.value),
             Insert::PhoneNumber(x) => Cow::Borrowed(&x.value),
@@ -48,7 +47,7 @@ impl Insert {
                 let network = Network::by_id(db, x.network_id)?;
                 let device = Device::by_id(db, x.device_id)?;
                 Cow::Owned(format!("{}+{}", network.value, device.value))
-            },
+            }
             Insert::Account(x) => Cow::Borrowed(&x.value),
             Insert::Breach(x) => Cow::Borrowed(&x.value),
             Insert::BreachEmail(x) => {
@@ -138,58 +137,58 @@ pub enum Update {
 impl Update {
     pub fn is_dirty(&self) -> bool {
         match self {
-            Update::Subdomain(update)     => update.is_dirty(),
-            Update::IpAddr(update)        => update.is_dirty(),
-            Update::Url(update)           => update.is_dirty(),
-            Update::Email(update)         => update.is_dirty(),
-            Update::PhoneNumber(update)   => update.is_dirty(),
-            Update::Device(update)        => update.is_dirty(),
-            Update::Network(update)       => update.is_dirty(),
+            Update::Subdomain(update) => update.is_dirty(),
+            Update::IpAddr(update) => update.is_dirty(),
+            Update::Url(update) => update.is_dirty(),
+            Update::Email(update) => update.is_dirty(),
+            Update::PhoneNumber(update) => update.is_dirty(),
+            Update::Device(update) => update.is_dirty(),
+            Update::Network(update) => update.is_dirty(),
             Update::NetworkDevice(update) => update.is_dirty(),
-            Update::Account(update)       => update.is_dirty(),
-            Update::BreachEmail(update)   => update.is_dirty(),
-            Update::Image(update)         => update.is_dirty(),
-            Update::Port(update)          => update.is_dirty(),
-            Update::Netblock(update)      => update.is_dirty(),
-            Update::CryptoAddr(update)    => update.is_dirty(),
+            Update::Account(update) => update.is_dirty(),
+            Update::BreachEmail(update) => update.is_dirty(),
+            Update::Image(update) => update.is_dirty(),
+            Update::Port(update) => update.is_dirty(),
+            Update::Netblock(update) => update.is_dirty(),
+            Update::CryptoAddr(update) => update.is_dirty(),
         }
     }
 
     pub fn to_plain_str(&self) -> String {
         match self {
-            Update::Subdomain(update)       => update.to_plain_str(),
-            Update::IpAddr(update)          => update.to_plain_str(),
-            Update::Url(update)             => update.to_plain_str(),
-            Update::Email(update)           => update.to_plain_str(),
-            Update::PhoneNumber(update)     => update.to_plain_str(),
-            Update::Device(update)          => update.to_plain_str(),
-            Update::Network(update)         => update.to_plain_str(),
-            Update::NetworkDevice(update)   => update.to_plain_str(),
-            Update::Account(update)         => update.to_plain_str(),
-            Update::BreachEmail(update)     => update.to_plain_str(),
-            Update::Image(update)           => update.to_plain_str(),
-            Update::Port(update)            => update.to_plain_str(),
-            Update::Netblock(update)        => update.to_plain_str(),
-            Update::CryptoAddr(update)      => update.to_plain_str(),
+            Update::Subdomain(update) => update.to_plain_str(),
+            Update::IpAddr(update) => update.to_plain_str(),
+            Update::Url(update) => update.to_plain_str(),
+            Update::Email(update) => update.to_plain_str(),
+            Update::PhoneNumber(update) => update.to_plain_str(),
+            Update::Device(update) => update.to_plain_str(),
+            Update::Network(update) => update.to_plain_str(),
+            Update::NetworkDevice(update) => update.to_plain_str(),
+            Update::Account(update) => update.to_plain_str(),
+            Update::BreachEmail(update) => update.to_plain_str(),
+            Update::Image(update) => update.to_plain_str(),
+            Update::Port(update) => update.to_plain_str(),
+            Update::Netblock(update) => update.to_plain_str(),
+            Update::CryptoAddr(update) => update.to_plain_str(),
         }
     }
 
     pub fn to_term_str(&self) -> String {
         match self {
-            Update::Subdomain(update)       => update.to_term_str(),
-            Update::IpAddr(update)          => update.to_term_str(),
-            Update::Url(update)             => update.to_term_str(),
-            Update::Email(update)           => update.to_term_str(),
-            Update::PhoneNumber(update)     => update.to_term_str(),
-            Update::Device(update)          => update.to_term_str(),
-            Update::Network(update)         => update.to_term_str(),
-            Update::NetworkDevice(update)   => update.to_term_str(),
-            Update::Account(update)         => update.to_term_str(),
-            Update::BreachEmail(update)     => update.to_term_str(),
-            Update::Image(update)           => update.to_term_str(),
-            Update::Port(update)            => update.to_term_str(),
-            Update::Netblock(update)        => update.to_term_str(),
-            Update::CryptoAddr(update)      => update.to_term_str(),
+            Update::Subdomain(update) => update.to_term_str(),
+            Update::IpAddr(update) => update.to_term_str(),
+            Update::Url(update) => update.to_term_str(),
+            Update::Email(update) => update.to_term_str(),
+            Update::PhoneNumber(update) => update.to_term_str(),
+            Update::Device(update) => update.to_term_str(),
+            Update::Network(update) => update.to_term_str(),
+            Update::NetworkDevice(update) => update.to_term_str(),
+            Update::Account(update) => update.to_term_str(),
+            Update::BreachEmail(update) => update.to_term_str(),
+            Update::Image(update) => update.to_term_str(),
+            Update::Port(update) => update.to_term_str(),
+            Update::Netblock(update) => update.to_term_str(),
+            Update::CryptoAddr(update) => update.to_term_str(),
         }
     }
 }
@@ -220,14 +219,11 @@ pub trait Model: Sized {
     fn by_id(db: &Database, id: i32) -> Result<Self>;
 
     fn get_id(db: &Database, query: &Self::ID) -> Result<i32> {
-        Self::get(db, query)
-            .map(|x| x.id())
+        Self::get(db, query).map(|x| x.id())
     }
 
     fn get_id_opt(db: &Database, query: &Self::ID) -> Result<Option<i32>> {
-        Self::get_opt(db, query)
-            .map(|x| x
-                .map(|x| x.id()))
+        Self::get_opt(db, query).map(|x| x.map(|x| x.id()))
     }
 
     fn get(db: &Database, query: &Self::ID) -> Result<Self>;
@@ -260,7 +256,11 @@ pub trait Upsertable<M> {
 
     #[inline]
     fn upsert_opt<T: PartialEq>(insert: Option<T>, existing: &Option<T>) -> Option<T> {
-        if insert != *existing { insert } else { None }
+        if insert != *existing {
+            insert
+        } else {
+            None
+        }
     }
 
     fn upsert(self, existing: &M) -> Self::Update;
@@ -307,7 +307,9 @@ pub trait Updateable<M> {
 
     #[inline]
     fn clear_if_equal<T: PartialEq>(update: &mut Option<T>, existing: &Option<T>) {
-        if update == existing { update.take(); }
+        if update == existing {
+            update.take();
+        }
     }
 
     fn clear_if_lower_or_equal<T: PartialOrd>(update: &mut Option<T>, existing: &Option<T>) {
@@ -329,7 +331,12 @@ pub trait Updateable<M> {
     fn changeset(&mut self, existing: &M);
 
     #[inline]
-    fn push_value<D: fmt::Debug>(updates: &mut Vec<String>, name: &str, value: &Option<D>, colors: bool) {
+    fn push_value<D: fmt::Debug>(
+        updates: &mut Vec<String>,
+        name: &str,
+        value: &Option<D>,
+        colors: bool,
+    ) {
         if let Some(v) = value {
             if colors {
                 updates.push(format!("{} => \x1b[33m{:?}\x1b[0m", name, v));
@@ -340,7 +347,12 @@ pub trait Updateable<M> {
     }
 
     #[inline]
-    fn push_raw<T: AsRef<str>>(updates: &mut Vec<String>, name: &str, value: Option<T>, colors: bool) {
+    fn push_raw<T: AsRef<str>>(
+        updates: &mut Vec<String>,
+        name: &str,
+        value: Option<T>,
+        colors: bool,
+    ) {
         if let Some(v) = value {
             if colors {
                 updates.push(format!("{} => \x1b[33m{}\x1b[0m", name, v.as_ref()));
