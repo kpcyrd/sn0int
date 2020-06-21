@@ -1,15 +1,15 @@
 use crate::errors::*;
 
 use crate::cmd::Cmd;
-use crate::shell::Shell;
 use crate::models::*;
-use chrono::{Utc, NaiveDateTime, NaiveTime, Duration};
+use crate::shell::Shell;
+use chrono::{Duration, NaiveDateTime, NaiveTime, Utc};
 use regex::Regex;
 use std::convert::TryFrom;
 use std::io;
 use std::str::FromStr;
-use structopt::StructOpt;
 use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug)]
 pub struct TimeSpec {
@@ -26,10 +26,14 @@ impl TimeSpec {
             s if s.ends_with(" ago") => {
                 let re = Regex::new(r"(\d+) ?(s|seconds?|m|min|minutes?|h|hours?|d|days?|w|weeks?|months?|y|years?) ago").unwrap();
 
-                let caps = re.captures(s)
+                let caps = re
+                    .captures(s)
                     .ok_or_else(|| format_err!("Couldn't parse TimeSpec"))?;
 
-                let n = caps.get(1).unwrap().as_str()
+                let n = caps
+                    .get(1)
+                    .unwrap()
+                    .as_str()
                     .parse::<i64>()
                     .context("Failed to parse number in timespec")?;
                 let unit = caps.get(2).unwrap();
@@ -45,13 +49,11 @@ impl TimeSpec {
                     _ => unreachable!(),
                 };
                 now - duration
-            },
+            }
             s => NaiveDateTime::from_str(s)?,
         };
 
-        Ok(TimeSpec {
-            datetime,
-        })
+        Ok(TimeSpec { datetime })
     }
 }
 
@@ -68,19 +70,19 @@ impl FromStr for TimeSpec {
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Only query events for a given topic
-    #[structopt(short="t", long="topic")]
+    #[structopt(short = "t", long = "topic")]
     topic: Option<String>,
     /// Only query events starting from that datetime
-    #[structopt(long="since")]
+    #[structopt(long = "since")]
     since: Option<TimeSpec>,
     /// Only query events until this datetime
-    #[structopt(long="until")]
+    #[structopt(long = "until")]
     until: Option<TimeSpec>,
     /// Try to select the previous event before --since as an initial state
-    #[structopt(short="i", long="initial")]
+    #[structopt(short = "i", long = "initial")]
     initial: bool,
     /// Only query events that are tied to a location
-    #[structopt(short="l", long="location")]
+    #[structopt(short = "l", long = "location")]
     location: bool,
 }
 
@@ -116,7 +118,6 @@ impl Cmd for Args {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -130,48 +131,72 @@ mod tests {
     #[test]
     fn test_today() {
         let x = TimeSpec::resolve("today", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-14T00:00:00").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-14T00:00:00").unwrap()
+        );
     }
 
     #[test]
     fn test_yesterday() {
         let x = TimeSpec::resolve("yesterday", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-13T00:00:00").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-13T00:00:00").unwrap()
+        );
     }
 
     #[test]
     fn test_20_min_ago() {
         let x = TimeSpec::resolve("20min ago", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-14T16:00:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-14T16:00:23").unwrap()
+        );
     }
 
     #[test]
     fn test_3_days_ago() {
         let x = TimeSpec::resolve("3 days ago", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-11T16:20:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-11T16:20:23").unwrap()
+        );
     }
 
     #[test]
     fn test_1_week_ago() {
         let x = TimeSpec::resolve("1w ago", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-07T16:20:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-07T16:20:23").unwrap()
+        );
     }
 
     #[test]
     fn test_3_months_ago() {
         let x = TimeSpec::resolve("3 months ago", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2019-12-12T16:20:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2019-12-12T16:20:23").unwrap()
+        );
     }
 
     #[test]
     fn test_1_year_ago() {
         let x = TimeSpec::resolve("1 year ago", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2019-03-15T16:20:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2019-03-15T16:20:23").unwrap()
+        );
     }
 
     #[test]
     fn test_exact_time() {
         let x = TimeSpec::resolve("2020-03-14T16:20:23", datetime()).unwrap();
-        assert_eq!(x.datetime, NaiveDateTime::from_str("2020-03-14T16:20:23").unwrap());
+        assert_eq!(
+            x.datetime,
+            NaiveDateTime::from_str("2020-03-14T16:20:23").unwrap()
+        );
     }
 }

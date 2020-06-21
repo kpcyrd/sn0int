@@ -1,32 +1,31 @@
 use crate::errors::*;
 
-use chrootable_https::dns::Resolver;
 use crate::args;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::Cmd;
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
 use crate::ipc::common::StartCommand;
+use crate::keyring::KeyRing;
 use crate::models::*;
 use crate::shell::Shell;
-use crate::keyring::KeyRing;
 use crate::term;
 use crate::utils;
 use crate::worker;
+use chrootable_https::dns::Resolver;
 use serde::Serialize;
 use serde_json;
 use sn0int_common::metadata::Source;
 use std::collections::HashMap;
-use structopt::StructOpt;
 use structopt::clap::AppSettings;
-
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
-    #[structopt(short="j", long="threads", default_value="1")]
+    #[structopt(short = "j", long = "threads", default_value = "1")]
     threads: usize,
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u64,
 }
 
@@ -69,7 +68,10 @@ impl From<Args> for Params<'static> {
     }
 }
 
-fn prepare_arg<T: Serialize + Model>(bs: &BlobStorage, x: T) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
+fn prepare_arg<T: Serialize + Model>(
+    bs: &BlobStorage,
+    x: T,
+) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let pretty = x.to_string();
 
     let blobs = if let Some(blob) = x.blob() {
@@ -83,7 +85,11 @@ fn prepare_arg<T: Serialize + Model>(bs: &BlobStorage, x: T) -> Result<(serde_js
     Ok((arg, Some(pretty), blobs))
 }
 
-fn prepare_args<T: Scopable + Serialize + Model>(rl: &Shell, filter: &Filter, param: Option<&String>) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
+fn prepare_args<T: Scopable + Serialize + Model>(
+    rl: &Shell,
+    filter: &Filter,
+    param: Option<&String>,
+) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
     let db = rl.db();
     let bs = rl.blobs();
     db.filter_with_param::<T>(filter, param)?
@@ -109,13 +115,15 @@ pub fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) 
         }
     }
 
-    keyring.save()
-        .context("Failed to write keyring")?;
+    keyring.save().context("Failed to write keyring")?;
 
     Ok(())
 }
 
-fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
+fn get_args(
+    rl: &mut Shell,
+    module: &Module,
+) -> Result<Vec<(serde_json::Value, Option<String>, Vec<Blob>)>> {
     let filter = rl.scoped_targets();
 
     match module.source() {
@@ -132,12 +140,16 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
         Some(Source::Images) => prepare_args::<Image>(rl, &filter, None),
         Some(Source::Ports) => prepare_args::<Port>(rl, &filter, None),
         Some(Source::Netblocks) => prepare_args::<Netblock>(rl, &filter, None),
-        Some(Source::CryptoAddrs(currency)) => prepare_args::<CryptoAddr>(rl, &filter, currency.as_ref()),
+        Some(Source::CryptoAddrs(currency)) => {
+            prepare_args::<CryptoAddr>(rl, &filter, currency.as_ref())
+        }
         Some(Source::Notifications) => bail!("Notification modules can't be executed like this"),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
             if keyring.is_access_granted(&module, &namespace) {
-                keyring.get_all_for(&namespace).into_iter()
+                keyring
+                    .get_all_for(&namespace)
+                    .into_iter()
                     .map(|key| {
                         let pretty = format!("{}:{}", key.namespace, key.access_key);
                         let arg = serde_json::to_value(key)?;
@@ -147,13 +159,18 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
             } else {
                 Ok(vec![])
             }
-        },
+        }
         None => Ok(vec![(serde_json::Value::Null, None, vec![])]),
     }
 }
 
-pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = rl.module()
+pub fn dump_sandbox_init_msg(
+    rl: &mut Shell,
+    params: Params,
+    options: HashMap<String, String>,
+) -> Result<()> {
+    let module = rl
+        .module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
 
@@ -165,14 +182,16 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
 
     let args = get_args(rl, &module)?;
     for (arg, _pretty_arg, blobs) in args {
-        let start_cmd = StartCommand::new(params.verbose,
-                                          keyring.clone(),
-                                          dns_config.clone(),
-                                          proxy.clone(),
-                                          options.clone(),
-                                          module.clone(),
-                                          arg,
-                                          blobs);
+        let start_cmd = StartCommand::new(
+            params.verbose,
+            keyring.clone(),
+            dns_config.clone(),
+            proxy.clone(),
+            options.clone(),
+            module.clone(),
+            arg,
+            blobs,
+        );
         let out = serde_json::to_string(&start_cmd)?;
         println!("{}", out);
     }
@@ -181,7 +200,8 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
 }
 
 pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = rl.module()
+    let module = rl
+        .module()
         .map(|m| m.to_owned())
         .ok_or_else(|| format_err!("No module selected"))?;
 
@@ -189,11 +209,22 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
     let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
+    let errors = worker::spawn(
+        rl,
+        &module,
+        args,
+        &params,
+        rl.config().network.proxy.clone(),
+        options,
+    );
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {
-        term::info(&format!("Finished {} ({} errors)", module.canonical(), errors));
+        term::info(&format!(
+            "Finished {} ({} errors)",
+            module.canonical(),
+            errors
+        ));
 
         if params.exit_on_error {
             bail!("Some scripts failed");

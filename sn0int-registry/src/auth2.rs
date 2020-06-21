@@ -1,19 +1,17 @@
+use crate::github;
+use rocket::http::Status;
+use rocket::request::{self, FromRequest};
+use rocket::{Outcome, Request};
+use sn0int_registry::db::Connection;
 use sn0int_registry::errors::*;
 use sn0int_registry::models::AuthToken;
-use sn0int_registry::db::Connection;
-use rocket::http::Status;
-use rocket::{Request, Outcome};
-use rocket::request::{self, FromRequest};
-use crate::github;
-
 
 pub struct AuthHeader(String);
 
 impl AuthHeader {
     pub fn verify(&self, connection: &Connection) -> Result<String> {
         let session = AuthToken::read(&self.0, &connection)?;
-        github::get_username(&session.access_token)
-            .map_err(Error::from)
+        github::get_username(&session.access_token).map_err(Error::from)
     }
 }
 

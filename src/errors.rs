@@ -1,3 +1,3 @@
-pub use log::{trace, debug, info, warn, error};
-pub use failure::{Error, ResultExt, format_err, bail};
+pub use failure::{bail, format_err, Error, ResultExt};
+pub use log::{debug, error, info, trace, warn};
 pub type Result<T> = ::std::result::Result<T, Error>;

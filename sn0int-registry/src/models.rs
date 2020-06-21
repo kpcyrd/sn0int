@@ -1,17 +1,16 @@
 use crate::errors::*;
-use diesel::prelude::*;
+use crate::schema::*;
 use diesel::pg::PgConnection;
+use diesel::prelude::*;
 use diesel::sql_types::BigInt;
 use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
-use crate::schema::*;
+use sn0int_common::metadata::Metadata;
+use sn0int_common::ModuleID;
 use std::collections::HashMap;
 use std::time::SystemTime;
-use sn0int_common::ModuleID;
-use sn0int_common::metadata::Metadata;
-
 
 #[derive(AsChangeset, Serialize, Deserialize, Queryable, Insertable)]
-#[table_name="auth_tokens"]
+#[table_name = "auth_tokens"]
 pub struct AuthToken {
     pub id: String,
     pub author: String,
@@ -27,21 +26,22 @@ impl AuthToken {
     }
 
     pub fn read(id: &str, connection: &PgConnection) -> Result<AuthToken> {
-        auth_tokens::table.find(id)
+        auth_tokens::table
+            .find(id)
             .first::<AuthToken>(connection)
             .map_err(Error::from)
     }
 
     pub fn read_opt(id: &str, connection: &PgConnection) -> Result<Option<AuthToken>> {
-        auth_tokens::table.find(id)
+        auth_tokens::table
+            .find(id)
             .first::<AuthToken>(connection)
             .optional()
             .map_err(Error::from)
     }
 
     pub fn delete(id: &str, connection: &PgConnection) -> Result<()> {
-        diesel::delete(auth_tokens::table.find(id))
-            .execute(connection)?;
+        diesel::delete(auth_tokens::table.find(id)).execute(connection)?;
         Ok(())
     }
 }
@@ -70,7 +70,7 @@ pub const ALL_MODULE_COLUMNS: AllModuleColumns = (
 );
 
 #[derive(AsChangeset, Identifiable, Queryable, Serialize, PartialEq, Debug)]
-#[table_name="modules"]
+#[table_name = "modules"]
 pub struct Module {
     pub id: i32,
     pub author: String,
@@ -92,55 +92,69 @@ impl Module {
     }
 
     pub fn find(author: &str, name: &str, connection: &PgConnection) -> Result<Module> {
-        modules::table.filter(modules::columns::author.eq(author))
-                        .filter(modules::columns::name.eq(name))
-                        .select(ALL_MODULE_COLUMNS)
-                        .first::<Self>(connection)
-                        .map_err(Error::from)
+        modules::table
+            .filter(modules::columns::author.eq(author))
+            .filter(modules::columns::name.eq(name))
+            .select(ALL_MODULE_COLUMNS)
+            .first::<Self>(connection)
+            .map_err(Error::from)
     }
 
     pub fn find_opt(author: &str, name: &str, connection: &PgConnection) -> Result<Option<Module>> {
-        modules::table.filter(modules::columns::author.eq(author))
-                        .filter(modules::columns::name.eq(name))
-                        .select(ALL_MODULE_COLUMNS)
-                        .first::<Self>(connection)
-                        .optional()
-                        .map_err(Error::from)
+        modules::table
+            .filter(modules::columns::author.eq(author))
+            .filter(modules::columns::name.eq(name))
+            .select(ALL_MODULE_COLUMNS)
+            .first::<Self>(connection)
+            .optional()
+            .map_err(Error::from)
     }
 
-    pub fn update_or_create(author: &str, name: &str, metadata: &Metadata, connection: &PgConnection) -> Result<Module> {
+    pub fn update_or_create(
+        author: &str,
+        name: &str,
+        metadata: &Metadata,
+        connection: &PgConnection,
+    ) -> Result<Module> {
         let description = metadata.description.as_str();
         let source = metadata.source.as_ref().map(|x| x.group_as_str());
 
         match Self::find_opt(author, name, connection)? {
-            Some(module) => diesel::update(modules::table.filter(modules::columns::id.eq(module.id)))
-                            .set(&BumpModule {
-                                description: Some(description),
-                                redirect: Some(None),
-                            })
-                            .returning(ALL_MODULE_COLUMNS)
-                            .get_result(connection)
-                            .map_err(Error::from),
-            None => Self::create(&NewModule {
-                author,
-                name,
-                description,
-                latest: None,
-                source,
-                redirect: None,
-            }, connection),
+            Some(module) => {
+                diesel::update(modules::table.filter(modules::columns::id.eq(module.id)))
+                    .set(&BumpModule {
+                        description: Some(description),
+                        redirect: Some(None),
+                    })
+                    .returning(ALL_MODULE_COLUMNS)
+                    .get_result(connection)
+                    .map_err(Error::from)
+            }
+            None => Self::create(
+                &NewModule {
+                    author,
+                    name,
+                    description,
+                    latest: None,
+                    source,
+                    redirect: None,
+                },
+                connection,
+            ),
         }
     }
 
     pub fn id(id: i32, connection: &PgConnection) -> Result<Module> {
-        modules::table.find(id)
+        modules::table
+            .find(id)
             .select(ALL_MODULE_COLUMNS)
             .first::<Module>(connection)
             .map_err(Error::from)
     }
 
     pub fn id_opt(id: i32, connection: &PgConnection) -> Result<Option<Module>> {
-        modules::table.find(id)
+        modules::table
+            .find(id)
             .select(ALL_MODULE_COLUMNS)
             .first::<Module>(connection)
             .optional()
@@ -148,17 +162,19 @@ impl Module {
     }
 
     pub fn delete(id: i32, connection: &PgConnection) -> Result<()> {
-        diesel::delete(modules::table.find(id))
-            .execute(connection)?;
+        diesel::delete(modules::table.find(id)).execute(connection)?;
         Ok(())
     }
 
     pub fn add_version(&self, version: &str, code: &str, connection: &PgConnection) -> Result<()> {
-        let _release = Release::create(&NewRelease {
-            module_id: self.id,
-            version,
-            code,
-        }, connection)?;
+        let _release = Release::create(
+            &NewRelease {
+                module_id: self.id,
+                version,
+                code,
+            },
+            connection,
+        )?;
 
         diesel::update(modules::table.filter(modules::columns::id.eq(self.id)))
             .set(modules::columns::latest.eq(version))
@@ -178,7 +194,18 @@ impl Module {
     pub fn search(query: &str, connection: &PgConnection) -> Result<Vec<(Module, i64)>> {
         let q = plainto_tsquery(query);
 
-        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, Option<String>, i64)> = modules::table.select((
+        let x: Vec<(
+            i32,
+            String,
+            String,
+            String,
+            Option<String>,
+            bool,
+            Option<String>,
+            Option<String>,
+            i64,
+        )> = modules::table
+            .select((
                 modules::id,
                 modules::author,
                 modules::name,
@@ -198,35 +225,49 @@ impl Module {
             ))
             .load(connection)?;
 
-        Ok(x.into_iter().map(|(id, author, name, description, latest, featured, source, redirect, downloads)| (
-            Module {
-                id,
-                author,
-                name,
-                description,
-                latest,
-                featured,
-                source,
-                redirect,
-            },
-            downloads,
-        )).collect())
+        Ok(x.into_iter()
+            .map(
+                |(id, author, name, description, latest, featured, source, redirect, downloads)| {
+                    (
+                        Module {
+                            id,
+                            author,
+                            name,
+                            description,
+                            latest,
+                            featured,
+                            source,
+                            redirect,
+                        },
+                        downloads,
+                    )
+                },
+            )
+            .collect())
     }
 
     pub fn quickstart(connection: &PgConnection) -> Result<Vec<Module>> {
         modules::table
             .select(ALL_MODULE_COLUMNS)
             .filter(modules::featured)
-            .order((
-                modules::author.asc(),
-                modules::name.asc(),
-            ))
+            .order((modules::author.asc(), modules::name.asc()))
             .load(connection)
             .map_err(Error::from)
     }
 
     pub fn start_page(connection: &PgConnection) -> Result<HashMap<String, Vec<Module>>> {
-        let x: Vec<(i32, String, String, String, Option<String>, bool, Option<String>, Option<String>, i64)> = modules::table.select((
+        let x: Vec<(
+            i32,
+            String,
+            String,
+            String,
+            Option<String>,
+            bool,
+            Option<String>,
+            Option<String>,
+            i64,
+        )> = modules::table
+            .select((
                 modules::id,
                 modules::author,
                 modules::name,
@@ -286,7 +327,7 @@ impl Module {
 }
 
 #[derive(Insertable)]
-#[table_name="modules"]
+#[table_name = "modules"]
 pub struct NewModule<'a> {
     author: &'a str,
     name: &'a str,
@@ -297,7 +338,7 @@ pub struct NewModule<'a> {
 }
 
 #[derive(AsChangeset)]
-#[table_name="modules"]
+#[table_name = "modules"]
 pub struct BumpModule<'a> {
     description: Option<&'a str>,
     redirect: Option<Option<&'a str>>,
@@ -305,7 +346,7 @@ pub struct BumpModule<'a> {
 
 #[derive(AsChangeset, Identifiable, Queryable, Associations, Serialize, PartialEq, Debug)]
 #[belongs_to(Module)]
-#[table_name="releases"]
+#[table_name = "releases"]
 pub struct Release {
     pub id: i32,
     pub module_id: i32,
@@ -331,36 +372,43 @@ impl Release {
     }
 
     pub fn find(module_id: i32, version: &str, connection: &PgConnection) -> Result<Release> {
-        releases::table.filter(releases::columns::module_id.eq(module_id))
-                        .filter(releases::columns::version.eq(version))
-                        .first::<Release>(connection)
-                        .map_err(Error::from)
+        releases::table
+            .filter(releases::columns::module_id.eq(module_id))
+            .filter(releases::columns::version.eq(version))
+            .first::<Release>(connection)
+            .map_err(Error::from)
     }
 
-    pub fn try_find(module_id: i32, version: &str, connection: &PgConnection) -> Result<Option<Release>> {
-        releases::table.filter(releases::columns::module_id.eq(module_id))
-                        .filter(releases::columns::version.eq(version))
-                        .first::<Release>(connection)
-                        .optional()
-                        .map_err(Error::from)
+    pub fn try_find(
+        module_id: i32,
+        version: &str,
+        connection: &PgConnection,
+    ) -> Result<Option<Release>> {
+        releases::table
+            .filter(releases::columns::module_id.eq(module_id))
+            .filter(releases::columns::version.eq(version))
+            .first::<Release>(connection)
+            .optional()
+            .map_err(Error::from)
     }
 
     pub fn id(id: i32, connection: &PgConnection) -> Result<Release> {
-        releases::table.find(id)
+        releases::table
+            .find(id)
             .first::<Release>(connection)
             .map_err(Error::from)
     }
 
     pub fn id_opt(id: i32, connection: &PgConnection) -> Result<Option<Release>> {
-        releases::table.find(id)
+        releases::table
+            .find(id)
             .first::<Release>(connection)
             .optional()
             .map_err(Error::from)
     }
 
     pub fn delete(id: i32, connection: &PgConnection) -> Result<()> {
-        diesel::delete(releases::table.find(id))
-            .execute(connection)?;
+        diesel::delete(releases::table.find(id)).execute(connection)?;
         Ok(())
     }
 
@@ -381,14 +429,16 @@ impl Release {
 
     pub fn downloads(connection: &PgConnection) -> Result<i64> {
         releases::table
-            .select(diesel::dsl::sql::<BigInt>("coalesce(sum(releases.downloads), 0) AS sum"))
+            .select(diesel::dsl::sql::<BigInt>(
+                "coalesce(sum(releases.downloads), 0) AS sum",
+            ))
             .first(connection)
             .map_err(Error::from)
     }
 }
 
 #[derive(Insertable)]
-#[table_name="releases"]
+#[table_name = "releases"]
 pub struct NewRelease<'a> {
     module_id: i32,
     version: &'a str,

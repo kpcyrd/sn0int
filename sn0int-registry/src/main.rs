@@ -2,31 +2,38 @@
 #![warn(unused_extern_crates)]
 #![feature(proc_macro_hygiene, decl_macro)]
 
-#[macro_use] extern crate rocket;
-#[macro_use] extern crate rocket_contrib;
-#[macro_use] extern crate rocket_failure;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate log;
-#[macro_use] extern crate maplit;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate failure;
+#[macro_use]
+extern crate rocket;
+#[macro_use]
+extern crate rocket_contrib;
+#[macro_use]
+extern crate rocket_failure;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate maplit;
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate failure;
 
+use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use rocket::http::Header;
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::templates::Template;
-use dotenv::dotenv;
 
-use std::env;
-use sn0int_registry::errors::*;
 use sn0int_registry::db;
+use sn0int_registry::errors::*;
+use std::env;
 
 pub mod assets;
 pub mod auth;
 pub mod auth2;
 pub mod github;
 pub mod routes;
-
 
 #[catch(400)]
 fn bad_request() -> Json<JsonValue> {
@@ -52,11 +59,9 @@ fn internal_error() -> Json<JsonValue> {
 fn run() -> Result<()> {
     dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL")
-        .context("DATABASE_URL must be set")?;
+    let database_url = env::var("DATABASE_URL").context("DATABASE_URL must be set")?;
 
-    db::setup_db(&database_url, 60)
-        .context("Failed to setup db")?;
+    db::setup_db(&database_url, 60).context("Failed to setup db")?;
 
     rocket::ignite()
         .manage(db::init(&database_url))

@@ -1,13 +1,12 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
-use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
+use diesel;
+use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="devices"]
+#[table_name = "devices"]
 pub struct Device {
     pub id: i32,
     pub value: String,
@@ -69,8 +68,7 @@ impl Model for Device {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::devices::dsl::*;
 
-        let domain = devices.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = devices.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -78,8 +76,7 @@ impl Model for Device {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::devices::dsl::*;
 
-        let domain = devices.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let domain = devices.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -87,7 +84,8 @@ impl Model for Device {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::devices::dsl::*;
 
-        let domain = devices.filter(value.eq(query))
+        let domain = devices
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -203,7 +201,7 @@ impl Detailed for Device {
             Some(network_device) => {
                 let network = network_device.network(db)?;
                 (network_device.ipaddr, Some(network.value))
-            },
+            }
             _ => (None, None),
         };
 
@@ -222,7 +220,7 @@ impl Detailed for Device {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="devices"]
+#[table_name = "devices"]
 pub struct NewDevice {
     pub value: String,
     pub name: Option<String>,
@@ -298,7 +296,7 @@ impl InsertToNew for InsertDevice {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="devices"]
+#[table_name = "devices"]
 pub struct DeviceUpdate {
     pub id: i32,
     pub name: Option<String>,
@@ -309,10 +307,10 @@ pub struct DeviceUpdate {
 
 impl Upsert for DeviceUpdate {
     fn is_dirty(&self) -> bool {
-        self.name.is_some() ||
-        self.hostname.is_some() ||
-        self.vendor.is_some() ||
-        self.last_seen.is_some()
+        self.name.is_some()
+            || self.hostname.is_some()
+            || self.vendor.is_some()
+            || self.last_seen.is_some()
     }
 
     fn generic(self) -> Update {

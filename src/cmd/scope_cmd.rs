@@ -1,13 +1,12 @@
 use crate::errors::*;
 
 use crate::cmd::Cmd;
-use crate::filters::{Target, Filter};
-use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use crate::filters::{Filter, Target};
 use crate::models::*;
+use crate::shell::Shell;
 use crate::term;
-
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]

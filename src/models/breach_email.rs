@@ -1,13 +1,12 @@
 use crate::errors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Breach)]
 #[belongs_to(Email)]
-#[table_name="breach_emails"]
+#[table_name = "breach_emails"]
 pub struct BreachEmail {
     pub id: i32,
     pub breach_id: i32,
@@ -62,8 +61,7 @@ impl Model for BreachEmail {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::breach_emails::dsl::*;
 
-        let breach_email = breach_emails.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let breach_email = breach_emails.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(breach_email)
     }
@@ -73,15 +71,15 @@ impl Model for BreachEmail {
 
         let (my_breach_id, my_email_id, my_password) = query;
 
-        let query = breach_emails.filter(breach_id.eq(my_breach_id))
-                                 .filter(email_id.eq(my_email_id));
+        let query = breach_emails
+            .filter(breach_id.eq(my_breach_id))
+            .filter(email_id.eq(my_email_id));
         let breach_email = if let Some(my_password) = my_password {
-           query
-               .filter(password.is_null().or(password.eq(my_password)))
-               .first::<Self>(db.db())?
+            query
+                .filter(password.is_null().or(password.eq(my_password)))
+                .first::<Self>(db.db())?
         } else {
-           query
-               .first::<Self>(db.db())?
+            query.first::<Self>(db.db())?
         };
 
         Ok(breach_email)
@@ -92,17 +90,16 @@ impl Model for BreachEmail {
 
         let (my_breach_id, my_email_id, my_password) = query;
 
-        let query = breach_emails.filter(breach_id.eq(my_breach_id))
-                                 .filter(email_id.eq(my_email_id));
+        let query = breach_emails
+            .filter(breach_id.eq(my_breach_id))
+            .filter(email_id.eq(my_email_id));
         let breach_email = if let Some(my_password) = my_password {
-           query
-               .filter(password.is_null().or(password.eq(my_password)))
-               .first::<Self>(db.db())
-               .optional()?
+            query
+                .filter(password.is_null().or(password.eq(my_password)))
+                .first::<Self>(db.db())
+                .optional()?
         } else {
-           query
-               .first::<Self>(db.db())
-               .optional()?
+            query.first::<Self>(db.db()).optional()?
         };
 
         Ok(breach_email)
@@ -144,7 +141,7 @@ impl Printable<PrintableBreachEmail> for BreachEmail {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="breach_emails"]
+#[table_name = "breach_emails"]
 pub struct NewBreachEmail {
     pub breach_id: i32,
     pub email_id: i32,
@@ -186,7 +183,7 @@ impl InsertToNew for InsertBreachEmail {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="breach_emails"]
+#[table_name = "breach_emails"]
 pub struct BreachEmailUpdate {
     pub id: i32,
     pub password: Option<String>,

@@ -7,10 +7,9 @@ use crate::db::Database;
 use crate::shell::Shell;
 use crate::term;
 use crate::utils;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 use crate::workspaces::{self, Workspace};
-
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
@@ -29,7 +28,10 @@ pub struct Args {
 
 fn delete(workspace: Workspace, force: bool) -> Result<()> {
     if !force {
-        if !utils::no_else_yes(&format!("Do you really want to delete {:?}", workspace.as_str()))? {
+        if !utils::no_else_yes(&format!(
+            "Do you really want to delete {:?}",
+            workspace.as_str()
+        ))? {
             return Ok(());
         }
     }

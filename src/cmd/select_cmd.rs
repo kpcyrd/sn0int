@@ -2,14 +2,13 @@ use crate::errors::*;
 
 use crate::cmd::Cmd;
 use crate::db::ttl;
-use crate::filters::{Target, Filter};
+use crate::filters::{Filter, Target};
+use crate::models::*;
 use crate::shell::Shell;
 use serde::Serialize;
 use serde_json;
-use structopt::StructOpt;
 use structopt::clap::AppSettings;
-use crate::models::*;
-
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
@@ -17,13 +16,13 @@ pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
     /// Print json output
-    #[structopt(long="json", group="output")]
+    #[structopt(long = "json", group = "output")]
     json: bool,
     /// Print paths to blobs
-    #[structopt(long="paths", group="output")]
+    #[structopt(long = "paths", group = "output")]
     paths: bool,
     /// Count rows returned
-    #[structopt(short="c", long="count", group="output")]
+    #[structopt(short = "c", long = "count", group = "output")]
     count: bool,
 }
 
@@ -52,10 +51,7 @@ impl<'a, 'b> Printer<'a, 'b> {
             Output::Normal
         };
 
-        Printer {
-            rl,
-            output,
-        }
+        Printer { rl, output }
     }
 
     pub fn select<T: Model + Detailed + Serialize>(&self, filter: &Filter) -> Result<()> {
@@ -70,19 +66,20 @@ impl<'a, 'b> Printer<'a, 'b> {
                     Output::Json => {
                         let v = serde_json::to_string(&obj)?;
                         println!("{}", v);
-                    },
+                    }
                     Output::Paths => {
-                        let blob = obj.blob()
-                            .ok_or_else(|| format_err!("This model isn't linked to blob storage"))?;
+                        let blob = obj.blob().ok_or_else(|| {
+                            format_err!("This model isn't linked to blob storage")
+                        })?;
 
-                        let path = self.rl.blobs()
-                            .join(blob)?;
+                        let path = self.rl.blobs().join(blob)?;
 
-                        let path = path.to_str()
+                        let path = path
+                            .to_str()
                             .ok_or_else(|| format_err!("Path is invalid utf-8"))?;
 
                         println!("{}", path);
-                    },
+                    }
                     Output::Count => unreachable!(),
                 }
             }

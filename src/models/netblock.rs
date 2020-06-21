@@ -1,13 +1,12 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use ipnetwork;
 
-
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="netblocks"]
+#[table_name = "netblocks"]
 pub struct Netblock {
     pub id: i32,
     pub family: String,
@@ -69,8 +68,7 @@ impl Model for Netblock {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::netblocks::dsl::*;
 
-        let domain = netblocks.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = netblocks.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -78,8 +76,7 @@ impl Model for Netblock {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::netblocks::dsl::*;
 
-        let netblock = netblocks.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let netblock = netblocks.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(netblock)
     }
@@ -87,7 +84,8 @@ impl Model for Netblock {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::netblocks::dsl::*;
 
-        let netblock = netblocks.filter(value.eq(query))
+        let netblock = netblocks
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -196,7 +194,7 @@ impl Detailed for Netblock {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="netblocks"]
+#[table_name = "netblocks"]
 pub struct NewNetblock {
     pub family: String,
     pub value: String,
@@ -256,7 +254,9 @@ impl InsertToNew for InsertNetblock {
     type Target = NewNetblock;
 
     fn try_into_new(self) -> Result<NewNetblock> {
-        let ipnet = self.value.parse::<ipnetwork::IpNetwork>()
+        let ipnet = self
+            .value
+            .parse::<ipnetwork::IpNetwork>()
             .context("Failed to parse ip network")?;
 
         let family = match ipnet {
@@ -276,7 +276,7 @@ impl InsertToNew for InsertNetblock {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="netblocks"]
+#[table_name = "netblocks"]
 pub struct NetblockUpdate {
     pub id: i32,
     pub asn: Option<i32>,
@@ -286,9 +286,7 @@ pub struct NetblockUpdate {
 
 impl Upsert for NetblockUpdate {
     fn is_dirty(&self) -> bool {
-        self.asn.is_some() ||
-        self.as_org.is_some() ||
-        self.description.is_some()
+        self.asn.is_some() || self.as_org.is_some() || self.description.is_some()
     }
 
     fn generic(self) -> Update {

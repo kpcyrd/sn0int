@@ -1,14 +1,14 @@
 use crate::config::Config;
-use crate::errors::*;
+use crate::engine::ctx::{LuaState, State};
 use crate::engine::{ctx, Environment};
+use crate::errors::*;
+use crate::geoip::{AsnDB, GeoIP, Maxmind};
+use crate::hlua::{AnyLuaValue, Lua};
 use crate::ipc::child::DummyIpcChild;
-use crate::engine::ctx::{State, LuaState};
-use crate::geoip::{Maxmind, AsnDB, GeoIP};
-use crate::hlua::{Lua, AnyLuaValue};
 use crate::paths;
 use crate::psl::PslReader;
-use crate::shell::readline::Readline;
 use crate::runtime::format_lua;
+use crate::shell::readline::Readline;
 use chrootable_https::Resolver;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -26,11 +26,7 @@ pub struct Repl<'a> {
 impl<'a> Repl<'a> {
     pub fn new(lua: Lua<'a>, state: Arc<LuaState>) -> Repl<'a> {
         let rl = Readline::with(ReplCompleter::default());
-        Repl {
-            rl,
-            lua,
-            state,
-        }
+        Repl { rl, lua, state }
     }
 
     fn update_globals(&mut self) {
@@ -54,7 +50,7 @@ impl<'a> Repl<'a> {
                 Ok(line) => {
                     self.rl.add_history_entry(line.as_str());
                     self.exec(&line);
-                },
+                }
                 Err(_) => break,
             }
         }
@@ -72,7 +68,7 @@ impl<'a> Repl<'a> {
                     println!("Error: {}", err);
                     self.state.clear_error();
                 }
-            },
+            }
             Err(err) => {
                 println!("Fatal: {}", err);
             }
@@ -106,10 +102,13 @@ pub fn run(config: &Config) -> Result<()> {
     let (lua, state) = ctx::ctx(env, tx);
     let mut repl = Repl::new(lua, state);
 
-    println!(r#":: sn0int v{} lua repl
+    println!(
+        r#":: sn0int v{} lua repl
 Assign variables with `a = sn0int_version()` and `return a` to print
 Read the docs at https://sn0int.readthedocs.io/en/stable/reference.html
-"#, env!("CARGO_PKG_VERSION"));
+"#,
+        env!("CARGO_PKG_VERSION")
+    );
 
     repl.run();
 

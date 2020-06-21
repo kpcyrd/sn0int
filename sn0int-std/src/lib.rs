@@ -1,11 +1,12 @@
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 use hlua_badtouch as hlua;
 
 pub mod blobs;
 pub mod crt;
 pub mod crypto;
-mod errors;
 pub mod engine;
+mod errors;
 pub mod geo;
 pub mod geoip;
 pub mod gfx;

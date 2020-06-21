@@ -1,13 +1,12 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
-use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
+use diesel;
+use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="cryptoaddrs"]
+#[table_name = "cryptoaddrs"]
 pub struct CryptoAddr {
     pub id: i32,
     pub value: String,
@@ -48,9 +47,7 @@ impl Model for CryptoAddr {
     fn filter_with_param(db: &Database, filter: &Filter, param: &str) -> Result<Vec<Self>> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let query = cryptoaddrs
-            .filter(currency.eq(param))
-            .filter(filter.sql());
+        let query = cryptoaddrs.filter(currency.eq(param)).filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
 
         Ok(results)
@@ -83,8 +80,7 @@ impl Model for CryptoAddr {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let domain = cryptoaddrs.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = cryptoaddrs.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -92,8 +88,7 @@ impl Model for CryptoAddr {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let cryptoaddr = cryptoaddrs.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let cryptoaddr = cryptoaddrs.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(cryptoaddr)
     }
@@ -101,7 +96,8 @@ impl Model for CryptoAddr {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::cryptoaddrs::dsl::*;
 
-        let cryptoaddr = cryptoaddrs.filter(value.eq(query))
+        let cryptoaddr = cryptoaddrs
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -165,7 +161,12 @@ pub struct DetailedCryptoAddr {
 }
 
 #[inline]
-fn add_currency(w: &mut fmt::DetailFormatter, label: &str, num: &Option<i64>, denominator: &Option<i32>) -> fmt::Result {
+fn add_currency(
+    w: &mut fmt::DetailFormatter,
+    label: &str,
+    num: &Option<i64>,
+    denominator: &Option<i32>,
+) -> fmt::Result {
     if let Some(&num) = num.as_ref() {
         let denominator = denominator.unwrap_or(0);
         let display = display_currency(num as u64, denominator as usize);
@@ -232,7 +233,7 @@ impl Detailed for CryptoAddr {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="cryptoaddrs"]
+#[table_name = "cryptoaddrs"]
 pub struct NewCryptoAddr {
     pub value: String,
     pub currency: Option<String>,
@@ -299,7 +300,7 @@ impl InsertToNew for InsertCryptoAddr {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="cryptoaddrs"]
+#[table_name = "cryptoaddrs"]
 pub struct CryptoAddrUpdate {
     pub id: i32,
     pub currency: Option<String>,
@@ -313,13 +314,13 @@ pub struct CryptoAddrUpdate {
 
 impl Upsert for CryptoAddrUpdate {
     fn is_dirty(&self) -> bool {
-        self.currency.is_some() ||
-        self.denominator.is_some() ||
-        self.balance.is_some() ||
-        self.received.is_some() ||
-        self.first_seen.is_some() ||
-        self.last_withdrawal.is_some() ||
-        self.description.is_some()
+        self.currency.is_some()
+            || self.denominator.is_some()
+            || self.balance.is_some()
+            || self.received.is_some()
+            || self.first_seen.is_some()
+            || self.last_withdrawal.is_some()
+            || self.description.is_some()
     }
 
     fn generic(self) -> Update {
@@ -355,8 +356,8 @@ impl Updateable<CryptoAddr> for CryptoAddrUpdate {
 
 // ensure precision by working around floats
 fn display_currency(value: u64, denominator: usize) -> String {
-    let x = format!("{:>0width$}", value, width=denominator+1);
-    let (a, b) = x.split_at(x.len()-denominator);
+    let x = format!("{:>0width$}", value, width = denominator + 1);
+    let (a, b) = x.split_at(x.len() - denominator);
     let mut x = format!("{}.{}", a, b).chars().collect::<Vec<_>>();
 
     loop {
@@ -365,7 +366,7 @@ fn display_currency(value: u64, denominator: usize) -> String {
             Some('.') => {
                 x.pop();
                 break;
-            },
+            }
             _ => break,
         };
     }

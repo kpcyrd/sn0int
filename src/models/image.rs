@@ -1,15 +1,14 @@
+use crate::engine::ctx::State;
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use std::sync::Arc;
-use crate::engine::ctx::State;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="images"]
+#[table_name = "images"]
 pub struct Image {
     pub id: i32,
     pub value: String,
@@ -82,8 +81,7 @@ impl Model for Image {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::images::dsl::*;
 
-        let domain = images.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = images.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -91,8 +89,7 @@ impl Model for Image {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::images::dsl::*;
 
-        let email = images.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let email = images.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(email)
     }
@@ -100,7 +97,8 @@ impl Model for Image {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::images::dsl::*;
 
-        let email = images.filter(value.eq(query))
+        let email = images
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -274,7 +272,7 @@ impl Detailed for Image {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="images"]
+#[table_name = "images"]
 pub struct NewImage {
     pub value: String,
 
@@ -402,7 +400,7 @@ impl LuaInsertToNew for InsertImage {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="images"]
+#[table_name = "images"]
 pub struct ImageUpdate {
     pub id: i32,
 
@@ -423,19 +421,17 @@ pub struct ImageUpdate {
 
 impl Upsert for ImageUpdate {
     fn is_dirty(&self) -> bool {
-        self.filename.is_some() ||
-        self.mime.is_some() ||
-        self.width.is_some() ||
-        self.height.is_some() ||
-        self.created.is_some() ||
-
-        self.latitude.is_some() ||
-        self.longitude.is_some() ||
-
-        self.nudity.is_some() ||
-        self.ahash.is_some() ||
-        self.dhash.is_some() ||
-        self.phash.is_some()
+        self.filename.is_some()
+            || self.mime.is_some()
+            || self.width.is_some()
+            || self.height.is_some()
+            || self.created.is_some()
+            || self.latitude.is_some()
+            || self.longitude.is_some()
+            || self.nudity.is_some()
+            || self.ahash.is_some()
+            || self.dhash.is_some()
+            || self.phash.is_some()
     }
 
     fn generic(self) -> Update {

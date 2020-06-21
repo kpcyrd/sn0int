@@ -15,7 +15,6 @@ pub mod seccomp;
 #[cfg(target_os = "linux")]
 static CHROOT: &str = "/var/empty";
 
-
 #[cfg(target_os = "linux")]
 /// Drop all privileges that are only needed to setup the sandbox
 pub fn fasten_seatbelt() -> Result<()> {
@@ -62,15 +61,12 @@ pub fn init_linux() -> Result<()> {
 
 #[cfg(target_os = "openbsd")]
 pub fn init_openbsd() -> Result<()> {
-    unveil("/etc/resolv.conf", "r")
-        .map_err(|_| format_err!("Failed to call unveil"))?;
+    unveil("/etc/resolv.conf", "r").map_err(|_| format_err!("Failed to call unveil"))?;
 
-    unveil("/dev/urandom", "r")
-        .map_err(|_| format_err!("Failed to call unveil"))?;
+    unveil("/dev/urandom", "r").map_err(|_| format_err!("Failed to call unveil"))?;
 
     // disable further unveil calls
-    unveil("", "")
-        .map_err(|_| format_err!("Failed to call unveil"))?;
+    unveil("", "").map_err(|_| format_err!("Failed to call unveil"))?;
 
     pledge![Stdio Rpath Dns Inet,]?;
 

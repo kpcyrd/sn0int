@@ -2,15 +2,14 @@ use crate::errors::*;
 
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
-use rustls::{self, ClientConfig, Session, ClientSession};
+use rustls::{self, ClientConfig, ClientSession, Session};
 
-use std::str;
-use std::result;
-use std::sync::Arc;
 use std::net::TcpStream;
+use std::result;
+use std::str;
+use std::sync::Arc;
 
-use super::{Stream, SocketOptions};
-
+use super::{SocketOptions, Stream};
 
 #[derive(Debug, Serialize)]
 pub struct TlsData {
@@ -45,7 +44,8 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
 
     if options.disable_tls_verify {
         info!("tls verification has been disabled");
-        config.dangerous()
+        config
+            .dangerous()
             .set_certificate_verifier(Arc::new(NoCertificateVerification {}));
     }
 
@@ -76,12 +76,14 @@ fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
 fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, TlsData)> {
     info!("starting tls handshake");
     if session.is_handshaking() {
-        session.complete_io(&mut stream)
+        session
+            .complete_io(&mut stream)
             .context("Failed to read reply to tls client hello")?;
     }
 
     if session.wants_write() {
-        session.complete_io(&mut stream)
+        session
+            .complete_io(&mut stream)
             .context("wants_write->complete_io failed")?;
     }
 
@@ -91,7 +93,8 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, T
     };
 
     if let Some(certs) = session.get_peer_certificates() {
-        tls.cert_chain = certs.into_iter()
+        tls.cert_chain = certs
+            .into_iter()
             .rev()
             .map(|c| {
                 pem::encode(&pem::Pem {
@@ -102,8 +105,7 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, T
             .collect();
     }
 
-    tls.cert = tls.cert_chain.last()
-        .map(|x| x.to_owned());
+    tls.cert = tls.cert_chain.last().map(|x| x.to_owned());
 
     info!("successfully established tls connection");
     let stream = rustls::StreamOwned::new(session, stream);
@@ -114,11 +116,13 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, T
 pub struct NoCertificateVerification {}
 
 impl rustls::ServerCertVerifier for NoCertificateVerification {
-    fn verify_server_cert(&self,
+    fn verify_server_cert(
+        &self,
         _roots: &rustls::RootCertStore,
         _presented_certs: &[rustls::Certificate],
         _dns_name: webpki::DNSNameRef<'_>,
-        _ocsp: &[u8]) -> result::Result<rustls::ServerCertVerified, rustls::TLSError> {
+        _ocsp: &[u8],
+    ) -> result::Result<rustls::ServerCertVerified, rustls::TLSError> {
         Ok(rustls::ServerCertVerified::assertion())
     }
 }

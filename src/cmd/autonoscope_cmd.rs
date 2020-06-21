@@ -4,8 +4,8 @@ use crate::autonoscope;
 use crate::fmt::colors::*;
 use crate::shell::Shell;
 use std::fmt::Write;
-use structopt::StructOpt;
 use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
@@ -16,11 +16,11 @@ pub struct Args {
 
 #[derive(Debug, StructOpt)]
 pub enum Subcommand {
-    #[structopt(name="add")]
+    #[structopt(name = "add")]
     Add(Add),
-    #[structopt(name="delete")]
+    #[structopt(name = "delete")]
     Delete(Delete),
-    #[structopt(name="list")]
+    #[structopt(name = "list")]
     List,
 }
 
@@ -46,12 +46,12 @@ fn display_rule<T: Color>(object: &str, rule: &str) -> Result<()> {
 
 pub fn run_with_scope_param(rl: &mut Shell, args: Args, scoped: bool) -> Result<()> {
     match args.subcommand {
-        Subcommand::Add(add) => {
-            rl.db_mut().autonoscope_add_rule(&add.object, &add.value, scoped)
-        },
-        Subcommand::Delete(delete) => {
-            rl.db_mut().autonoscope_delete_rule(&delete.object, &delete.value)
-        },
+        Subcommand::Add(add) => rl
+            .db_mut()
+            .autonoscope_add_rule(&add.object, &add.value, scoped),
+        Subcommand::Delete(delete) => rl
+            .db_mut()
+            .autonoscope_delete_rule(&delete.object, &delete.value),
         Subcommand::List => {
             for (object, rule, scoped) in rl.db().autonoscope_rules() {
                 if scoped {
@@ -61,7 +61,7 @@ pub fn run_with_scope_param(rl: &mut Shell, args: Args, scoped: bool) -> Result<
                 }
             }
             Ok(())
-        },
+        }
     }
 }
 

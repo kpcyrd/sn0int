@@ -9,7 +9,6 @@ use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Workspace {
     s: String,
@@ -18,8 +17,7 @@ pub struct Workspace {
 impl Workspace {
     #[inline]
     pub fn db_path(&self) -> Result<PathBuf> {
-        Ok(paths::workspace_dir(&self)?
-            .join("db.sqlite"))
+        Ok(paths::workspace_dir(&self)?.join("db.sqlite"))
     }
 
     #[inline]
@@ -50,23 +48,17 @@ impl Workspace {
 
     pub fn migrate(&self) -> Result<()> {
         // relocate old paths
-        let old_db = paths::sn0int_dir()?
-            .join(self.to_string() + ".db");
+        let old_db = paths::sn0int_dir()?.join(self.to_string() + ".db");
         if old_db.exists() {
-            let new_db = paths::workspace_dir(self)?
-                .join("db.sqlite");
+            let new_db = paths::workspace_dir(self)?.join("db.sqlite");
 
-            fs::rename(old_db, new_db)
-                .context("Failed to migrate old db to new location")?;
+            fs::rename(old_db, new_db).context("Failed to migrate old db to new location")?;
         }
 
-        let old_blobs_parent = paths::sn0int_dir()?
-            .join("blobs");
-        let old_blobs = old_blobs_parent
-            .join(self.as_str());
+        let old_blobs_parent = paths::sn0int_dir()?.join("blobs");
+        let old_blobs = old_blobs_parent.join(self.as_str());
         if old_blobs.exists() {
-            let new_blobs = paths::workspace_dir(self)?
-                .join("blobs");
+            let new_blobs = paths::workspace_dir(self)?.join("blobs");
             fs::rename(old_blobs, new_blobs)
                 .context("Failed to migrate old blob folder to new location")?;
         }
@@ -87,15 +79,14 @@ impl FromStr for Workspace {
         }
 
         lazy_static! {
-            static ref RE: Regex = Regex::new(r"^[a-zA-Z0-9]([a-zA-Z0-9\._\-]*[a-zA-Z0-9])?$").unwrap();
+            static ref RE: Regex =
+                Regex::new(r"^[a-zA-Z0-9]([a-zA-Z0-9\._\-]*[a-zA-Z0-9])?$").unwrap();
         }
         if !RE.is_match(s) {
             bail!("Workspace contains invalid characters")
         }
 
-        Ok(Workspace {
-            s: s.into(),
-        })
+        Ok(Workspace { s: s.into() })
     }
 }
 
@@ -118,9 +109,11 @@ pub fn list() -> Result<Vec<Workspace>> {
             continue;
         }
 
-        let name = path.file_name()
+        let name = path
+            .file_name()
             .ok_or_else(|| format_err!("read_dir returned file with no name"))?;
-        let name = name.to_str()
+        let name = name
+            .to_str()
             .ok_or_else(|| format_err!("Workspace has invalid name: {:?}", name))?;
 
         if let Ok(workspace) = Workspace::from_str(name) {
@@ -143,7 +136,8 @@ pub fn list() -> Result<Vec<Workspace>> {
             _ => continue,
         };
 
-        let name = name.to_str()
+        let name = name
+            .to_str()
             .ok_or_else(|| format_err!("Workspace has invalid name: {:?}", name))?;
 
         if let Ok(workspace) = Workspace::from_str(name) {
@@ -155,7 +149,6 @@ pub fn list() -> Result<Vec<Workspace>> {
     workspaces.sort();
     Ok(workspaces)
 }
-
 
 #[cfg(test)]
 mod tests {

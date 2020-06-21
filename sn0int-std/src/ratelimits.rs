@@ -36,9 +36,7 @@ struct Bucket {
 
 impl Bucket {
     pub fn new() -> Bucket {
-        Bucket {
-            passes: Vec::new(),
-        }
+        Bucket { passes: Vec::new() }
     }
 
     pub fn pass(&mut self, passes: usize, time: u32) -> RatelimitResponse {

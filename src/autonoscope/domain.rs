@@ -1,5 +1,5 @@
+use crate::autonoscope::{AutoRule, Autonoscope, IntoRule, RulePrecision};
 use crate::errors::*;
-use crate::autonoscope::{Autonoscope, IntoRule, AutoRule, RulePrecision};
 use crate::models::*;
 use std::convert::TryFrom;
 
@@ -19,7 +19,8 @@ impl TryFrom<&str> for DomainRule {
     type Error = Error;
 
     fn try_from(rule: &str) -> Result<DomainRule> {
-        let mut fragments = rule.split('.')
+        let mut fragments = rule
+            .split('.')
             .filter(|x| !x.is_empty())
             .map(String::from)
             .collect::<Vec<_>>();
@@ -69,7 +70,8 @@ impl AutoRule<NewUrl> for DomainRule {
 
 impl AutoRule<str> for DomainRule {
     fn matches(&self, domain: &str) -> Result<bool> {
-        let frags = domain.split('.')
+        let frags = domain
+            .split('.')
             .filter(|x| !x.is_empty())
             .collect::<Vec<_>>();
 

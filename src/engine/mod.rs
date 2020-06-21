@@ -2,30 +2,29 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::config::Config;
+use crate::engine::ctx::Script;
 use crate::geoip::MaxmindReader;
+use crate::ipc::child::IpcChild;
 use crate::json::LuaJsonValue;
 use crate::keyring::KeyRingEntry;
-use std::fs;
-use std::fmt::Debug;
-use std::path::PathBuf;
-use std::collections::HashMap;
-use std::net::SocketAddr;
-use std::sync::{Arc, Mutex};
-use crate::engine::ctx::Script;
-use crate::ipc::child::IpcChild;
-use sn0int_common::ModuleID;
-use sn0int_common::metadata::{Metadata, Source};
-use chrootable_https::dns::Resolver;
-use crate::psl::PslReader;
 use crate::paths;
-use std::cmp::Ordering;
-use std::path::Path;
+use crate::psl::PslReader;
 use crate::term;
 use crate::worker;
+use chrootable_https::dns::Resolver;
+use sn0int_common::metadata::{Metadata, Source};
+use sn0int_common::ModuleID;
+use std::cmp::Ordering;
+use std::collections::HashMap;
+use std::fmt::Debug;
+use std::fs;
+use std::net::SocketAddr;
+use std::path::Path;
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 pub mod ctx;
 pub use sn0int_std::engine::structs;
-
 
 /// Data that is passed to every script
 #[derive(Debug)]
@@ -45,7 +44,7 @@ pub struct Environment {
 pub struct Library<'a> {
     path: PathBuf,
     modules: HashMap<String, Vec<Module>>,
-    config: &'a Config
+    config: &'a Config,
 }
 
 impl<'a> Library<'a> {
@@ -68,11 +67,15 @@ impl<'a> Library<'a> {
     }
 
     pub fn reload_modules(&mut self) -> Result<usize> {
-        let modules = worker::spawn_fn("Loading modules", || {
-            self.reload_modules_quiet()
-                .context("Failed to load modules")?;
-            Ok(self.list().len())
-        }, true)?;
+        let modules = worker::spawn_fn(
+            "Loading modules",
+            || {
+                self.reload_modules_quiet()
+                    .context("Failed to load modules")?;
+                Ok(self.list().len())
+            },
+            true,
+        )?;
         term::info(&format!("Loaded {} modules", modules));
         Ok(modules)
     }
@@ -105,9 +108,10 @@ impl<'a> Library<'a> {
 
             let private_modules = Self::private_modules(&path)?;
 
-            let author_name = author.file_name()
-                                    .into_string()
-                                    .map_err(|_| format_err!("Failed to decode filename"))?;
+            let author_name = author
+                .file_name()
+                .into_string()
+                .map_err(|_| format_err!("Failed to decode filename"))?;
 
             // skip if the namespace has an explicit path configured
             if self.config.namespaces.contains_key(&author_name) {
@@ -121,8 +125,7 @@ impl<'a> Library<'a> {
             let folder = if folder.is_absolute() {
                 folder.to_owned()
             } else {
-                let folder = folder.strip_prefix("~/")
-                    .unwrap_or(&folder);
+                let folder = folder.strip_prefix("~/").unwrap_or(&folder);
 
                 dirs::home_dir()
                     .ok_or_else(|| format_err!("Failed to find home folder"))?
@@ -135,14 +138,20 @@ impl<'a> Library<'a> {
         Ok(())
     }
 
-    pub fn load_module_folder(&mut self, folder: &Path, author_name: &str, private_modules: bool) -> Result<()> {
+    pub fn load_module_folder(
+        &mut self,
+        folder: &Path,
+        author_name: &str,
+        private_modules: bool,
+    ) -> Result<()> {
         debug!("Loading modules from {:?}", folder);
 
         for module in fs::read_dir(folder)? {
             let module = module?;
-            let module_name = module.file_name()
-                                    .into_string()
-                                    .map_err(|_| format_err!("Failed to decode filename"))?;
+            let module_name = module
+                .file_name()
+                .into_string()
+                .map_err(|_| format_err!("Failed to decode filename"))?;
 
             // find last instance of .lua in filename, if any
             let (module_name, ext) = if let Some(idx) = module_name.rfind(".lua") {
@@ -158,16 +167,27 @@ impl<'a> Library<'a> {
                 continue;
             }
 
-            if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
+            if let Err(err) =
+                self.load_single_module(&module.path(), &author_name, &module_name, private_modules)
+            {
                 let root = err.find_root_cause();
-                term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
+                term::warn(&format!(
+                    "Failed to load {}/{}: {}",
+                    author_name, module_name, root
+                ));
             }
         }
 
         Ok(())
     }
 
-    pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str, private_module: bool) -> Result<()> {
+    pub fn load_single_module(
+        &mut self,
+        path: &Path,
+        author_name: &str,
+        module_name: &str,
+        private_module: bool,
+    ) -> Result<()> {
         let module_name = module_name.to_string();
         let module = Module::load(path, &author_name, &module_name, private_module)
             .context(format!("Failed to parse {}/{}", author_name, module_name))?;
@@ -205,7 +225,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn list(&self) -> Vec<&Module> {
-        let mut modules: Vec<_> = self.modules.iter()
+        let mut modules: Vec<_> = self
+            .modules
+            .iter()
             .filter(|(key, _)| key.contains('/'))
             .flat_map(|(_, v)| v.iter())
             .collect();
@@ -214,7 +236,8 @@ impl<'a> Library<'a> {
     }
 
     pub fn variants(&self) -> Vec<String> {
-        self.modules.iter()
+        self.modules
+            .iter()
             .filter(|(_, values)| values.len() == 1)
             .map(|(key, _)| key.to_owned())
             .collect()
@@ -236,10 +259,10 @@ pub struct Module {
 impl Module {
     pub fn load(path: &Path, author: &str, name: &str, private_module: bool) -> Result<Module> {
         debug!("Loading lua module {}/{} from {:?}", author, name, path);
-        let code = fs::read_to_string(path)
-            .context("Failed to read module")?;
+        let code = fs::read_to_string(path).context("Failed to read module")?;
 
-        let metadata = code.parse::<Metadata>()
+        let metadata = code
+            .parse::<Metadata>()
             .context("Failed to parse module metadata")?;
 
         let script = Script::load_unchecked(code)?;
@@ -298,7 +321,12 @@ impl Module {
         self.private_module
     }
 
-    pub fn run(&self, env: Environment, ipc_child: Arc<Mutex<Box<dyn IpcChild>>>, arg: LuaJsonValue) -> Result<()> {
+    pub fn run(
+        &self,
+        env: Environment,
+        ipc_child: Arc<Mutex<Box<dyn IpcChild>>>,
+        arg: LuaJsonValue,
+    ) -> Result<()> {
         debug!("Executing lua script {}", self.canonical());
         self.script.run(env, ipc_child, arg.into())
     }

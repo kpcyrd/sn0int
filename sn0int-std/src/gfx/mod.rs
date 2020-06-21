@@ -3,7 +3,6 @@ use image::{self, DynamicImage, GenericImageView};
 
 pub mod exif;
 
-
 #[derive(Debug)]
 pub enum ImageFormat {
     Png,
@@ -99,12 +98,8 @@ pub fn load(buf: &[u8]) -> Result<Image> {
 
     let image = image::load_from_memory_with_format(&buf, img_format)?;
 
-    Ok(Image {
-        image,
-        format,
-    })
+    Ok(Image { image, format })
 }
-
 
 #[cfg(test)]
 mod tests {

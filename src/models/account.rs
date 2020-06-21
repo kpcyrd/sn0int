@@ -1,13 +1,12 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
-use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
+use diesel;
+use diesel::prelude::*;
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="accounts"]
+#[table_name = "accounts"]
 pub struct Account {
     pub id: i32,
     pub value: String,
@@ -50,9 +49,7 @@ impl Model for Account {
     fn filter_with_param(db: &Database, filter: &Filter, param: &str) -> Result<Vec<Self>> {
         use crate::schema::accounts::dsl::*;
 
-        let query = accounts
-            .filter(service.eq(param))
-            .filter(filter.sql());
+        let query = accounts.filter(service.eq(param)).filter(filter.sql());
         let results = query.load::<Self>(db.db())?;
 
         Ok(results)
@@ -85,8 +82,7 @@ impl Model for Account {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::accounts::dsl::*;
 
-        let account = accounts.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let account = accounts.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(account)
     }
@@ -94,8 +90,7 @@ impl Model for Account {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::accounts::dsl::*;
 
-        let account = accounts.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let account = accounts.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(account)
     }
@@ -103,7 +98,8 @@ impl Model for Account {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::accounts::dsl::*;
 
-        let account = accounts.filter(value.eq(query))
+        let account = accounts
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -220,7 +216,7 @@ impl Detailed for Account {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="accounts"]
+#[table_name = "accounts"]
 pub struct NewAccount {
     pub value: String,
     pub service: String,
@@ -315,7 +311,7 @@ impl InsertToNew for InsertAccount {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="accounts"]
+#[table_name = "accounts"]
 pub struct AccountUpdate {
     pub id: i32,
     pub displayname: Option<String>,
@@ -329,13 +325,13 @@ pub struct AccountUpdate {
 
 impl Upsert for AccountUpdate {
     fn is_dirty(&self) -> bool {
-        self.displayname.is_some() ||
-        self.email.is_some() ||
-        self.url.is_some() ||
-        self.last_seen.is_some() ||
-        self.birthday.is_some() ||
-        self.phonenumber.is_some() ||
-        self.profile_pic.is_some()
+        self.displayname.is_some()
+            || self.email.is_some()
+            || self.url.is_some()
+            || self.last_seen.is_some()
+            || self.birthday.is_some()
+            || self.phonenumber.is_some()
+            || self.profile_pic.is_some()
     }
 
     fn generic(self) -> Update {

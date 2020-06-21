@@ -1,16 +1,15 @@
-use crate::errors::*;
-use crate::ipc::common::*;
 use crate::engine::Environment;
+use crate::errors::*;
 use crate::geoip::MaxmindReader;
+use crate::ipc::common::*;
 use crate::psl::PslReader;
-use serde_json;
 use crate::worker::Event;
+use serde_json;
 
 use std::fmt::Debug;
 use std::io::prelude::*;
 use std::io::{self, Stdin, Stdout};
 use std::sync::{Arc, Mutex};
-
 
 pub trait IpcChild: Debug {
     fn send(&mut self, event: &Event) -> Result<()>;
@@ -29,10 +28,7 @@ impl StdioIpcChild {
         let stdin = io::stdin();
         let stdout = io::stdout();
 
-        StdioIpcChild {
-            stdin,
-            stdout,
-        }
+        StdioIpcChild { stdin, stdout }
     }
 
     pub fn recv_start(&mut self) -> Result<StartCommand> {
@@ -97,11 +93,11 @@ pub fn run(geoip: Option<MaxmindReader>, asn: Option<MaxmindReader>, psl: PslRea
     };
 
     let mtx: Arc<Mutex<Box<dyn IpcChild>>> = Arc::new(Mutex::new(Box::new(ipc_child)));
-    let result = start.module.run(environment,
-                                  mtx.clone(),
-                                  start.arg.into());
-    let mut ipc_child = Arc::try_unwrap(mtx).expect("Failed to consume Arc")
-                        .into_inner().expect("Failed to consume Mutex");
+    let result = start.module.run(environment, mtx.clone(), start.arg.into());
+    let mut ipc_child = Arc::try_unwrap(mtx)
+        .expect("Failed to consume Arc")
+        .into_inner()
+        .expect("Failed to consume Mutex");
 
     let event = result.into();
     ipc_child.send(&Event::Exit(event))?;

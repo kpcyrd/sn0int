@@ -7,8 +7,8 @@ use crate::notify::{self, Notification};
 use crate::options::{self, Opt};
 use crate::shell::Shell;
 use crate::term;
-use structopt::StructOpt;
 use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
@@ -32,7 +32,7 @@ pub enum Subcommand {
 #[derive(Debug, StructOpt)]
 pub struct SendArgs {
     /// Evaluate the routing rules, but do not actually send a notification
-    #[structopt(short="n", long)]
+    #[structopt(short = "n", long)]
     pub dry_run: bool,
     pub topic: String,
     #[structopt(flatten)]
@@ -42,32 +42,38 @@ pub struct SendArgs {
 #[derive(Debug, StructOpt)]
 pub struct ExecArgs {
     pub module: String,
-    #[structopt(short="o", long="option")]
+    #[structopt(short = "o", long = "option")]
     pub options: Vec<options::Opt>,
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
+    #[structopt(short = "v", long = "verbose", parse(from_occurrences))]
     verbose: u64,
     #[structopt(flatten)]
     pub notification: Notification,
 }
 
 fn print_summary(module: &Module, sent: usize, errors: usize) {
-        let mut out = if sent == 1 {
-            String::from("Sent 1 notification")
-        } else {
-            format!("Sent {} notifications", sent)
-        };
+    let mut out = if sent == 1 {
+        String::from("Sent 1 notification")
+    } else {
+        format!("Sent {} notifications", sent)
+    };
 
-        out.push_str(&format!(" with {}", module.canonical()));
+    out.push_str(&format!(" with {}", module.canonical()));
 
-        if errors > 0 {
-            out.push_str(&format!(" ({} errors)", errors));
-        }
+    if errors > 0 {
+        out.push_str(&format!(" ({} errors)", errors));
+    }
 
-        term::info(&out);
+    term::info(&out);
 }
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
-    notify::run_router(rl, &mut term::Term, args.dry_run, &args.topic, &args.notification)?;
+    notify::run_router(
+        rl,
+        &mut term::Term,
+        args.dry_run,
+        &args.topic,
+        &args.notification,
+    )?;
     Ok(())
 }
 

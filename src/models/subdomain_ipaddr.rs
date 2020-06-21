@@ -1,14 +1,13 @@
 use crate::errors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
 use std::net;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Subdomain)]
 #[belongs_to(IpAddr)]
-#[table_name="subdomain_ipaddrs"]
+#[table_name = "subdomain_ipaddrs"]
 pub struct SubdomainIpAddr {
     pub id: i32,
     pub subdomain_id: i32,
@@ -62,7 +61,8 @@ impl Model for SubdomainIpAddr {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::subdomain_ipaddrs::dsl::*;
 
-        let subdomain_ipaddr = subdomain_ipaddrs.filter(id.eq(my_id))
+        let subdomain_ipaddr = subdomain_ipaddrs
+            .filter(id.eq(my_id))
             .first::<Self>(db.db())?;
 
         Ok(subdomain_ipaddr)
@@ -72,9 +72,10 @@ impl Model for SubdomainIpAddr {
         use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let (my_subdomain_id, my_ip_addr_id) = query;
-        let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
-                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
-                                                   .first::<Self>(db.db())?;
+        let subdomain_ipaddr = subdomain_ipaddrs
+            .filter(subdomain_id.eq(my_subdomain_id))
+            .filter(ip_addr_id.eq(my_ip_addr_id))
+            .first::<Self>(db.db())?;
 
         Ok(subdomain_ipaddr)
     }
@@ -83,10 +84,11 @@ impl Model for SubdomainIpAddr {
         use crate::schema::subdomain_ipaddrs::dsl::*;
 
         let (my_subdomain_id, my_ip_addr_id) = query;
-        let subdomain_ipaddr = subdomain_ipaddrs.filter(subdomain_id.eq(my_subdomain_id))
-                                                   .filter(ip_addr_id.eq(my_ip_addr_id))
-                                                   .first::<Self>(db.db())
-                                                   .optional()?;
+        let subdomain_ipaddr = subdomain_ipaddrs
+            .filter(subdomain_id.eq(my_subdomain_id))
+            .filter(ip_addr_id.eq(my_ip_addr_id))
+            .first::<Self>(db.db())
+            .optional()?;
 
         Ok(subdomain_ipaddr)
     }
@@ -115,7 +117,7 @@ impl Printable<PrintableSubdomainIpAddr> for SubdomainIpAddr {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="subdomain_ipaddrs"]
+#[table_name = "subdomain_ipaddrs"]
 pub struct NewSubdomainIpAddr {
     pub subdomain_id: i32,
     pub ip_addr_id: i32,

@@ -1,15 +1,14 @@
 use crate::errors::*;
-use crate::fmt::Write;
 use crate::fmt::colors::*;
+use crate::fmt::Write;
 use crate::models::*;
 use diesel;
 use diesel::prelude::*;
 use std::net;
 use std::result;
 
-
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="ipaddrs"]
+#[table_name = "ipaddrs"]
 pub struct IpAddr {
     pub id: i32,
     pub family: String,
@@ -79,8 +78,7 @@ impl Model for IpAddr {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::ipaddrs::dsl::*;
 
-        let ipaddr = ipaddrs.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let ipaddr = ipaddrs.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(ipaddr)
     }
@@ -88,8 +86,7 @@ impl Model for IpAddr {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::ipaddrs::dsl::*;
 
-        let ipaddr = ipaddrs.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let ipaddr = ipaddrs.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(ipaddr)
     }
@@ -97,7 +94,8 @@ impl Model for IpAddr {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::ipaddrs::dsl::*;
 
-        let ipaddr = ipaddrs.filter(value.eq(query))
+        let ipaddr = ipaddrs
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -135,19 +133,19 @@ impl IpAddr {
             .select(subdomain_ipaddrs::subdomain_id)
             .load::<i32>(db.db())?;
 
-        subdomain_ids.into_iter()
-            .map(|subdomain_id| subdomains::table
-                .filter(subdomains::id.eq(subdomain_id))
-                .first::<Subdomain>(db.db())
-            )
+        subdomain_ids
+            .into_iter()
+            .map(|subdomain_id| {
+                subdomains::table
+                    .filter(subdomains::id.eq(subdomain_id))
+                    .first::<Subdomain>(db.db())
+            })
             .collect::<result::Result<_, _>>()
             .map_err(Error::from)
     }
 
     fn ports(&self, db: &Database) -> Result<Vec<Port>> {
-        Port::belonging_to(self)
-            .load(db.db())
-            .map_err(Error::from)
+        Port::belonging_to(self).load(db.db()).map_err(Error::from)
     }
 }
 
@@ -245,11 +243,15 @@ impl Detailed for IpAddr {
     type T = DetailedIpAddr;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let subdomains = self.subdomains(db)?.into_iter()
+        let subdomains = self
+            .subdomains(db)?
+            .into_iter()
             .map(|x| x.printable(db))
             .collect::<Result<_>>()?;
 
-        let ports = self.ports(db)?.into_iter()
+        let ports = self
+            .ports(db)?
+            .into_iter()
             .map(|x| x.printable(db))
             .collect::<Result<_>>()?;
 
@@ -271,7 +273,7 @@ impl Detailed for IpAddr {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="ipaddrs"]
+#[table_name = "ipaddrs"]
 pub struct NewIpAddr {
     pub family: String,
     pub value: String,
@@ -359,7 +361,9 @@ impl InsertToNew for InsertIpAddr {
     type Target = NewIpAddr;
 
     fn try_into_new(self) -> Result<NewIpAddr> {
-        let ipaddr = self.value.parse::<net::IpAddr>()
+        let ipaddr = self
+            .value
+            .parse::<net::IpAddr>()
             .context("Failed to parse ip address")?;
 
         let family = match ipaddr {
@@ -389,7 +393,7 @@ impl InsertToNew for InsertIpAddr {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="ipaddrs"]
+#[table_name = "ipaddrs"]
 pub struct IpAddrUpdate {
     pub id: i32,
     pub continent: Option<String>,
@@ -407,17 +411,17 @@ pub struct IpAddrUpdate {
 
 impl Upsert for IpAddrUpdate {
     fn is_dirty(&self) -> bool {
-        self.continent.is_some() ||
-        self.continent_code.is_some() ||
-        self.country.is_some() ||
-        self.country_code.is_some() ||
-        self.city.is_some() ||
-        self.latitude.is_some() ||
-        self.longitude.is_some() ||
-        self.asn.is_some() ||
-        self.as_org.is_some() ||
-        self.description.is_some() ||
-        self.reverse_dns.is_some()
+        self.continent.is_some()
+            || self.continent_code.is_some()
+            || self.country.is_some()
+            || self.country_code.is_some()
+            || self.city.is_some()
+            || self.latitude.is_some()
+            || self.longitude.is_some()
+            || self.asn.is_some()
+            || self.as_org.is_some()
+            || self.description.is_some()
+            || self.reverse_dns.is_some()
     }
 
     fn generic(self) -> Update {

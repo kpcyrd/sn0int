@@ -32,28 +32,28 @@ pub fn parse_last(line: &str) -> Token {
                 match c {
                     'a'..='z' | 'A'..='Z' | '_' => {
                         token = Token::Name(c.to_string());
-                    },
+                    }
                     '0'..='9' => {
                         token = Token::Value(c.to_string());
-                    },
+                    }
                     '\'' | '"' => {
                         token = Token::InString(StringState::new(c));
-                    },
+                    }
                     // ignore operators
                     _ => (),
                 }
-            },
+            }
             Token::Name(s) => {
                 match c {
                     'a'..='z' | 'A'..='Z' | '0'..='9' | '_' => {
                         s.push(c);
-                    },
+                    }
                     // ignore operators
                     _ => {
                         token = Token::Empty;
-                    },
+                    }
                 }
-            },
+            }
             Token::InString(s) => {
                 if s.escape {
                     s.buf.push(c);
@@ -66,19 +66,19 @@ pub fn parse_last(line: &str) -> Token {
                 } else {
                     s.buf.push(c);
                 }
-            },
+            }
             Token::Value(s) => {
                 match c {
                     '0'..='9' => {
                         s.push(c);
-                    },
+                    }
                     // ignore operators
                     // a name can't directly follow a value
                     _ => {
                         token = Token::Empty;
-                    },
+                    }
                 }
-            },
+            }
         }
     }
 
@@ -104,11 +104,14 @@ mod tests {
     #[test]
     pub fn test_in_string() {
         let token = parse_last("return url_encode(\"asdf");
-        assert_eq!(token, Token::InString(StringState {
-            quote: '"',
-            escape: false,
-            buf: "asdf".into(),
-        }));
+        assert_eq!(
+            token,
+            Token::InString(StringState {
+                quote: '"',
+                escape: false,
+                buf: "asdf".into(),
+            })
+        );
     }
 
     #[test]

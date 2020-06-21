@@ -1,15 +1,14 @@
 use crate::errors::*;
-use std::io;
-use std::thread;
-use std::time::Duration;
-use std::ops::Deref;
-use diesel::Connection as ConnectionTrait;
 use diesel::pg::PgConnection;
 use diesel::r2d2;
+use diesel::Connection as ConnectionTrait;
 use rocket::http::Status;
 use rocket::request::{self, FromRequest};
-use rocket::{Request, State, Outcome};
-
+use rocket::{Outcome, Request, State};
+use std::io;
+use std::ops::Deref;
+use std::thread;
+use std::time::Duration;
 
 type ManagedPgConn = r2d2::ConnectionManager<PgConnection>;
 type Pool = r2d2::Pool<ManagedPgConn>;
@@ -32,7 +31,7 @@ impl<'a, 'r> FromRequest<'a, 'r> for Connection {
         let pool = request.guard::<State<Pool>>()?;
         match pool.get() {
             Ok(conn) => Outcome::Success(Connection(conn)),
-            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ()))
+            Err(_) => Outcome::Failure((Status::ServiceUnavailable, ())),
         }
     }
 }

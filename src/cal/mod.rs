@@ -15,23 +15,24 @@ impl FromStr for DateArg {
 
     fn from_str(s: &str) -> Result<DateArg> {
         let ds = match s.to_lowercase().as_str() {
-            "jan" | "january"   => DateArg::Month(1),
-            "feb" | "february"  => DateArg::Month(2),
-            "mar" | "march"     => DateArg::Month(3),
-            "apr" | "april"     => DateArg::Month(4),
-            "may"               => DateArg::Month(5),
-            "jun" | "june"      => DateArg::Month(6),
-            "jul" | "july"      => DateArg::Month(7),
-            "aug" | "august"    => DateArg::Month(8),
+            "jan" | "january" => DateArg::Month(1),
+            "feb" | "february" => DateArg::Month(2),
+            "mar" | "march" => DateArg::Month(3),
+            "apr" | "april" => DateArg::Month(4),
+            "may" => DateArg::Month(5),
+            "jun" | "june" => DateArg::Month(6),
+            "jul" | "july" => DateArg::Month(7),
+            "aug" | "august" => DateArg::Month(8),
             "sep" | "september" => DateArg::Month(9),
-            "oct" | "october"   => DateArg::Month(10),
-            "nov" | "november"  => DateArg::Month(11),
-            "dec" | "december"  => DateArg::Month(12),
+            "oct" | "october" => DateArg::Month(10),
+            "nov" | "november" => DateArg::Month(11),
+            "dec" | "december" => DateArg::Month(12),
             _ => {
-                let num = s.parse::<i32>()
+                let num = s
+                    .parse::<i32>()
                     .context("Input is not a month and not a number")?;
                 DateArg::Num(num)
-            },
+            }
         };
         Ok(ds)
     }

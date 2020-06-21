@@ -5,15 +5,15 @@ use crate::cmd::Cmd;
 use crate::gfx;
 use crate::models::*;
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
-use crate::utils;
 use crate::term;
+use crate::utils;
+use ipnetwork;
 use std::fs;
 use std::net;
 use std::net::SocketAddr;
-use ipnetwork;
 use std::path::Path;
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 use walkdir::WalkDir;
 
 #[derive(Debug, StructOpt)]
@@ -22,53 +22,53 @@ pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
     /// Do not actually insert into database
-    #[structopt(short="n", long="dry-run")]
+    #[structopt(short = "n", long = "dry-run")]
     dry_run: bool,
 }
 
 #[derive(Debug, StructOpt)]
 pub enum Target {
     /// Insert domain into the database
-    #[structopt(name="domain")]
+    #[structopt(name = "domain")]
     Domain(AddDomain),
     /// Insert subdomain into the database
-    #[structopt(name="subdomain")]
+    #[structopt(name = "subdomain")]
     Subdomain(AddSubdomain),
     /// Insert ip address into the database
-    #[structopt(name="ipaddr")]
+    #[structopt(name = "ipaddr")]
     IpAddr(AddIpAddr),
     /// Insert url into the database
-    #[structopt(name="url")]
+    #[structopt(name = "url")]
     Url(AddUrl),
     /// Insert email into the database
-    #[structopt(name="email")]
+    #[structopt(name = "email")]
     Email(AddEmail),
     /// Insert phonenumber into the database
-    #[structopt(name="phonenumber")]
+    #[structopt(name = "phonenumber")]
     PhoneNumber(AddPhoneNumber),
     /// Insert device into the database
-    #[structopt(name="device")]
+    #[structopt(name = "device")]
     Device(AddDevice),
     /// Insert network into the database
-    #[structopt(name="network")]
+    #[structopt(name = "network")]
     Network(AddNetwork),
     /// Insert account into the database
-    #[structopt(name="account")]
+    #[structopt(name = "account")]
     Account(AddAccount),
     /// Insert breach into the database
-    #[structopt(name="breach")]
+    #[structopt(name = "breach")]
     Breach(AddBreach),
     /// Insert images into the database
-    #[structopt(name="image")]
+    #[structopt(name = "image")]
     Image(AddImage),
     /// Insert ip network into the database
-    #[structopt(name="netblock")]
+    #[structopt(name = "netblock")]
     Netblock(AddNetblock),
     /// Insert port into the database
-    #[structopt(name="port")]
+    #[structopt(name = "port")]
     Port(AddPort),
     /// Insert a crypto currency address into the database
-    #[structopt(name="cryptoaddr")]
+    #[structopt(name = "cryptoaddr")]
     CryptoAddr(AddCryptoAddr),
 }
 
@@ -118,7 +118,9 @@ impl IntoInsert for AddDomain {
         };
 
         // ensure input is a valid domain
-        let dns_name = rl.psl()?.parse_dns_name(&domain)
+        let dns_name = rl
+            .psl()?
+            .parse_dns_name(&domain)
             .map_err(|e| format_err!("Failed to parse domain: {}", e))?;
 
         if dns_name.fulldomain.is_some() {
@@ -144,13 +146,18 @@ impl IntoInsert for AddSubdomain {
             _ => utils::question("Subdomain")?,
         };
 
-        let dns_name = rl.psl()?.parse_dns_name(&subdomain)
+        let dns_name = rl
+            .psl()?
+            .parse_dns_name(&subdomain)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
-        let domain_id = match rl.db().insert_struct(NewDomain {
-            value: dns_name.root,
-            unscoped: false,
-        }, true)? {
+        let domain_id = match rl.db().insert_struct(
+            NewDomain {
+                value: dns_name.root,
+                unscoped: false,
+            },
+            true,
+        )? {
             Some((_, domain_id)) => domain_id,
             _ => bail!("Domain is out out of scope"),
         };
@@ -176,7 +183,7 @@ impl IntoInsert for AddIpAddr {
             _ => {
                 let ipaddr = utils::question("IP address")?;
                 ipaddr.parse()?
-            },
+            }
         };
 
         let family = match ipaddr {
@@ -216,39 +223,51 @@ impl IntoInsert for AddUrl {
         };
 
         let parts = url::Url::parse(&url)?;
-        let subdomain = parts.domain()
+        let subdomain = parts
+            .domain()
             .ok_or_else(|| format_err!("url doesn't have a domain host"))?;
 
-        let dns_name = rl.psl()?.parse_dns_name(&subdomain)
+        let dns_name = rl
+            .psl()?
+            .parse_dns_name(&subdomain)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
-        let domain_id = match rl.db().insert_struct(NewDomain {
-            value: dns_name.root,
-            unscoped: false,
-        }, true)? {
+        let domain_id = match rl.db().insert_struct(
+            NewDomain {
+                value: dns_name.root,
+                unscoped: false,
+            },
+            true,
+        )? {
             Some((_, domain_id)) => domain_id,
             _ => bail!("Domain is out out of scope"),
         };
 
-        let subdomain_id = match rl.db().insert_struct(NewSubdomain {
-            value: subdomain.to_string(),
-            domain_id,
-            resolvable: None,
-            unscoped: false,
-        }, true)? {
+        let subdomain_id = match rl.db().insert_struct(
+            NewSubdomain {
+                value: subdomain.to_string(),
+                domain_id,
+                resolvable: None,
+                unscoped: false,
+            },
+            true,
+        )? {
             Some((_, subdomain_id)) => subdomain_id,
             _ => bail!("Subdomain is out out of scope"),
         };
 
-        Ok(Insert::Url(InsertUrl {
-            subdomain_id,
-            value: url,
-            status: None,
-            body: None,
-            online: None,
-            title: None,
-            redirect: None,
-        }.try_into_new()?))
+        Ok(Insert::Url(
+            InsertUrl {
+                subdomain_id,
+                value: url,
+                status: None,
+                body: None,
+                online: None,
+                title: None,
+                redirect: None,
+            }
+            .try_into_new()?,
+        ))
     }
 }
 
@@ -287,7 +306,7 @@ impl IntoInsert for AddPhoneNumber {
                 let phonenumber = utils::question("Phone Number")?;
                 let name = utils::question_opt("Name")?;
                 (phonenumber, name)
-            },
+            }
         };
 
         Ok(Insert::PhoneNumber(NewPhoneNumber {
@@ -316,14 +335,12 @@ pub struct AddDevice {
 impl IntoInsert for AddDevice {
     fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let (mac, name) = match self.mac {
-            Some(mac) => {
-                (mac, self.name)
-            },
+            Some(mac) => (mac, self.name),
             _ => {
                 let mac = utils::question("Mac address")?;
                 let name = utils::question_opt("Name")?;
                 (mac, name)
-            },
+            }
         };
 
         Ok(Insert::Device(NewDevice {
@@ -455,13 +472,14 @@ impl IntoInsert for AddImage {
                     Err(err) => {
                         let path = err.path().unwrap_or(Path::new("")).display();
 
-                        let err = err.io_error()
+                        let err = err
+                            .io_error()
                             .map(|err| err.to_string())
                             .unwrap_or_else(|| String::from("walkdir failed"));
                         term::error(&format!("Failed to access entry {:?}: {}", path, err));
 
                         continue;
-                    },
+                    }
                 };
 
                 if path.file_type().is_dir() {
@@ -476,7 +494,7 @@ impl IntoInsert for AddImage {
                     Err(err) => {
                         term::error(&format!("Failed to read {:?}: {}", path, err));
                         continue;
-                    },
+                    }
                 };
 
                 // check if image
@@ -485,7 +503,7 @@ impl IntoInsert for AddImage {
                     _ => {
                         debug!("Probably not an image, skipping");
                         continue;
-                    },
+                    }
                 };
                 debug!("Detected image format: {:?}", format);
 
@@ -495,9 +513,7 @@ impl IntoInsert for AddImage {
                 }
                 let value = blob.id;
 
-                let filename = path.file_name()
-                    .to_string_lossy()
-                    .to_string();
+                let filename = path.file_name().to_string_lossy().to_string();
 
                 term::info(&format!("{} {:?}", value, path.path()));
 
@@ -541,7 +557,7 @@ impl IntoInsert for AddNetblock {
             _ => {
                 let ipnet = utils::question("IP network")?;
                 ipnet.parse()?
-            },
+            }
         };
 
         let family = match ipnet {
@@ -586,22 +602,25 @@ impl IntoInsert for AddPort {
             net::IpAddr::V6(_) => "6",
         };
 
-        let ip_addr_id = match rl.db().insert_struct(NewIpAddr {
-            family: family.to_string(),
-            value: addr.ip().to_string(),
-            continent: None,
-            continent_code: None,
-            country: None,
-            country_code: None,
-            city: None,
-            latitude: None,
-            longitude: None,
-            asn: None,
-            as_org: None,
-            description: None,
-            reverse_dns: None,
-            unscoped: false,
-        }, true)? {
+        let ip_addr_id = match rl.db().insert_struct(
+            NewIpAddr {
+                family: family.to_string(),
+                value: addr.ip().to_string(),
+                continent: None,
+                continent_code: None,
+                country: None,
+                country_code: None,
+                city: None,
+                latitude: None,
+                longitude: None,
+                asn: None,
+                as_org: None,
+                description: None,
+                reverse_dns: None,
+                unscoped: false,
+            },
+            true,
+        )? {
             Some((_, ip_addr_id)) => ip_addr_id,
             _ => bail!("IpAddr is out out of scope"),
         };

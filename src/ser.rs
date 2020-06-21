@@ -1,16 +1,18 @@
-use std::fmt;
-use std::result;
+use serde::de::SeqAccess;
+use serde::de::{self, Visitor};
 use serde::Deserialize;
 use serde::Deserializer;
-use serde::de::{self, Visitor};
-use serde::de::SeqAccess;
+use std::fmt;
 use std::marker::PhantomData;
-
+use std::result;
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct StringOrBytes(#[serde(deserialize_with="string_or_bytes")] pub Vec<u8>);
+pub struct StringOrBytes(#[serde(deserialize_with = "string_or_bytes")] pub Vec<u8>);
 
-pub fn string_or_bytes<'de, D>(deserializer: D) -> result::Result<Vec<u8>, D::Error> where D: Deserializer<'de> {
+pub fn string_or_bytes<'de, D>(deserializer: D) -> result::Result<Vec<u8>, D::Error>
+where
+    D: Deserializer<'de>,
+{
     struct StringOrBytes(PhantomData<fn() -> Vec<u8>>);
 
     impl<'de> Visitor<'de> for StringOrBytes {
@@ -44,9 +46,11 @@ pub fn string_or_bytes<'de, D>(deserializer: D) -> result::Result<Vec<u8>, D::Er
     deserializer.deserialize_any(StringOrBytes(PhantomData))
 }
 
-pub fn opt_string_or_bytes<'de, D>(deserializer: D) -> result::Result<Option<Vec<u8>>, D::Error> where D: Deserializer<'de> {
-    Option::<StringOrBytes>::deserialize(deserializer)
-        .map(|opt_wrapped: Option<StringOrBytes>| {
-            opt_wrapped.map(|wrapped: StringOrBytes| wrapped.0)
-        })
+pub fn opt_string_or_bytes<'de, D>(deserializer: D) -> result::Result<Option<Vec<u8>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::<StringOrBytes>::deserialize(deserializer).map(|opt_wrapped: Option<StringOrBytes>| {
+        opt_wrapped.map(|wrapped: StringOrBytes| wrapped.0)
+    })
 }

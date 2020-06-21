@@ -1,9 +1,9 @@
 use crate::errors::*;
 
-use chrono::Duration;
-use chrono::prelude::*;
 use crate::cal::{ActivityGrade, DateArg};
 use crate::models::*;
+use chrono::prelude::*;
+use chrono::Duration;
 use std::collections::HashMap;
 
 const MIN_PER_DAY: u32 = 1440;
@@ -67,7 +67,12 @@ pub struct DateTimeContext {
 }
 
 impl DateTimeContext {
-    pub fn new(events: &[Activity], now: NaiveDateTime, slice_width: u32, slice_duration: u32) -> DateTimeContext {
+    pub fn new(
+        events: &[Activity],
+        now: NaiveDateTime,
+        slice_width: u32,
+        slice_duration: u32,
+    ) -> DateTimeContext {
         let (events, max) = setup_graph_map(&events, slice_duration);
         DateTimeContext {
             events,
@@ -114,14 +119,12 @@ impl DateTimeSpec {
             let mut start = today;
 
             if let Some(context) = context {
-                start = start.checked_sub_signed(Duration::days(context as i64))
+                start = start
+                    .checked_sub_signed(Duration::days(context as i64))
                     .ok_or_else(|| format_err!("Failed travel back in time"))?;
             }
 
-            Ok(DateTimeSpec {
-                start,
-                end: today,
-            })
+            Ok(DateTimeSpec { start, end: today })
         } else {
             todo!()
         }
@@ -185,7 +188,8 @@ impl DateTimeSpec {
                 w.push('\n');
             }
 
-            date = date.checked_add_signed(Duration::days(1))
+            date = date
+                .checked_add_signed(Duration::days(1))
                 .expect("Failed to get next day");
         }
 

@@ -2,24 +2,23 @@ use crate::errors::*;
 
 use crate::keyring::{KeyName, KeyRing};
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 use crate::utils;
-
+use structopt::clap::AppSettings;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub enum Args {
-    #[structopt(name="add")]
+    #[structopt(name = "add")]
     /// Add a new key to the keyring
     Add(KeyRingAdd),
-    #[structopt(name="delete")]
+    #[structopt(name = "delete")]
     /// Delete a key from the keyring
     Delete(KeyRingDelete),
-    #[structopt(name="get")]
+    #[structopt(name = "get")]
     /// Get a key from the keyring
     Get(KeyRingGet),
-    #[structopt(name="list")]
+    #[structopt(name = "list")]
     /// List keys in the keyring
     List(KeyRingList),
 }
@@ -38,8 +37,7 @@ pub struct KeyRingDelete {
 #[derive(Debug, StructOpt)]
 pub struct KeyRingGet {
     key: KeyName,
-    #[structopt(short="q",
-                long="quiet")]
+    #[structopt(short = "q", long = "quiet")]
     /// Only output secret key
     quiet: bool,
 }

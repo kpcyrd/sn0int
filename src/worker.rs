@@ -3,27 +3,26 @@ use crate::errors::*;
 use crate::blobs::Blob;
 use crate::channel;
 use crate::cmd::run_cmd::Params;
-use crate::db::{DbChange, Family};
 use crate::db::ttl::Ttl;
+use crate::db::{DbChange, Family};
 use crate::engine::Module;
 use crate::ipc;
 use crate::ipc::parent::IpcParent;
 use crate::models::*;
 use crate::notify::{self, Notification};
-use serde_json;
-use crate::ratelimits::{Ratelimiter, RatelimitResponse};
+use crate::ratelimits::{RatelimitResponse, Ratelimiter};
 use crate::shell::Shell;
+use crate::term::{SpinLogger, Spinner, StackedSpinners};
+use serde_json;
 use sn0int_std::ratelimits::RatelimitSender;
 use std::collections::HashMap;
+use std::io::{BufRead, BufReader, Read, Stdin};
+use std::net::SocketAddr;
 use std::result;
 use std::sync::{mpsc, Arc, Mutex};
-use std::time::Duration;
 use std::thread;
-use std::io::{Stdin, Read, BufRead, BufReader};
-use std::net::SocketAddr;
-use crate::term::{Spinner, StackedSpinners, SpinLogger};
+use std::time::Duration;
 use threadpool::ThreadPool;
-
 
 type DbSender = mpsc::Sender<result::Result<DatabaseResponse, String>>;
 pub type VoidSender = mpsc::Sender<result::Result<(), String>>;
@@ -81,10 +80,7 @@ pub struct EventSender {
 impl EventSender {
     #[inline]
     pub fn new(name: String, tx: channel::Sender<MultiEvent>) -> EventSender {
-        EventSender {
-            name,
-            tx,
-        }
+        EventSender { name, tx }
     }
 
     #[inline]
@@ -94,7 +90,9 @@ impl EventSender {
 
     #[inline]
     pub fn send(&self, event: Event2) {
-        self.tx.send(MultiEvent::new(self.name.clone(), event)).unwrap();
+        self.tx
+            .send(MultiEvent::new(self.name.clone(), event))
+            .unwrap();
     }
 }
 
@@ -116,12 +114,13 @@ impl From<Result<()>> for ExitEvent {
         match result {
             Ok(_) => ExitEvent::Ok,
             Err(err) => {
-                let err = err.iter_chain()
+                let err = err
+                    .iter_chain()
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(": ");
                 ExitEvent::Err(err.to_string())
-            },
+            }
         }
     }
 }
@@ -170,10 +169,15 @@ impl EventWithCallback for DatabaseEvent {
 
 impl DatabaseEvent {
     fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, subject: String) {
-        if let Err(err) = notify::trigger_notify_event(rl, spinner, topic, &Notification {
-            subject,
-            body: None,
-        }) {
+        if let Err(err) = notify::trigger_notify_event(
+            rl,
+            spinner,
+            topic,
+            &Notification {
+                subject,
+                body: None,
+            },
+        ) {
             spinner.error(&format!("Failed to send notifications: {}", err));
         }
     }
@@ -188,8 +192,19 @@ impl DatabaseEvent {
         Self::notify(rl, spinner, &topic, subject);
     }
 
-    fn on_update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str, update: &Update) {
-        spinner.log(&format!("Updating {} {:?} ({})", family, value, update.to_term_str()));
+    fn on_update<T: SpinLogger>(
+        rl: &mut Shell,
+        spinner: &mut T,
+        family: &str,
+        value: &str,
+        update: &Update,
+    ) {
+        spinner.log(&format!(
+            "Updating {} {:?} ({})",
+            family,
+            value,
+            update.to_term_str()
+        ));
 
         // TODO: in the future we could consider firing multiple events, one for each column
         // TODO: this would be super noisy if a lot of fields change though
@@ -198,7 +213,12 @@ impl DatabaseEvent {
         Self::notify(rl, spinner, &topic, subject);
     }
 
-    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, object: &NewActivity, verbose: u64) {
+    fn on_activity<T: SpinLogger>(
+        rl: &mut Shell,
+        spinner: &mut T,
+        object: &NewActivity,
+        verbose: u64,
+    ) {
         Self::spinner_log_new_activity(&object, spinner, verbose);
 
         // TODO: we don't want to copy the match arms everywhere
@@ -210,7 +230,11 @@ impl DatabaseEvent {
         Self::notify(rl, spinner, &topic, subject);
     }
 
-    fn spinner_log_new_activity<T: SpinLogger>(object: &NewActivity, spinner: &mut T, verbose: u64) {
+    fn spinner_log_new_activity<T: SpinLogger>(
+        object: &NewActivity,
+        spinner: &mut T,
+        verbose: u64,
+    ) {
         let mut log = format!("{:?} ", object.topic);
         if let Some(uniq) = &object.uniq {
             log.push_str(&format!("({:?}) ", uniq));
@@ -232,7 +256,14 @@ impl DatabaseEvent {
         spinner.log(&log);
     }
 
-    fn insert<T: SpinLogger>(rl: &mut Shell, object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, verbose: u64) {
+    fn insert<T: SpinLogger>(
+        rl: &mut Shell,
+        object: Insert,
+        ttl: Option<i32>,
+        tx: DbSender,
+        spinner: &mut T,
+        verbose: u64,
+    ) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Inserting: {:?}", object));
@@ -254,12 +285,15 @@ impl DatabaseEvent {
                         Self::on_insert(rl, spinner, object.family(), &value);
                     }
                     Err(err) => {
-                        spinner.error(&format!("Failed to query necessary fields for {:?}: {:?}", object, err));
+                        spinner.error(&format!(
+                            "Failed to query necessary fields for {:?}: {:?}",
+                            object, err
+                        ));
                     }
                 }
 
                 Ok(DatabaseResponse::Inserted(id))
-            },
+            }
             Ok(Some((DbChange::Update(update), id))) => {
                 if let Some(ttl) = ttl {
                     if let Err(err) = Ttl::bump(&object, id, ttl, db) {
@@ -272,11 +306,11 @@ impl DatabaseEvent {
                     Err(err) => {
                         // TODO: this should be unreachable
                         spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
-                    },
+                    }
                 }
 
                 Ok(DatabaseResponse::Updated(id))
-            },
+            }
             Ok(Some((DbChange::None, id))) => {
                 if let Some(ttl) = ttl {
                     if let Err(err) = Ttl::bump(&object, id, ttl, db) {
@@ -285,20 +319,26 @@ impl DatabaseEvent {
                 }
 
                 Ok(DatabaseResponse::NoChange(id))
-            },
+            }
             Ok(None) => Ok(DatabaseResponse::None),
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
                 Err(err)
-            },
+            }
         };
 
-        tx.send(result).expect("Failed to send db result to channel");
+        tx.send(result)
+            .expect("Failed to send db result to channel");
     }
 
-
-    pub fn activity<T: SpinLogger>(rl: &mut Shell, object: NewActivity, tx: DbSender, spinner: &mut T, verbose: u64) {
+    pub fn activity<T: SpinLogger>(
+        rl: &mut Shell,
+        object: NewActivity,
+        tx: DbSender,
+        spinner: &mut T,
+        verbose: u64,
+    ) {
         let db = rl.db();
         let result = db.insert_activity(object.clone());
         debug!("{:?} => {:?}", object, result);
@@ -307,19 +347,28 @@ impl DatabaseEvent {
             Ok(true) => {
                 Self::on_activity(rl, spinner, &object, verbose);
                 Ok(DatabaseResponse::Inserted(0))
-            },
+            }
             Ok(false) => Ok(DatabaseResponse::NoChange(0)),
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
                 Err(err)
-            },
+            }
         };
 
-        tx.send(result).expect("Failed to send db result to channel");
+        tx.send(result)
+            .expect("Failed to send db result to channel");
     }
 
-    pub fn update<T: SpinLogger>(rl: &mut Shell, family: &str, value: &str, update: &Update, tx: DbSender, spinner: &mut T, verbose: u64) {
+    pub fn update<T: SpinLogger>(
+        rl: &mut Shell,
+        family: &str,
+        value: &str,
+        update: &Update,
+        tx: DbSender,
+        spinner: &mut T,
+        verbose: u64,
+    ) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Updating: {:?}", update));
@@ -332,21 +381,24 @@ impl DatabaseEvent {
             Ok(id) => {
                 Self::on_update(rl, spinner, family, &value, &update);
                 Ok(DatabaseResponse::Updated(id))
-            },
+            }
             Err(err) => {
                 let err = err.to_string();
                 spinner.error(&err);
                 Err(err)
-            },
+            }
         };
 
-        tx.send(result).expect("Failed to send db result to channel");
+        tx.send(result)
+            .expect("Failed to send db result to channel");
     }
 
     pub fn apply<T: SpinLogger>(self, rl: &mut Shell, tx: DbSender, spinner: &mut T, verbose: u64) {
         match self {
             DatabaseEvent::Insert(object) => Self::insert(rl, object, None, tx, spinner, verbose),
-            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(rl, object, Some(ttl), tx, spinner, verbose),
+            DatabaseEvent::InsertTtl((object, ttl)) => {
+                Self::insert(rl, object, Some(ttl), tx, spinner, verbose)
+            }
             DatabaseEvent::Activity(object) => Self::activity(rl, object, tx, spinner, verbose),
             DatabaseEvent::Select((family, value)) => {
                 let db = rl.db();
@@ -356,9 +408,12 @@ impl DatabaseEvent {
                     Err(e) => Err(e.to_string()),
                 };
 
-                tx.send(result).expect("Failed to send db result to channel");
-            },
-            DatabaseEvent::Update((family, value, update)) => Self::update(rl, family.as_str(), &value, &update, tx, spinner, verbose),
+                tx.send(result)
+                    .expect("Failed to send db result to channel");
+            }
+            DatabaseEvent::Update((family, value, update)) => {
+                Self::update(rl, family.as_str(), &value, &update, tx, spinner, verbose)
+            }
         }
     }
 }
@@ -401,7 +456,12 @@ impl StdioEvent {
         }
     }
 
-    pub fn apply(self, ipc_parent: &mut IpcParent, tx: &EventSender, reader: &mut Option<BufReader<Stdin>>) {
+    pub fn apply(
+        self,
+        ipc_parent: &mut IpcParent,
+        tx: &EventSender,
+        reader: &mut Option<BufReader<Stdin>>,
+    ) {
         let reply = match self {
             StdioEvent::Readline => Self::read_line(reader),
             StdioEvent::ToEnd => Self::read_to_end(reader),
@@ -429,15 +489,18 @@ impl EventWithCallback for RatelimitEvent {
 impl RatelimitEvent {
     #[inline]
     pub fn new(key: String, passes: u32, time: u32) -> RatelimitEvent {
-        RatelimitEvent {
-            key,
-            passes,
-            time,
-        }
+        RatelimitEvent { key, passes, time }
     }
 }
 
-pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
+pub fn spawn(
+    rl: &mut Shell,
+    module: &Module,
+    args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>,
+    params: &Params,
+    proxy: Option<SocketAddr>,
+    options: HashMap<String, String>,
+) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -473,7 +536,9 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
             }
 
             tx.send(Event2::Start);
-            let event = match ipc::parent::run(module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs) {
+            let event = match ipc::parent::run(
+                module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs,
+            ) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };
@@ -541,7 +606,9 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
 }
 
 pub fn spawn_fn<F, T>(label: &str, f: F, clear: bool) -> Result<T>
-        where F: FnOnce() -> Result<T> {
+where
+    F: FnOnce() -> Result<T>,
+{
     let (tx, rx) = channel::bounded(1);
 
     let spinner = Arc::new(Mutex::new(Spinner::random(label.to_string())));
@@ -596,9 +663,9 @@ pub trait Task {
 }
 
 pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) -> Result<()>
-    where
-        F: FnMut(String),
-        T: 'static + Send
+where
+    F: FnMut(String),
+    T: 'static + Send,
 {
     // This function hangs if args is empty, so return early if that's the case
     if tasks.is_empty() {

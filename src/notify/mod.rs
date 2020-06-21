@@ -1,7 +1,7 @@
-use crate::errors::*;
 use crate::cmd::run_cmd::prepare_keyring;
 use crate::cmd::run_cmd::Params;
 use crate::engine::Module;
+use crate::errors::*;
 use crate::options;
 use crate::shell::Shell;
 use crate::term::SpinLogger;
@@ -44,9 +44,11 @@ impl Glob {
 
         loop {
             match (filter.next(), topic.next()) {
-                (Some(filter), Some(topic)) => if !filter.matches(&topic) {
-                    return false;
-                },
+                (Some(filter), Some(topic)) => {
+                    if !filter.matches(&topic) {
+                        return false;
+                    }
+                }
                 (None, None) => return true,
                 (_, _) => return false,
             }
@@ -58,7 +60,8 @@ impl FromStr for Glob {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Glob> {
-        let patterns = s.split(':')
+        let patterns = s
+            .split(':')
             .map(|s| glob::Pattern::new(s).map_err(Error::from))
             .collect::<Result<Vec<_>>>()?;
         Ok(Glob {
@@ -70,7 +73,8 @@ impl FromStr for Glob {
 
 impl Serialize for Glob {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.src)
     }
@@ -78,7 +82,8 @@ impl Serialize for Glob {
 
 impl<'de> Deserialize<'de> for Glob {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         FromStr::from_str(&s).map_err(de::Error::custom)
@@ -100,10 +105,14 @@ fn apply_rule<T>(name: &str, filter: &[T], value: &str, cmp: fn(&T, &str) -> boo
 impl NotificationConfig {
     fn matches(&self, workspace: &str, topic: &str) -> bool {
         debug!("testing notification with rules");
-        if !apply_rule("workspace", &self.workspaces, workspace, |filter, value| filter == value) {
+        if !apply_rule("workspace", &self.workspaces, workspace, |filter, value| {
+            filter == value
+        }) {
             return false;
         }
-        if !apply_rule("topic", &self.topics, topic, |filter, value| filter.matches(value)) {
+        if !apply_rule("topic", &self.topics, topic, |filter, value| {
+            filter.matches(value)
+        }) {
             return false;
         }
         debug!("notification matches this config");
@@ -111,16 +120,29 @@ impl NotificationConfig {
     }
 }
 
-pub fn trigger_notify_event<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, notification: &Notification) -> Result<()> {
+pub fn trigger_notify_event<T: SpinLogger>(
+    rl: &mut Shell,
+    spinner: &mut T,
+    topic: &str,
+    notification: &Notification,
+) -> Result<()> {
     run_router(rl, spinner, false, topic, notification)
 }
 
-fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
+fn prepare_arg(
+    notification: &Notification,
+) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
     let arg = serde_json::to_value(notification)?;
     Ok((arg, None, vec![]))
 }
 
-pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
+pub fn exec(
+    rl: &mut Shell,
+    module: &Module,
+    options: HashMap<String, String>,
+    verbose: u64,
+    notification: &Notification,
+) -> Result<usize> {
     if *module.source() != Some(Source::Notifications) {
         bail!("Module doesn't take notifications as source");
     }
@@ -139,34 +161,56 @@ pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, v
     let args = vec![prepare_arg(&notification)?];
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
+    let errors = worker::spawn(
+        rl,
+        &module,
+        args,
+        &params,
+        rl.config().network.proxy.clone(),
+        options,
+    );
     rl.signal_register().reset_ctrlc();
 
     Ok(errors)
 }
 
-pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool, topic: &str, notification: &Notification) -> Result<()> {
+pub fn run_router<T: SpinLogger>(
+    rl: &mut Shell,
+    spinner: &mut T,
+    dry_run: bool,
+    topic: &str,
+    notification: &Notification,
+) -> Result<()> {
     let configs = rl.config().notifications.clone();
 
     for (name, config) in configs {
         if config.matches(rl.workspace(), topic) {
             let module = rl.library().get(&config.script)?.clone();
             if dry_run {
-                spinner.success(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
+                spinner.success(&format!(
+                    "Executed {} {:?} (dry-run)",
+                    module.canonical(),
+                    name
+                ));
             } else {
                 let options = options::Opt::collect(&config.options);
                 match exec(rl, &module, options, 0, notification) {
                     Ok(0) => {
                         let msg = format!("Executed {} {:?}", module.canonical(), name);
                         spinner.success(&msg);
-                    },
+                    }
                     Ok(errors) => {
-                        let msg = format!("Executed {} {:?} ({} errors)", module.canonical(), name, errors);
+                        let msg = format!(
+                            "Executed {} {:?} ({} errors)",
+                            module.canonical(),
+                            name,
+                            errors
+                        );
                         spinner.error(&msg);
-                    },
+                    }
                     Err(err) => {
                         spinner.error(&format!("Fatal {} {:?}: {}", module.canonical(), name, err));
-                    },
+                    }
                 }
             }
         }

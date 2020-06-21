@@ -1,16 +1,15 @@
-use crate::ser::StringOrBytes;
 use crate::errors::*;
-use crate::fmt::Write;
 use crate::fmt::colors::*;
+use crate::fmt::Write;
 use crate::models::*;
+use crate::ser::StringOrBytes;
+use crate::url;
 use diesel;
 use diesel::prelude::*;
-use crate::url;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Subdomain)]
-#[table_name="urls"]
+#[table_name = "urls"]
 pub struct Url {
     pub id: i32,
     pub subdomain_id: i32,
@@ -75,8 +74,7 @@ impl Model for Url {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::urls::dsl::*;
 
-        let url = urls.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let url = urls.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(url)
     }
@@ -84,8 +82,7 @@ impl Model for Url {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::urls::dsl::*;
 
-        let url = urls.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let url = urls.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(url)
     }
@@ -93,7 +90,8 @@ impl Model for Url {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::urls::dsl::*;
 
-        let url = urls.filter(value.eq(query))
+        let url = urls
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -222,7 +220,7 @@ impl Detailed for Url {
 }
 
 #[derive(Debug, Clone, PartialEq, Insertable, Serialize, Deserialize)]
-#[table_name="urls"]
+#[table_name = "urls"]
 pub struct NewUrl {
     pub subdomain_id: i32,
     pub value: String,
@@ -317,7 +315,7 @@ impl InsertToNew for InsertUrl {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="urls"]
+#[table_name = "urls"]
 pub struct UrlChangeset {
     pub id: i32,
     pub status: Option<i32>,
@@ -329,11 +327,11 @@ pub struct UrlChangeset {
 
 impl Upsert for UrlChangeset {
     fn is_dirty(&self) -> bool {
-        self.status.is_some() ||
-        self.body.is_some() ||
-        self.online.is_some() ||
-        self.title.is_some() ||
-        self.redirect.is_some()
+        self.status.is_some()
+            || self.body.is_some()
+            || self.online.is_some()
+            || self.title.is_some()
+            || self.redirect.is_some()
     }
 
     fn generic(self) -> Update {
@@ -357,7 +355,12 @@ impl Updateable<Url> for UrlChangeset {
     fn fmt(&self, updates: &mut Vec<String>, colors: bool) {
         Self::push_value(updates, "online", &self.online, colors);
         Self::push_value(updates, "status", &self.status, colors);
-        Self::push_raw(updates, "body", self.body.as_ref().map(|x| format!("[{} bytes]", x.len())), colors);
+        Self::push_raw(
+            updates,
+            "body",
+            self.body.as_ref().map(|x| format!("[{} bytes]", x.len())),
+            colors,
+        );
         Self::push_value(updates, "title", &self.title, colors);
         Self::push_value(updates, "redirect", &self.redirect, colors);
     }
@@ -402,17 +405,20 @@ mod tests {
             title: None,
             redirect: None,
         };
-        assert_eq!(url.try_into_new().unwrap(), NewUrl {
-            subdomain_id: 1234,
-            value: "https://example.com/foo/bar".to_string(),
-            path: "/foo/bar".to_string(),
-            status: Some(200),
-            body: None,
-            online: None,
-            title: None,
-            redirect: None,
-            unscoped: false,
-        });
+        assert_eq!(
+            url.try_into_new().unwrap(),
+            NewUrl {
+                subdomain_id: 1234,
+                value: "https://example.com/foo/bar".to_string(),
+                path: "/foo/bar".to_string(),
+                status: Some(200),
+                body: None,
+                online: None,
+                title: None,
+                redirect: None,
+                unscoped: false,
+            }
+        );
     }
 
     #[test]
@@ -440,17 +446,20 @@ mod tests {
             title: None,
             redirect: Some("https://github.com/robots.txt".to_string()),
         };
-        assert_eq!(url.try_into_new().unwrap(), NewUrl {
-            subdomain_id: 1234,
-            value: "https://example.com/foo/bar".to_string(),
-            path: "/foo/bar".to_string(),
-            status: Some(200),
-            body: None,
-            online: None,
-            title: None,
-            redirect: Some("https://github.com/robots.txt".to_string()),
-            unscoped: false,
-        });
+        assert_eq!(
+            url.try_into_new().unwrap(),
+            NewUrl {
+                subdomain_id: 1234,
+                value: "https://example.com/foo/bar".to_string(),
+                path: "/foo/bar".to_string(),
+                status: Some(200),
+                body: None,
+                online: None,
+                title: None,
+                redirect: Some("https://github.com/robots.txt".to_string()),
+                unscoped: false,
+            }
+        );
     }
 
     #[test]
@@ -464,17 +473,20 @@ mod tests {
             title: None,
             redirect: Some("/".to_string()),
         };
-        assert_eq!(url.try_into_new().unwrap(), NewUrl {
-            subdomain_id: 1234,
-            value: "https://example.com/foo/bar".to_string(),
-            path: "/foo/bar".to_string(),
-            status: Some(200),
-            body: None,
-            online: None,
-            title: None,
-            redirect: Some("https://example.com/".to_string()),
-            unscoped: false,
-        });
+        assert_eq!(
+            url.try_into_new().unwrap(),
+            NewUrl {
+                subdomain_id: 1234,
+                value: "https://example.com/foo/bar".to_string(),
+                path: "/foo/bar".to_string(),
+                status: Some(200),
+                body: None,
+                online: None,
+                title: None,
+                redirect: Some("https://example.com/".to_string()),
+                unscoped: false,
+            }
+        );
     }
 
     #[test]
@@ -488,16 +500,19 @@ mod tests {
             title: None,
             redirect: Some("//github.com/robots.txt".to_string()),
         };
-        assert_eq!(url.try_into_new().unwrap(), NewUrl {
-            subdomain_id: 1234,
-            value: "https://example.com/foo/bar".to_string(),
-            path: "/foo/bar".to_string(),
-            status: Some(200),
-            body: None,
-            online: None,
-            title: None,
-            redirect: Some("https://github.com/robots.txt".to_string()),
-            unscoped: false,
-        });
+        assert_eq!(
+            url.try_into_new().unwrap(),
+            NewUrl {
+                subdomain_id: 1234,
+                value: "https://example.com/foo/bar".to_string(),
+                path: "/foo/bar".to_string(),
+                status: Some(200),
+                body: None,
+                online: None,
+                title: None,
+                redirect: Some("https://github.com/robots.txt".to_string()),
+                unscoped: false,
+            }
+        );
     }
 }

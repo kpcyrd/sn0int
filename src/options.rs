@@ -43,7 +43,8 @@ impl ToString for Opt {
 
 impl Serialize for Opt {
     fn serialize<S>(&self, serializer: S) -> result::Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.to_string())
     }
@@ -51,7 +52,8 @@ impl Serialize for Opt {
 
 impl<'de> Deserialize<'de> for Opt {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         FromStr::from_str(&s).map_err(de::Error::custom)

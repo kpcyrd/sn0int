@@ -1,18 +1,17 @@
-use crate::errors::*;
-use std::fmt;
 use crate::config::Config;
-use chrootable_https::{self, HttpClient, Body, Request, Uri};
-use chrootable_https::http::request::Builder as RequestBuilder;
+use crate::errors::*;
+use crate::web;
 use chrootable_https::header::CONTENT_TYPE;
-use rand::{Rng, thread_rng};
+use chrootable_https::http::request::Builder as RequestBuilder;
+use chrootable_https::{self, Body, HttpClient, Request, Uri};
 use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use serde_json;
 use sn0int_common::api::*;
-use sn0int_common::{ModuleID, ApiResponse};
-use crate::web;
-
+use sn0int_common::{ApiResponse, ModuleID};
+use std::fmt;
 
 pub struct Client {
     server: String,
@@ -52,14 +51,19 @@ impl Client {
 
     #[inline]
     fn user_agent(&self) -> String {
-        format!("{}, {}, {}",
+        format!(
+            "{}, {}, {}",
             web::default_user_agent(),
             embedded_triple::get(),
             self.os_version,
         )
     }
 
-    pub fn request<T: DeserializeOwned + fmt::Debug>(&self, mut request: RequestBuilder, body: Body) -> Result<T> {
+    pub fn request<T: DeserializeOwned + fmt::Debug>(
+        &self,
+        mut request: RequestBuilder,
+        body: Body,
+    ) -> Result<T> {
         if let Some(session) = &self.session {
             info!("Adding session token to request");
             request.header("Auth", session.as_str());
@@ -68,8 +72,7 @@ impl Client {
 
         let request = request.body(body)?;
 
-        let resp = self.client.request(request)
-            .wait_for_response()?;
+        let resp = self.client.request(request).wait_for_response()?;
         info!("response: {:?}", resp);
 
         let reply = serde_json::from_slice::<ApiResponse<T>>(&resp.body)?;
@@ -89,8 +92,9 @@ impl Client {
     }
 
     pub fn get_with<T, S>(&self, url: &str, query: &S) -> Result<T>
-        where T: DeserializeOwned + fmt::Debug,
-              S: Serialize + fmt::Debug,
+    where
+        T: DeserializeOwned + fmt::Debug,
+        S: Serialize + fmt::Debug,
     {
         let url = web::url_set_qs(url.parse()?, query)?;
         info!("requesting: {:?}", url);
@@ -99,8 +103,9 @@ impl Client {
     }
 
     pub fn post<T, S>(&self, url: &str, body: &S) -> Result<T>
-        where T: DeserializeOwned + fmt::Debug,
-              S: Serialize + fmt::Debug,
+    where
+        T: DeserializeOwned + fmt::Debug,
+        S: Serialize + fmt::Debug,
     {
         let url = url.parse::<Uri>()?;
 
@@ -119,29 +124,36 @@ impl Client {
 
     pub fn publish_module(&self, name: &str, body: String) -> Result<PublishResponse> {
         let url = format!("{}/api/v0/publish/{}", self.server, name);
-        let reply = self.post::<PublishResponse, _>(&url, &PublishRequest {
-            code: body,
-        })?;
+        let reply = self.post::<PublishResponse, _>(&url, &PublishRequest { code: body })?;
         Ok(reply)
     }
 
     pub fn download_module(&self, module: &ModuleID, version: &str) -> Result<DownloadResponse> {
-        let url = format!("{}/api/v0/dl/{}/{}/{}", self.server, module.author, module.name, version);
+        let url = format!(
+            "{}/api/v0/dl/{}/{}/{}",
+            self.server, module.author, module.name, version
+        );
         let reply = self.get::<DownloadResponse>(&url)?;
         Ok(reply)
     }
 
     pub fn query_module(&self, module: &ModuleID) -> Result<ModuleInfoResponse> {
-        let url = format!("{}/api/v0/info/{}/{}", self.server, module.author, module.name);
+        let url = format!(
+            "{}/api/v0/info/{}/{}",
+            self.server, module.author, module.name
+        );
         let reply = self.get::<ModuleInfoResponse>(&url)?;
         Ok(reply)
     }
 
     pub fn search(&self, query: &str) -> Result<Vec<SearchResponse>> {
         let url = format!("{}/api/v0/search", self.server);
-        let reply = self.get_with::<Vec<SearchResponse>, _>(&url, &hashmap!{
-            "q" => query,
-        })?;
+        let reply = self.get_with::<Vec<SearchResponse>, _>(
+            &url,
+            &hashmap! {
+                "q" => query,
+            },
+        )?;
         Ok(reply)
     }
 

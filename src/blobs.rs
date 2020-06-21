@@ -1,6 +1,6 @@
 use crate::errors::*;
 use crate::paths;
-use crate::worker::{EventWithCallback, Event2};
+use crate::worker::{Event2, EventWithCallback};
 use crate::workspaces::Workspace;
 
 use bytes::Bytes;
@@ -27,9 +27,7 @@ pub struct BlobStorage {
 impl BlobStorage {
     #[inline]
     pub fn new<I: Into<PathBuf>>(path: I) -> BlobStorage {
-        BlobStorage {
-            path: path.into(),
-        }
+        BlobStorage { path: path.into() }
     }
 
     #[inline]
@@ -55,8 +53,7 @@ impl BlobStorage {
         let path = self.join(id)?;
 
         debug!("Loading blob from {:?}", path);
-        let bytes = fs::read(path)
-            .context("Failed to read blob")?;
+        let bytes = fs::read(path).context("Failed to read blob")?;
 
         Ok(Blob {
             id: id.to_string(),
@@ -68,8 +65,7 @@ impl BlobStorage {
         let path = self.join(&blob.id)?;
 
         debug!("Writing blob to {:?}", path);
-        fs::write(path, &blob.bytes)
-            .context("Failed to write blob")?;
+        fs::write(path, &blob.bytes).context("Failed to write blob")?;
 
         Ok(())
     }
@@ -77,8 +73,7 @@ impl BlobStorage {
     pub fn delete(&self, id: &str) -> Result<()> {
         let path = self.join(id)?;
         debug!("Deleting blob: {:?}", path);
-        fs::remove_file(path)
-            .context("Failed to delete blob")?;
+        fs::remove_file(path).context("Failed to delete blob")?;
         Ok(())
     }
 
@@ -94,7 +89,6 @@ impl BlobStorage {
         Ok(blobs)
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -115,7 +109,9 @@ mod tests {
         let (_, blob1) = blob();
         s.save(&blob1).expect("save failed");
 
-        let blob2 = s.load("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz").expect("load failed");
+        let blob2 = s
+            .load("DTTV3EjpHBNJx3Zw7eJsVPm4bYXKmNkJQpVNkcvTtTSz")
+            .expect("load failed");
 
         assert_eq!(blob1, blob2);
     }

@@ -1,11 +1,10 @@
 use crate::errors::*;
 
+use crate::engine::structs::LuaMap;
+use crate::hlua::AnyLuaValue;
 use kuchiki;
 use kuchiki::traits::TendrilSink;
 use std::collections::HashMap;
-use crate::hlua::AnyLuaValue;
-use crate::engine::structs::LuaMap;
-
 
 #[derive(Debug, PartialEq)]
 pub struct Element {
@@ -44,14 +43,10 @@ fn transform_element(entry: &kuchiki::NodeDataRef<kuchiki::ElementData>) -> Elem
         Err(_) => {
             debug!("html serialize failed");
             String::new()
-        },
+        }
     };
 
-    Element {
-        attrs,
-        text,
-        html,
-    }
+    Element { attrs, text, html }
 }
 
 pub fn html_select(html: &str, selector: &str) -> Result<Element> {
@@ -98,7 +93,6 @@ pub fn html_form(html: &str) -> Result<HashMap<String, String>> {
     Ok(form)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,9 +101,10 @@ mod tests {
     #[test]
     fn test_html_select() {
         let elems = html_select(r#"<html><div id="yey">content</div></html>"#, "#yey").unwrap();
-        assert_eq!(elems,
+        assert_eq!(
+            elems,
             Element {
-                attrs: hashmap!{
+                attrs: hashmap! {
                     "id".into() => "yey".into(),
                 },
                 text: "content".into(),
@@ -120,15 +115,17 @@ mod tests {
 
     #[test]
     fn test_html_select_list() {
-        let elems = html_select_list(r#"<html><div id="yey">content</div></html>"#, "#yey").unwrap();
-        assert_eq!(elems, vec![
-            Element {
-                attrs: hashmap!{
+        let elems =
+            html_select_list(r#"<html><div id="yey">content</div></html>"#, "#yey").unwrap();
+        assert_eq!(
+            elems,
+            vec![Element {
+                attrs: hashmap! {
                     "id".into() => "yey".into(),
                 },
                 text: "content".into(),
                 html: r#"<div id="yey">content</div>"#.into(),
-            }
-        ]);
+            }]
+        );
     }
 }

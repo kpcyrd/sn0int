@@ -1,16 +1,15 @@
 use crate::errors::*;
+use crate::models::*;
 use crate::schema::activity;
+use chrono::NaiveDateTime;
 use diesel;
 use diesel::prelude::*;
 use diesel::query_builder::BoxedSelectStatement;
-use crate::models::*;
-use chrono::NaiveDateTime;
 use std::convert::TryFrom;
 use std::io::Write;
 
-
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="activity"]
+#[table_name = "activity"]
 pub struct Activity {
     pub id: i32,
     pub topic: String,
@@ -25,13 +24,29 @@ pub struct Activity {
 impl Activity {
     pub fn uniq(db: &Database, my_uniq: &str) -> Result<Option<Self>> {
         use crate::schema::activity::dsl::*;
-        activity.filter(uniq.eq(my_uniq))
+        activity
+            .filter(uniq.eq(my_uniq))
             .first::<Self>(db.db())
             .optional()
             .map_err(Error::from)
     }
 
-    fn build_query_except_since(filter: &ActivityFilter) -> BoxedSelectStatement<(diesel::sql_types::Integer, diesel::sql_types::Text, diesel::sql_types::Timestamp, diesel::sql_types::Nullable<diesel::sql_types::Text>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Nullable<diesel::sql_types::Float>, diesel::sql_types::Nullable<diesel::sql_types::Integer>, diesel::sql_types::Text), activity::table, diesel::sqlite::Sqlite> {
+    fn build_query_except_since(
+        filter: &ActivityFilter,
+    ) -> BoxedSelectStatement<
+        (
+            diesel::sql_types::Integer,
+            diesel::sql_types::Text,
+            diesel::sql_types::Timestamp,
+            diesel::sql_types::Nullable<diesel::sql_types::Text>,
+            diesel::sql_types::Nullable<diesel::sql_types::Float>,
+            diesel::sql_types::Nullable<diesel::sql_types::Float>,
+            diesel::sql_types::Nullable<diesel::sql_types::Integer>,
+            diesel::sql_types::Text,
+        ),
+        activity::table,
+        diesel::sqlite::Sqlite,
+    > {
         use crate::schema::activity::dsl::*;
 
         let mut query = activity.into_boxed();
@@ -74,7 +89,11 @@ impl Activity {
             .map_err(Error::from)
     }
 
-    pub fn previous(db: &Database, previous: &Activity, filter: &ActivityFilter) -> Result<Option<Self>> {
+    pub fn previous(
+        db: &Database,
+        previous: &Activity,
+        filter: &ActivityFilter,
+    ) -> Result<Option<Self>> {
         use crate::schema::activity::dsl::*;
 
         Self::build_query_except_since(filter)
@@ -139,7 +158,7 @@ impl TryFrom<Activity> for JsonActivity {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="activity"]
+#[table_name = "activity"]
 pub struct NewActivity {
     pub topic: String,
     pub time: NaiveDateTime,

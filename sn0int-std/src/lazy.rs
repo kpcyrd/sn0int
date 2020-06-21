@@ -13,11 +13,12 @@ impl<T1: LazyInit<T2>, T2> Lazy<T1, T2> {
     pub fn get(&mut self) -> Result<&mut T2> {
         match self {
             Lazy::Init(init) => {
-                let init = init.take()
+                let init = init
+                    .take()
                     .ok_or_else(|| format_err!("Previous initialization failed"))?;
                 *self = Lazy::Active(init.initialize()?);
                 self.get()
-            },
+            }
             Lazy::Active(active) => Ok(active),
         }
     }

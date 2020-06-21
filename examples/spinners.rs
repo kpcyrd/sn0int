@@ -1,21 +1,20 @@
+use sn0int::term::{Spinner, StackedSpinners, SPINNERS};
 use std::thread;
 use std::time::Duration;
-use sn0int::term::{SPINNERS, Spinner, StackedSpinners};
 use structopt::StructOpt;
-
 
 #[derive(Debug, StructOpt)]
 pub enum Args {
-    #[structopt(name="single")]
+    #[structopt(name = "single")]
     Single(Single),
-    #[structopt(name="stacked")]
+    #[structopt(name = "stacked")]
     Stacked(Stacked),
 }
 
 #[derive(Debug, StructOpt)]
 pub struct Single {
     idx: usize,
-    #[structopt(long="ticks", default_value="100")]
+    #[structopt(long = "ticks", default_value = "100")]
     ticks: usize,
 }
 
@@ -33,8 +32,7 @@ impl Single {
 }
 
 #[derive(Debug, StructOpt)]
-pub struct Stacked {
-}
+pub struct Stacked {}
 
 impl Stacked {
     fn run(&self) {

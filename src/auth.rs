@@ -1,14 +1,13 @@
+use crate::api::Client;
+use crate::config::Config;
 use crate::errors::*;
+use crate::paths;
+use crate::term;
 use opener;
 use std::fs;
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
-use crate::api::Client;
-use crate::config::Config;
-use crate::paths;
-use crate::term;
-
 
 fn path() -> Result<PathBuf> {
     let path = paths::sn0int_dir()?;

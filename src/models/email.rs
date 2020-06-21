@@ -1,12 +1,11 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="emails"]
+#[table_name = "emails"]
 pub struct Email {
     pub id: i32,
     pub value: String,
@@ -66,8 +65,7 @@ impl Model for Email {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::emails::dsl::*;
 
-        let domain = emails.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = emails.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -75,8 +73,7 @@ impl Model for Email {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::emails::dsl::*;
 
-        let email = emails.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let email = emails.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(email)
     }
@@ -84,7 +81,8 @@ impl Model for Email {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::emails::dsl::*;
 
-        let email = emails.filter(value.eq(query))
+        let email = emails
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -124,7 +122,8 @@ impl Email {
             .select((breach_emails::breach_id, breach_emails::password))
             .load::<(i32, Option<String>)>(db.db())?;
 
-        breach_id_pws.into_iter()
+        breach_id_pws
+            .into_iter()
             .map(|(breach_id, password)| {
                 breaches::table
                     .filter(breaches::id.eq(breach_id))
@@ -220,11 +219,15 @@ impl Detailed for Email {
     type T = DetailedEmail;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let breaches = self.breaches(db)?.into_iter()
-            .map(|(sd, password)| Ok(BreachWithPassword {
-                breach: sd.printable(db)?,
-                password,
-            }))
+        let breaches = self
+            .breaches(db)?
+            .into_iter()
+            .map(|(sd, password)| {
+                Ok(BreachWithPassword {
+                    breach: sd.printable(db)?,
+                    password,
+                })
+            })
             .collect::<Result<_>>()?;
 
         Ok(DetailedEmail {
@@ -239,7 +242,7 @@ impl Detailed for Email {
 }
 
 #[derive(Debug, Clone, PartialEq, Insertable, Serialize, Deserialize)]
-#[table_name="emails"]
+#[table_name = "emails"]
 pub struct NewEmail {
     pub value: String,
     pub displayname: Option<String>,
@@ -307,7 +310,7 @@ impl InsertToNew for InsertEmail {
 }
 
 #[derive(Identifiable, AsChangeset, Serialize, Deserialize, Debug)]
-#[table_name="emails"]
+#[table_name = "emails"]
 pub struct EmailUpdate {
     pub id: i32,
     pub displayname: Option<String>,
@@ -316,8 +319,7 @@ pub struct EmailUpdate {
 
 impl Upsert for EmailUpdate {
     fn is_dirty(&self) -> bool {
-        self.displayname.is_some() ||
-            self.valid.is_some()
+        self.displayname.is_some() || self.valid.is_some()
     }
 
     fn generic(self) -> Update {
@@ -352,11 +354,14 @@ mod tests {
             displayname: None,
             valid: None,
         };
-        assert_eq!(email.try_into_new().unwrap(), NewEmail {
-            value: "foo.bar@example.com".to_string(),
-            displayname: None,
-            valid: None,
-            unscoped: false,
-        });
+        assert_eq!(
+            email.try_into_new().unwrap(),
+            NewEmail {
+                value: "foo.bar@example.com".to_string(),
+                displayname: None,
+                valid: None,
+                unscoped: false,
+            }
+        );
     }
 }

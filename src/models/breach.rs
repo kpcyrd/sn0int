@@ -1,12 +1,11 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
+use crate::models::*;
 use diesel;
 use diesel::prelude::*;
-use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
-#[table_name="breaches"]
+#[table_name = "breaches"]
 pub struct Breach {
     pub id: i32,
     pub value: String,
@@ -64,8 +63,7 @@ impl Model for Breach {
     fn by_id(db: &Database, my_id: i32) -> Result<Self> {
         use crate::schema::breaches::dsl::*;
 
-        let domain = breaches.filter(id.eq(my_id))
-            .first::<Self>(db.db())?;
+        let domain = breaches.filter(id.eq(my_id)).first::<Self>(db.db())?;
 
         Ok(domain)
     }
@@ -73,8 +71,7 @@ impl Model for Breach {
     fn get(db: &Database, query: &Self::ID) -> Result<Self> {
         use crate::schema::breaches::dsl::*;
 
-        let breach = breaches.filter(value.eq(query))
-            .first::<Self>(db.db())?;
+        let breach = breaches.filter(value.eq(query)).first::<Self>(db.db())?;
 
         Ok(breach)
     }
@@ -82,7 +79,8 @@ impl Model for Breach {
     fn get_opt(db: &Database, query: &Self::ID) -> Result<Option<Self>> {
         use crate::schema::breaches::dsl::*;
 
-        let breach = breaches.filter(value.eq(query))
+        let breach = breaches
+            .filter(value.eq(query))
             .first::<Self>(db.db())
             .optional()?;
 
@@ -122,7 +120,8 @@ impl Breach {
             .select((breach_emails::email_id, breach_emails::password))
             .load::<(i32, Option<String>)>(db.db())?;
 
-        email_id_pws.into_iter()
+        email_id_pws
+            .into_iter()
             .map(|(email_id, password)| {
                 emails::table
                     .filter(emails::id.eq(email_id))
@@ -202,11 +201,15 @@ impl Detailed for Breach {
     type T = DetailedBreach;
 
     fn detailed(&self, db: &Database) -> Result<Self::T> {
-        let emails = self.emails(db)?.into_iter()
-            .map(|(sd, password)| Ok(EmailWithPassword {
-                email: sd.printable(db)?,
-                password,
-            }))
+        let emails = self
+            .emails(db)?
+            .into_iter()
+            .map(|(sd, password)| {
+                Ok(EmailWithPassword {
+                    email: sd.printable(db)?,
+                    password,
+                })
+            })
             .collect::<Result<_>>()?;
 
         Ok(DetailedBreach {
@@ -219,7 +222,7 @@ impl Detailed for Breach {
 }
 
 #[derive(Debug, Clone, Insertable, Serialize, Deserialize)]
-#[table_name="breaches"]
+#[table_name = "breaches"]
 pub struct NewBreach {
     pub value: String,
     pub unscoped: bool,
@@ -246,9 +249,7 @@ impl Upsertable<Breach> for NewBreach {
     type Update = NullUpdate;
 
     fn upsert(self, existing: &Breach) -> Self::Update {
-        Self::Update {
-            id: existing.id,
-        }
+        Self::Update { id: existing.id }
     }
 }
 
