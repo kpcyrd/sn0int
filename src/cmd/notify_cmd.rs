@@ -7,6 +7,7 @@ use crate::notify::{self, Notification};
 use crate::options::{self, Opt};
 use crate::shell::Shell;
 use crate::term;
+use sn0int_std::ratelimits::Ratelimiter;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -67,14 +68,20 @@ fn print_summary(module: &Module, sent: usize, errors: usize) {
 }
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
-    notify::run_router(rl, &mut term::Term, args.dry_run, &args.topic, &args.notification)?;
+    rl.signal_register().catch_ctrl();
+    notify::run_router(rl, &mut term::Term, &mut Ratelimiter::new(), args.dry_run, &args.topic, &args.notification)?;
+    rl.signal_register().reset_ctrlc();
     Ok(())
 }
 
 fn exec(args: ExecArgs, rl: &mut Shell) -> Result<()> {
     let module = rl.library().get(&args.module)?.clone();
     let options = Opt::collect(&args.options);
-    let errors = notify::exec(rl, &module, options, args.verbose, &args.notification)?;
+
+    rl.signal_register().catch_ctrl();
+    let errors = notify::exec(rl, &module, &mut Ratelimiter::new(), options, args.verbose, &args.notification)?;
+    rl.signal_register().reset_ctrlc();
+
     print_summary(&module, 1, errors);
     Ok(())
 }

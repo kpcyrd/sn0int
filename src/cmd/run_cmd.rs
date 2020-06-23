@@ -16,6 +16,7 @@ use crate::worker;
 use serde::Serialize;
 use serde_json;
 use sn0int_common::metadata::Source;
+use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
@@ -189,7 +190,7 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
     let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
+    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, rl.config().network.proxy.clone(), options);
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {

@@ -8,6 +8,7 @@ use crate::term::{self, Term};
 use chrono::{NaiveDateTime, Duration, Utc};
 use diesel;
 use diesel::prelude::*;
+use sn0int_std::ratelimits::Ratelimiter;
 
 
 #[derive(Identifiable, Queryable, AsChangeset, PartialEq, Debug)]
@@ -137,13 +138,14 @@ impl Ttl {
 pub fn reap_expired(rl: &mut Shell) -> Result<()> {
     debug!("Reaping expired entities");
 
+    let mut ratelimit = Ratelimiter::new();
     for expired in Ttl::expired(rl.db())? {
         debug!("Expired: {:?}", expired);
         expired.delete(rl.db())?;
 
         let subject = format!("Deleted {} {:?}", &expired.family, &expired.value);
         let topic = &format!("db:{}:{}:delete", &expired.family, &expired.value);
-        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &topic, &Notification {
+        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &mut ratelimit, &topic, &Notification {
             subject,
             body: None,
         }) {
