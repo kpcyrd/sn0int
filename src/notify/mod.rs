@@ -98,15 +98,15 @@ fn apply_rule<T>(name: &str, filter: &[T], value: &str, cmp: fn(&T, &str) -> boo
 }
 
 impl NotificationConfig {
-    fn matches(&self, workspace: &str, topic: &str) -> bool {
-        debug!("testing notification with rules");
+    fn matches(&self, name: &str, workspace: &str, topic: &str) -> bool {
+        debug!("Testing notification with rules: {:?}", name);
         if !apply_rule("workspace", &self.workspaces, workspace, |filter, value| filter == value) {
             return false;
         }
         if !apply_rule("topic", &self.topics, topic, |filter, value| filter.matches(value)) {
             return false;
         }
-        debug!("notification matches this config");
+        debug!("Notification matches this config");
         true
     }
 }
@@ -121,6 +121,9 @@ fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option
 }
 
 pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
+    let module_name = module.canonical();
+    debug!("Setting up notification execution with {:?}", module_name);
+
     if *module.source() != Some(Source::Notifications) {
         bail!("Module doesn't take notifications as source");
     }
@@ -138,9 +141,9 @@ pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, v
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let args = vec![prepare_arg(&notification)?];
 
-    rl.signal_register().catch_ctrl();
+    debug!("Executing notification module {:?}", module_name);
     let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
-    rl.signal_register().reset_ctrlc();
+    debug!("Notification module {:?} exited with {:?} errors", module_name, errors);
 
     Ok(errors)
 }
@@ -148,29 +151,37 @@ pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, v
 pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool, topic: &str, notification: &Notification) -> Result<()> {
     let configs = rl.config().notifications.clone();
 
+    debug!("Running notification router");
     for (name, config) in configs {
-        if config.matches(rl.workspace(), topic) {
+        if rl.signal_register().ctrlc_received() {
+            debug!("Exiting notification router due to ctrl-c");
+            break;
+        }
+
+        if config.matches(&name, rl.workspace(), topic) {
             let module = rl.library().get(&config.script)?.clone();
             if dry_run {
-                spinner.success(&format!("Executed {} {:?} (dry-run)", module.canonical(), name));
+                spinner.success(&format!("Executed {} for {:?} (dry-run)", module.canonical(), name));
             } else {
                 let options = options::Opt::collect(&config.options);
                 match exec(rl, &module, options, 0, notification) {
                     Ok(0) => {
-                        let msg = format!("Executed {} {:?}", module.canonical(), name);
+                        let msg = format!("Executed {} for {:?}", module.canonical(), name);
                         spinner.success(&msg);
                     },
                     Ok(errors) => {
-                        let msg = format!("Executed {} {:?} ({} errors)", module.canonical(), name, errors);
+                        let msg = format!("Executed {} for {:?} ({} errors)", module.canonical(), name, errors);
                         spinner.error(&msg);
                     },
                     Err(err) => {
-                        spinner.error(&format!("Fatal {} {:?}: {}", module.canonical(), name, err));
+                        spinner.error(&format!("Fatal {} for {:?}: {}", module.canonical(), name, err));
                     },
                 }
             }
         }
     }
+    debug!("Notification router finished");
+
     Ok(())
 }
 

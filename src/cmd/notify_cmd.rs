@@ -67,14 +67,20 @@ fn print_summary(module: &Module, sent: usize, errors: usize) {
 }
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {
+    rl.signal_register().catch_ctrl();
     notify::run_router(rl, &mut term::Term, args.dry_run, &args.topic, &args.notification)?;
+    rl.signal_register().reset_ctrlc();
     Ok(())
 }
 
 fn exec(args: ExecArgs, rl: &mut Shell) -> Result<()> {
     let module = rl.library().get(&args.module)?.clone();
     let options = Opt::collect(&args.options);
+
+    rl.signal_register().catch_ctrl();
     let errors = notify::exec(rl, &module, options, args.verbose, &args.notification)?;
+    rl.signal_register().reset_ctrlc();
+
     print_summary(&module, 1, errors);
     Ok(())
 }

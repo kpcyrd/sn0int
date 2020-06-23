@@ -453,6 +453,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
     let pool = ThreadPool::new(params.threads);
 
     let mut expected = 0;
+    debug!("Preparing to spawn scripts for {:?} structs", args.len());
     for (arg, pretty_arg, blobs) in args {
         let name = match pretty_arg {
             Some(pretty_arg) => format!("{:?}", pretty_arg),
@@ -465,9 +466,11 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
         let options = options.clone();
         let signal_register = rl.signal_register().clone();
         pool.execute(move || {
+            debug!("Thread pool job became active");
             let tx = EventSender::new(name, tx);
 
             if signal_register.ctrlc_received() {
+                debug!("Thread pool job exits due to ctrl-c");
                 tx.send(Event2::Exit(ExitEvent::Ok));
                 return;
             }
