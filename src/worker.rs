@@ -169,8 +169,8 @@ impl EventWithCallback for DatabaseEvent {
 }
 
 impl DatabaseEvent {
-    fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, subject: String) {
-        if let Err(err) = notify::trigger_notify_event(rl, spinner, topic, &Notification {
+    fn notify<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, topic: &str, subject: String) {
+        if let Err(err) = notify::trigger_notify_event(rl, spinner, ratelimit, topic, &Notification {
             subject,
             body: None,
         }) {
@@ -178,28 +178,28 @@ impl DatabaseEvent {
         }
     }
 
-    fn on_insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str) {
+    fn on_insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, family: &str, value: &str) {
         // TODO: also include fields, see update
         let log = format!("Adding {} {:?}", family, value);
         spinner.log(&log);
 
         let subject = format!("Added {} {:?}", family, value);
         let topic = format!("db:{}:{}:insert", family, value);
-        Self::notify(rl, spinner, &topic, subject);
+        Self::notify(rl, spinner, ratelimit, &topic, subject);
     }
 
-    fn on_update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, family: &str, value: &str, update: &Update) {
+    fn on_update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, family: &str, value: &str, update: &Update) {
         spinner.log(&format!("Updating {} {:?} ({})", family, value, update.to_term_str()));
 
         // TODO: in the future we could consider firing multiple events, one for each column
         // TODO: this would be super noisy if a lot of fields change though
         let subject = format!("Updated {} {:?} ({})", family, value, update.to_plain_str());
         let topic = format!("db:{}:{}:update", family, value);
-        Self::notify(rl, spinner, &topic, subject);
+        Self::notify(rl, spinner, ratelimit, &topic, subject);
     }
 
-    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, object: &NewActivity, verbose: u64) {
-        Self::spinner_log_new_activity(&object, spinner, verbose);
+    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: &NewActivity, verbose: u64) {
+        Self::spinner_log_new_activity(spinner, &object, verbose);
 
         // TODO: we don't want to copy the match arms everywhere
         let mut subject = format!("New activity: {:?}", object.topic);
@@ -207,10 +207,10 @@ impl DatabaseEvent {
             subject += &format!(" ({:?})", uniq);
         }
         let topic = format!("activity:{}", object.topic);
-        Self::notify(rl, spinner, &topic, subject);
+        Self::notify(rl, spinner, ratelimit, &topic, subject);
     }
 
-    fn spinner_log_new_activity<T: SpinLogger>(object: &NewActivity, spinner: &mut T, verbose: u64) {
+    fn spinner_log_new_activity<T: SpinLogger>(spinner: &mut T, object: &NewActivity, verbose: u64) {
         let mut log = format!("{:?} ", object.topic);
         if let Some(uniq) = &object.uniq {
             log.push_str(&format!("({:?}) ", uniq));
@@ -232,7 +232,7 @@ impl DatabaseEvent {
         spinner.log(&log);
     }
 
-    fn insert<T: SpinLogger>(rl: &mut Shell, object: Insert, ttl: Option<i32>, tx: DbSender, spinner: &mut T, verbose: u64) {
+    fn insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: Insert, ttl: Option<i32>, tx: DbSender, verbose: u64) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Inserting: {:?}", object));
@@ -251,7 +251,7 @@ impl DatabaseEvent {
                             }
                         }
 
-                        Self::on_insert(rl, spinner, object.family(), &value);
+                        Self::on_insert(rl, spinner, ratelimit, object.family(), &value);
                     }
                     Err(err) => {
                         spinner.error(&format!("Failed to query necessary fields for {:?}: {:?}", object, err));
@@ -268,7 +268,7 @@ impl DatabaseEvent {
                 }
 
                 match object.value(rl.db()) {
-                    Ok(value) => Self::on_update(rl, spinner, object.family(), &value, &update),
+                    Ok(value) => Self::on_update(rl, spinner, ratelimit, object.family(), &value, &update),
                     Err(err) => {
                         // TODO: this should be unreachable
                         spinner.error(&format!("Failed to get label for {:?}: {:?}", object, err));
@@ -298,14 +298,14 @@ impl DatabaseEvent {
     }
 
 
-    pub fn activity<T: SpinLogger>(rl: &mut Shell, object: NewActivity, tx: DbSender, spinner: &mut T, verbose: u64) {
+    pub fn activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: NewActivity, tx: DbSender, verbose: u64) {
         let db = rl.db();
         let result = db.insert_activity(object.clone());
         debug!("{:?} => {:?}", object, result);
 
         let result = match result {
             Ok(true) => {
-                Self::on_activity(rl, spinner, &object, verbose);
+                Self::on_activity(rl, spinner, ratelimit, &object, verbose);
                 Ok(DatabaseResponse::Inserted(0))
             },
             Ok(false) => Ok(DatabaseResponse::NoChange(0)),
@@ -319,7 +319,7 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn update<T: SpinLogger>(rl: &mut Shell, family: &str, value: &str, update: &Update, tx: DbSender, spinner: &mut T, verbose: u64) {
+    pub fn update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, family: &str, value: &str, update: &Update, tx: DbSender, verbose: u64) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Updating: {:?}", update));
@@ -330,7 +330,7 @@ impl DatabaseEvent {
 
         let result = match result {
             Ok(id) => {
-                Self::on_update(rl, spinner, family, &value, &update);
+                Self::on_update(rl, spinner, ratelimit, family, &value, &update);
                 Ok(DatabaseResponse::Updated(id))
             },
             Err(err) => {
@@ -343,11 +343,11 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn apply<T: SpinLogger>(self, rl: &mut Shell, tx: DbSender, spinner: &mut T, verbose: u64) {
+    pub fn apply<T: SpinLogger>(self, rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, tx: DbSender, verbose: u64) {
         match self {
-            DatabaseEvent::Insert(object) => Self::insert(rl, object, None, tx, spinner, verbose),
-            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(rl, object, Some(ttl), tx, spinner, verbose),
-            DatabaseEvent::Activity(object) => Self::activity(rl, object, tx, spinner, verbose),
+            DatabaseEvent::Insert(object) => Self::insert(rl, spinner, ratelimit, object, None, tx, verbose),
+            DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(rl, spinner, ratelimit, object, Some(ttl), tx, verbose),
+            DatabaseEvent::Activity(object) => Self::activity(rl, spinner, ratelimit, object, tx, verbose),
             DatabaseEvent::Select((family, value)) => {
                 let db = rl.db();
                 let result = match db.get_opt(&family, &value) {
@@ -358,7 +358,7 @@ impl DatabaseEvent {
 
                 tx.send(result).expect("Failed to send db result to channel");
             },
-            DatabaseEvent::Update((family, value, update)) => Self::update(rl, family.as_str(), &value, &update, tx, spinner, verbose),
+            DatabaseEvent::Update((family, value, update)) => Self::update(rl, spinner, ratelimit, family.as_str(), &value, &update, tx, verbose),
         }
     }
 }
@@ -437,7 +437,7 @@ impl RatelimitEvent {
     }
 }
 
-pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
+pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -485,8 +485,6 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
         expected += 1;
     }
 
-    let mut ratelimit = Ratelimiter::new();
-
     let mut errors = 0;
     let mut failed = Vec::new();
     let timeout = Duration::from_millis(100);
@@ -502,7 +500,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, args: Vec<(serde_json::Value, Opti
                             stack.add(name, label);
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
-                        Event2::Database((db, tx)) => db.apply(rl, tx, &mut stack.prefixed(name), verbose),
+                        Event2::Database((db, tx)) => db.apply(rl, &mut stack.prefixed(name), ratelimit, tx, verbose),
                         Event2::Ratelimit((req, tx)) => ratelimit.pass(tx, &req.key, req.passes, req.time),
                         Event2::Blob((blob, tx)) => rl.store_blob(tx, &blob),
                         Event2::Exit(event) => {

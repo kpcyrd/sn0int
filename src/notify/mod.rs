@@ -10,6 +10,7 @@ use serde::de::{self, Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use sn0int_common::metadata::Source;
 use sn0int_std::blobs::Blob;
+use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
 use std::result;
 use std::str::FromStr;
@@ -111,8 +112,8 @@ impl NotificationConfig {
     }
 }
 
-pub fn trigger_notify_event<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, topic: &str, notification: &Notification) -> Result<()> {
-    run_router(rl, spinner, false, topic, notification)
+pub fn trigger_notify_event<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, topic: &str, notification: &Notification) -> Result<()> {
+    run_router(rl, spinner, ratelimit, false, topic, notification)
 }
 
 fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option<String>, Vec<Blob>)> {
@@ -120,7 +121,7 @@ fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option
     Ok((arg, None, vec![]))
 }
 
-pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
+pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
     let module_name = module.canonical();
     debug!("Setting up notification execution with {:?}", module_name);
 
@@ -142,13 +143,13 @@ pub fn exec(rl: &mut Shell, module: &Module, options: HashMap<String, String>, v
     let args = vec![prepare_arg(&notification)?];
 
     debug!("Executing notification module {:?}", module_name);
-    let errors = worker::spawn(rl, &module, args, &params, rl.config().network.proxy.clone(), options);
+    let errors = worker::spawn(rl, &module, ratelimit, args, &params, rl.config().network.proxy.clone(), options);
     debug!("Notification module {:?} exited with {:?} errors", module_name, errors);
 
     Ok(errors)
 }
 
-pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool, topic: &str, notification: &Notification) -> Result<()> {
+pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, dry_run: bool, topic: &str, notification: &Notification) -> Result<()> {
     let configs = rl.config().notifications.clone();
 
     debug!("Running notification router");
@@ -164,7 +165,7 @@ pub fn run_router<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, dry_run: bool,
                 spinner.success(&format!("Executed {} for {:?} (dry-run)", module.canonical(), name));
             } else {
                 let options = options::Opt::collect(&config.options);
-                match exec(rl, &module, options, 0, notification) {
+                match exec(rl, &module, ratelimit, options, 0, notification) {
                     Ok(0) => {
                         let msg = format!("Executed {} for {:?}", module.canonical(), name);
                         spinner.success(&msg);
