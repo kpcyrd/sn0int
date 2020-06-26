@@ -21,7 +21,6 @@ use crate::paths;
 use std::cmp::Ordering;
 use std::path::Path;
 use crate::term;
-use crate::worker;
 
 pub mod ctx;
 pub use sn0int_std::engine::structs;
@@ -68,11 +67,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn reload_modules(&mut self) -> Result<usize> {
-        let modules = worker::spawn_fn("Loading modules", || {
-            self.reload_modules_quiet()
-                .context("Failed to load modules")?;
-            Ok(self.list().len())
-        }, true)?;
+        self.reload_modules_quiet()
+            .context("Failed to load modules")?;
+        let modules = self.list().len();
         term::info(&format!("Loaded {} modules", modules));
         Ok(modules)
     }
