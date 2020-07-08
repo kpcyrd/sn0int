@@ -135,6 +135,21 @@ impl DateTimeSpec {
         &self.end
     }
 
+    fn push_date(&self, w: &mut String, date: &NaiveDate) {
+        let weekday = date.weekday();
+        let is_weekend = weekday == Weekday::Sat || weekday == Weekday::Sun;
+
+        if is_weekend {
+            w.push_str("\x1b[1m");
+        }
+
+        w.push_str(&date.format("%Y-%m-%d (%a) ").to_string());
+
+        if is_weekend {
+            w.push_str("\x1b[0m");
+        }
+    }
+
     pub fn to_term_string(&self, ctx: &DateTimeContext) -> String {
         let mut w = String::new();
 
@@ -154,7 +169,7 @@ impl DateTimeSpec {
         // add days
         let mut date = self.start;
         while date <= self.end {
-            w.push_str(&date.format("%Y-%m-%d ").to_string());
+            self.push_date(&mut w, &date);
 
             let mut hours = 0;
             let mut mins = 0;
