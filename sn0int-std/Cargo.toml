@@ -25,7 +25,7 @@ webpki = "0.21"
 webpki-roots = "0.19.0"
 ct-logs = "0.6"
 #chrootable-https = { path = "../../chrootable-https" }
-chrootable-https = "0.15.2"
+chrootable-https = "0.16"
 http = "0.2"
 bufstream = "0.1.4"
 pem = "0.7"
