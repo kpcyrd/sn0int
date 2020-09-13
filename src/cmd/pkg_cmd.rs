@@ -73,6 +73,9 @@ pub struct List {
     /// List outdated modules
     #[structopt(long="outdated")]
     pub outdated_only: bool,
+    /// Only show modules with equal or better stealth level
+    #[structopt(long="stealth")]
+    pub stealth: Option<Stealth>,
     /// Filter by pattern
     #[structopt(default_value="*")]
     pub pattern: String,
@@ -142,6 +145,12 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
                 let canonical = module.canonical();
                 if !filter.matches(&canonical) {
                     continue;
+                }
+
+                if let Some(stealth) = &list.stealth {
+                    if !module.stealth().equal_or_better(&stealth) {
+                        continue;
+                    }
                 }
 
                 let is_outdated = autoupdate.is_outdated(&canonical);

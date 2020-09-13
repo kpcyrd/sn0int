@@ -2,6 +2,9 @@ use crate::errors::*;
 
 use std::str::FromStr;
 
+mod stealth;
+pub use self::stealth::Stealth;
+
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum EntryType {
@@ -106,29 +109,6 @@ impl FromStr for Source {
             ("keyring", Some(param)) => Ok(Source::KeyRing(param.to_string())),
             (x, Some(param)) => bail!("Unknown Source: {:?} ({:?})", x, param),
             (x, None) => bail!("Unknown Source: {:?}", x),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
-pub enum Stealth {
-    Loud,
-    Normal,
-    Passive,
-    Offline,
-}
-
-impl FromStr for Stealth {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Stealth> {
-        match s {
-            "loud" => Ok(Stealth::Loud),
-            // This is also the default level if none is provided
-            "normal" => Ok(Stealth::Normal),
-            "passive" => Ok(Stealth::Passive),
-            "offline" => Ok(Stealth::Offline),
-            x => bail!("Unknown stealth: {:?}", x),
         }
     }
 }
