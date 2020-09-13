@@ -71,6 +71,7 @@ fn run_cmd<T: cmd::Cmd>(gargs: &Args, args: T, config: &Config) -> Result<()> {
 }
 
 fn run_new(_gargs: &Args, args: &args::New) -> Result<()> {
+    // TODO: Add `-- Author: anonymous`
     let boilerplate = b"-- Description: TODO your description here
 -- Version: 0.1.0
 -- License: GPL-3.0

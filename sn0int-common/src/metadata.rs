@@ -9,6 +9,7 @@ pub enum EntryType {
     Version,
     Source,
     KeyringAccess,
+    Stealth,
     License,
 }
 
@@ -21,6 +22,7 @@ impl FromStr for EntryType {
             "Version" => Ok(EntryType::Version),
             "Source" => Ok(EntryType::Source),
             "Keyring-Access" => Ok(EntryType::KeyringAccess),
+            "Stealth" => Ok(EntryType::Stealth),
             "License" => Ok(EntryType::License),
             x => bail!("Unknown EntryType: {:?}", x),
         }
@@ -105,6 +107,29 @@ impl FromStr for Source {
 }
 
 #[derive(Debug, PartialEq)]
+pub enum Stealth {
+    Loud,
+    Normal,
+    Silent,
+    Offline,
+}
+
+impl FromStr for Stealth {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Stealth> {
+        match s {
+            "loud" => Ok(Stealth::Loud),
+            // This is also the default level if none is provided
+            "normal" => Ok(Stealth::Normal),
+            "silent" => Ok(Stealth::Silent),
+            "offline" => Ok(Stealth::Offline),
+            x => bail!("Unknown stealth: {:?}", x),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum License {
     MIT,
     GPL3,
@@ -136,6 +161,7 @@ pub struct Metadata {
     pub version: String,
     pub source: Option<Source>,
     pub keyring_access: Vec<String>,
+    pub stealth: Stealth,
     pub license: License,
 }
 
@@ -154,6 +180,7 @@ impl FromStr for Metadata {
                 EntryType::Version => data.version = Some(v),
                 EntryType::Source => data.source = Some(v),
                 EntryType::KeyringAccess => data.keyring_access.push(v),
+                EntryType::Stealth => data.stealth = Some(v),
                 EntryType::License => data.license = Some(v),
             }
         }
@@ -168,6 +195,7 @@ pub struct NewMetadata<'a> {
     pub version: Option<&'a str>,
     pub source: Option<&'a str>,
     pub keyring_access: Vec<&'a str>,
+    pub stealth: Option<&'a str>,
     pub license: Option<&'a str>,
 }
 
@@ -182,6 +210,10 @@ impl<'a> NewMetadata<'a> {
         let keyring_access = self.keyring_access.into_iter()
             .map(String::from)
             .collect();
+        let stealth = match self.stealth {
+            Some(x) => x.parse()?,
+            _ => Stealth::Normal,
+        };
         let license = self.license.ok_or_else(|| format_err!("License is required"))?;
         let license = license.parse()?;
 
@@ -190,6 +222,7 @@ impl<'a> NewMetadata<'a> {
             version: version.to_string(),
             source,
             keyring_access,
+            stealth,
             license,
         })
     }
@@ -230,6 +263,26 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: Some(Source::Domains),
+            stealth: Stealth::Normal,
+            keyring_access: Vec::new(),
+        });
+    }
+
+    #[test]
+    fn verify_much_metadata() {
+        let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
+-- Version: 1.0.0
+-- Source: domains
+-- Stealth: silent
+-- License: WTFPL
+
+"#).expect("parse");
+        assert_eq!(metadata, Metadata {
+            description: "Hello world, this is my description".to_string(),
+            version: "1.0.0".to_string(),
+            license: License::WTFPL,
+            source: Some(Source::Domains),
+            stealth: Stealth::Silent,
             keyring_access: Vec::new(),
         });
     }
@@ -246,6 +299,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: None,
+            stealth: Stealth::Normal,
             keyring_access: Vec::new(),
         });
     }
