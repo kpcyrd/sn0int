@@ -10,6 +10,8 @@ pub enum EntryType {
     Source,
     KeyringAccess,
     Stealth,
+    Author,
+    Repository,
     License,
 }
 
@@ -23,6 +25,8 @@ impl FromStr for EntryType {
             "Source" => Ok(EntryType::Source),
             "Keyring-Access" => Ok(EntryType::KeyringAccess),
             "Stealth" => Ok(EntryType::Stealth),
+            "Author" => Ok(EntryType::Author),
+            "Repository" => Ok(EntryType::Repository),
             "License" => Ok(EntryType::License),
             x => bail!("Unknown EntryType: {:?}", x),
         }
@@ -162,6 +166,8 @@ pub struct Metadata {
     pub source: Option<Source>,
     pub keyring_access: Vec<String>,
     pub stealth: Stealth,
+    pub authors: Vec<String>,
+    pub repository: Option<String>,
     pub license: License,
 }
 
@@ -181,6 +187,8 @@ impl FromStr for Metadata {
                 EntryType::Source => data.source = Some(v),
                 EntryType::KeyringAccess => data.keyring_access.push(v),
                 EntryType::Stealth => data.stealth = Some(v),
+                EntryType::Author => data.authors.push(v),
+                EntryType::Repository => data.repository = Some(v),
                 EntryType::License => data.license = Some(v),
             }
         }
@@ -196,6 +204,8 @@ pub struct NewMetadata<'a> {
     pub source: Option<&'a str>,
     pub keyring_access: Vec<&'a str>,
     pub stealth: Option<&'a str>,
+    pub authors: Vec<&'a str>,
+    pub repository: Option<&'a str>,
     pub license: Option<&'a str>,
 }
 
@@ -214,6 +224,10 @@ impl<'a> NewMetadata<'a> {
             Some(x) => x.parse()?,
             _ => Stealth::Normal,
         };
+        let authors = self.authors.into_iter()
+            .map(String::from)
+            .collect();
+        let repository = self.repository.map(String::from);
         let license = self.license.ok_or_else(|| format_err!("License is required"))?;
         let license = license.parse()?;
 
@@ -223,6 +237,8 @@ impl<'a> NewMetadata<'a> {
             source,
             keyring_access,
             stealth,
+            authors,
+            repository,
             license,
         })
     }
@@ -264,6 +280,8 @@ mod tests {
             license: License::WTFPL,
             source: Some(Source::Domains),
             stealth: Stealth::Normal,
+            authors: vec![],
+            repository: None,
             keyring_access: Vec::new(),
         });
     }
@@ -274,6 +292,9 @@ mod tests {
 -- Version: 1.0.0
 -- Source: domains
 -- Stealth: silent
+-- Author: kpcyrd <git at rxv dot cc>
+-- Author: kpcyrd's cat
+-- Repository: https://github.com/kpcyrd/sn0int
 -- License: WTFPL
 
 "#).expect("parse");
@@ -283,6 +304,11 @@ mod tests {
             license: License::WTFPL,
             source: Some(Source::Domains),
             stealth: Stealth::Silent,
+            authors: vec![
+                "kpcyrd <git at rxv dot cc>".to_string(),
+                "kpcyrd's cat".to_string(),
+            ],
+            repository: Some("https://github.com/kpcyrd/sn0int".to_string()),
             keyring_access: Vec::new(),
         });
     }
@@ -300,6 +326,8 @@ mod tests {
             license: License::WTFPL,
             source: None,
             stealth: Stealth::Normal,
+            authors: vec![],
+            repository: None,
             keyring_access: Vec::new(),
         });
     }
