@@ -110,11 +110,11 @@ impl FromStr for Source {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 pub enum Stealth {
     Loud,
     Normal,
-    Silent,
+    Passive,
     Offline,
 }
 
@@ -126,7 +126,7 @@ impl FromStr for Stealth {
             "loud" => Ok(Stealth::Loud),
             // This is also the default level if none is provided
             "normal" => Ok(Stealth::Normal),
-            "silent" => Ok(Stealth::Silent),
+            "passive" => Ok(Stealth::Passive),
             "offline" => Ok(Stealth::Offline),
             x => bail!("Unknown stealth: {:?}", x),
         }
@@ -291,7 +291,7 @@ mod tests {
         let metadata = Metadata::from_str(r#"-- Description: Hello world, this is my description
 -- Version: 1.0.0
 -- Source: domains
--- Stealth: silent
+-- Stealth: passive
 -- Author: kpcyrd <git at rxv dot cc>
 -- Author: kpcyrd's cat
 -- Repository: https://github.com/kpcyrd/sn0int
@@ -303,7 +303,7 @@ mod tests {
             version: "1.0.0".to_string(),
             license: License::WTFPL,
             source: Some(Source::Domains),
-            stealth: Stealth::Silent,
+            stealth: Stealth::Passive,
             authors: vec![
                 "kpcyrd <git at rxv dot cc>".to_string(),
                 "kpcyrd's cat".to_string(),
