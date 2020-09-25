@@ -5,13 +5,14 @@ use crate::api::Client;
 use crate::args;
 use crate::config::Config;
 use crate::cmd::{Cmd, LiteCmd};
-use crate::engine::Library;
+use crate::engine::{Library, Module};
 use crate::registry::{self, InstallTask, UpdateTask, Updater};
 use crate::shell::Shell;
 use crate::update::AutoUpdater;
 use crate::worker;
-use colored::Colorize;
+use colored::{Color, Colorize};
 use sn0int_common::ModuleID;
+use sn0int_common::metadata::Stealth;
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
@@ -71,7 +72,10 @@ pub struct List {
     pub source: Option<String>,
     /// List outdated modules
     #[structopt(long="outdated")]
-    pub outdated: bool,
+    pub outdated_only: bool,
+    /// Only show modules with equal or better stealth level
+    #[structopt(long="stealth", possible_values=Stealth::variants())]
+    pub stealth: Option<Stealth>,
     /// Filter by pattern
     #[structopt(default_value="*")]
     pub pattern: String,
@@ -96,6 +100,34 @@ enum ModuleReload {
     No,
 }
 
+#[inline]
+fn write_tag(out: &mut String, color: Color, txt: &str) -> Result<()> {
+    write!(out, " [{}]", txt.color(color))?;
+    Ok(())
+}
+
+fn print_module(module: &Module, is_outdated: bool) -> Result<()> {
+    let mut out = String::new();
+    write!(&mut out, "{}/{} {}", module.author().purple(),
+                                 module.name(),
+                                 module.version().blue())?;
+
+    match module.stealth() {
+        Stealth::Loud => write_tag(&mut out, Color::Yellow, "LOUD")?,
+        Stealth::Normal => (),
+        Stealth::Passive => write_tag(&mut out, Color::Green, "passive")?,
+        Stealth::Offline => write_tag(&mut out, Color::Green, "offline")?,
+    };
+
+    if is_outdated {
+        write_tag(&mut out, Color::Red, "outdated")?;
+    }
+
+    println!("{}", out.bold());
+    println!("    {}", module.description());
+    Ok(())
+}
+
 fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) -> Result<ModuleReload> {
     match subcommand {
         SubCommand::List(list) => {
@@ -115,16 +147,18 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
                     continue;
                 }
 
-                let mut out = String::new();
-                write!(&mut out, "{} ({})", canonical.green(),
-                                            module.version().yellow())?;
-                if autoupdate.is_outdated(&canonical) {
-                    write!(&mut out, " {}", "[outdated]".red())?;
-                } else if list.outdated {
+                if let Some(stealth) = &list.stealth {
+                    if !module.stealth().equal_or_better(&stealth) {
+                        continue;
+                    }
+                }
+
+                let is_outdated = autoupdate.is_outdated(&canonical);
+                if list.outdated_only && !is_outdated {
                     continue;
                 }
-                println!("{}", out);
-                println!("\t{}", module.description());
+
+                print_module(module, is_outdated)?;
             }
             Ok(ModuleReload::No)
         },

@@ -4,8 +4,9 @@ use crate::api::Client;
 use crate::auth;
 use crate::config::Config;
 use crate::engine::{Library, Module};
-use colored::Colorize;
+use colored::{Color, Colorize};
 use separator::Separatable;
+use std::fmt::Write;
 use sn0int_common::ModuleID;
 use sn0int_common::api::ModuleInfoResponse;
 use sn0int_common::metadata::Metadata;
@@ -242,6 +243,12 @@ impl Task for UpdateTask {
     }
 }
 
+#[inline]
+fn write_tag(out: &mut String, color: Color, txt: &str) -> Result<()> {
+    write!(out, " [{}]", txt.color(color))?;
+    Ok(())
+}
+
 pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result<()> {
     let client = Client::new(&config)?;
 
@@ -258,12 +265,23 @@ pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result
             continue;
         }
 
-        println!("{} ({}) - {} downloads{}{}", canonical.green(),
-                            module.latest.yellow(),
-                            module.downloads.separated_string(),
-                            (if module.featured { " [featured]" } else { "" }).cyan(),
-                            (if installed.is_some() { " [installed]" } else { "" }).green());
-        println!("\t{}", module.description);
+        let mut out = format!("{}/{} {} - {} downloads",
+            module.author.purple(),
+            module.name,
+            module.latest.blue(),
+            module.downloads.separated_string(),
+        );
+
+        if module.featured {
+            write_tag(&mut out, Color::Cyan, "featured")?;
+        }
+
+        if installed.is_some() {
+            write_tag(&mut out, Color::Green, "installed")?;
+        }
+
+        println!("{}", out.bold());
+        println!("    {}", module.description);
     }
 
     Ok(())

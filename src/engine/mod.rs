@@ -14,14 +14,13 @@ use std::sync::{Arc, Mutex};
 use crate::engine::ctx::Script;
 use crate::ipc::child::IpcChild;
 use sn0int_common::ModuleID;
-use sn0int_common::metadata::{Metadata, Source};
+use sn0int_common::metadata::{Metadata, Source, Stealth};
 use chrootable_https::dns::Resolver;
 use crate::psl::PslReader;
 use crate::paths;
 use std::cmp::Ordering;
 use std::path::Path;
 use crate::term;
-use crate::worker;
 
 pub mod ctx;
 pub use sn0int_std::engine::structs;
@@ -68,11 +67,9 @@ impl<'a> Library<'a> {
     }
 
     pub fn reload_modules(&mut self) -> Result<usize> {
-        let modules = worker::spawn_fn("Loading modules", || {
-            self.reload_modules_quiet()
-                .context("Failed to load modules")?;
-            Ok(self.list().len())
-        }, true)?;
+        self.reload_modules_quiet()
+            .context("Failed to load modules")?;
+        let modules = self.list().len();
         term::info(&format!("Loaded {} modules", modules));
         Ok(modules)
     }
@@ -229,6 +226,8 @@ pub struct Module {
     version: String,
     source: Option<Source>,
     keyring_access: Vec<String>,
+    stealth: Stealth,
+
     private_module: bool,
     script: Script,
 }
@@ -251,9 +250,16 @@ impl Module {
             version: metadata.version,
             source: metadata.source,
             keyring_access: metadata.keyring_access,
+            stealth: metadata.stealth,
+
             private_module,
             script,
         })
+    }
+
+    #[inline]
+    pub fn author(&self) -> &str {
+        &self.author
     }
 
     #[inline]
@@ -291,6 +297,11 @@ impl Module {
     #[inline]
     pub fn keyring_access(&self) -> &[String] {
         &self.keyring_access
+    }
+
+    #[inline]
+    pub fn stealth(&self) -> &Stealth {
+        &self.stealth
     }
 
     #[inline]

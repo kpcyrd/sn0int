@@ -1,5 +1,6 @@
 -- Description: Send a request to a hidden service
 -- Version: 0.1.0
+-- Stealth: passive
 -- License: GPL-3.0
 
 function run()

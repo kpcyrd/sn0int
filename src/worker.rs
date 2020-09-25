@@ -670,5 +670,7 @@ pub fn spawn_multi<T: Task, F>(tasks: Vec<T>, mut done_fn: F, threads: usize) ->
         stack.tick();
     }
 
+    stack.clear();
+
     Ok(())
 }
