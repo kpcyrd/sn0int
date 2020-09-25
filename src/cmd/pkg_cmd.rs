@@ -74,7 +74,7 @@ pub struct List {
     #[structopt(long="outdated")]
     pub outdated_only: bool,
     /// Only show modules with equal or better stealth level
-    #[structopt(long="stealth")]
+    #[structopt(long="stealth", possible_values=Stealth::variants())]
     pub stealth: Option<Stealth>,
     /// Filter by pattern
     #[structopt(default_value="*")]

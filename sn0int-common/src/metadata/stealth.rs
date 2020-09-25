@@ -10,6 +10,16 @@ pub enum Stealth {
 }
 
 impl Stealth {
+    #[inline]
+    pub fn variants() -> &'static [&'static str] {
+        &[
+            "loud",
+            "normal",
+            "passive",
+            "offline",
+        ]
+    }
+
     #[inline(always)]
     fn as_num(&self) -> u8 {
         match self {
