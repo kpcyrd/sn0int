@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use blake2::VarBlake2b;
-use digest::{Input, VariableOutput};
+use digest::{Update, VariableOutput};
 use serde::ser::{Serialize, Serializer};
 use serde::de::{self, Deserialize, Deserializer};
 use std::result;
@@ -22,8 +22,9 @@ impl Blob {
 
     pub fn hash(bytes: &[u8]) -> String {
         let mut h = VarBlake2b::new(32).unwrap();
-        h.input(bytes);
-        Self::encode_hash(&h.vec_result())
+        h.update(bytes);
+        let output = h.finalize_boxed();
+        Self::encode_hash(&output)
     }
 
     #[inline]
