@@ -33,8 +33,8 @@ url = "2.0"
 tungstenite = { version = "0.11", default-features = false }
 kuchiki = "0.8.0"
 maxminddb = "0.14"
-x509-parser = "0.7"
-der-parser = "3.0"
+x509-parser = "0.8.2"
+der-parser = "4.1"
 publicsuffix = { version="1.5", default-features=false }
 xml-rs = "0.8"
 geo = "0.14"

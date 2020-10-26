@@ -1,78 +1,7 @@
 use crate::errors::*;
-
-use x509_parser;
-use der_parser::der::DerObject;
-use der_parser::ber::{BerObjectContent, BerTag};
-use der_parser::oid::Oid;
 use std::collections::HashSet;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-
-
-#[derive(Debug, PartialEq)]
-pub enum AlternativeName {
-    DnsName(String),
-    Email(String),
-    IpAddr(IpAddr),
-}
-
-pub fn san_extension(i: &[u8]) -> Result<Vec<AlternativeName>> {
-    let (rem, seq) = der_parser::der::parse_der_sequence(i)
-        .map_err(|_| format_err!("Failed to parse san extension"))?;
-
-    if !rem.is_empty() {
-        bail!("san extension has trailing garbage");
-    }
-
-    debug!("Decoded sequence: {:?}", seq);
-    if let BerObjectContent::Sequence(seq) = seq.content {
-        seq.into_iter()
-            .map(san_value)
-            .collect()
-    } else {
-        bail!("Expected der sequence");
-    }
-}
-
-pub fn san_value(o: DerObject) -> Result<AlternativeName> {
-    debug!("DER object in SAN extension: {:?}", o);
-
-    match (o.class, o.tag, &o.content) {
-        (2, BerTag::Integer, BerObjectContent::Unknown(BerTag::Integer, value)) => san_value_dns(value),
-        (2, BerTag::Boolean, BerObjectContent::Unknown(BerTag::Boolean, value)) => san_value_email(value),
-        (2, BerTag::ObjDescriptor, BerObjectContent::Unknown(BerTag::ObjDescriptor, value)) => san_value_ipaddr(value),
-        _ => bail!("Unexpected object: {:?}", o),
-    }
-}
-
-pub fn san_value_dns(v: &[u8]) -> Result<AlternativeName> {
-    debug!("Reading as dns name: {:?}", v);
-    String::from_utf8(v.to_vec())
-        .map(AlternativeName::DnsName)
-        .map_err(Error::from)
-}
-
-pub fn san_value_email(v: &[u8]) -> Result<AlternativeName> {
-    debug!("Reading as email: {:?}", v);
-    String::from_utf8(v.to_vec())
-        .map(AlternativeName::Email)
-        .map_err(Error::from)
-}
-
-pub fn san_value_ipaddr(v: &[u8]) -> Result<AlternativeName> {
-    debug!("Reading as ipaddr: {:?}", v);
-    match v.len() {
-        4  => Ok(AlternativeName::IpAddr(Ipv4Addr::from([
-            v[0], v[1], v[2], v[3],
-        ]).into())),
-        16 => Ok(AlternativeName::IpAddr(Ipv6Addr::from([
-            v[0],  v[1],  v[2],  v[3],
-            v[4],  v[5],  v[6],  v[7],
-            v[8],  v[9],  v[10], v[11],
-            v[12], v[13], v[14], v[15],
-        ]).into())),
-        _ => Err(format_err!("Invalid ipaddr")),
-    }
-}
+use std::net::IpAddr;
+use x509_parser::extensions::{GeneralName, ParsedExtension};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
@@ -116,35 +45,48 @@ impl Certificate {
         let mut valid_emails = HashSet::new();
         let mut valid_ipaddrs = HashSet::new();
 
-        for x in crt.tbs_certificate.subject.rdn_seq {
-            for y in x.set {
-                // CommonName
-                if y.attr_type != Oid::from(&[2, 5, 4, 3]) {
-                    continue;
-                }
-
-                if let Ok(x) = y.attr_value.content.as_slice() {
-                    let value = String::from_utf8(x.to_vec())?;
-                    info!("Found CN in Subject: {:?}", value);
-                    valid_names.insert(value);
-                }
+        for attr in crt.subject().iter_common_name() {
+            if let Ok(cn) = attr.as_str() {
+                info!("Found CN in Subject: {:?}", cn);
+                valid_names.insert(cn.to_string());
             }
         }
 
-        for x in crt.tbs_certificate.extensions {
-            if x.oid != Oid::from(&[2, 5, 29, 17]) {
-                continue;
-            }
-
-            debug!("Found san extension: {:?}", x.value);
-            let values = san_extension(x.value)?;
-
-            for v in values {
-                match v {
-                    AlternativeName::DnsName(v) => valid_names.insert(v),
-                    AlternativeName::Email(v) => valid_emails.insert(v),
-                    AlternativeName::IpAddr(v) => valid_ipaddrs.insert(v),
-                };
+        for (_oid, ext) in crt.tbs_certificate.extensions {
+            match ext.parsed_extension() {
+                ParsedExtension::SubjectAlternativeName(san) => {
+                    for name in &san.general_names {
+                        debug!("Certificate is valid for {:?}", name);
+                        match name {
+                            GeneralName::DNSName(v) => {
+                                valid_names.insert(v.to_string());
+                            },
+                            GeneralName::RFC822Name(v) => {
+                                valid_emails.insert(v.to_string());
+                            },
+                            GeneralName::IPAddress(v) => {
+                                let ip = match v.len() {
+                                    4 => Some(IpAddr::from([v[0], v[1], v[2], v[3]])),
+                                    16 => Some(IpAddr::from([
+                                        v[0], v[1], v[2], v[3],
+                                        v[4], v[5], v[6], v[7],
+                                        v[8], v[9], v[10], v[11],
+                                        v[12], v[13], v[14], v[15],
+                                    ])),
+                                    _ => {
+                                        info!("Certificate is valid for invalid ip address: {:?}", v);
+                                        None
+                                    },
+                                };
+                                if let Some(ip) = ip {
+                                    valid_ipaddrs.insert(ip);
+                                }
+                            },
+                            _ => (),
+                        }
+                    }
+                },
+                _ => (),
             }
         }
 
@@ -162,7 +104,6 @@ impl Certificate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use der_parser::parse_der;
 
     #[test]
     fn test_parse_pem_github() {
@@ -258,19 +199,6 @@ ZkZZmqNn2Q8=
                 "2606:4700:4700::1111".parse().unwrap(),
             ],
         });
-    }
-
-    #[test]
-    fn test_san_extension() {
-        let ext = san_extension(&[48, 28,
-                130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109,
-                130, 14, 119, 119, 119, 46, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109
-            ])
-            .expect("Failed to parse extension");
-        assert_eq!(ext, vec![
-            AlternativeName::DnsName(String::from("github.com")),
-            AlternativeName::DnsName(String::from("www.github.com")),
-        ]);
     }
 
     #[test]
@@ -370,48 +298,6 @@ z/6Vy8Ga9kigYVsa8ZFMR+Ex
             valid_emails: vec![],
             valid_ipaddrs: vec![],
         });
-    }
-
-    #[test]
-    fn test_san_value_dns() {
-        let (rem, v) = parse_der(&[130, 10, 103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
-            .expect("Failed to parse san value");
-        assert!(rem.is_empty());
-        println!("{:?}", v);
-        assert_eq!(v, DerObject {
-            class: 2,
-            structured: 0,
-            tag: BerTag::Integer,
-            content: BerObjectContent::Unknown(BerTag::Integer, &[103, 105, 116, 104, 117, 98, 46, 99, 111, 109])
-        });
-        let content = match v.content {
-            BerObjectContent::Unknown(BerTag::Integer, v) => v,
-            _ => panic!("Wrong BerObjectContent"),
-        };
-        let v = san_value_dns(content)
-            .expect("Failed to process san value");
-        assert_eq!(v, AlternativeName::DnsName(String::from("github.com")));
-    }
-
-    #[test]
-    fn test_san_value_ipaddr() {
-        let (rem, v) = parse_der(&[135, 4, 1, 1, 1, 1])
-            .expect("Failed to parse san value");
-        assert!(rem.is_empty());
-        println!("{:?}", v);
-        assert_eq!(v, DerObject {
-            class: 2,
-            structured: 0,
-            tag: BerTag::ObjDescriptor,
-            content: BerObjectContent::Unknown(BerTag::ObjDescriptor, &[1, 1, 1, 1])
-        });
-        let content = match v.content {
-            BerObjectContent::Unknown(BerTag::ObjDescriptor, v) => v,
-            _ => panic!("Wrong BerObjectContent"),
-        };
-        let v = san_value_ipaddr(content)
-            .expect("Failed to process san value");
-        assert_eq!(v, AlternativeName::IpAddr("1.1.1.1".parse().unwrap()));
     }
 
     #[test]
