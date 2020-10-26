@@ -167,7 +167,7 @@ dependencies = [
  "cfg-if 0.1.10",
  "clang-sys",
  "clap",
- "env_logger",
+ "env_logger 0.7.1",
  "lazy_static",
  "lazycell",
  "log 0.4.11",
@@ -375,9 +375,9 @@ dependencies = [
 
 [[package]]
 name = "caps"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7cad42d60031544f3332449273d5148028deb89e275300e87cdc1930021ec7d4"
+checksum = "26b13b33799e01119c4a7cd15c8f07e5f6b901bd97e85b321cf5a460f430f7cc"
 dependencies = [
  "errno",
  "libc",
@@ -594,16 +594,6 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.4.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b153fe7cbef478c567df0f972e02e6d736db11affe43dfc9c56a9374d1adfb87"
-dependencies = [
- "crossbeam-utils 0.7.2",
- "maybe-uninit",
-]
-
-[[package]]
-name = "crossbeam-channel"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dca26ee1f8d361640700bde38b2c37d8c22b3ce2d360e1fc1c74ea4b0aa7d775"
@@ -719,9 +709,9 @@ dependencies = [
 
 [[package]]
 name = "crypto-mac"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58bcd97a54c7ca5ce2f6eb16f6bede5b0ab5f0055fedc17d2f0b4466e21671ca"
+checksum = "4857fd85a0c34b3c3297875b747c1e02e06b6a0ea32dd892d8192b9ce0813ea6"
 dependencies = [
  "generic-array 0.14.4",
  "subtle 2.3.0",
@@ -1108,7 +1098,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 dependencies = [
  "atty",
- "humantime",
+ "humantime 1.3.0",
+ "log 0.4.11",
+ "regex",
+ "termcolor",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54532e3223c5af90a6a757c90b5c5521564b07e5e7a958681bcd2afad421cdcd"
+dependencies = [
+ "atty",
+ "humantime 2.0.1",
  "log 0.4.11",
  "regex",
  "termcolor",
@@ -1349,13 +1352,14 @@ dependencies = [
 
 [[package]]
 name = "geo"
-version = "0.14.2"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "139007e3210dfc1d010e166e779059be5e0f31967a71f3edae97116aefb74450"
+checksum = "c1488b04daa30b25f0beb19c2110fa507484ac8c2b8cad83d548cdda857f7f7a"
 dependencies = [
  "geo-types",
  "geographiclib-rs",
  "num-traits",
+ "robust",
  "rstar",
 ]
 
@@ -1516,11 +1520,11 @@ dependencies = [
 
 [[package]]
 name = "hmac"
-version = "0.9.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "deae6d9dbb35ec2c502d62b8f7b1c000a0822c3b0794ba36b3149c0a1c840dff"
+checksum = "c1441c6b1e930e2817404b5046f1f989899143a12bf92de603b69f4e0aee1e15"
 dependencies = [
- "crypto-mac 0.9.1",
+ "crypto-mac 0.10.0",
  "digest 0.9.0",
 ]
 
@@ -1586,6 +1590,12 @@ checksum = "df004cfca50ef23c36850aaaa59ad52cc70d0e90243c3c7737a4dd32dc7a3c4f"
 dependencies = [
  "quick-error",
 ]
+
+[[package]]
+name = "humantime"
+version = "2.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c1ad908cc71012b7bea4d0c53ba96a8cba9962f048fa68d143376143d863b7a"
 
 [[package]]
 name = "hyper"
@@ -2036,9 +2046,9 @@ checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
 name = "maxminddb"
-version = "0.14.0"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9d4f312870f536f2f87d6afe80570c3df890bd9b9985dfadd3c2e9bba183d80"
+checksum = "912cf8c0da1a673a0e0c6b230a858ea71ccaf3ded184041a1c2172d81c1d54d7"
 dependencies = [
  "log 0.4.11",
  "serde",
@@ -2198,9 +2208,9 @@ dependencies = [
 
 [[package]]
 name = "mqtt-protocol"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad527bd1d7917664e1f35f30ac9d0a01fa1425c52c66494a5b875e8b8848058"
+checksum = "3bcd47e4e18c644d5e83ffaa560691eab7f56dfef30a022ce5f3c45782a3ea1a"
 dependencies = [
  "byteorder",
  "lazy_static",
@@ -2286,6 +2296,18 @@ name = "nix"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83450fe6a6142ddd95fb064b746083fc4ef1705fe81f64a64e1d4b39f54a1055"
+dependencies = [
+ "bitflags",
+ "cc",
+ "cfg-if 0.1.10",
+ "libc",
+]
+
+[[package]]
+name = "nix"
+version = "0.19.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85db2feff6bf70ebc3a4793191517d5f0331100a2f10f9bf93b5e5214f32b7b7"
 dependencies = [
  "bitflags",
  "cc",
@@ -2759,7 +2781,7 @@ checksum = "5f2a9f075f6394100e7c105ed1af73fb1859d6fd14e49d4290d578120beb167f"
 dependencies = [
  "base64 0.10.1",
  "byteorder",
- "humantime",
+ "humantime 1.3.0",
  "line-wrap",
  "serde",
  "xml-rs",
@@ -3093,7 +3115,7 @@ version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9ab346ac5921dc62ffa9f89b7a773907511cdfa5490c572ae9be1be33e8afa4a"
 dependencies = [
- "crossbeam-channel 0.5.0",
+ "crossbeam-channel",
  "crossbeam-deque 0.8.0",
  "crossbeam-utils 0.8.0",
  "lazy_static",
@@ -3201,6 +3223,12 @@ dependencies = [
  "web-sys",
  "winapi 0.3.9",
 ]
+
+[[package]]
+name = "robust"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d1a6eb3bd241993b09a354047bfba030778b347ac4de4bc0fd80e531e7cbfac8"
 
 [[package]]
 name = "rocket"
@@ -3542,16 +3570,16 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1d7eb9ef2c18661902cc47e535f9bc51b78acd254da71d375c2f6720d9a40403"
 dependencies = [
- "semver-parser",
+ "semver-parser 0.7.0",
 ]
 
 [[package]]
 name = "semver"
-version = "0.10.0"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "394cec28fa623e00903caf7ba4fa6fb9a0e260280bb8cdbbba029611108a0190"
+checksum = "f301af10236f6df4160f7c3f04eec6dbc70ace82d23326abad5edee88801c6b6"
 dependencies = [
- "semver-parser",
+ "semver-parser 0.10.1",
 ]
 
 [[package]]
@@ -3559,6 +3587,15 @@ name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
+
+[[package]]
+name = "semver-parser"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42ef146c2ad5e5f4b037cd6ce2ebb775401729b19a82040c1beac9d36c7d1428"
+dependencies = [
+ "pest",
+]
 
 [[package]]
 name = "separator"
@@ -3768,15 +3805,15 @@ name = "sn0int"
 version = "0.19.1"
 dependencies = [
  "atty",
- "base64 0.12.3",
+ "base64 0.13.0",
  "boxxy",
  "bytes 0.4.12",
  "bytesize",
- "caps 0.4.0",
+ "caps 0.5.0",
  "chrono",
  "chrootable-https",
  "colored",
- "crossbeam-channel 0.4.4",
+ "crossbeam-channel",
  "ctrlc",
  "data-encoding",
  "diesel",
@@ -3784,7 +3821,7 @@ dependencies = [
  "digest 0.9.0",
  "dirs 3.0.1",
  "embedded-triple",
- "env_logger",
+ "env_logger 0.8.1",
  "failure",
  "glob",
  "hlua-badtouch",
@@ -3795,7 +3832,7 @@ dependencies = [
  "log 0.4.11",
  "maplit",
  "md-5",
- "nix 0.18.0",
+ "nix 0.19.0",
  "nude",
  "opener",
  "os-version",
@@ -3804,7 +3841,7 @@ dependencies = [
  "rand 0.7.3",
  "regex",
  "rustyline 6.3.0",
- "semver 0.10.0",
+ "semver 0.11.0",
  "separator",
  "serde",
  "serde_derive",
@@ -3849,7 +3886,7 @@ dependencies = [
  "diesel_full_text_search",
  "diesel_migrations",
  "dotenv",
- "env_logger",
+ "env_logger 0.7.1",
  "failure",
  "hex 0.4.2",
  "lazy_static",
@@ -3883,7 +3920,7 @@ dependencies = [
  "ct-logs 0.7.0",
  "der-parser",
  "digest 0.9.0",
- "env_logger",
+ "env_logger 0.8.1",
  "failure",
  "geo",
  "hlua-badtouch",
@@ -4113,9 +4150,9 @@ dependencies = [
 
 [[package]]
 name = "syscallz"
-version = "0.14.1"
+version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2910a2812d8a826c7ab3bec20fb35be45adfb42687edcb02b35ac64b12e90125"
+checksum = "7fea20c794acfd4cebf0bd8f623846cdc8424e0495a29ad76ecf2060d673be7c"
 dependencies = [
  "log 0.4.11",
  "pkg-config",
