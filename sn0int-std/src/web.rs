@@ -89,10 +89,6 @@ impl RequestOptions {
     }
 }
 
-pub fn default_user_agent() -> String {
-    format!("sn0int/{}", env!("CARGO_PKG_VERSION"))
-}
-
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct HttpRequest {
     // reference to the HttpSession
@@ -103,7 +99,7 @@ pub struct HttpRequest {
     query: Option<HashMap<String, String>>,
     headers: Option<HashMap<String, String>>,
     basic_auth: Option<(String, String)>,
-    user_agent: Option<String>,
+    user_agent: String,
     follow_redirects: usize,
     body: Option<ReqBody>,
     timeout: Option<Duration>,
@@ -113,10 +109,11 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions) -> HttpRequest {
+    pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions, default_agent: fn() -> String) -> HttpRequest {
         let cookies = session.cookies.clone();
 
-        let user_agent = options.user_agent.or_else(|| Some(default_user_agent()));
+        let user_agent = options.user_agent.unwrap_or_else(default_agent);
+
         let timeout = options.timeout.map(Duration::from_millis);
 
         let mut request = HttpRequest {
@@ -244,10 +241,8 @@ impl HttpRequest {
         req.uri(url);
         self.attach_cookies(&mut req);
 
-        if let Some(ref agent) = self.user_agent {
-            use chrootable_https::header::USER_AGENT;
-            req.header(USER_AGENT, agent.as_str());
-        }
+        use chrootable_https::header::USER_AGENT;
+        req.header(USER_AGENT, self.user_agent.as_str());
 
         req
     }
