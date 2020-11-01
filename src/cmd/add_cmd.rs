@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
+use crate::db::DbChange;
 use crate::gfx;
 use crate::models::*;
 use crate::shell::Shell;
@@ -9,7 +10,9 @@ use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::utils;
 use crate::term;
+use std::fmt::Debug;
 use std::fs;
+use std::io::{self, BufRead};
 use std::net;
 use std::net::SocketAddr;
 use ipnetwork;
@@ -24,6 +27,9 @@ pub struct Args {
     /// Do not actually insert into database
     #[structopt(short="n", long="dry-run")]
     dry_run: bool,
+    /// Stream structs from stdin line by line
+    #[structopt(long)]
+    stdin: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -74,23 +80,66 @@ pub enum Target {
 
 impl Cmd for Args {
     fn run(self, rl: &mut Shell) -> Result<()> {
-        match self.subcommand {
-            Target::Domain(args) => args.insert(rl, self.dry_run),
-            Target::Subdomain(args) => args.insert(rl, self.dry_run),
-            Target::IpAddr(args) => args.insert(rl, self.dry_run),
-            Target::Url(args) => args.insert(rl, self.dry_run),
-            Target::Email(args) => args.insert(rl, self.dry_run),
-            Target::PhoneNumber(args) => args.insert(rl, self.dry_run),
-            Target::Device(args) => args.insert(rl, self.dry_run),
-            Target::Network(args) => args.insert(rl, self.dry_run),
-            Target::Account(args) => args.insert(rl, self.dry_run),
-            Target::Breach(args) => args.insert(rl, self.dry_run),
-            Target::Image(args) => args.insert(rl, self.dry_run),
-            Target::Netblock(args) => args.insert(rl, self.dry_run),
-            Target::Port(args) => args.insert(rl, self.dry_run),
-            Target::CryptoAddr(args) => args.insert(rl, self.dry_run),
+        if self.stdin {
+            match self.subcommand {
+                Target::Domain(_) => stream_stdin::<AddDomain>(rl),
+                Target::Subdomain(_) => stream_stdin::<AddSubdomain>(rl),
+                Target::IpAddr(_) => stream_stdin::<AddIpAddr>(rl),
+                Target::Url(_) => stream_stdin::<AddUrl>(rl),
+                Target::Email(_) => stream_stdin::<AddEmail>(rl),
+                Target::PhoneNumber(_) => stream_stdin::<AddPhoneNumber>(rl),
+                Target::Port(_) => stream_stdin::<AddPort>(rl),
+                Target::CryptoAddr(_) => stream_stdin::<AddCryptoAddr>(rl),
+                Target::Device(_) | Target::Network(_) | Target::Account(_) | Target::Breach(_) | Target::Image(_) | Target::Netblock(_) => {
+                    bail!("This struct doesn't support streaming from stdin")
+                },
+            }
+        } else {
+            match self.subcommand {
+                Target::Domain(args) => args.insert(rl, self.dry_run),
+                Target::Subdomain(args) => args.insert(rl, self.dry_run),
+                Target::IpAddr(args) => args.insert(rl, self.dry_run),
+                Target::Url(args) => args.insert(rl, self.dry_run),
+                Target::Email(args) => args.insert(rl, self.dry_run),
+                Target::PhoneNumber(args) => args.insert(rl, self.dry_run),
+                Target::Device(args) => args.insert(rl, self.dry_run),
+                Target::Network(args) => args.insert(rl, self.dry_run),
+                Target::Account(args) => args.insert(rl, self.dry_run),
+                Target::Breach(args) => args.insert(rl, self.dry_run),
+                Target::Image(args) => args.insert(rl, self.dry_run),
+                Target::Netblock(args) => args.insert(rl, self.dry_run),
+                Target::Port(args) => args.insert(rl, self.dry_run),
+                Target::CryptoAddr(args) => args.insert(rl, self.dry_run),
+            }
         }
     }
+}
+
+fn stream_stdin<T: InsertFromString>(rl: &mut Shell) -> Result<()> {
+    let stdin = io::stdin();
+    for line in stdin.lock().lines() {
+        let line = line?;
+        match T::from_string(rl, line) {
+            Ok(insert) => {
+                debug!("Received {:?}", insert);
+                let result = rl.db().insert_generic(insert.clone())?;
+
+                if let Some((DbChange::Insert, _)) = result {
+                    if let Ok(value) = insert.value(rl.db()) {
+                        let log = format!("Adding {} {:?}", insert.family(), value);
+                        term::success(&log);
+                    }
+                }
+            },
+            Err(err) => term::error(&format!("Error: {:#}", err)),
+        }
+    }
+    Ok(())
+}
+
+trait InsertFromString {
+    // TODO: some implementations run insert_struct instead of just transforming
+    fn from_string(rl: &mut Shell, x: String) -> Result<Insert>;
 }
 
 trait IntoInsert: Sized {
@@ -116,7 +165,12 @@ impl IntoInsert for AddDomain {
             Some(domain) => domain,
             _ => utils::question("Domain")?,
         };
+        Self::from_string(rl, domain)
+    }
+}
 
+impl InsertFromString for AddDomain {
+    fn from_string(rl: &mut Shell, domain: String) -> Result<Insert> {
         // ensure input is a valid domain
         let dns_name = rl.psl()?.parse_dns_name(&domain)
             .map_err(|e| format_err!("Failed to parse domain: {}", e))?;
@@ -143,7 +197,12 @@ impl IntoInsert for AddSubdomain {
             Some(subdomain) => subdomain,
             _ => utils::question("Subdomain")?,
         };
+        Self::from_string(rl, subdomain)
+    }
+}
 
+impl InsertFromString for AddSubdomain {
+    fn from_string(rl: &mut Shell, subdomain: String) -> Result<Insert> {
         let dns_name = rl.psl()?.parse_dns_name(&subdomain)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
@@ -170,7 +229,8 @@ pub struct AddIpAddr {
 }
 
 impl IntoInsert for AddIpAddr {
-    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
+        // TODO: change this to Option<String> so we don't need to parse back and forth
         let ipaddr = match self.ipaddr {
             Some(ipaddr) => ipaddr,
             _ => {
@@ -178,6 +238,13 @@ impl IntoInsert for AddIpAddr {
                 ipaddr.parse()?
             },
         };
+        Self::from_string(rl, ipaddr.to_string())
+    }
+}
+
+impl InsertFromString for AddIpAddr {
+    fn from_string(_rl: &mut Shell, ipaddr: String) -> Result<Insert> {
+        let ipaddr = ipaddr.parse()?;
 
         let family = match ipaddr {
             net::IpAddr::V4(_) => "4",
@@ -214,7 +281,12 @@ impl IntoInsert for AddUrl {
             Some(url) => url,
             _ => utils::question("URL")?,
         };
+        Self::from_string(rl, url)
+    }
+}
 
+impl InsertFromString for AddUrl {
+    fn from_string(rl: &mut Shell, url: String) -> Result<Insert> {
         let parts = url::Url::parse(&url)?;
         let subdomain = parts.domain()
             .ok_or_else(|| format_err!("url doesn't have a domain host"))?;
@@ -258,12 +330,18 @@ pub struct AddEmail {
 }
 
 impl IntoInsert for AddEmail {
-    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
         let email = match self.email {
             Some(email) => email,
             _ => utils::question("Email")?,
         };
+        Self::from_string(rl, email)
+    }
+}
 
+impl InsertFromString for AddEmail {
+    fn from_string(_rl: &mut Shell, email: String) -> Result<Insert> {
+        // TODO: consider doing basic validation
         Ok(Insert::Email(NewEmail {
             value: email,
             displayname: None,
@@ -290,9 +368,30 @@ impl IntoInsert for AddPhoneNumber {
             },
         };
 
+        // TODO: consider doing basic validation
         Ok(Insert::PhoneNumber(NewPhoneNumber {
             value: phonenumber,
             name: name,
+            valid: None,
+            last_online: None,
+            country: None,
+            carrier: None,
+            line: None,
+            is_ported: None,
+            last_ported: None,
+            caller_name: None,
+            caller_type: None,
+            unscoped: false,
+        }))
+    }
+}
+
+impl InsertFromString for AddPhoneNumber {
+    fn from_string(_rl: &mut Shell, phonenumber: String) -> Result<Insert> {
+        // TODO: consider doing basic validation
+        Ok(Insert::PhoneNumber(NewPhoneNumber {
+            value: phonenumber,
+            name: None,
             valid: None,
             last_online: None,
             country: None,
@@ -575,11 +674,23 @@ impl IntoInsert for AddPort {
         };
 
         let addr = if let Some(addr) = self.addr {
+            // TODO: change this to a regular string so we don't parse->fmt->parse
             addr
         } else {
             let addr = utils::question("IP:Port")?;
             addr.parse()?
         };
+
+        Self::from_string(rl, format!("{}/{}", protocol, addr))
+    }
+}
+
+impl InsertFromString for AddPort {
+    fn from_string(rl: &mut Shell, value: String) -> Result<Insert> {
+        let idx = value.find('/')
+            .ok_or_else(|| format_err!("Could not locate `/` delimiter for protocol/ip:port"))?;
+        let protocol = value[..idx].to_string();
+        let addr = value[idx+1..].parse::<SocketAddr>()?;
 
         let family = match addr.ip() {
             net::IpAddr::V4(_) => "4",
@@ -606,8 +717,6 @@ impl IntoInsert for AddPort {
             _ => bail!("IpAddr is out out of scope"),
         };
 
-        let value = format!("{}/{}", protocol, addr);
-
         Ok(Insert::Port(NewPort {
             ip_addr_id,
             value,
@@ -631,13 +740,18 @@ pub struct AddCryptoAddr {
 }
 
 impl IntoInsert for AddCryptoAddr {
-    fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
+    fn into_insert(self, rl: &mut Shell) -> Result<Insert> {
         let address = if let Some(address) = self.address {
             address
         } else {
             utils::question("Address")?
         };
+        Self::from_string(rl, address)
+    }
+}
 
+impl InsertFromString for AddCryptoAddr {
+    fn from_string(_rl: &mut Shell, address: String) -> Result<Insert> {
         Ok(Insert::CryptoAddr(NewCryptoAddr {
             value: address,
             currency: None,
