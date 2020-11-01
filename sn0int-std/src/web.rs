@@ -1,4 +1,6 @@
 pub use chrootable_https::{Client, HttpClient, Resolver, Response};
+use chrootable_https::http::HttpTryFrom;
+use chrootable_https::http::request::Builder;
 
 use crate::blobs::{Blob, BlobState};
 use std::collections::{HashMap, HashSet};
@@ -19,6 +21,7 @@ use chrootable_https::http::uri::Parts;
 use chrootable_https::{Request, Body, Uri};
 use serde_urlencoded;
 use base64;
+use url::Url;
 
 
 pub fn url_set_qs<S: Serialize + fmt::Debug>(url: Uri, query: &S) -> Result<Uri> {
@@ -67,6 +70,8 @@ pub struct RequestOptions {
     user_agent: Option<String>,
     json: Option<serde_json::Value>,
     form: Option<serde_json::Value>,
+    #[serde(default)]
+    follow_redirects: usize,
     body: Option<String>,
     timeout: Option<u64>,
     #[serde(default)]
@@ -99,6 +104,7 @@ pub struct HttpRequest {
     headers: Option<HashMap<String, String>>,
     basic_auth: Option<(String, String)>,
     user_agent: Option<String>,
+    follow_redirects: usize,
     body: Option<ReqBody>,
     timeout: Option<Duration>,
     into_blob: bool,
@@ -122,6 +128,7 @@ impl HttpRequest {
             headers: options.headers,
             basic_auth: options.basic_auth,
             user_agent,
+            follow_redirects: options.follow_redirects,
             body: None,
             timeout,
             into_blob: options.into_blob,
@@ -144,7 +151,7 @@ impl HttpRequest {
         request
     }
 
-    pub fn send(&self, state: &dyn WebState) -> Result<Response> {
+    pub fn send(&mut self, state: &dyn WebState) -> Result<Response> {
         let mut url = self.url.parse::<Uri>()?;
 
         // set query string
@@ -153,37 +160,9 @@ impl HttpRequest {
         }
 
         // start setting up request
-        let mut req = Request::builder();
-        req.method(self.method.as_str());
-        req.uri(url);
-
-        let mut observed_headers = HashSet::new();
-
-        // set cookies
-        {
-            use chrootable_https::header::COOKIE;
-            let mut cookies = String::new();
-
-            for (key, value) in self.cookies.iter() {
-                if !cookies.is_empty() {
-                    cookies += "; ";
-                }
-                cookies.push_str(&format!("{}={}", key, value));
-            }
-
-            if !cookies.is_empty() {
-                req.header(COOKIE, cookies.as_str());
-                observed_headers.insert(COOKIE.as_str().to_lowercase());
-            }
-        }
+        let mut req = self.mkrequest(self.method.as_str(), &url);
 
         // add headers
-        if let Some(ref agent) = self.user_agent {
-            use chrootable_https::header::USER_AGENT;
-            req.header(USER_AGENT, agent.as_str());
-            observed_headers.insert(USER_AGENT.as_str().to_lowercase());
-        }
-
         if let Some(ref auth) = self.basic_auth {
             use chrootable_https::header::AUTHORIZATION;
             let &(ref user, ref password) = auth;
@@ -191,9 +170,9 @@ impl HttpRequest {
             let auth = base64::encode(&format!("{}:{}", user, password));
             let auth = format!("Basic {}", auth);
             req.header(AUTHORIZATION, auth.as_str());
-            observed_headers.insert(AUTHORIZATION.as_str().to_lowercase());
         }
 
+        let mut observed_headers = HashSet::new();
         if let Some(ref headers) = self.headers {
             for (k, v) in headers {
                 req.header(k.as_str(), v.as_str());
@@ -220,22 +199,73 @@ impl HttpRequest {
             },
             None => Body::empty(),
         };
-        let req = req.body(body)?;
+        let mut req = req.body(body)?;
 
         debug!("Getting http client");
         let client = state.http(&self.proxy)?;
 
-        // send request
-        debug!("Sending http request: {:?}", req);
-        let res = client.request(req)
-            .with_timeout(self.timeout)
-            .wait_for_response()?;
+        let res = loop {
+            // send request
+            debug!("Sending http request: {:?}", req);
+            let res = client.request(req)
+                .with_timeout(self.timeout)
+                .wait_for_response()?;
 
-        for cookie in &res.cookies {
-            HttpRequest::register_cookies_on_state(&self.session, state, cookie);
-        }
+            for cookie in &res.cookies {
+                HttpRequest::register_cookies_on_state(&self.session, state, cookie);
+            }
+
+            if self.follow_redirects > 0 {
+                if res.status >= 300 && res.status < 400 {
+                    if let Some(location) = res.headers.get("location") {
+                        let base = Url::parse(&url.to_string())?;
+                        let joined = base.join(&location)?;
+                        url = joined.to_string().parse()?;
+
+                        req = self.mkrequest("GET", &url).body(Body::empty())?;
+                        self.follow_redirects -= 1;
+                        continue;
+                    }
+                }
+            }
+
+            break res;
+        };
 
         Ok(res)
+    }
+
+    /// create a basic request, reusable when following redirects
+    fn mkrequest<T>(&self, method: &str, url: T) -> Builder
+        where Uri: HttpTryFrom<T>,
+    {
+        let mut req = Request::builder();
+        req.method(method);
+        req.uri(url);
+        self.attach_cookies(&mut req);
+
+        if let Some(ref agent) = self.user_agent {
+            use chrootable_https::header::USER_AGENT;
+            req.header(USER_AGENT, agent.as_str());
+        }
+
+        req
+    }
+
+    fn attach_cookies(&self, req: &mut Builder) {
+        use chrootable_https::header::COOKIE;
+        let mut cookies = String::new();
+
+        for (key, value) in self.cookies.iter() {
+            if !cookies.is_empty() {
+                cookies += "; ";
+            }
+            cookies.push_str(&format!("{}={}", key, value));
+        }
+
+        if !cookies.is_empty() {
+            req.header(COOKIE, cookies.as_str());
+        }
     }
 
     pub fn response_to_lua<S>(&self, state: &S, res: Response) -> Result<LuaMap>

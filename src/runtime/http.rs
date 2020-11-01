@@ -31,7 +31,7 @@ pub fn http_send<S>(lua: &mut hlua::Lua, state: Arc<S>)
     where S: State + WebState + BlobState + 'static
 {
     lua.set("http_send", hlua::function1(move |request: AnyLuaValue| -> Result<HashMap<AnyHashableLuaValue, AnyLuaValue>> {
-        let req = HttpRequest::try_from(request)
+        let mut req = HttpRequest::try_from(request)
             .context("invalid http request object")
             .map_err(|err| state.set_error(err.into()))?;
 
@@ -48,7 +48,7 @@ pub fn http_fetch<S>(lua: &mut hlua::Lua, state: Arc<S>)
     where S: State + WebState + BlobState + 'static
 {
     lua.set("http_fetch", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
-        let req = HttpRequest::try_from(request)
+        let mut req = HttpRequest::try_from(request)
             .context("invalid http request object")
             .map_err(|err| state.set_error(err.into()))?;
 
@@ -69,7 +69,7 @@ pub fn http_fetch_json<S>(lua: &mut hlua::Lua, state: Arc<S>)
     where S: State + WebState + 'static
 {
     lua.set("http_fetch_json", hlua::function1(move |request: AnyLuaValue| -> Result<AnyLuaValue> {
-        let req = HttpRequest::try_from(request)
+        let mut req = HttpRequest::try_from(request)
             .context("invalid http request object")
             .map_err(|err| state.set_error(err.into()))?;
 
@@ -270,5 +270,45 @@ mod tests {
         end
         "#).expect("failed to load script");
         script.test().err().expect("Script should have failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_redirects() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "http://github.com", {
+                follow_redirects=1,
+            })
+            x = http_send(req)
+            if last_err() then return end
+
+            if x['status'] ~= 200 then
+                return 'redirect wasn\'t followed'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
+    }
+
+    #[test]
+    #[ignore]
+    fn verify_fetch_skip_redirects() {
+        let script = Script::load_unchecked(r#"
+        function run()
+            session = http_mksession()
+            req = http_request(session, "GET", "http://github.com", {
+                follow_redirects=0,
+            })
+            x = http_send(req)
+            if last_err() then return end
+
+            if x['status'] ~= 301 then
+                return 'redirect was followed'
+            end
+        end
+        "#).expect("failed to load script");
+        script.test().expect("Script failed");
     }
 }
