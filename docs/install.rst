@@ -19,20 +19,34 @@ Mac OSX
 
     $ brew install sn0int
 
-Debian/Ubuntu/Kali
-------------------
+Debian >= bullseye, Ubuntu >= 20.04, Kali
+-----------------------------------------
 
 There are prebuilt packages signed by a debian maintainer. We can import the
 key for this repository out of the debian keyring.
 
 .. code-block:: bash
 
-    $ apt install debian-keyring
-    $ gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg git@rxv.cc | apt-key add -
-    $ apt-key adv --keyserver keyserver.ubuntu.com --refresh-keys git@rxv.cc
-    $ echo deb http://apt.vulns.sexy stable main > /etc/apt/sources.list.d/apt-vulns-sexy.list
-    $ apt update
-    $ apt install sn0int
+    $ sudo apt install debian-keyring
+    $ gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg kpcyrd@archlinux.org | sudo tee /etc/apt/trusted.gpg.d/apt-vulns-sexy.gpg
+    $ echo deb http://apt.vulns.sexy stable main | sudo tee /etc/apt/sources.list.d/apt-vulns-sexy.list
+    $ sudo apt update
+    $ sudo apt install sn0int
+
+Debian <= buster, Ubuntu <= 19.10
+---------------------------------
+
+There are prebuilt packages signed by a debian maintainer. We can import the
+key for this repository out of the debian keyring.
+
+.. code-block:: bash
+
+    $ sudo apt install debian-keyring
+    $ gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg git@rxv.cc | sudo apt-key add -
+    $ sudo apt-key adv --keyserver keyserver.ubuntu.com --refresh-keys git@rxv.cc
+    $ echo deb http://apt.vulns.sexy stable main | sudo tee /etc/apt/sources.list.d/apt-vulns-sexy.list
+    $ sudo apt update
+    $ sudo apt install sn0int
 
 Fedora/CentOS/Redhat
 --------------------
