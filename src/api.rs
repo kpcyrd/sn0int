@@ -52,8 +52,8 @@ impl Client {
 
     #[inline]
     fn user_agent(&self) -> String {
-        format!("{}, {}, {}",
-            web::default_user_agent(),
+        format!("sn0int/{}, {}, {}",
+            env!("CARGO_PKG_VERSION"),
             embedded_triple::get(),
             self.os_version,
         )

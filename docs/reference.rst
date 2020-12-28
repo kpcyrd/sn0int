@@ -383,6 +383,10 @@ options are set. The following options are available:
   The request body that should be json encoded.
 ``form``
   The request body that should be form encoded.
+``follow_redirects``
+  Automatically follow redirects, up to the specified number. If set to 1, only
+  one redirect is going to be followed. Defaults to 0 so redirects aren't
+  followed.
 ``body``
   The raw request body as string.
 ``into_blob``
