@@ -6,7 +6,6 @@ use crate::schema::*;
 use crate::shell::Shell;
 use crate::term::{self, Term};
 use chrono::{NaiveDateTime, Duration, Utc};
-use diesel;
 use diesel::prelude::*;
 use sn0int_std::ratelimits::Ratelimiter;
 
@@ -21,25 +20,7 @@ pub struct Ttl {
     pub expire: NaiveDateTime,
 }
 
-#[derive(Insertable)]
-#[table_name="ttls"]
-pub struct NewTtl<'a> {
-    pub family: &'a str,
-    pub key: i32,
-    pub value: String,
-    pub expire: NaiveDateTime,
-}
-
 impl Ttl {
-    pub fn new(obj: &Insert, key: i32, value: String, expire: NaiveDateTime) -> NewTtl {
-        NewTtl {
-            family: obj.table(),
-            key,
-            value,
-            expire,
-        }
-    }
-
     pub fn find(obj: &Insert, my_key: i32, db: &Database) -> Result<Option<Ttl>> {
         use crate::schema::ttls::dsl::*;
 
@@ -133,6 +114,15 @@ impl Ttl {
 
         Ok(())
     }
+}
+
+#[derive(Insertable)]
+#[table_name="ttls"]
+pub struct NewTtl<'a> {
+    pub family: &'a str,
+    pub key: i32,
+    pub value: String,
+    pub expire: NaiveDateTime,
 }
 
 pub fn reap_expired(rl: &mut Shell) -> Result<()> {

@@ -5,7 +5,6 @@ use rustyline::{self, Context};
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
-use shellwords;
 use std::borrow::Cow::{self, Owned};
 use std::str::FromStr;
 use std::io::stdout;

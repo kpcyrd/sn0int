@@ -80,7 +80,7 @@ fn setup_graph_map(events: &[Activity]) -> (HashMap<NaiveDate, u64>, u64) {
                 if ctr > max {
                     max = ctr;
                 }
-                map.insert(cur.clone(), ctr);
+                map.insert(*cur, ctr);
                 *cur = date;
                 ctr = 1;
             }

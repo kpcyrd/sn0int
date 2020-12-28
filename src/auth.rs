@@ -1,5 +1,4 @@
 use crate::errors::*;
-use opener;
 use std::fs;
 use std::path::PathBuf;
 use std::thread;

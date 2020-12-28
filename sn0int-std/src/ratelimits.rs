@@ -10,6 +10,12 @@ pub struct Ratelimiter {
     buckets: HashMap<String, Bucket>,
 }
 
+impl Default for Ratelimiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Ratelimiter {
     pub fn new() -> Ratelimiter {
         Ratelimiter {

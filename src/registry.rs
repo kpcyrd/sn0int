@@ -54,7 +54,7 @@ impl Updater {
             fs::write(&path, module.code)
                 .context(format_err!("Failed to write to {:?}", path))?;
 
-            Ok(version.to_string())
+            Ok(version)
         } else {
             let infos = self.query_module(&install.module)
                         .context("Failed to query module infos")?;

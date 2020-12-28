@@ -1,6 +1,5 @@
 use crate::errors::*;
 
-use serde;
 use crate::db::Family;
 use crate::engine::ctx::State;
 use crate::engine::structs;

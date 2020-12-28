@@ -1,12 +1,10 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
 use chrono::NaiveDateTime;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::sync::Arc;
 use crate::engine::ctx::State;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="images"]
@@ -174,8 +172,8 @@ impl Printable<PrintableImage> for Image {
         Ok(PrintableImage {
             value: self.value.to_string(),
             filename: self.filename.clone(),
-            width: self.width.clone(),
-            height: self.height.clone(),
+            width: self.width,
+            height: self.height,
         })
     }
 }
@@ -256,14 +254,14 @@ impl Detailed for Image {
 
             filename: self.filename.clone(),
             mime: self.mime.clone(),
-            width: self.width.clone(),
-            height: self.height.clone(),
-            created: self.created.clone(),
+            width: self.width,
+            height: self.height,
+            created: self.created,
 
-            latitude: self.latitude.clone(),
-            longitude: self.longitude.clone(),
+            latitude: self.latitude,
+            longitude: self.longitude,
 
-            nudity: self.nudity.clone(),
+            nudity: self.nudity,
             ahash: self.ahash.clone(),
             dhash: self.dhash.clone(),
             phash: self.phash.clone(),
@@ -341,8 +339,8 @@ impl Printable<PrintableImage> for NewImage {
         Ok(PrintableImage {
             value: self.value.to_string(),
             filename: self.filename.clone(),
-            width: self.width.clone(),
-            height: self.height.clone(),
+            width: self.width,
+            height: self.height,
         })
     }
 }

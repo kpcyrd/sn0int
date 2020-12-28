@@ -5,7 +5,6 @@ use crate::db::ttl;
 use crate::filters::{Target, Filter};
 use crate::shell::Shell;
 use serde::Serialize;
-use serde_json;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 use crate::models::*;

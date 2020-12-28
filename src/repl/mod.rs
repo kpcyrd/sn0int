@@ -102,7 +102,7 @@ pub fn run(config: &Config) -> Result<()> {
         asn,
     };
 
-    let tx = DummyIpcChild::new();
+    let tx = DummyIpcChild::create();
     let (lua, state) = ctx::ctx(env, tx);
     let mut repl = Repl::new(lua, state);
 

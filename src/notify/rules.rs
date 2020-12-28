@@ -32,8 +32,8 @@ impl FromStr for Glob {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Glob> {
-        let (s, inverse) = if s.starts_with('!') {
-            (&s[1..], true)
+        let (s, inverse) = if let Some(stripped) = s.strip_prefix('!') {
+            (stripped, true)
         } else {
             (s, false)
         };

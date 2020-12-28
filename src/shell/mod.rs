@@ -431,6 +431,12 @@ impl<'a> Shell<'a> {
 
 pub struct SignalRegister(AtomicUsize);
 
+impl Default for SignalRegister {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SignalRegister {
     pub fn new() -> SignalRegister {
         SignalRegister(AtomicUsize::new(1))

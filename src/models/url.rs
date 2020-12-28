@@ -3,10 +3,7 @@ use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;
 use crate::models::*;
-use diesel;
 use diesel::prelude::*;
-use crate::url;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Subdomain)]
@@ -292,7 +289,7 @@ impl InsertToNew for InsertUrl {
     type Target = NewUrl;
 
     fn try_into_new(self) -> Result<NewUrl> {
-        let url = url::Url::parse(&self.value)?;
+        let url = ::url::Url::parse(&self.value)?;
         let path = url.path().to_string();
 
         let redirect = if let Some(redirect) = self.redirect {

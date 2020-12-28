@@ -8,12 +8,9 @@ pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 use chrootable_https::http::HttpTryFrom;
 use chrootable_https::http::uri::Parts;
 use chrootable_https::http::request::Builder;
-use base64;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use serde::Serialize;
-use serde_json;
-use serde_urlencoded;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::iter;
@@ -216,17 +213,15 @@ impl HttpRequest {
                 HttpRequest::register_cookies_on_state(&self.session, state, cookie);
             }
 
-            if self.follow_redirects > 0 {
-                if res.status >= 300 && res.status < 400 {
-                    if let Some(location) = res.headers.get("location") {
-                        let base = Url::parse(&url.to_string())?;
-                        let joined = base.join(&location)?;
-                        url = joined.to_string().parse()?;
+            if self.follow_redirects > 0 && res.status >= 300 && res.status < 400 {
+                if let Some(location) = res.headers.get("location") {
+                    let base = Url::parse(&url.to_string())?;
+                    let joined = base.join(&location)?;
+                    url = joined.to_string().parse()?;
 
-                        req = self.mkrequest("GET", &url).body(Body::empty())?;
-                        self.follow_redirects -= 1;
-                        continue;
-                    }
+                    req = self.mkrequest("GET", &url).body(Body::empty())?;
+                    self.follow_redirects -= 1;
+                    continue;
                 }
             }
 

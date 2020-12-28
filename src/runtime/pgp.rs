@@ -23,7 +23,7 @@ fn is_new_signing_key(seen: &mut HashSet<String>, sig: &Signature) -> bool {
     }
 
     seen.insert(key.to_string());
-    return true;
+    true
 }
 
 fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {

@@ -60,15 +60,12 @@ fn match_element_name(xml: &AnyLuaValue, name: &str) -> bool {
 pub fn xml_named(lua: &mut hlua::Lua, _state: Arc<dyn State>) {
     lua.set("xml_named", hlua::function2(move |xml: AnyLuaValue, name: String| -> AnyLuaValue {
         if let Some(value) = get_children(xml) {
-            match value {
-                AnyLuaValue::LuaArray(arr) => {
-                    for (_, value) in arr {
-                        if match_element_name(&value, &name) {
-                            return value;
-                        }
+            if let AnyLuaValue::LuaArray(arr) = value {
+                for (_, value) in arr {
+                    if match_element_name(&value, &name) {
+                        return value;
                     }
-                },
-                _ => (),
+                }
             }
         }
 

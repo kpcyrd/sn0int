@@ -180,7 +180,7 @@ pub fn sock_sendafter(lua: &mut hlua::Lua, state: Arc<dyn State>) {
 }
 
 pub fn sock_newline(lua: &mut hlua::Lua, state: Arc<dyn State>) {
-    lua.set("sock_newline", hlua::function2(move |sock: String, newline: String| -> () {
+    lua.set("sock_newline", hlua::function2(move |sock: String, newline: String| {
         let sock = state.get_sock(&sock);
         let mut sock = sock.lock().unwrap();
 

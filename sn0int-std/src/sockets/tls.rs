@@ -107,7 +107,7 @@ fn setup(mut stream: TcpStream, mut session: ClientSession) -> Result<(Stream, T
 
     info!("successfully established tls connection");
     let stream = rustls::StreamOwned::new(session, stream);
-    let stream = Stream::Tls(stream);
+    let stream = Stream::Tls(Box::new(stream));
     Ok((stream, tls))
 }
 

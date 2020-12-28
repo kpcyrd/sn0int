@@ -1,10 +1,8 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="devices"]
@@ -216,7 +214,7 @@ impl Detailed for Device {
             ipaddr,
             network,
             unscoped: self.unscoped,
-            last_seen: self.last_seen.clone(),
+            last_seen: self.last_seen,
         })
     }
 }

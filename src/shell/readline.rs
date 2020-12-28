@@ -15,6 +15,12 @@ impl Readline<()> {
     }
 }
 
+impl Default for Readline<()> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: rustyline::Helper> Readline<T> {
     #[inline]
     pub fn with(helper: T) -> Readline<T> {

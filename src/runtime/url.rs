@@ -6,7 +6,6 @@ use crate::json::LuaJsonValue;
 use url::Url;
 use percent_encoding::{percent_encode, percent_decode, NON_ALPHANUMERIC};
 use serde_json::Value;
-use serde_urlencoded;
 use std::sync::Arc;
 
 pub fn url_join(lua: &mut hlua::Lua, state: Arc<dyn State>) {

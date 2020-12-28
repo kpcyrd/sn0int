@@ -70,7 +70,7 @@ impl AutoRule<str> for IpRule {
 
 impl AutoRule<net::IpAddr> for IpRule {
     fn matches(&self, ipaddr: &net::IpAddr) -> Result<bool> {
-        Ok(self.network.contains(ipaddr.clone()))
+        Ok(self.network.contains(*ipaddr))
     }
 }
 

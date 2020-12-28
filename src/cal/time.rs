@@ -34,7 +34,7 @@ fn setup_graph_map(events: &[Activity], slice_duration: u32) -> (HashMap<NaiveDa
                 if ctr > max {
                     max = ctr;
                 }
-                map.insert(cur.clone(), ctr);
+                map.insert(*cur, ctr);
                 *cur = time;
                 ctr = 1;
             }

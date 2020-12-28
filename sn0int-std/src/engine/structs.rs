@@ -2,9 +2,6 @@ use crate::errors::*;
 use crate::hlua::{AnyHashableLuaValue, AnyLuaValue, AnyLuaString};
 use std::collections::{self, HashMap};
 use crate::json::LuaJsonValue;
-use serde;
-use serde_json;
-
 
 pub fn from_lua<T>(x: LuaJsonValue) -> Result<T>
     where for<'de> T: serde::Deserialize<'de>

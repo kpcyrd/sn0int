@@ -1,5 +1,4 @@
 use crate::errors::*;
-use nom;
 use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
 use std::fmt;
 use std::result;

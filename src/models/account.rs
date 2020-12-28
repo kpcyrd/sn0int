@@ -1,10 +1,8 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="accounts"]
@@ -210,7 +208,7 @@ impl Detailed for Account {
             displayname: self.displayname.clone(),
             email: self.email.clone(),
             url: self.url.clone(),
-            last_seen: self.last_seen.clone(),
+            last_seen: self.last_seen,
             unscoped: self.unscoped,
             birthday: self.birthday.clone(),
             phonenumber: self.phonenumber.clone(),

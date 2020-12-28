@@ -2,11 +2,8 @@ use chrootable_https::dns::Resolver;
 use crate::blobs::Blob;
 use crate::engine::Module;
 use crate::keyring::KeyRingEntry;
-use serde_json;
-
 use std::collections::HashMap;
 use std::net::SocketAddr;
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {

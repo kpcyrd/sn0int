@@ -27,9 +27,9 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         let path = Path::new(&args.module);
 
         let filename = path.file_stem()
-            .ok_or(format_err!("Failed to decode filename"))?
+            .ok_or_else(|| format_err!("Failed to decode filename"))?
             .to_str()
-            .ok_or(format_err!("Failed to decode filename"))?;
+            .ok_or_else(|| format_err!("Failed to decode filename"))?;
 
         Module::load(&path.to_path_buf(), "anonymous", &filename, true)
             .context(format!("Failed to parse {:?}", path))?

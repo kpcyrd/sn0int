@@ -1,13 +1,11 @@
 use crate::errors::*;
 use crate::schema::activity;
-use diesel;
 use diesel::prelude::*;
 use diesel::query_builder::BoxedSelectStatement;
 use crate::models::*;
 use chrono::NaiveDateTime;
 use std::convert::TryFrom;
 use std::io::Write;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="activity"]

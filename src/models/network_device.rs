@@ -1,9 +1,7 @@
 use crate::errors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Network)]
@@ -116,8 +114,8 @@ impl Printable<PrintableNetworkDevice> for NetworkDevice {
         let network = Network::by_id(db, self.network_id)?;
         let device = Device::by_id(db, self.device_id)?;
         Ok(PrintableNetworkDevice {
-            network: network.value.to_string(),
-            device: device.value.to_string(),
+            network: network.value,
+            device: device.value,
         })
     }
 }
@@ -148,8 +146,8 @@ impl Printable<PrintableNetworkDevice> for NewNetworkDevice {
         let network = Network::by_id(db, self.network_id)?;
         let device = Device::by_id(db, self.device_id)?;
         Ok(PrintableNetworkDevice {
-            network: network.value.to_string(),
-            device: device.value.to_string(),
+            network: network.value,
+            device: device.value,
         })
     }
 }

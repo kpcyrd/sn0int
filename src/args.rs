@@ -18,10 +18,7 @@ pub struct Args {
 
 impl Args {
     pub fn is_sandbox(&self) -> bool {
-        match self.subcommand {
-            Some(SubCommand::Sandbox(_)) => true,
-            _ => false,
-        }
+        matches!(self.subcommand, Some(SubCommand::Sandbox(_)))
     }
 }
 

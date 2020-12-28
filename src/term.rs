@@ -1,3 +1,5 @@
+#![allow(clippy::print_literal)]
+
 use atty::{self, Stream};
 use crate::db;
 use crate::engine::Module;
@@ -88,7 +90,7 @@ pub trait SpinLogger {
 
     fn status(&mut self, status: String);
 
-    fn stacked_status(&mut self, name: &String, status: String);
+    fn stacked_status(&mut self, name: &str, status: String);
 }
 
 pub struct Spinner {
@@ -196,7 +198,7 @@ impl SpinLogger for Spinner {
     }
 
     #[inline]
-    fn stacked_status(&mut self, _name: &String, status: String) {
+    fn stacked_status(&mut self, _name: &str, status: String) {
         self.status = status;
     }
 }
@@ -254,7 +256,7 @@ impl SpinLogger for Term {
     }
 
     #[inline]
-    fn stacked_status(&mut self, _name: &String, _status: String) {
+    fn stacked_status(&mut self, _name: &str, _status: String) {
         unimplemented!()
     }
 }
@@ -292,6 +294,12 @@ pub struct StackedSpinners {
     drawn: usize,
     dummy: bool,
     warnings: HashSet<String>,
+}
+
+impl Default for StackedSpinners {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StackedSpinners {
@@ -337,7 +345,7 @@ impl StackedSpinners {
         for (i, (_, s)) in self.spinners.iter_mut().enumerate() {
             print!("{}", s.tick_bytes());
             if i < n {
-                print!("\n");
+                println!();
                 self.drawn += 1;
             }
         }
@@ -400,7 +408,7 @@ impl SpinLogger for StackedSpinners {
         self.error(&format!("TODO: set status: {:?}", status));
     }
 
-    fn stacked_status(&mut self, name: &String, status: String) {
+    fn stacked_status(&mut self, name: &str, status: String) {
         if let Some(spinner) = self.spinners.get_mut(name) {
             spinner.status(status);
         }
@@ -459,7 +467,7 @@ impl<'a, T: SpinLogger> SpinLogger for PrefixedLogger<'a, T> {
     }
 
     #[inline]
-    fn stacked_status(&mut self, prefix: &String, status: String) {
+    fn stacked_status(&mut self, prefix: &str, status: String) {
         self.s.stacked_status(prefix, status)
     }
 }

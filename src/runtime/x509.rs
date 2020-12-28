@@ -4,9 +4,7 @@ use crate::crt::Certificate;
 use crate::engine::ctx::State;
 use crate::json::LuaJsonValue;
 use crate::hlua::{self, AnyLuaValue};
-use serde_json;
 use std::sync::Arc;
-
 
 pub fn x509_parse_pem(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("x509_parse_pem", hlua::function1(move |cert: String| -> Result<AnyLuaValue> {

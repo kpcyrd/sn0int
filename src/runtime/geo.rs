@@ -9,7 +9,7 @@ use std::sync::Arc;
 pub fn geo_polygon_contains(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("geo_polygon_contains", hlua::function2(move |polygon: Vec<AnyLuaValue>, point: AnyLuaValue| -> Result<bool> {
         let polygon = polygon.into_iter()
-            .map(|p| Point::try_from(p))
+            .map(Point::try_from)
             .collect::<Result<Vec<_>>>()
             .context("Invalid polygon")
             .map_err(|err| state.set_error(Error::from(err)))?;

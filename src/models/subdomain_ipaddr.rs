@@ -1,9 +1,7 @@
 use crate::errors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::net;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Subdomain)]
@@ -108,7 +106,7 @@ impl Printable<PrintableSubdomainIpAddr> for SubdomainIpAddr {
         let subdomain = Subdomain::by_id(db, self.subdomain_id)?;
         let ipaddr = IpAddr::by_id(db, self.ip_addr_id)?;
         Ok(PrintableSubdomainIpAddr {
-            subdomain: subdomain.value.to_string(),
+            subdomain: subdomain.value,
             ipaddr: ipaddr.value.parse()?,
         })
     }
@@ -126,7 +124,7 @@ impl Printable<PrintableSubdomainIpAddr> for NewSubdomainIpAddr {
         let subdomain = Subdomain::by_id(db, self.subdomain_id)?;
         let ipaddr = IpAddr::by_id(db, self.ip_addr_id)?;
         Ok(PrintableSubdomainIpAddr {
-            subdomain: subdomain.value.to_string(),
+            subdomain: subdomain.value,
             ipaddr: ipaddr.value.parse()?,
         })
     }
