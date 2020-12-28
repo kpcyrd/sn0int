@@ -121,7 +121,7 @@ impl<'a> Library<'a> {
                 let folder = folder.strip_prefix("~/")
                     .unwrap_or(&folder);
 
-                dirs::home_dir()
+                dirs_next::home_dir()
                     .ok_or_else(|| format_err!("Failed to find home folder"))?
                     .join(folder)
             };

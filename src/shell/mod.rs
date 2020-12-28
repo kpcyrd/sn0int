@@ -395,7 +395,7 @@ impl<'a> Shell<'a> {
         self.rl.load_history(&paths::history_path()?)
     }
 
-    pub fn save_history(&self) -> Result<()> {
+    pub fn save_history(&mut self) -> Result<()> {
         self.rl.save_history(&paths::history_path()?)
     }
 

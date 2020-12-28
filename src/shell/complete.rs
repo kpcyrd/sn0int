@@ -249,6 +249,8 @@ impl Completer for CmdCompleter {
 
 // TODO: suggest rest of the line if only one possible completion
 impl Hinter for CmdCompleter {
+    type Hint = String;
+
     #[inline]
     fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         // None

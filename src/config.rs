@@ -1,12 +1,9 @@
-use dirs;
 use crate::errors::*;
 use crate::notify::NotificationConfig;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::net::SocketAddr;
-use toml;
-
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -27,7 +24,7 @@ impl Config {
     }
 
     pub fn path() -> Result<PathBuf> {
-        let path = dirs::config_dir()
+        let path = dirs_next::config_dir()
             .ok_or_else(|| format_err!("Failed to find config directory"))?;
         let path = path.join("sn0int.toml");
         Ok(path)

@@ -1,6 +1,6 @@
 use crate::errors::*;
 use std::path::Path;
-use rustyline::{self, CompletionType, EditMode, Editor, KeyPress, Movement, Word, At};
+use rustyline::{self, CompletionType, EditMode, Editor};
 pub use rustyline::error::ReadlineError;
 
 
@@ -26,10 +26,8 @@ impl<T: rustyline::Helper> Readline<T> {
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
             .build();
-        let mut rl: Editor<T> = Editor::with_config(rl_config);
-        rl.bind_sequence(KeyPress::ControlLeft, rustyline::Cmd::Move(Movement::BackwardWord(1, Word::Big)));
-        rl.bind_sequence(KeyPress::ControlRight, rustyline::Cmd::Move(Movement::ForwardWord(1, At::Start, Word::Big)));
 
+        let mut rl: Editor<T> = Editor::with_config(rl_config);
         rl.set_helper(helper);
 
         Readline {
@@ -38,7 +36,7 @@ impl<T: rustyline::Helper> Readline<T> {
     }
 
     #[inline]
-    pub fn save_history<P: AsRef<Path>>(&self, path: &P) -> Result<()> {
+    pub fn save_history<P: AsRef<Path>>(&mut self, path: &P) -> Result<()> {
         self.rl.save_history(path)
             .map_err(Error::from)
     }
