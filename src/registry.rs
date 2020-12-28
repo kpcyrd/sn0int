@@ -9,7 +9,6 @@ use separator::Separatable;
 use std::fmt::Write;
 use sn0int_common::ModuleID;
 use sn0int_common::api::ModuleInfoResponse;
-use sn0int_common::metadata::Metadata;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -113,13 +112,11 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
         let name = name.to_os_string().into_string()
             .map_err(|_| format_err!("Failed to decode file name"))?;
 
-        let code = fs::read_to_string(path)
-            .context("Failed to read module")?;
-        let metadata = code.parse::<Metadata>()?;
+        let module = Module::load(path, "anonymous", &name, false)?;
 
-        let label = format!("Uploading {} {} ({:?})", name, metadata.version, path);
+        let label = format!("Uploading {} {} ({:?})", name, module.version(), path);
         match worker::spawn_fn(&label, || {
-            client.publish_module(&name, code.to_string())
+            client.publish_module(&name, module.code().to_string())
         }, true) {
             Ok(result) => term::info(&format!("Published {}/{} {} ({:?})",
                                               result.author,
@@ -128,7 +125,7 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
                                               path)),
             Err(err) => term::error(&format!("Failed to publish {} {} ({:?}): {}",
                                              name,
-                                             metadata.version,
+                                             module.version(),
                                              path,
                                              err)),
         }

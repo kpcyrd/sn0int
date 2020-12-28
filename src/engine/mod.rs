@@ -239,7 +239,7 @@ impl Module {
             .context("Failed to read module")?;
 
         let metadata = code.parse::<Metadata>()
-            .context("Failed to parse module metadata")?;
+            .map_err(|e| format_err!("Failed to parse module metadata: {}", e))?;
 
         let script = Script::load_unchecked(code)?;
 
@@ -307,6 +307,11 @@ impl Module {
     #[inline]
     pub fn is_private(&self) -> bool {
         self.private_module
+    }
+
+    #[inline]
+    pub fn code(&self) -> &str {
+        self.script.code()
     }
 
     pub fn run(&self, env: Environment, ipc_child: Arc<Mutex<Box<dyn IpcChild>>>, arg: LuaJsonValue) -> Result<()> {

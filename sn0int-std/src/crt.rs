@@ -1,6 +1,8 @@
 use crate::errors::*;
 use std::collections::HashSet;
 use std::net::IpAddr;
+use x509_parser::x509::X509Version;
+use x509_parser::certificate::X509Certificate;
 use x509_parser::extensions::{GeneralName, ParsedExtension};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -12,7 +14,7 @@ pub struct Certificate {
 
 impl Certificate {
     pub fn parse_pem(crt: &str) -> Result<Certificate> {
-        let pem = match x509_parser::pem::pem_to_der(crt.as_bytes()) {
+        let pem = match x509_parser::pem::parse_x509_pem(crt.as_bytes()) {
             Ok((remaining, pem)) => {
                 if !remaining.is_empty() {
                     bail!("input cert has trailing garbage");
@@ -28,12 +30,12 @@ impl Certificate {
     }
 
     pub fn from_bytes(crt: &[u8]) -> Result<Certificate> {
-        let crt = match x509_parser::parse_x509_der(&crt) {
+        let crt = match X509Certificate::from_der(&crt) {
             Ok((remaining, der)) => {
                 if !remaining.is_empty() {
                     bail!("input cert has trailing garbage");
                 }
-                if der.tbs_certificate.version != 2 {
+                if der.tbs_certificate.version != X509Version::V3 {
                     bail!("unexpected certificate version");
                 }
                 der

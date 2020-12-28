@@ -1,7 +1,18 @@
 use crate::errors::*;
+use rand::{Rng, thread_rng};
+use rand::distributions::Alphanumeric;
 use rustyline::error::ReadlineError;
+use std::iter;
 use std::str::FromStr;
 
+pub fn random_string(len: usize) -> String {
+    let mut rng = thread_rng();
+    iter::repeat(())
+        .map(|()| rng.sample(Alphanumeric))
+        .map(char::from)
+        .take(len)
+        .collect()
+}
 
 pub fn read_line(prompt: &str) -> Result<String> {
     let mut rl = rustyline::Editor::<()>::new();

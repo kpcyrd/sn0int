@@ -53,7 +53,7 @@ impl FromStr for ModuleID {
 
     fn from_str(s: &str) -> Result<ModuleID> {
         let (trailing, module) = module(s)
-            .map_err(|err| format_err!("Failed to parse module id: {:?}", err))?;
+            .map_err(|err| anyhow!("Failed to parse module id: {:?}", err))?;
         if !trailing.is_empty() {
             bail!("Trailing data in module id");
         }

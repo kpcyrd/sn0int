@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]

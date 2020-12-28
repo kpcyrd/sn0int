@@ -46,7 +46,7 @@ impl MqttClient {
             stream,
         };
 
-        let mut pkt = ConnectPacket::new("MQTT", "sn0int");
+        let mut pkt = ConnectPacket::new("sn0int");
         pkt.set_user_name(options.username.clone());
         pkt.set_password(options.password.clone());
 

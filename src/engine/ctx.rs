@@ -5,15 +5,16 @@ use crate::engine::{Environment, IpcChild};
 use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
+use crate::lazy::Lazy;
 use crate::models::*;
 use crate::psl::{Psl, PslReader};
-use crate::lazy::Lazy;
+use crate::ratelimits::RatelimitResponse;
 use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
+use crate::utils;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::websockets::{WebSocket, WebSocketOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, DatabaseResponse, StdioEvent, RatelimitEvent};
-use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
 use serde_json;
 use sn0int_std::blobs::{Blob, BlobState};
@@ -24,8 +25,6 @@ use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use rand::prelude::*;
-use rand::distributions::Alphanumeric;
 
 
 pub trait State {
@@ -152,7 +151,7 @@ pub trait State {
 
     #[inline]
     fn random_id(&self) -> String {
-        thread_rng().sample_iter(&Alphanumeric).take(16).collect()
+        utils::random_string(16)
     }
 
     fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry>;
@@ -618,6 +617,11 @@ impl Script {
         Ok(Script {
             code: code.into(),
         })
+    }
+
+    #[inline]
+    pub fn code(&self) -> &str {
+        &self.code
     }
 
     pub fn run(&self, env: Environment,

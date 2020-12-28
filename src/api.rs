@@ -1,18 +1,16 @@
 use crate::errors::*;
-use std::fmt;
+use crate::web;
 use crate::config::Config;
+use crate::utils;
 use chrootable_https::{self, HttpClient, Body, Request, Uri};
 use chrootable_https::http::request::Builder as RequestBuilder;
 use chrootable_https::header::CONTENT_TYPE;
-use rand::{Rng, thread_rng};
-use rand::distributions::Alphanumeric;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use serde_json;
 use sn0int_common::api::*;
 use sn0int_common::{ModuleID, ApiResponse};
-use crate::web;
-
+use std::fmt;
 
 pub struct Client {
     server: String,
@@ -46,8 +44,9 @@ impl Client {
         self.session = Some(session.into());
     }
 
+    #[inline]
     pub fn random_session() -> String {
-        thread_rng().sample_iter(&Alphanumeric).take(32).collect()
+        utils::random_string(32)
     }
 
     #[inline]
