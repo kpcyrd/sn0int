@@ -1,9 +1,7 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="breaches"]

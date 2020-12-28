@@ -395,7 +395,7 @@ impl<'a> Shell<'a> {
         self.rl.load_history(&paths::history_path()?)
     }
 
-    pub fn save_history(&self) -> Result<()> {
+    pub fn save_history(&mut self) -> Result<()> {
         self.rl.save_history(&paths::history_path()?)
     }
 
@@ -430,6 +430,12 @@ impl<'a> Shell<'a> {
 }
 
 pub struct SignalRegister(AtomicUsize);
+
+impl Default for SignalRegister {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl SignalRegister {
     pub fn new() -> SignalRegister {

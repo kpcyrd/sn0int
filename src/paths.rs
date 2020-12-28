@@ -1,14 +1,11 @@
 use crate::config::Config;
 use crate::errors::*;
 use crate::workspaces::Workspace;
-
-use dirs;
 use std::fs;
 use std::path::PathBuf;
 
-
 pub fn sn0int_dir() -> Result<PathBuf> {
-    let path = dirs::data_dir()
+    let path = dirs_next::data_dir()
         .ok_or_else(|| format_err!("Failed to find data directory"))?;
     let path = path.join("sn0int");
     fs::create_dir_all(&path)
@@ -56,7 +53,7 @@ pub fn blobs_dir(workspace: &Workspace) -> Result<PathBuf> {
 }
 
 pub fn cache_dir() -> Result<PathBuf> {
-    let path = dirs::cache_dir()
+    let path = dirs_next::cache_dir()
         .ok_or_else(|| format_err!("Failed to find cache directory"))?;
     let path = path.join("sn0int");
     fs::create_dir_all(&path)

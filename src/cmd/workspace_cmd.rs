@@ -28,10 +28,8 @@ pub struct Args {
 }
 
 fn delete(workspace: Workspace, force: bool) -> Result<()> {
-    if !force {
-        if !utils::no_else_yes(&format!("Do you really want to delete {:?}", workspace.as_str()))? {
-            return Ok(());
-        }
+    if !force && !utils::no_else_yes(&format!("Do you really want to delete {:?}", workspace.as_str()))? {
+        return Ok(());
     }
 
     term::info(&format!("Deleting workspace: {:?}", workspace.as_str()));

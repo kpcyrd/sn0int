@@ -35,11 +35,7 @@ pub fn decode_stream(x: &str) -> Result<Vec<AnyLuaValue>> {
 pub fn lua_array_is_list(array: &[(AnyLuaValue, AnyLuaValue)]) -> bool {
     if !array.is_empty() {
         let first = &array[0];
-        if let AnyLuaValue::LuaNumber(_) = first.0 {
-            true
-        } else {
-            false
-        }
+        matches!(first.0, AnyLuaValue::LuaNumber(_))
     } else {
         // true // TODO: this breaks unserialize
         false

@@ -5,7 +5,6 @@ use crate::cmd::Cmd;
 use crate::db::ttl;
 use crate::models::*;
 use crate::shell::Shell;
-use serde_json;
 use serde::Serialize;
 use std::io::{self, Write};
 use structopt::StructOpt;

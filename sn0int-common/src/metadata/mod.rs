@@ -1,10 +1,9 @@
 use crate::errors::*;
-
+use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 
 mod stealth;
 pub use self::stealth::Stealth;
-
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum EntryType {

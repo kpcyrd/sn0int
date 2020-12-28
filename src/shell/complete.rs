@@ -5,7 +5,6 @@ use rustyline::{self, Context};
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
-use shellwords;
 use std::borrow::Cow::{self, Owned};
 use std::str::FromStr;
 use std::io::stdout;
@@ -249,6 +248,8 @@ impl Completer for CmdCompleter {
 
 // TODO: suggest rest of the line if only one possible completion
 impl Hinter for CmdCompleter {
+    type Hint = String;
+
     #[inline]
     fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         // None

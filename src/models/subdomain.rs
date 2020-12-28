@@ -1,10 +1,8 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use std::result;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(Domain)]

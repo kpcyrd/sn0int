@@ -1,10 +1,8 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="cryptoaddrs"]
@@ -220,11 +218,11 @@ impl Detailed for CryptoAddr {
             id: self.id,
             value: self.value.to_string(),
             currency: self.currency.clone(),
-            denominator: self.denominator.clone(),
-            balance: self.balance.clone(),
-            received: self.received.clone(),
-            first_seen: self.first_seen.clone(),
-            last_withdrawal: self.last_withdrawal.clone(),
+            denominator: self.denominator,
+            balance: self.balance,
+            received: self.received,
+            first_seen: self.first_seen,
+            last_withdrawal: self.last_withdrawal,
             unscoped: self.unscoped,
             description: self.description.clone(),
         })

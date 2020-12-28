@@ -2,10 +2,8 @@ use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;
 use crate::models::*;
-use diesel;
 use diesel::prelude::*;
 use std::net::{self, SocketAddr};
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize, PartialEq, Debug)]
 #[belongs_to(IpAddr)]

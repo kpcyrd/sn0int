@@ -81,9 +81,7 @@ impl AutoUpdater {
             return;
         }
 
-        let modules = modules.into_iter()
-            .map(|x| x.clone())
-            .collect();
+        let modules = modules.into_iter().cloned().collect();
 
         debug!("Checking for outdated modules in the background");
         match Client::new(config) {

@@ -14,7 +14,6 @@ use crate::term;
 use crate::utils;
 use crate::worker;
 use serde::Serialize;
-use serde_json;
 use sn0int_common::metadata::Source;
 use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
@@ -162,14 +161,14 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
     let keyring = rl.keyring().request_keys(&module);
 
     let dns_config = Resolver::from_system_v4()?;
-    let proxy = rl.config().network.proxy.clone();
+    let proxy = rl.config().network.proxy;
 
     let args = get_args(rl, &module)?;
     for (arg, _pretty_arg, blobs) in args {
         let start_cmd = StartCommand::new(params.verbose,
                                           keyring.clone(),
                                           dns_config.clone(),
-                                          proxy.clone(),
+                                          proxy,
                                           options.clone(),
                                           module.clone(),
                                           arg,
@@ -190,7 +189,7 @@ pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>)
     let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, rl.config().network.proxy.clone(), options);
+    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, rl.config().network.proxy, options);
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {

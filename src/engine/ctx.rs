@@ -5,17 +5,17 @@ use crate::engine::{Environment, IpcChild};
 use crate::geoip::{MaxmindReader, GeoIP, AsnDB};
 use crate::hlua::{self, AnyLuaValue};
 use crate::keyring::KeyRingEntry;
+use crate::lazy::Lazy;
 use crate::models::*;
 use crate::psl::{Psl, PslReader};
-use crate::lazy::Lazy;
+use crate::ratelimits::RatelimitResponse;
 use crate::runtime;
 use crate::sockets::{Socket, SocketOptions, TlsData};
+use crate::utils;
 use crate::web::{HttpSession, HttpRequest, RequestOptions};
 use crate::websockets::{WebSocket, WebSocketOptions};
 use crate::worker::{Event, LogEvent, DatabaseEvent, DatabaseResponse, StdioEvent, RatelimitEvent};
-use crate::ratelimits::RatelimitResponse;
 use chrootable_https::{self, Resolver};
-use serde_json;
 use sn0int_std::blobs::{Blob, BlobState};
 use sn0int_std::mqtt::{MqttClient, MqttOptions};
 use sn0int_std::web::WebState;
@@ -24,8 +24,6 @@ use std::result;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use rand::prelude::*;
-use rand::distributions::Alphanumeric;
 
 
 pub trait State {
@@ -80,14 +78,14 @@ pub trait State {
     }
 
     fn db_insert(&self, object: Insert) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::Insert(object)));
+        self.send(&Event::Database(Box::new(DatabaseEvent::Insert(object))));
         self.db_recv()
             .context("Failed to add to database")
             .map_err(Error::from)
     }
 
     fn db_insert_ttl(&self, object: Insert, ttl: i32) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::InsertTtl((object, ttl))));
+        self.send(&Event::Database(Box::new(DatabaseEvent::InsertTtl((object, ttl)))));
         self.db_recv()
             .context("Failed to add to database")
             .map_err(Error::from)
@@ -96,7 +94,7 @@ pub trait State {
     fn db_activity(&self, activity: InsertActivity) -> Result<bool> {
         let activity = activity.try_into_new()?;
 
-        self.send(&Event::Database(DatabaseEvent::Activity(activity)));
+        self.send(&Event::Database(Box::new(DatabaseEvent::Activity(activity))));
         let r = self.db_recv()
             .context("Failed to log activity")?;
 
@@ -108,14 +106,14 @@ pub trait State {
     }
 
     fn db_select(&self, family: Family, value: String) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::Select((family, value))));
+        self.send(&Event::Database(Box::new(DatabaseEvent::Select((family, value)))));
         self.db_recv()
             .context("Failed to query database")
             .map_err(Error::from)
     }
 
     fn db_update(&self, family: Family, value: String, update: Update) -> Result<DatabaseResponse> {
-        self.send(&Event::Database(DatabaseEvent::Update((family, value, update))));
+        self.send(&Event::Database(Box::new(DatabaseEvent::Update((family, value, update)))));
         self.db_recv()
             .context("Failed to update database")
             .map_err(Error::from)
@@ -152,7 +150,7 @@ pub trait State {
 
     #[inline]
     fn random_id(&self) -> String {
-        thread_rng().sample_iter(&Alphanumeric).take(16).collect()
+        utils::random_string(16)
     }
 
     fn keyring(&self, namespace: &str) -> Vec<&KeyRingEntry>;
@@ -620,6 +618,11 @@ impl Script {
         })
     }
 
+    #[inline]
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+
     pub fn run(&self, env: Environment,
                       tx: Arc<Mutex<Box<dyn IpcChild>>>,
                       arg: AnyLuaValue,
@@ -681,6 +684,6 @@ a.prod.fastly.net
             geoip,
             asn,
         };
-        self.run(env, DummyIpcChild::new(), AnyLuaValue::LuaNil)
+        self.run(env, DummyIpcChild::create(), AnyLuaValue::LuaNil)
     }
 }

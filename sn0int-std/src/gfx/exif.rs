@@ -1,8 +1,5 @@
 use crate::errors::*;
-
-use exif;
 use std::io;
-
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {

@@ -91,7 +91,7 @@ impl SocketOptions {
 
 pub enum Stream {
     Tcp(TcpStream),
-    Tls(rustls::StreamOwned<rustls::ClientSession, TcpStream>),
+    Tls(Box<rustls::StreamOwned<rustls::ClientSession, TcpStream>>),
 }
 
 impl Stream {

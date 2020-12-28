@@ -2,9 +2,7 @@ use crate::errors::*;
 use crate::fmt::colors::*;
 use crate::models::*;
 use chrono::NaiveDateTime;
-use diesel;
 use diesel::prelude::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="phonenumbers"]

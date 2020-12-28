@@ -1,6 +1,8 @@
 use crate::errors::*;
 use std::collections::HashSet;
 use std::net::IpAddr;
+use x509_parser::x509::X509Version;
+use x509_parser::certificate::X509Certificate;
 use x509_parser::extensions::{GeneralName, ParsedExtension};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
@@ -12,7 +14,7 @@ pub struct Certificate {
 
 impl Certificate {
     pub fn parse_pem(crt: &str) -> Result<Certificate> {
-        let pem = match x509_parser::pem::pem_to_der(crt.as_bytes()) {
+        let pem = match x509_parser::pem::parse_x509_pem(crt.as_bytes()) {
             Ok((remaining, pem)) => {
                 if !remaining.is_empty() {
                     bail!("input cert has trailing garbage");
@@ -28,12 +30,12 @@ impl Certificate {
     }
 
     pub fn from_bytes(crt: &[u8]) -> Result<Certificate> {
-        let crt = match x509_parser::parse_x509_der(&crt) {
+        let crt = match X509Certificate::from_der(&crt) {
             Ok((remaining, der)) => {
                 if !remaining.is_empty() {
                     bail!("input cert has trailing garbage");
                 }
-                if der.tbs_certificate.version != 2 {
+                if der.tbs_certificate.version != X509Version::V3 {
                     bail!("unexpected certificate version");
                 }
                 der
@@ -53,40 +55,37 @@ impl Certificate {
         }
 
         for (_oid, ext) in crt.tbs_certificate.extensions {
-            match ext.parsed_extension() {
-                ParsedExtension::SubjectAlternativeName(san) => {
-                    for name in &san.general_names {
-                        debug!("Certificate is valid for {:?}", name);
-                        match name {
-                            GeneralName::DNSName(v) => {
-                                valid_names.insert(v.to_string());
-                            },
-                            GeneralName::RFC822Name(v) => {
-                                valid_emails.insert(v.to_string());
-                            },
-                            GeneralName::IPAddress(v) => {
-                                let ip = match v.len() {
-                                    4 => Some(IpAddr::from([v[0], v[1], v[2], v[3]])),
-                                    16 => Some(IpAddr::from([
-                                        v[0], v[1], v[2], v[3],
-                                        v[4], v[5], v[6], v[7],
-                                        v[8], v[9], v[10], v[11],
-                                        v[12], v[13], v[14], v[15],
-                                    ])),
-                                    _ => {
-                                        info!("Certificate is valid for invalid ip address: {:?}", v);
-                                        None
-                                    },
-                                };
-                                if let Some(ip) = ip {
-                                    valid_ipaddrs.insert(ip);
-                                }
-                            },
-                            _ => (),
-                        }
+            if let ParsedExtension::SubjectAlternativeName(san) = ext.parsed_extension() {
+                for name in &san.general_names {
+                    debug!("Certificate is valid for {:?}", name);
+                    match name {
+                        GeneralName::DNSName(v) => {
+                            valid_names.insert(v.to_string());
+                        },
+                        GeneralName::RFC822Name(v) => {
+                            valid_emails.insert(v.to_string());
+                        },
+                        GeneralName::IPAddress(v) => {
+                            let ip = match v.len() {
+                                4 => Some(IpAddr::from([v[0], v[1], v[2], v[3]])),
+                                16 => Some(IpAddr::from([
+                                    v[0], v[1], v[2], v[3],
+                                    v[4], v[5], v[6], v[7],
+                                    v[8], v[9], v[10], v[11],
+                                    v[12], v[13], v[14], v[15],
+                                ])),
+                                _ => {
+                                    info!("Certificate is valid for invalid ip address: {:?}", v);
+                                    None
+                                },
+                            };
+                            if let Some(ip) = ip {
+                                valid_ipaddrs.insert(ip);
+                            }
+                        },
+                        _ => (),
                     }
-                },
-                _ => (),
+                }
             }
         }
 

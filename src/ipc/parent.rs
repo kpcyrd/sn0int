@@ -4,9 +4,7 @@ use chrootable_https::dns::Resolver;
 use crate::blobs::Blob;
 use crate::engine::Module;
 use crate::keyring::KeyRingEntry;
-use serde_json;
 use crate::worker::{Event, Event2, LogEvent, ExitEvent, EventSender, EventWithCallback};
-
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsString;
@@ -15,7 +13,6 @@ use std::io::{BufReader, BufRead, stdin};
 use std::net::SocketAddr;
 use std::sync::mpsc;
 use std::process::{Command, Child, Stdio, ChildStdin, ChildStdout};
-
 
 pub struct IpcParent {
     child: Child,
@@ -65,7 +62,7 @@ impl IpcParent {
 
     pub fn send_struct<T: serde::Serialize>(&mut self, value: T, tx: &EventSender) {
         let value = serde_json::to_value(value).expect("Failed to serialize reply");
-        if let Err(_) = self.send(&value) {
+        if self.send(&value).is_err() {
             tx.send(Event2::Log(LogEvent::Error("Failed to send to child".into())));
         }
     }
@@ -125,7 +122,7 @@ pub fn run(module: Module,
     let exit = loop {
         match ipc_parent.recv()? {
             Event::Log(event) => tx.send(Event2::Log(event)),
-            Event::Database(object) => ipc_parent.send_event_callback(object, &tx),
+            Event::Database(object) => ipc_parent.send_event_callback(*object, &tx),
             Event::Stdio(object) => object.apply(&mut ipc_parent, tx, &mut reader),
             Event::Ratelimit(req) => ipc_parent.send_event_callback(req, &tx),
             Event::Blob(blob) => ipc_parent.send_event_callback(blob, &tx),

@@ -1,6 +1,5 @@
 use crate::errors::*;
 
-use diesel;
 use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;
 use diesel::sql_types::Bool;
@@ -25,10 +24,7 @@ pub enum DbChange {
 
 impl DbChange {
     pub fn is_some(&self) -> bool {
-        match self {
-            DbChange::None => false,
-            _ => true,
-        }
+        !matches!(self, DbChange::None)
     }
 }
 

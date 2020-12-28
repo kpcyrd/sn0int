@@ -55,6 +55,8 @@ impl Highlighter for ReplCompleter {
 }
 
 impl Hinter for ReplCompleter {
+    type Hint = String;
+
     #[inline]
     fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
         None

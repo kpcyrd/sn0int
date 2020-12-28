@@ -15,7 +15,6 @@ use std::fs;
 use std::io::{self, BufRead};
 use std::net;
 use std::net::SocketAddr;
-use ipnetwork;
 use std::path::Path;
 use walkdir::WalkDir;
 
@@ -371,7 +370,7 @@ impl IntoInsert for AddPhoneNumber {
         // TODO: consider doing basic validation
         Ok(Insert::PhoneNumber(NewPhoneNumber {
             value: phonenumber,
-            name: name,
+            name,
             valid: None,
             last_online: None,
             country: None,
@@ -427,7 +426,7 @@ impl IntoInsert for AddDevice {
 
         Ok(Insert::Device(NewDevice {
             value: mac,
-            name: name,
+            name,
             hostname: None,
             vendor: None,
             last_seen: None,
@@ -492,9 +491,9 @@ impl IntoInsert for AddAccount {
         let value = format!("{}/{}", service, username);
 
         Ok(Insert::Account(NewAccount {
-            value: value,
-            service: service,
-            username: username,
+            value,
+            service,
+            username,
             displayname: None,
             email: None,
             url: None,
@@ -516,10 +515,7 @@ impl IntoInsert for AddBreach {
     fn into_insert(self, _rl: &mut Shell) -> Result<Insert> {
         let name = match self.name {
             Some(name) => name,
-            _ => {
-                let name = utils::question("Name")?;
-                name
-            }
+            _ => utils::question("Name")?,
         };
 
         Ok(Insert::Breach(NewBreach {
@@ -552,7 +548,7 @@ impl IntoInsert for AddImage {
                 let path = match path {
                     Ok(path) => path,
                     Err(err) => {
-                        let path = err.path().unwrap_or(Path::new("")).display();
+                        let path = err.path().unwrap_or_else(|| Path::new("")).display();
 
                         let err = err.io_error()
                             .map(|err| err.to_string())

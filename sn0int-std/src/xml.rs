@@ -13,6 +13,12 @@ pub struct XmlDocument {
     pub children: Vec<XmlElement>,
 }
 
+impl Default for XmlDocument {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl XmlDocument {
     #[inline(always)]
     pub fn new() -> XmlDocument {

@@ -23,7 +23,7 @@ fn is_new_signing_key(seen: &mut HashSet<String>, sig: &Signature) -> bool {
     }
 
     seen.insert(key.to_string());
-    return true;
+    true
 }
 
 fn pgp_pubkey_lua(pubkey: &[u8]) -> Result<AnyLuaValue> {
@@ -81,7 +81,7 @@ pub fn pgp_pubkey_armored(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("pgp_pubkey_armored", hlua::function1(move |pubkey: String| -> Result<AnyLuaValue> {
         let mut r = BufReader::new(pubkey.as_bytes());
         let pubkey = sloppy_rfc4880::armor::read_armored(&mut r)
-            .map_err(|err| state.set_error(err))?;
+            .map_err(|err| state.set_error(format_err!("{:#}", err)))?;
 
         pgp_pubkey_lua(&pubkey)
             .map_err(|err| state.set_error(err))

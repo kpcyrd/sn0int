@@ -1,8 +1,6 @@
 use crate::errors::*;
 #[cfg(target_os = "linux")]
 use caps::{self, CapSet};
-#[cfg(target_os = "linux")]
-use nix;
 
 #[cfg(target_os = "openbsd")]
 use pledge::pledge;

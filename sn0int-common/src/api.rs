@@ -1,4 +1,5 @@
 use crate::id::ModuleID;
+use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WhoamiResponse {

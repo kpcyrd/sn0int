@@ -1,6 +1,9 @@
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+#![allow(clippy::large_enum_variant)]
+
 #![warn(unused_extern_crates)]
 #[macro_use] extern crate maplit;
-use url;
 use hlua_badtouch as hlua;
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate structopt;

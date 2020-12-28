@@ -5,7 +5,6 @@ use crate::engine;
 use crate::engine::ctx::State;
 use crate::json::LuaJsonValue;
 use crate::hlua::{self, AnyLuaValue};
-use serde_json;
 use std::sync::Arc;
 use std::net::SocketAddr;
 use std::time::Duration;

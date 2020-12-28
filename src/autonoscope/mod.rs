@@ -1,6 +1,5 @@
 use crate::db::DatabaseSock;
 use crate::errors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::schema::*;
 use crate::models::*;

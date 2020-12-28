@@ -1,28 +1,24 @@
+use crate::blobs::{Blob, BlobState};
+use crate::engine::structs::LuaMap;
+use crate::errors::*;
+use crate::json::LuaJsonValue;
+use crate::hlua::AnyLuaValue;
+use chrootable_https::{Request, Body, Uri};
 pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 use chrootable_https::http::HttpTryFrom;
+use chrootable_https::http::uri::Parts;
 use chrootable_https::http::request::Builder;
-
-use crate::blobs::{Blob, BlobState};
-use std::collections::{HashMap, HashSet};
-use std::time::Duration;
-use std::ops::Deref;
-use crate::errors::*;
-use crate::hlua::AnyLuaValue;
-use serde_json;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
-use std::fmt;
-use std::net::SocketAddr;
-use std::sync::Arc;
 use serde::Serialize;
-use crate::engine::structs::LuaMap;
-use crate::json::LuaJsonValue;
-use chrootable_https::http::uri::Parts;
-use chrootable_https::{Request, Body, Uri};
-use serde_urlencoded;
-use base64;
+use std::collections::{HashMap, HashSet};
+use std::fmt;
+use std::iter;
+use std::net::SocketAddr;
+use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Duration;
 use url::Url;
-
 
 pub fn url_set_qs<S: Serialize + fmt::Debug>(url: Uri, query: &S) -> Result<Uri> {
     let mut parts = Parts::from(url);
@@ -54,7 +50,12 @@ pub struct HttpSession {
 
 impl HttpSession {
     pub fn new() -> (String, HttpSession) {
-        let id: String = thread_rng().sample_iter(&Alphanumeric).take(16).collect();
+        let mut rng = thread_rng();
+        let id: String = iter::repeat(())
+            .map(|()| rng.sample(Alphanumeric))
+            .map(char::from)
+            .take(16)
+            .collect();
         (id.clone(), HttpSession {
             id,
             cookies: CookieJar::default(),
@@ -212,17 +213,15 @@ impl HttpRequest {
                 HttpRequest::register_cookies_on_state(&self.session, state, cookie);
             }
 
-            if self.follow_redirects > 0 {
-                if res.status >= 300 && res.status < 400 {
-                    if let Some(location) = res.headers.get("location") {
-                        let base = Url::parse(&url.to_string())?;
-                        let joined = base.join(&location)?;
-                        url = joined.to_string().parse()?;
+            if self.follow_redirects > 0 && res.status >= 300 && res.status < 400 {
+                if let Some(location) = res.headers.get("location") {
+                    let base = Url::parse(&url.to_string())?;
+                    let joined = base.join(&location)?;
+                    url = joined.to_string().parse()?;
 
-                        req = self.mkrequest("GET", &url).body(Body::empty())?;
-                        self.follow_redirects -= 1;
-                        continue;
-                    }
+                    req = self.mkrequest("GET", &url).body(Body::empty())?;
+                    self.follow_redirects -= 1;
+                    continue;
                 }
             }
 

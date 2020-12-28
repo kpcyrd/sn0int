@@ -8,9 +8,8 @@ repository = "https://github.com/kpcyrd/sn0int"
 edition = "2018"
 
 [dependencies]
-serde = "1.0"
-serde_derive = "1.0"
+serde = { version = "1.0", features=["derive"] }
 #rocket_failure_errors = { path = "../../../rocket_failure/rocket_failure_errors" }
 rocket_failure_errors = "0.2"
-failure = "0.1"
-nom = "5.0"
+anyhow = "1.0"
+nom = "6.0"

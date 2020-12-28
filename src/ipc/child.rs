@@ -3,14 +3,11 @@ use crate::ipc::common::*;
 use crate::engine::Environment;
 use crate::geoip::MaxmindReader;
 use crate::psl::PslReader;
-use serde_json;
 use crate::worker::Event;
-
 use std::fmt::Debug;
 use std::io::prelude::*;
 use std::io::{self, Stdin, Stdout};
 use std::sync::{Arc, Mutex};
-
 
 pub trait IpcChild: Debug {
     fn send(&mut self, event: &Event) -> Result<()>;
@@ -65,7 +62,7 @@ impl IpcChild for StdioIpcChild {
 pub struct DummyIpcChild;
 
 impl DummyIpcChild {
-    pub fn new() -> Arc<Mutex<Box<dyn IpcChild>>> {
+    pub fn create() -> Arc<Mutex<Box<dyn IpcChild>>> {
         Arc::new(Mutex::new(Box::new(DummyIpcChild)))
     }
 }

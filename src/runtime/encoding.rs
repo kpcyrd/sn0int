@@ -1,6 +1,5 @@
 use crate::errors::*;
 
-use base64;
 use crate::engine::ctx::State;
 use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
@@ -40,7 +39,7 @@ pub fn base64_custom_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             bail!("alphabet isn't base64");
         }
         let spec = spec(&alphabet, &padding)
-            .map_err(|err| state.set_error(err.into()))?;
+            .map_err(|err| state.set_error(err))?;
         spec.decode(bytes.as_bytes())
             .map_err(|err| state.set_error(err.into()))
             .map(|bytes| lua_bytes(&bytes))
@@ -53,7 +52,7 @@ pub fn base64_custom_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             bail!("alphabet isn't base64");
         }
         let spec = spec(&alphabet, &padding)
-            .map_err(|err| state.set_error(err.into()))?;
+            .map_err(|err| state.set_error(err))?;
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
             .map(|bytes| spec.encode(&bytes))
@@ -66,7 +65,7 @@ pub fn base32_custom_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             bail!("alphabet isn't base32");
         }
         let spec = spec(&alphabet, &padding)
-            .map_err(|err| state.set_error(err.into()))?;
+            .map_err(|err| state.set_error(err))?;
         spec.decode(bytes.as_bytes())
             .map_err(|err| state.set_error(err.into()))
             .map(|bytes| lua_bytes(&bytes))
@@ -79,7 +78,7 @@ pub fn base32_custom_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             bail!("alphabet isn't base32");
         }
         let spec = spec(&alphabet, &padding)
-            .map_err(|err| state.set_error(err.into()))?;
+            .map_err(|err| state.set_error(err))?;
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
             .map(|bytes| spec.encode(&bytes))

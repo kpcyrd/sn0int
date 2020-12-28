@@ -1,9 +1,7 @@
 use crate::errors::*;
 use crate::fmt::colors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Serialize, Deserialize, PartialEq, Debug)]
 #[table_name="networks"]
@@ -199,8 +197,8 @@ impl Detailed for Network {
             id: self.id,
             value: self.value.to_string(),
             unscoped: self.unscoped,
-            latitude: self.latitude.clone(),
-            longitude: self.longitude.clone(),
+            latitude: self.latitude,
+            longitude: self.longitude,
             description: self.description.clone(),
             devices,
         })

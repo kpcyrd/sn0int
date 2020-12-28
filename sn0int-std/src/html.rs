@@ -1,11 +1,8 @@
+use crate::engine::structs::LuaMap;
 use crate::errors::*;
-
-use kuchiki;
+use crate::hlua::AnyLuaValue;
 use kuchiki::traits::TendrilSink;
 use std::collections::HashMap;
-use crate::hlua::AnyLuaValue;
-use crate::engine::structs::LuaMap;
-
 
 #[derive(Debug, PartialEq)]
 pub struct Element {

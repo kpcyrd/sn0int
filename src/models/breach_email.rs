@@ -1,8 +1,6 @@
 use crate::errors::*;
-use diesel;
 use diesel::prelude::*;
 use crate::models::*;
-
 
 #[derive(Identifiable, Queryable, Associations, Serialize, Deserialize)]
 #[belongs_to(Breach)]
@@ -136,8 +134,8 @@ impl Printable<PrintableBreachEmail> for BreachEmail {
         let breach = Breach::by_id(db, self.breach_id)?;
         let email = Email::by_id(db, self.email_id)?;
         Ok(PrintableBreachEmail {
-            breach: breach.value.to_string(),
-            email: email.value.to_string(),
+            breach: breach.value,
+            email: email.value,
             password: self.password.clone(),
         })
     }
@@ -167,8 +165,8 @@ impl Printable<PrintableBreachEmail> for NewBreachEmail {
         let breach = Breach::by_id(db, self.breach_id)?;
         let email = Email::by_id(db, self.email_id)?;
         Ok(PrintableBreachEmail {
-            breach: breach.value.to_string(),
-            email: email.value.to_string(),
+            breach: breach.value,
+            email: email.value,
             password: self.password.clone(),
         })
     }

@@ -11,7 +11,7 @@ pub fn format_lua(out: &mut String, x: &AnyLuaValue) {
         AnyLuaValue::LuaAnyString(ref x) => out.push_str(&format!("{:?}", x.0)),
         AnyLuaValue::LuaBoolean(ref x) => out.push_str(&format!("{:?}", x)),
         AnyLuaValue::LuaArray(ref x) => {
-            out.push_str("{");
+            out.push('{');
             let mut first = true;
 
             for &(ref k, ref v) in x {
@@ -29,7 +29,7 @@ pub fn format_lua(out: &mut String, x: &AnyLuaValue) {
 
                 first = false;
             }
-            out.push_str("}");
+            out.push('}');
         },
         AnyLuaValue::LuaOther => out.push_str("LuaOther"),
     }

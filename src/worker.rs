@@ -10,7 +10,6 @@ use crate::ipc;
 use crate::ipc::parent::IpcParent;
 use crate::models::*;
 use crate::notify::{self, Notification};
-use serde_json;
 use crate::ratelimits::{Ratelimiter, RatelimitResponse};
 use crate::shell::Shell;
 use sn0int_std::ratelimits::RatelimitSender;
@@ -40,7 +39,7 @@ pub enum DatabaseResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub enum Event {
     Log(LogEvent),
-    Database(DatabaseEvent),
+    Database(Box<DatabaseEvent>),
     Stdio(StdioEvent),
     Ratelimit(RatelimitEvent),
     Blob(Blob),
@@ -51,7 +50,7 @@ pub enum Event {
 pub enum Event2 {
     Start,
     Log(LogEvent),
-    Database((DatabaseEvent, DbSender)),
+    Database(Box<(DatabaseEvent, DbSender)>),
     Ratelimit((RatelimitEvent, RatelimitSender)),
     Blob((Blob, VoidSender)),
     Exit(ExitEvent),
@@ -120,7 +119,7 @@ impl From<Result<()>> for ExitEvent {
                     .map(|e| e.to_string())
                     .collect::<Vec<_>>()
                     .join(": ");
-                ExitEvent::Err(err.to_string())
+                ExitEvent::Err(err)
             },
         }
     }
@@ -164,7 +163,7 @@ impl EventWithCallback for DatabaseEvent {
     type Payload = DatabaseResponse;
 
     fn with_callback(self, tx: mpsc::Sender<result::Result<Self::Payload, String>>) -> Event2 {
-        Event2::Database((self, tx))
+        Event2::Database(Box::new((self, tx)))
     }
 }
 
@@ -222,7 +221,7 @@ impl DatabaseEvent {
             if let Some(radius) = &object.radius {
                 log.push_str(&format!(" | {}m", radius));
             }
-            log.push_str(")");
+            log.push(')');
         }
 
         if verbose > 0 {
@@ -500,7 +499,10 @@ pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args:
                             stack.add(name, label);
                         },
                         Event2::Log(log) => log.apply(&mut stack.prefixed(name)),
-                        Event2::Database((db, tx)) => db.apply(rl, &mut stack.prefixed(name), ratelimit, tx, verbose),
+                        Event2::Database(tuple) => {
+                            let (db, tx) = *tuple;
+                            db.apply(rl, &mut stack.prefixed(name), ratelimit, tx, verbose)
+                        },
                         Event2::Ratelimit((req, tx)) => ratelimit.pass(tx, &req.key, req.passes, req.time),
                         Event2::Blob((blob, tx)) => rl.store_blob(tx, &blob),
                         Event2::Exit(event) => {
