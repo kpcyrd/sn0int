@@ -32,7 +32,7 @@ Debian/Ubuntu/Kali
 
 .. code-block:: bash
 
-    $ apt install build-essential libsqlite3-dev libseccomp-dev libsodium-dev publicsuffix
+    $ apt install build-essential libsqlite3-dev libseccomp-dev libsodium-dev publicsuffix pkg-config
 
 .. warning::
    On a debian based system make sure you've installed rust with rustup.
