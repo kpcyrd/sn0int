@@ -1,16 +1,13 @@
 use crate::errors::*;
-
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use rustls::{self, ClientConfig, Session, ClientSession};
-
+use serde::Serialize;
 use std::str;
 use std::result;
 use std::sync::Arc;
 use std::net::TcpStream;
-
 use super::{Stream, SocketOptions};
-
 
 #[derive(Debug, Serialize)]
 pub struct TlsData {

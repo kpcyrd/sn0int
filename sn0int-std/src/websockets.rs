@@ -4,6 +4,7 @@ use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use crate::sockets::{Stream, SocketOptions};
 use http::Request;
+use serde::Deserialize;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::io;

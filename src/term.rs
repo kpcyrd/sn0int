@@ -3,6 +3,7 @@
 use atty::{self, Stream};
 use crate::db;
 use crate::engine::Module;
+use lazy_static::lazy_static;
 use rand::prelude::*;
 use std::collections::{HashMap, HashSet};
 use std::fmt;

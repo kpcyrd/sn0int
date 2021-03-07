@@ -1,8 +1,8 @@
+use crate::github;
 use diesel::pg::PgConnection;
 use oauth2::basic::BasicClient;
 use oauth2::prelude::*;
 use oauth2::{AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, TokenUrl, TokenResponse};
-use crate::github;
 use sn0int_registry::errors::*;
 use sn0int_registry::models::AuthToken;
 use url::Url;

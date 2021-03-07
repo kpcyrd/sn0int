@@ -1,12 +1,13 @@
-use sn0int_registry::errors::*;
+use crate::assets::ASSET_REV;
 use crate::auth::Authenticator;
+use serde::{Serialize, Deserialize};
+use serde_json::Value;
 use sn0int_registry::db;
+use sn0int_registry::errors::*;
 use rocket::request::Form;
 use rocket::response::Redirect;
 use rocket_contrib::templates::Template;
-use crate::assets::ASSET_REV;
-use serde_json::{self, Value};
-
+use maplit::hashmap;
 
 #[get("/?<auth..>")]
 pub fn get(auth: Form<OAuth>) -> Template {

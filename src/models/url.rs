@@ -1,4 +1,5 @@
 use crate::ser::StringOrBytes;
+use serde::{Serialize, Deserialize};
 use crate::errors::*;
 use crate::fmt::Write;
 use crate::fmt::colors::*;

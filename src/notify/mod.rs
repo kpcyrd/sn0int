@@ -9,6 +9,8 @@ use crate::shell::Shell;
 use crate::term::SpinLogger;
 use crate::worker;
 use self::rules::Glob;
+use serde::{Serialize, Deserialize};
+use structopt::StructOpt;
 use sn0int_common::metadata::Source;
 use sn0int_std::blobs::Blob;
 use sn0int_std::ratelimits::Ratelimiter;

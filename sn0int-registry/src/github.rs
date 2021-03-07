@@ -1,5 +1,5 @@
+use serde::Deserialize;
 use sn0int_registry::errors::*;
-use reqwest;
 
 pub fn get_username(oauth_token: &str) -> Result<String> {
     let client = reqwest::Client::new();

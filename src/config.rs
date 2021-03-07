@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 use crate::notify::NotificationConfig;
 use std::collections::HashMap;
 use std::fs;

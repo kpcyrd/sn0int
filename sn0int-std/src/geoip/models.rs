@@ -1,7 +1,7 @@
 use crate::errors::*;
 use maxminddb::geoip2;
+use serde::Serialize;
 use std::collections::BTreeMap;
-
 
 fn from_geoip_model_names(names: Option<BTreeMap<&str, &str>>) -> Option<String> {
     names?.get("en").map(|x| x.to_string())

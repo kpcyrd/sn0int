@@ -9,16 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+        - name: sn0int
+          file: Dockerfile
+        - name: registry
+          file: sn0int-registry/Dockerfile
 
     steps:
     - uses: actions/checkout@v2
-    - name: Build the Docker image (sn0int)
-      run: docker build -t sn0int .
-    - name: Test the Docker image (sn0int)
-      run: docker run --rm sn0int --help
 
-    - name: Build the Docker image (registry)
-      run: docker build -t sn0int-registry -f sn0int-registry/Dockerfile .
+    - name: Build the Docker image
+      run: docker build -t ${{ matrix.build.name }} -f ${{ matrix.build.file }} .
+    - name: Test the Docker image
+      run: docker run --rm ${{ matrix.build.name }} --help
 
     - name: Show Docker images
       run: docker images

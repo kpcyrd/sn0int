@@ -3,6 +3,7 @@ use crate::errors::*;
 use diesel::prelude::*;
 use crate::schema::*;
 use crate::models::*;
+use lazy_static::lazy_static;
 use std::cmp::Ordering;
 use std::convert::{TryInto, TryFrom};
 use std::str::FromStr;

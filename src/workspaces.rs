@@ -3,6 +3,7 @@ use crate::errors::*;
 use crate::blobs::BlobStorage;
 use crate::paths;
 use regex::Regex;
+use lazy_static::lazy_static;
 use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;

@@ -1,10 +1,9 @@
 use crate::errors::*;
-
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
 use geo::{LineString, Polygon, Coordinate};
 use geo::prelude::*;
-
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct Point {

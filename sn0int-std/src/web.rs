@@ -10,7 +10,7 @@ use chrootable_https::http::uri::Parts;
 use chrootable_https::http::request::Builder;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::iter;

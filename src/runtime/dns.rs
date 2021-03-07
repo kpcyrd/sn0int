@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::Deserialize;
 
 use chrootable_https::dns::{Resolver, DnsResolver, RecordType};
 use crate::engine;

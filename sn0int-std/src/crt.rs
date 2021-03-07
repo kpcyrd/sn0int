@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::net::IpAddr;
 use x509_parser::x509::X509Version;

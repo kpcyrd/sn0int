@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 
 use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;

@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 use crate::schema::activity;
 use diesel::prelude::*;
 use diesel::query_builder::BoxedSelectStatement;

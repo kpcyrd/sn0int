@@ -1,3 +1,4 @@
+use serde::Serialize;
 use sn0int_registry::errors::*;
 use sn0int_registry::db;
 use sn0int_registry::models::*;

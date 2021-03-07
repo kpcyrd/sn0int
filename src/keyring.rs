@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 
 use crate::engine::Module;
 use crate::hlua::AnyLuaValue;
