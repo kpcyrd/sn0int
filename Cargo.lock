@@ -3904,7 +3904,7 @@ checksum = "fe0f37c9e8f3c5a4a66ad655a93c74daac4ad00c441533bf5c6e7990bb42604e"
 
 [[package]]
 name = "sn0int"
-version = "0.20.0"
+version = "0.20.1"
 dependencies = [
  "atty",
  "base64 0.13.0",
@@ -4008,7 +4008,7 @@ dependencies = [
 
 [[package]]
 name = "sn0int-std"
-version = "0.20.0"
+version = "0.20.1"
 dependencies = [
  "base64 0.13.0",
  "blake2 0.9.1",
