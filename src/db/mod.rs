@@ -111,14 +111,18 @@ impl Database {
 
         let db = SqliteConnection::establish(&path)
             .context("Failed to connect to database")?;
-        migrations::run(&db)
-            .context("Failed to run migrations")?;
-        db.execute("PRAGMA journal_mode = WAL")
-            .context("Failed to enable write ahead log")?;
+
+        db.execute("PRAGMA busy_timeout = 10000")
+            .context("Failed to set busy_timeout")?;
         db.execute("PRAGMA foreign_keys = ON")
             .context("Failed to enforce foreign keys")?;
+        db.execute("PRAGMA journal_mode = WAL")
+            .context("Failed to enable write ahead log")?;
         db.execute("PRAGMA synchronous = NORMAL")
             .context("Failed to enforce foreign keys")?;
+
+        migrations::run(&db)
+            .context("Failed to run migrations")?;
 
         let autonoscope = RuleSet::load(&db)?;
 
