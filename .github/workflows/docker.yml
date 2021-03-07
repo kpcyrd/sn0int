@@ -1,0 +1,24 @@
+name: Docker
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build the Docker image (sn0int)
+      run: docker build -t sn0int .
+    - name: Test the Docker image (sn0int)
+      run: docker run --rm sn0int --help
+
+    - name: Build the Docker image (registry)
+      run: docker build -t sn0int-registry -f sn0int-registry/Dockerfile .
+
+    - name: Show Docker images
+      run: docker images

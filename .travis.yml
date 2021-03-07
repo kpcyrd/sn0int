@@ -8,14 +8,6 @@ matrix:
   - os: linux
     rust: stable
     env:
-    - BUILD_MODE=docker
-  - os: linux
-    rust: stable
-    env:
-    - BUILD_MODE=docker-registry
-  - os: linux
-    rust: stable
-    env:
     - BUILD_MODE=test
   - os: linux
     rust: stable
