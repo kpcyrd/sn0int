@@ -1,5 +1,5 @@
 use blake2::{Blake2b, Digest};
-
+use lazy_static::lazy_static;
 
 pub static FAVICON: &[u8] = include_bytes!("../assets/favicon.ico");
 pub static STYLESHEET: &[u8] = include_bytes!("../assets/style.css");

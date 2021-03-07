@@ -1,9 +1,9 @@
-use structopt::clap::{AppSettings, Shell};
-use sn0int_common::ModuleID;
 use crate::cmd;
 use crate::options;
 use crate::workspaces::Workspace;
-
+use structopt::StructOpt;
+use structopt::clap::{AppSettings, Shell};
+use sn0int_common::ModuleID;
 
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]

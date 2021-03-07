@@ -4,6 +4,7 @@ use diesel::pg::PgConnection;
 use diesel::sql_types::BigInt;
 use diesel_full_text_search::{plainto_tsquery, TsQueryExtensions};
 use crate::schema::*;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::time::SystemTime;
 use sn0int_common::ModuleID;

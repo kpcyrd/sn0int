@@ -2,6 +2,7 @@ use crate::errors::*;
 
 use crate::json::LuaJsonValue;
 use crate::hlua::AnyLuaValue;
+use serde::Serialize;
 use std::collections::HashMap;
 use xml::attribute::OwnedAttribute;
 use xml::name::OwnedName;

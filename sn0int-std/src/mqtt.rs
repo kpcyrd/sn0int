@@ -9,6 +9,7 @@ use mqtt::control::ConnectReturnCode;
 use mqtt::control::fixed_header::FixedHeaderError;
 use mqtt::encodable::{Encodable, Decodable};
 use mqtt::packet::{Packet, VariablePacket, ConnectPacket, SubscribePacket, PingreqPacket};
+use serde::{Serialize, Deserialize};
 use std::convert::TryFrom;
 use std::io;
 use std::net::SocketAddr;

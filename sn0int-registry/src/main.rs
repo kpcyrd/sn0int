@@ -5,21 +5,16 @@
 #[macro_use] extern crate rocket;
 #[macro_use] extern crate rocket_contrib;
 #[macro_use] extern crate rocket_failure;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate log;
-#[macro_use] extern crate maplit;
-#[macro_use] extern crate lazy_static;
-#[macro_use] extern crate failure;
 
+use dotenv::dotenv;
 use rocket::fairing::AdHoc;
 use rocket::http::Header;
 use rocket_contrib::json::{Json, JsonValue};
 use rocket_contrib::templates::Template;
-use dotenv::dotenv;
-
-use std::env;
-use sn0int_registry::errors::*;
 use sn0int_registry::db;
+use sn0int_registry::errors::*;
+use std::env;
+use structopt::StructOpt;
 
 pub mod assets;
 pub mod auth;
@@ -49,7 +44,13 @@ fn internal_error() -> Json<JsonValue> {
     }))
 }
 
+#[derive(Debug, StructOpt)]
+pub struct Args {
+}
+
 fn run() -> Result<()> {
+    let _args = Args::from_args();
+
     dotenv().ok();
 
     let database_url = env::var("DATABASE_URL")

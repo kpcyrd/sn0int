@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::{Serialize, Deserialize};
 use diesel::prelude::*;
 use crate::models::*;
 use chrono::NaiveDateTime;

@@ -11,6 +11,7 @@ use colored::Colorize;
 use crate::db::{self, Database};
 use crate::engine::{Library, Module};
 use crate::update::AutoUpdater;
+use lazy_static::lazy_static;
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;

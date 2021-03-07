@@ -1,0 +1,51 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install dependencies (apt)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get install libsqlite3-dev libseccomp-dev libsodium-dev
+    - name: Install dependencies (brew)
+      if: matrix.os == 'macos-latest'
+      run: brew install pkg-config libsodium
+
+    - name: Build (sn0int)
+      run: cargo build --verbose
+    - name: Build (common)
+      run: cd sn0int-common && cargo build --verbose
+    - name: Build (std)
+      run: cd sn0int-std && cargo build --verbose
+    - name: Build (examples)
+      run: cargo build --verbose --examples
+
+    - name: Run tests (sn0int)
+      run: cargo test --verbose
+    - name: Run tests (sn0int, --ignored)
+      run: cargo test --verbose -- --ignored
+    - name: Run tests (common)
+      run: cd sn0int-common && cargo test --verbose
+    - name: Run tests (common, --ignored)
+      run: cd sn0int-common && cargo test --verbose -- --ignored
+    - name: Run tests (std)
+      run: cd sn0int-std && cargo test --verbose
+    - name: Run tests (std, --ignored)
+      run: cd sn0int-std && cargo test --verbose -- --ignored

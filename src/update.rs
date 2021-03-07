@@ -3,6 +3,7 @@ use crate::api::Client;
 use crate::config::Config;
 use crate::engine;
 use crate::paths;
+use serde::{Serialize, Deserialize};
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;

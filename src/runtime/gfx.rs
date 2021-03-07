@@ -1,4 +1,5 @@
 use crate::errors::*;
+use serde::Serialize;
 
 use crate::engine::ctx::State;
 use crate::gfx;

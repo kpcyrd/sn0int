@@ -1,10 +1,17 @@
-use sn0int_registry::errors::*;
 use crate::assets::*;
+use lazy_static::lazy_static;
 use sn0int_registry::db;
+use sn0int_registry::errors::*;
 use sn0int_registry::models::*;
-use rocket_contrib::templates::Template;
 use std::cmp::Ordering;
+use syntect::html::ClassedHTMLGenerator;
+use syntect::parsing::{SyntaxSet, SyntaxReference};
+use rocket_contrib::templates::Template;
 
+lazy_static! {
+    pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
+    pub static ref SYNTAX: &'static SyntaxReference = SYNTAX_SET.find_syntax_by_extension("lua").unwrap();
+}
 
 #[get("/")]
 pub fn index(connection: db::Connection) -> ApiResult<Template> {
@@ -28,14 +35,6 @@ pub fn index(connection: db::Connection) -> ApiResult<Template> {
         "ASSET_REV": asset_rev,
         "modules": modules,
     })))
-}
-
-use syntect::html::ClassedHTMLGenerator;
-use syntect::parsing::{SyntaxSet, SyntaxReference};
-
-lazy_static! {
-    pub static ref SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
-    pub static ref SYNTAX: &'static SyntaxReference = SYNTAX_SET.find_syntax_by_extension("lua").unwrap();
 }
 
 #[get("/r/<author>/<name>")]

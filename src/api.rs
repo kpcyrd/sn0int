@@ -5,6 +5,7 @@ use crate::utils;
 use chrootable_https::{self, HttpClient, Body, Request, Uri};
 use chrootable_https::http::request::Builder as RequestBuilder;
 use chrootable_https::header::CONTENT_TYPE;
+use maplit::hashmap;
 use serde::de::DeserializeOwned;
 use serde::ser::Serialize;
 use sn0int_common::api::*;

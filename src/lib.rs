@@ -3,11 +3,7 @@
 #![allow(clippy::large_enum_variant)]
 
 #![warn(unused_extern_crates)]
-#[macro_use] extern crate maplit;
 use hlua_badtouch as hlua;
-#[macro_use] extern crate serde_derive;
-#[macro_use] extern crate structopt;
-#[macro_use] extern crate lazy_static;
 #[macro_use] extern crate diesel;
 #[macro_use] extern crate diesel_migrations;
 #[macro_use] extern crate crossbeam_channel as channel;

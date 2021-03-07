@@ -1,7 +1,6 @@
 use std::fmt;
 use std::result;
-use serde::Deserialize;
-use serde::Deserializer;
+use serde::{Serialize, Deserialize, Deserializer};
 use serde::de::{self, Visitor};
 use serde::de::SeqAccess;
 use std::marker::PhantomData;

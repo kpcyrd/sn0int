@@ -1,4 +1,3 @@
-#[macro_use] extern crate serde_derive;
 use hlua_badtouch as hlua;
 
 pub mod blobs;

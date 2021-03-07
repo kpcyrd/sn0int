@@ -5,7 +5,7 @@ use crate::cmd::Cmd;
 use crate::db::ttl;
 use crate::models::*;
 use crate::shell::Shell;
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 use std::io::{self, Write};
 use structopt::StructOpt;
 use structopt::clap::AppSettings;

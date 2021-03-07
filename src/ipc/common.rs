@@ -2,6 +2,7 @@ use chrootable_https::dns::Resolver;
 use crate::blobs::Blob;
 use crate::engine::Module;
 use crate::keyring::KeyRingEntry;
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 

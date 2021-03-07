@@ -6,6 +6,7 @@ use crate::json::LuaJsonValue;
 use chrootable_https::dns::{DnsResolver, RecordType};
 use chrootable_https::socks5::{self, ProxyDest};
 use regex::Regex;
+use serde::Deserialize;
 use tokio::runtime::Runtime;
 
 use std::fmt;
