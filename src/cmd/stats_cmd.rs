@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use colored::Colorize;
+use crate::blobs::BlobStorage;
 use crate::cmd::Cmd;
 use crate::db::Database;
 use crate::db::ttl;
@@ -8,6 +9,7 @@ use crate::models::*;
 use crate::shell::Shell;
 use humansize::{FileSize, file_size_opts};
 use separator::Separatable;
+use serde::{Serialize, Deserialize};
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -17,9 +19,12 @@ pub struct Args {
     /// Exclude blob storage
     #[structopt(long)]
     short: bool,
+    /// Show workspace statistics in json
+    #[structopt(long)]
+    json: bool,
 }
 
-fn show_amount(label: &str, count: usize, amount: &str) -> Result<()> {
+fn show_amount(label: &str, count: usize, amount: &str) {
     let label = format!("{:20}", label);
     let amount = format!("{:>20}", amount);
 
@@ -28,18 +33,88 @@ fn show_amount(label: &str, count: usize, amount: &str) -> Result<()> {
     } else {
         println!("{} {}", label, amount);
     }
-
-    Ok(())
 }
 
-fn show_count(label: &str, count: usize) -> Result<()> {
-    show_amount(label, count, &count.separated_string())
+fn show_count(label: &str, count: usize) {
+    show_amount(label, count, &count.separated_string());
 }
 
-fn count_models<T: Model>(label: &str, db: &Database) -> Result<()> {
+fn count_models<T: Model>(db: &Database) -> Result<usize> {
     let query = db.list::<T>()?;
     let count = query.len();
-    show_count(label, count)
+    Ok(count)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct Stats {
+    workspace: String,
+    domains: usize,
+    subdomains: usize,
+    ipaddrs: usize,
+    urls: usize,
+    emails: usize,
+    phonenumbers: usize,
+    devices: usize,
+    networks: usize,
+    accounts: usize,
+    breaches: usize,
+    images: usize,
+    ports: usize,
+    netblocks: usize,
+    cryptoaddrs: usize,
+    activity: usize,
+    blobs: Option<BlobStats>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct BlobStats {
+    count: usize,
+    total_size: u64,
+    total_human_size: String,
+}
+
+impl Stats {
+    fn count(workspace: String, db: &Database) -> Result<Stats> {
+        Ok(Stats {
+            workspace,
+            domains: count_models::<Domain>(&db)?,
+            subdomains: count_models::<Subdomain>(&db)?,
+            ipaddrs: count_models::<IpAddr>(&db)?,
+            urls: count_models::<Url>(&db)?,
+            emails: count_models::<Email>(&db)?,
+            phonenumbers: count_models::<PhoneNumber>(&db)?,
+            devices: count_models::<Device>(&db)?,
+            networks: count_models::<Network>(&db)?,
+            accounts: count_models::<Account>(&db)?,
+            breaches: count_models::<Breach>(&db)?,
+            images: count_models::<Image>(&db)?,
+            ports: count_models::<Port>(&db)?,
+            netblocks: count_models::<Netblock>(&db)?,
+            cryptoaddrs: count_models::<CryptoAddr>(&db)?,
+            activity: Activity::count(&db)?,
+            blobs: None,
+        })
+    }
+
+    fn add_blob_usage(&mut self, storage: &BlobStorage) -> Result<()> {
+        let blobs = storage.list()?;
+
+        let mut total_size = 0;
+        for blob in &blobs {
+            total_size += storage.stat(blob)?;
+        }
+
+        let total_human_size = total_size.file_size(file_size_opts::CONVENTIONAL)
+            .map_err(|e| format_err!("Failed to format size: {}", e))?;
+
+        self.blobs = Some(BlobStats {
+            count: blobs.len(),
+            total_size,
+            total_human_size,
+        });
+
+        Ok(())
+    }
 }
 
 impl Cmd for Args {
@@ -48,35 +123,37 @@ impl Cmd for Args {
         ttl::reap_expired(rl)?;
 
         let db = rl.db();
-        println!("{:>41}", rl.workspace().bold());
-        count_models::<Domain>("domain", &db)?;
-        count_models::<Subdomain>("subdomains", &db)?;
-        count_models::<IpAddr>("ipaddrs", &db)?;
-        count_models::<Url>("urls", &db)?;
-        count_models::<Email>("emails", &db)?;
-        count_models::<PhoneNumber>("phonenumbers", &db)?;
-        count_models::<Device>("devices", &db)?;
-        count_models::<Network>("networks", &db)?;
-        count_models::<Account>("accounts", &db)?;
-        count_models::<Breach>("breaches", &db)?;
-        count_models::<Image>("images", &db)?;
-        count_models::<Port>("ports", &db)?;
-        count_models::<Netblock>("netblocks", &db)?;
-        count_models::<CryptoAddr>("cryptoaddrs", &db)?;
-        show_count("activity", Activity::count(&db)?)?;
 
+        let mut stats = Stats::count(rl.workspace().into(), &db)?;
         if !self.short {
-            let storage = rl.blobs();
-            let blobs = storage.list()?;
-            show_count("blobs", blobs.len())?;
+            stats.add_blob_usage(rl.blobs())?;
+        }
 
-            let mut total_size = 0;
-            for blob in &blobs {
-                total_size += storage.stat(blob)?;
+        if self.json {
+            let stats = serde_json::to_string(&stats)?;
+            println!("{}", stats);
+        } else {
+            println!("{:>41}", stats.workspace.bold());
+            show_count("domains", stats.domains);
+            show_count("subdomains", stats.subdomains);
+            show_count("ipaddrs", stats.ipaddrs);
+            show_count("urls", stats.urls);
+            show_count("emails", stats.emails);
+            show_count("phonenumbers", stats.phonenumbers);
+            show_count("devices", stats.devices);
+            show_count("networks", stats.networks);
+            show_count("accounts", stats.accounts);
+            show_count("breaches", stats.breaches);
+            show_count("images", stats.images);
+            show_count("ports", stats.ports);
+            show_count("netblocks", stats.netblocks);
+            show_count("cryptoaddrs", stats.cryptoaddrs);
+            show_count("activity", stats.activity);
+
+            if let Some(blobs) = stats.blobs {
+                show_count("blobs", blobs.count);
+                show_amount("blobs (size)", blobs.total_size as usize, &blobs.total_human_size);
             }
-            let human_size = total_size.file_size(file_size_opts::CONVENTIONAL)
-                .map_err(|e| format_err!("Failed to format size: {}", e))?;
-            show_amount("blobs (size)", total_size as usize, &human_size)?;
         }
 
         Ok(())
