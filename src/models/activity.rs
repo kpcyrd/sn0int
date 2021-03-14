@@ -83,6 +83,14 @@ impl Activity {
             .optional()
             .map_err(Error::from)
     }
+
+    pub fn count(db: &Database) -> Result<usize> {
+        use crate::schema::activity::dsl::*;
+        activity.count()
+            .get_result::<i64>(db.db())
+            .map(|x| x as usize)
+            .map_err(Error::from)
+    }
 }
 
 pub struct ActivityFilter {

@@ -79,6 +79,7 @@ ipnetwork = "0.17"
 strum = "0.20"
 strum_macros = "0.20"
 embedded-triple = "0.1.0"
+humansize = "1.1.0"
 
 digest = "0.9"
 md-5 = "0.9"

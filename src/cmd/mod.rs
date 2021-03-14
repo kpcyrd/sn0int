@@ -34,6 +34,7 @@ pub mod notify_cmd;
 pub mod pkg_cmd;
 pub mod set_cmd;
 pub mod scope_cmd;
+pub mod stats_cmd;
 pub mod target_cmd;
 pub mod quickstart_cmd;
 pub mod workspace_cmd;

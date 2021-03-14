@@ -93,6 +93,14 @@ impl BlobStorage {
         }
         Ok(blobs)
     }
+
+    pub fn stat(&self, id: &str) -> Result<u64> {
+        let path = self.join(id)?;
+        debug!("Stat-ing blob: {:?}", path);
+        let md = fs::metadata(path)
+            .context("Failed to stat blob")?;
+        Ok(md.len())
+    }
 }
 
 
