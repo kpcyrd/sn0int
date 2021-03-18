@@ -21,26 +21,6 @@ matrix:
     rust: stable
     env:
     - BUILD_MODE=boxxy
-  - os: osx
-    rust: stable
-    env:
-    - BUILD_MODE=test
-  - os: osx
-    rust: stable
-    env:
-    - BUILD_MODE=common
-  - os: osx
-    rust: stable
-    env:
-    - BUILD_MODE=std
-  #- os: windows
-  #  rust: stable
-  #  env:
-  #  - BUILD_MODE="windows test"
-  #- os: windows
-  #  rust: stable
-  #  env:
-  #  - BUILD_MODE="windows common"
 
 before_install:
 - ci/setup.sh "$TRAVIS_OS_NAME"

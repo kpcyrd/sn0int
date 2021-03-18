@@ -1,11 +1,12 @@
-use crate::errors::*;
-
 use chrootable_https::Client;
+use crate::errors::*;
+use crate::lazy::LazyInit;
+use publicsuffix::{List, Psl as _};
 use std::fs::{self, File};
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use crate::lazy::LazyInit;
-
+use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub struct DnsName {
@@ -72,11 +73,15 @@ impl PslReader {
 impl LazyInit<Arc<Psl>> for PslReader {
     fn initialize(self) -> Result<Arc<Psl>> {
         let list = match self {
-            PslReader::Reader(file) => publicsuffix::List::from_reader(file),
-            PslReader::String(s) => publicsuffix::List::from_str(&s),
+            PslReader::Reader(mut file) => {
+                let mut buf = String::new();
+                file.read_to_string(&mut buf)?;
+                buf
+            },
+            PslReader::String(s) => s,
         };
 
-        let list = list
+        let list = List::from_str(&list)
             .map_err(|e| format_err!("Failed to load public suffix list: {}", e))?;
 
         Ok(Arc::new(Psl {
@@ -87,32 +92,28 @@ impl LazyInit<Arc<Psl>> for PslReader {
 
 #[derive(Debug)]
 pub struct Psl {
-    list: publicsuffix::List,
+    list: List,
 }
 
 impl Psl {
     pub fn parse_dns_name(&self, name: &str) -> Result<DnsName> {
-        let dns_name = self.list.parse_dns_name(name)
-            .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
+        let bytes = name.as_bytes();
 
-        let (root, suffix) = if let Some(domain) = dns_name.domain() {
-            let root = domain.to_string();
-            if let Some(suffix) = domain.suffix() {
-                (root, suffix.to_string())
-            } else {
-                // XXX: not sure if this is reachable
-                (root.clone(), root)
-            }
+        let suffix = self.list.suffix(bytes)
+            .ok_or_else(|| format_err!("Failed to detect suffix"))?;
+        let suffix = String::from_utf8(suffix.as_bytes().to_vec())?;
+
+        let root = if let Some(root) = self.list.domain(bytes) {
+            String::from_utf8(root.as_bytes().to_vec())?
         } else {
             // this is technically a tld, but support eg. a.prod.fastly.net anyway
-            // XXX: consider forcing domain to be in self.list.private()
-            (name.to_string(), name.to_string())
+            name.to_string()
         };
 
-        let fulldomain = if root.as_str() != name {
-            Some(name.to_string())
-        } else {
+        let fulldomain = if root == name {
             None
+        } else {
+            Some(name.to_string())
         };
 
         Ok(DnsName {
