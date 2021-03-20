@@ -21,6 +21,7 @@ pub fn run(_rl: &mut Shell, _args: &[String]) -> Result<()> {
     help("run",         "Run the currently selected module");
     help("scope",       "Include entities in the scope again");
     help("select",      "Select entities from the database");
+    help("stats",       "Show statistics about your current workspace");
     help("target",      "Preview targeted entities or narrow them down");
     help("use",         "Select a module");
     help("workspace",   "Switch to a different workspace");

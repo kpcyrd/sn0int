@@ -191,18 +191,60 @@ impl Completer for CmdCompleter {
                 },
                 Command::Pkg => {
                     // we can only complete the 2nd argument
-                    if args != 2 {
-                        Ok((0, vec![]))
-                    } else {
-                        Ok(filter_options("pkg", &[
-                            "list",
-                            "install",
-                            "search",
-                            "reload",
-                            "update",
-                            "uninstall",
-                            "quickstart",
-                        ], &cmd[1]))
+                    let subcommand = cmd.get(1).map(|x| x.as_str());
+
+                    let current = &cmd[args - 1];
+                    let prev = &cmd[args - 2];
+
+                    match (args, subcommand) {
+                        (_, Some("list")) => {
+                            let line = &line[..line.len() - current.len() - 1];
+
+                            match prev.as_str() {
+                                "--source" => Ok(filter_options(line, &[
+                                    "domains",
+                                    "subdomains",
+                                    "ipaddrs",
+                                    "urls",
+                                    "emails",
+                                    "phonenumbers",
+                                    "devices",
+                                    "networks",
+                                    "accounts",
+                                    "breaches",
+                                    "images",
+                                    "ports",
+                                    "netblocks",
+                                    "cryptoaddrs",
+                                ], current)),
+                                "--stealth" => Ok(filter_options(line, &[
+                                    "loud",
+                                    "normal",
+                                    "passive",
+                                    "offline",
+                                ], current)),
+                                _ => if current.starts_with("-") {
+                                    Ok(filter_options(line, &[
+                                        "--source",
+                                        "--stealth",
+                                    ], current))
+                                } else {
+                                    Ok((0, vec![]))
+                                },
+                            }
+                        },
+                        (2, Some(subcommand)) => {
+                            Ok(filter_options("pkg", &[
+                                "list",
+                                "install",
+                                "search",
+                                "reload",
+                                "update",
+                                "uninstall",
+                                "quickstart",
+                            ], &subcommand))
+                        },
+                        (_, _) => Ok((0, vec![])),
                     }
                 },
                 Command::Noscope => self.filter("noscope", &cmd),
@@ -251,13 +293,13 @@ impl Hinter for CmdCompleter {
     type Hint = String;
 
     #[inline]
-    fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
+    fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<String> {
         // None
-        match self.complete(_line, _pos, _ctx) {
+        match self.complete(line, pos, ctx) {
             Ok((_, mut cmds)) => if cmds.len() == 1 {
                 // TODO: this fails if we complete a 2nd argument
                 let hint = cmds.remove(0);
-                Some(hint[_pos..].to_string())
+                Some(hint[pos..].to_string())
             } else {
                 None
             },

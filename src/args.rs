@@ -81,6 +81,9 @@ pub enum SubCommand {
     /// Export a workspace for external processing
     #[structopt(name="export")]
     Export(cmd::export_cmd::Args),
+    /// Show statistics about your current workspace
+    #[structopt(name="stats")]
+    Stats(cmd::stats_cmd::Args),
     /// Run a lua repl
     #[structopt(name="repl")]
     Repl,
