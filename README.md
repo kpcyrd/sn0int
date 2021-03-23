@@ -50,6 +50,8 @@ For questions and support join us on IRC: [irc.hackint.org:6697/#sn0int](https:/
 
 ## Installation
 
+<a href="https://repology.org/project/sn0int/versions"><img align="right" src="https://repology.org/badge/vertical-allrepos/sn0int.svg" alt="Packaging status"></a>
+
 Archlinux
 
     pacman -S sn0int
