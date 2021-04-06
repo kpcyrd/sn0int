@@ -1,19 +1,19 @@
-use crate::errors::*;
-
+use crate::args;
 use colored::Colorize;
 use crate::blobs::BlobStorage;
 use crate::cmd::Cmd;
-use crate::db::Database;
-use crate::db::ttl;
+use crate::db::{ttl, Database};
+use crate::errors::*;
 use crate::models::*;
-use crate::shell::Shell;
+use crate::shell::{self, Shell};
+use crate::workspaces;
 use humansize::{FileSize, file_size_opts};
 use separator::Separatable;
 use serde::{Serialize, Deserialize};
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Clone, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Exclude blob storage
@@ -22,6 +22,9 @@ pub struct Args {
     /// Show workspace statistics in json
     #[structopt(long)]
     json: bool,
+    /// Go through all workspaces
+    #[structopt(long)]
+    all: bool,
 }
 
 fn show_amount(label: &str, count: usize, amount: &str) {
@@ -119,40 +122,66 @@ impl Stats {
 
 impl Cmd for Args {
     #[inline]
-    fn run(self, rl: &mut Shell) -> Result<()> {
-        ttl::reap_expired(rl)?;
+    fn run(mut self, rl: &mut Shell) -> Result<()> {
+        if self.all {
+            self.all = false;
+            let mut first = true;
 
-        let db = rl.db();
+            let config = rl.config();
+            for ws in workspaces::list()? {
+                if first {
+                    first = false;
+                } else if !self.json {
+                    println!();
+                }
 
-        let mut stats = Stats::count(rl.workspace().into(), &db)?;
-        if !self.short {
-            stats.add_blob_usage(rl.blobs())?;
-        }
-
-        if self.json {
-            let stats = serde_json::to_string(&stats)?;
-            println!("{}", stats);
+                let mut rl = shell::init(&args::Args {
+                    workspace: Some(ws),
+                    subcommand: None,
+                }, config, false)?;
+                self.clone().run(&mut rl)?;
+            }
         } else {
-            println!("{:>41}", stats.workspace.bold());
-            show_count("domains", stats.domains);
-            show_count("subdomains", stats.subdomains);
-            show_count("ipaddrs", stats.ipaddrs);
-            show_count("urls", stats.urls);
-            show_count("emails", stats.emails);
-            show_count("phonenumbers", stats.phonenumbers);
-            show_count("devices", stats.devices);
-            show_count("networks", stats.networks);
-            show_count("accounts", stats.accounts);
-            show_count("breaches", stats.breaches);
-            show_count("images", stats.images);
-            show_count("ports", stats.ports);
-            show_count("netblocks", stats.netblocks);
-            show_count("cryptoaddrs", stats.cryptoaddrs);
-            show_count("activity", stats.activity);
+            ttl::reap_expired(rl)?;
 
-            if let Some(blobs) = stats.blobs {
-                show_count("blobs", blobs.count);
-                show_amount("blobs (size)", blobs.total_size as usize, &blobs.total_human_size);
+            let db = rl.db();
+
+            let workspace = rl.workspace();
+
+            if !self.json {
+                // print this early in case counting takes a while
+                println!("{:>41}", workspace.bold());
+            }
+
+            let mut stats = Stats::count(workspace.into(), &db)?;
+            if !self.short {
+                stats.add_blob_usage(rl.blobs())?;
+            }
+
+            if self.json {
+                let stats = serde_json::to_string(&stats)?;
+                println!("{}", stats);
+            } else {
+                show_count("domains", stats.domains);
+                show_count("subdomains", stats.subdomains);
+                show_count("ipaddrs", stats.ipaddrs);
+                show_count("urls", stats.urls);
+                show_count("emails", stats.emails);
+                show_count("phonenumbers", stats.phonenumbers);
+                show_count("devices", stats.devices);
+                show_count("networks", stats.networks);
+                show_count("accounts", stats.accounts);
+                show_count("breaches", stats.breaches);
+                show_count("images", stats.images);
+                show_count("ports", stats.ports);
+                show_count("netblocks", stats.netblocks);
+                show_count("cryptoaddrs", stats.cryptoaddrs);
+                show_count("activity", stats.activity);
+
+                if let Some(blobs) = stats.blobs {
+                    show_count("blobs", blobs.count);
+                    show_amount("blobs (size)", blobs.total_size as usize, &blobs.total_human_size);
+                }
             }
         }
 

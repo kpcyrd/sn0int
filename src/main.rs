@@ -1,4 +1,4 @@
-use env_logger::{self, Env};
+use env_logger::Env;
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd::{self, LiteCmd};
