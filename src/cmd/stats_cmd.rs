@@ -17,29 +17,38 @@ use structopt::clap::AppSettings;
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Exclude blob storage
-    #[structopt(long)]
+    #[structopt(short, long)]
     short: bool,
+    /// Exclude categories that don't contain any structs
+    #[structopt(short, long)]
+    quiet: bool,
     /// Show workspace statistics in json
-    #[structopt(long)]
+    #[structopt(short, long)]
     json: bool,
     /// Go through all workspaces
-    #[structopt(long)]
+    #[structopt(short, long)]
     all: bool,
 }
 
-fn show_amount(label: &str, count: usize, amount: &str) {
-    let label = format!("{:20}", label);
-    let amount = format!("{:>20}", amount);
+impl Args {
+    fn show_amount(&self, label: &str, count: usize, amount: &str) {
+        if self.quiet && count == 0 {
+            return;
+        }
 
-    if count > 0 {
-        println!("{} {}", label.green(), amount.yellow());
-    } else {
-        println!("{} {}", label, amount);
+        let label = format!("{:20}", label);
+        let amount = format!("{:>20}", amount);
+
+        if count > 0 {
+            println!("{} {}", label.green(), amount.yellow());
+        } else {
+            println!("{} {}", label, amount);
+        }
     }
-}
 
-fn show_count(label: &str, count: usize) {
-    show_amount(label, count, &count.separated_string());
+    fn show_count(&self, label: &str, count: usize) {
+        self.show_amount(label, count, &count.separated_string());
+    }
 }
 
 fn count_models<T: Model>(db: &Database) -> Result<usize> {
@@ -162,25 +171,25 @@ impl Cmd for Args {
                 let stats = serde_json::to_string(&stats)?;
                 println!("{}", stats);
             } else {
-                show_count("domains", stats.domains);
-                show_count("subdomains", stats.subdomains);
-                show_count("ipaddrs", stats.ipaddrs);
-                show_count("urls", stats.urls);
-                show_count("emails", stats.emails);
-                show_count("phonenumbers", stats.phonenumbers);
-                show_count("devices", stats.devices);
-                show_count("networks", stats.networks);
-                show_count("accounts", stats.accounts);
-                show_count("breaches", stats.breaches);
-                show_count("images", stats.images);
-                show_count("ports", stats.ports);
-                show_count("netblocks", stats.netblocks);
-                show_count("cryptoaddrs", stats.cryptoaddrs);
-                show_count("activity", stats.activity);
+                self.show_count("domains", stats.domains);
+                self.show_count("subdomains", stats.subdomains);
+                self.show_count("ipaddrs", stats.ipaddrs);
+                self.show_count("urls", stats.urls);
+                self.show_count("emails", stats.emails);
+                self.show_count("phonenumbers", stats.phonenumbers);
+                self.show_count("devices", stats.devices);
+                self.show_count("networks", stats.networks);
+                self.show_count("accounts", stats.accounts);
+                self.show_count("breaches", stats.breaches);
+                self.show_count("images", stats.images);
+                self.show_count("ports", stats.ports);
+                self.show_count("netblocks", stats.netblocks);
+                self.show_count("cryptoaddrs", stats.cryptoaddrs);
+                self.show_count("activity", stats.activity);
 
                 if let Some(blobs) = stats.blobs {
-                    show_count("blobs", blobs.count);
-                    show_amount("blobs (size)", blobs.total_size as usize, &blobs.total_human_size);
+                    self.show_count("blobs", blobs.count);
+                    self.show_amount("blobs (size)", blobs.total_size as usize, &blobs.total_human_size);
                 }
             }
         }
