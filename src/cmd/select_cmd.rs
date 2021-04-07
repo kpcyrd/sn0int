@@ -16,13 +16,16 @@ pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
     /// Print json output
-    #[structopt(long="json", group="output")]
+    #[structopt(long, group="output")]
     json: bool,
+    /// Only print the value instead of the whole object
+    #[structopt(long, group="output")]
+    values: bool,
     /// Print paths to blobs
-    #[structopt(long="paths", group="output")]
+    #[structopt(long, group="output")]
     paths: bool,
     /// Count rows returned
-    #[structopt(short="c", long="count", group="output")]
+    #[structopt(short="c", group="output")]
     count: bool,
 }
 
@@ -30,6 +33,7 @@ pub struct Args {
 enum Output {
     Normal,
     Json,
+    Values,
     Paths,
     Count,
 }
@@ -43,6 +47,8 @@ impl<'a, 'b> Printer<'a, 'b> {
     pub fn new(rl: &'a mut Shell<'b>, args: &Args) -> Printer<'a, 'b> {
         let output = if args.json {
             Output::Json
+        } else if args.values {
+            Output::Values
         } else if args.paths {
             Output::Paths
         } else if args.count {
@@ -69,6 +75,9 @@ impl<'a, 'b> Printer<'a, 'b> {
                     Output::Json => {
                         let v = serde_json::to_string(&obj)?;
                         println!("{}", v);
+                    },
+                    Output::Values => {
+                        println!("{}", obj.to_string());
                     },
                     Output::Paths => {
                         let blob = obj.blob()

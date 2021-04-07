@@ -24,7 +24,7 @@ pub struct Args {
     /// Skip confirmation
     #[structopt(short = "f", long = "force")]
     force: bool,
-    workspace: Option<Workspace>,
+    workspaces: Vec<Workspace>,
 }
 
 fn delete(workspace: Workspace, force: bool) -> Result<()> {
@@ -38,13 +38,13 @@ fn delete(workspace: Workspace, force: bool) -> Result<()> {
     Ok(())
 }
 
-fn usage(workspace: Option<Workspace>) -> Result<()> {
-    if let Some(ws) = workspace {
-        println!("{}", ws.usage_human()?);
-    } else {
-        for ws in workspaces::list()? {
-            println!("{:50}: {}", ws.as_str(), ws.usage_human()?);
-        }
+fn usage(mut workspaces: Vec<Workspace>) -> Result<()> {
+    if workspaces.is_empty() {
+        workspaces = workspaces::list()?;
+    }
+
+    for ws in workspaces {
+        println!("{:50}: {}", ws.as_str(), ws.usage_human()?);
     }
 
     Ok(())
@@ -67,30 +67,34 @@ fn list() -> Result<()> {
     Ok(())
 }
 
-fn run(args: Args, rl: Option<&mut Shell>) -> Result<()> {
+fn run(mut args: Args, rl: Option<&mut Shell>) -> Result<()> {
     if args.delete {
-        if let Some(workspace) = args.workspace {
-            if let Some(rl) = rl {
+        if args.workspaces.is_empty() {
+            bail!("--delete requires workspace");
+        }
+
+        for workspace in args.workspaces {
+            if let Some(rl) = &rl {
                 if *rl.db().workspace() == workspace {
                     bail!("Can't delete current workspace")
                 }
             }
-
-            delete(workspace, args.force)
-        } else {
-            bail!("--delete requires workspace")
+            delete(workspace, args.force)?;
         }
     } else if args.usage {
-        usage(args.workspace)
-    } else if let Some(workspace) = args.workspace {
-        if let Some(rl) = rl {
-            change(rl, workspace)
-        } else {
-            Ok(())
-        }
+        usage(args.workspaces)?;
     } else {
-        list()
+        match args.workspaces.len() {
+            0 => list()?,
+            1 => if let Some(rl) = rl {
+                // we've already tested there's one item in the list
+                change(rl, args.workspaces.pop().unwrap())?;
+            },
+            _ => bail!("Only one argument allowed when switching workspaces"),
+        }
     }
+
+    Ok(())
 }
 
 impl Cmd for Args {
