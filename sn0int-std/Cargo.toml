@@ -36,11 +36,11 @@ x509-parser = "0.9"
 der-parser = "5"
 publicsuffix = { version="2", default-features=false }
 xml-rs = "0.8"
-geo = "0.17"
+geo = "0.18"
 bytes = "0.4"
 base64 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
-mqtt-protocol = "0.10"
+mqtt-protocol = "0.11"
 sodiumoxide = { version="0.2.5", features=["use-pkg-config"] }
 
 image = "0.23.0"
