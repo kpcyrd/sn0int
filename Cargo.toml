@@ -75,7 +75,7 @@ atty = "0.2"
 semver = "0.11"
 bytes = "0.4"
 bytesize = "1.0"
-ipnetwork = "0.17"
+ipnetwork = "0.18"
 strum = "0.20"
 strum_macros = "0.20"
 embedded-triple = "0.1.0"
@@ -86,7 +86,7 @@ md-5 = "0.9"
 sha-1 = "0.9"
 sha2 = "0.9"
 sha3 = "0.9"
-hmac = "0.10"
+hmac = "0.11"
 
 walkdir = "2.2"
 nude = "0.3"
@@ -101,7 +101,7 @@ nix = "0.20"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.4"
-unveil = "0.2.0"
+unveil = "0.3"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }

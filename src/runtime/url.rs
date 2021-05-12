@@ -15,7 +15,7 @@ pub fn url_join(lua: &mut hlua::Lua, state: Arc<dyn State>) {
         let url = base.join(&update)
             .map_err(|err| state.set_error(Error::from(err)))?;
 
-        Ok(url.into_string())
+        Ok(url.into())
     }))
 }
 

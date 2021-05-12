@@ -8,7 +8,7 @@ use mqtt::{TopicFilter, QualityOfService};
 use mqtt::control::ConnectReturnCode;
 use mqtt::control::fixed_header::FixedHeaderError;
 use mqtt::encodable::{Encodable, Decodable};
-use mqtt::packet::{Packet, VariablePacket, ConnectPacket, SubscribePacket, PingreqPacket};
+use mqtt::packet::{VariablePacket, ConnectPacket, SubscribePacket, PingreqPacket};
 use serde::{Serialize, Deserialize};
 use std::convert::TryFrom;
 use std::io;
@@ -177,7 +177,7 @@ impl TryFrom<VariablePacket> for Pkt {
             VariablePacket::ConnackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
             VariablePacket::PublishPacket(pkt) => Ok(Pkt::Publish(Publish {
                 topic: pkt.topic_name().to_string(),
-                body: pkt.payload(),
+                body: pkt.payload().to_vec(),
             })),
             VariablePacket::PubackPacket(_) => bail!("Unsupported pkt: {:?}", pkt),
             VariablePacket::PubrecPacket(_) => bail!("Unsupported pkt: {:?}", pkt),

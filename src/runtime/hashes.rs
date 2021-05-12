@@ -65,7 +65,7 @@ fn hmac<D>(secret: AnyLuaValue, msg: AnyLuaValue) -> Result<AnyLuaValue>
     let secret = byte_array(secret)?;
     let msg = byte_array(msg)?;
 
-    let mut mac = match Hmac::<D>::new_varkey(&secret) {
+    let mut mac = match Hmac::<D>::new_from_slice(&secret) {
         Ok(mac) => mac,
         Err(_) => bail!("Invalid key length"),
     };
