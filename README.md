@@ -1,7 +1,5 @@
-# sn0int [![Build Status][travis-img]][travis] [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int][twitter-img]][twitter] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
+# sn0int [![crates.io][crates-img]][crates] [![Documentation Status][docs-img]][docs] [![irc.hackint.org:6697/#sn0int][irc-img]][irc] [![@sn0int][twitter-img]][twitter] [![@sn0int@chaos.social][mastodon-img]][mastodon] [![registry status][registry-img]][registry]
 
-[travis-img]:   https://travis-ci.org/kpcyrd/sn0int.svg?branch=master
-[travis]:       https://travis-ci.org/kpcyrd/sn0int
 [crates-img]:   https://img.shields.io/crates/v/sn0int.svg
 [crates]:       https://crates.io/crates/sn0int
 [docs-img]:     https://readthedocs.org/projects/sn0int/badge/?version=latest
