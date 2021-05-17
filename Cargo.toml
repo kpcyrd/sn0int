@@ -9,9 +9,6 @@ categories = ["command-line-utilities"]
 readme = "README.md"
 edition = "2018"
 
-[badges]
-travis-ci = { repository = "kpcyrd/sn0int" }
-
 [workspace]
 members = ["sn0int-common",
            "sn0int-registry",
