@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import subprocess
 from subprocess import DEVNULL, PIPE
+import shutil
+from pathlib import Path
 import tempfile
 import json
 import sys
@@ -97,6 +99,11 @@ def main(tempdir, binary):
         ('http://www.example.com/', 200),
         ('https://www.example.com/', 200),
     }
+
+    cache = Path.home() / '.cache' / 'sn0int'
+    if cache.exists():
+        print('[*] copying geoip files')
+        shutil.copytree(cache, tempdir + '/.cache/sn0int', dirs_exist_ok=True)
 
     print('[*] running geoip')
     sn0int(tempdir, binary, [
