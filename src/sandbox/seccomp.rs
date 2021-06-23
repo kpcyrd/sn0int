@@ -72,7 +72,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::membarrier)?;
 
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::openat)?;
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(target_arch = "aarch64"))]
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::open)?;
 
     ctx.load()?;
