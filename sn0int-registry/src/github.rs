@@ -5,6 +5,7 @@ pub fn get_username(oauth_token: &str) -> Result<String> {
     let client = reqwest::Client::new();
     let mut resp = client.get("https://api.github.com/user")
         .header("Authorization", format!("token {}", oauth_token))
+        .header("User-Agent", "sn0int-registry")
         .send()
         .context("Failed to check access_token")?
         .error_for_status()
