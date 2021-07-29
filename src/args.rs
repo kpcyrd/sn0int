@@ -9,7 +9,7 @@ use sn0int_common::ModuleID;
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
     /// Select a different workspace instead of the default
-    #[structopt(short="w", long="workspace")]
+    #[structopt(short="w", long="workspace", env="SN0INT_WORKSPACE")]
     pub workspace: Option<Workspace>,
 
     #[structopt(subcommand)]
