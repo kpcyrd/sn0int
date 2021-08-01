@@ -56,6 +56,7 @@ pub enum Command {
     Quit,
 
     Interrupt,
+    Exec(String),
 }
 
 impl Command {
@@ -85,6 +86,7 @@ impl Command {
             Command::Workspace => "workspace",
             Command::Cal => "cal",
             Command::Interrupt => unreachable!(),
+            Command::Exec(_) => unreachable!(),
         }
     }
 
@@ -317,6 +319,10 @@ impl<'a> Shell<'a> {
                         return None;
                     }
 
+                    if let Some(cmd) = line.strip_prefix('!') {
+                        return Some((Command::Exec(cmd.to_string()), vec![]));
+                    }
+
                     let cmd = match shellwords::split(&line) {
                         Ok(cmd) => cmd,
                         Err(err) => {
@@ -518,6 +524,9 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
         Some((Command::Exit, _)) => return Ok(true),
         Some((Command::Quit, _)) => return Ok(true),
         Some((Command::Interrupt, _)) => return Ok(true),
+        Some((Command::Exec(cmd), _)) => {
+            shell_exec(&cmd, rl.workspace())?;
+        },
         None => (),
     }
 
@@ -562,6 +571,26 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     ttl::reap_expired(&mut rl)?;
 
     Ok(rl)
+}
+
+pub fn shell_exec(cmd: &str, workspace: &str) -> Result<()> {
+    use std::process::Command;
+
+    let sh = if cfg!(target_os = "windows") {
+        ("cmd", "/C")
+    } else {
+        ("sh", "-c")
+    };
+
+    Command::new(sh.0)
+            .arg(sh.1)
+            .arg(cmd)
+            .env("SN0INT_WORKSPACE", workspace)
+            .spawn()
+            .context("Failed to execute process")?
+            .wait()?;
+
+    Ok(())
 }
 
 pub fn run(args: &Args, config: &Config) -> Result<()> {
