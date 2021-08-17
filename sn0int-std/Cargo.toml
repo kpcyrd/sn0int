@@ -32,7 +32,7 @@ url = "2.0"
 tungstenite = { version = "0.13", default-features = false }
 kuchiki = "0.8.0"
 maxminddb = "0.17"
-x509-parser = "0.9"
+x509-parser = "0.10"
 der-parser = "5"
 publicsuffix = { version="2", default-features=false }
 xml-rs = "0.8"
@@ -51,5 +51,5 @@ digest = "0.9"
 blake2 = "0.9"
 
 [dev-dependencies]
-env_logger = "0.8"
+env_logger = "0.9"
 maplit = "1.0.1"
