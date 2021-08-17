@@ -35,9 +35,9 @@ sqlite-bundled = ["libsqlite3-sys/bundled"]
 [dependencies]
 sn0int-common = { version="0.12.0", path="sn0int-common" }
 sn0int-std = { version="=0.21.0", path="sn0int-std" }
-rustyline = "8.0"
+rustyline = "9.0"
 log = "0.4"
-env_logger = "0.8"
+env_logger = "0.9"
 hlua-badtouch = "0.4"
 structopt = "0.3"
 failure = "0.1"
@@ -47,7 +47,7 @@ lazy_static = "1.0"
 shellwords = "1.0"
 diesel = { version = "1.0.0", features = ["sqlite", "chrono"] }
 diesel_migrations = { version = "1.3.0", features = ["sqlite"] }
-libsqlite3-sys = { version = "0.18.0", features = ["bundled-windows"] }
+libsqlite3-sys = { version = "0.22.0", features = ["bundled-windows"] }
 chrono = { version = "0.4", features = ["serde"] }
 dirs-next = "2.0"
 url = "2.0"
@@ -61,7 +61,7 @@ serde_urlencoded = "0.7"
 serde_json = "1.0"
 crossbeam-channel = "0.5"
 ctrlc = "3.1"
-opener = "0.4"
+opener = "0.5"
 separator = "0.4"
 maplit = "1.0.1"
 sloppy-rfc4880 = "0.2"
@@ -69,12 +69,12 @@ regex = "1.0"
 toml = "0.5"
 threadpool = "1.7"
 atty = "0.2"
-semver = "0.11"
+semver = "1"
 bytes = "0.4"
 bytesize = "1.0"
 ipnetwork = "0.18"
-strum = "0.20"
-strum_macros = "0.20"
+strum = "0.21"
+strum_macros = "0.21"
 embedded-triple = "0.1.0"
 humansize = "1.1.0"
 
@@ -88,13 +88,13 @@ hmac = "0.11"
 walkdir = "2.2"
 nude = "0.3"
 glob = "0.3.0"
-os-version = "0.1.1"
+os-version = "0.2"
 
 [target.'cfg(target_os="linux")'.dependencies]
 caps = "0.5"
 #syscallz = { path="../syscallz-rs" }
-syscallz = "0.15"
-nix = "0.20"
+syscallz = "0.16"
+nix = "0.22"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.4"

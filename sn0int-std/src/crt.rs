@@ -5,6 +5,7 @@ use std::net::IpAddr;
 use x509_parser::x509::X509Version;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::extensions::{GeneralName, ParsedExtension};
+use x509_parser::prelude::*;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
@@ -55,7 +56,7 @@ impl Certificate {
             }
         }
 
-        for (_oid, ext) in crt.tbs_certificate.extensions {
+        for ext in crt.tbs_certificate.extensions() {
             if let ParsedExtension::SubjectAlternativeName(san) = ext.parsed_extension() {
                 for name in &san.general_names {
                     debug!("Certificate is valid for {:?}", name);
