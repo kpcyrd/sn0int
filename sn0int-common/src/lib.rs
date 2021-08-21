@@ -1,5 +1,3 @@
-#[macro_use] extern crate nom;
-
 pub mod api;
 pub mod errors;
 pub use crate::errors::*;
