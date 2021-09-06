@@ -86,16 +86,16 @@ impl From<Vec<(AnyLuaValue, AnyLuaValue)>> for LuaMap {
     }
 }
 
-impl Into<HashMap<AnyHashableLuaValue, AnyLuaValue>> for LuaMap {
-    fn into(self: LuaMap) -> HashMap<AnyHashableLuaValue, AnyLuaValue> {
-        self.0
+impl From<LuaMap> for HashMap<AnyHashableLuaValue, AnyLuaValue> {
+    fn from(map: LuaMap) -> Self {
+        map.0
     }
 }
 
-impl Into<AnyLuaValue> for LuaMap {
-    fn into(self: LuaMap) -> AnyLuaValue {
+impl From<LuaMap> for AnyLuaValue {
+    fn from(map: LuaMap) -> AnyLuaValue {
         AnyLuaValue::LuaArray(
-            self.into_iter()
+            map.into_iter()
                 .filter_map(|(k, v)| {
                     match k {
                         AnyHashableLuaValue::LuaString(x) => Some((AnyLuaValue::LuaString(x), v)),
@@ -136,9 +136,9 @@ impl LuaList {
     }
 }
 
-impl Into<AnyLuaValue> for LuaList {
-    fn into(self: LuaList) -> AnyLuaValue {
-        AnyLuaValue::LuaArray(self.0)
+impl From<LuaList> for AnyLuaValue {
+    fn from(list: LuaList) -> AnyLuaValue {
+        AnyLuaValue::LuaArray(list.0)
     }
 }
 
@@ -149,7 +149,7 @@ pub fn byte_array(bytes: AnyLuaValue) -> Result<Vec<u8>> {
         AnyLuaValue::LuaArray(bytes) => {
             Ok(bytes.into_iter()
                 .map(|num| match num.1 {
-                    AnyLuaValue::LuaNumber(num) if num <= 255.0 && num >= 0.0 && (num % 1.0 == 0.0) =>
+                    AnyLuaValue::LuaNumber(num) if (0.0..=255.0).contains(&num) && (num % 1.0 == 0.0) =>
                             Ok(num as u8),
                     AnyLuaValue::LuaNumber(num) =>
                             Err(format_err!("number is out of range: {:?}", num)),

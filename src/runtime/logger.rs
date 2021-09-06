@@ -20,10 +20,10 @@ pub fn format_lua(out: &mut String, x: &AnyLuaValue) {
                 }
 
                 let mut key = String::new();
-                format_lua(&mut key, &k);
+                format_lua(&mut key, k);
 
                 let mut value = String::new();
-                format_lua(&mut value, &v);
+                format_lua(&mut value, v);
 
                 out.push_str(&format!("{}: {}", key, value));
 

@@ -199,7 +199,7 @@ impl DatabaseEvent {
     }
 
     fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: &NewActivity, verbose: u64) {
-        Self::spinner_log_new_activity(spinner, &object, verbose);
+        Self::spinner_log_new_activity(spinner, object, verbose);
 
         // TODO: we don't want to copy the match arms everywhere
         let mut subject = format!("New activity: {:?}", object.topic);
@@ -330,7 +330,7 @@ impl DatabaseEvent {
 
         let result = match result {
             Ok(id) => {
-                Self::on_update(rl, spinner, ratelimit, family, &value, &update);
+                Self::on_update(rl, spinner, ratelimit, family, value, update);
                 Ok(DatabaseResponse::Updated(id))
             },
             Err(err) => {
@@ -445,7 +445,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args:
 
     let verbose = params.verbose;
     let has_stdin = params.stdin;
-    let keyring = rl.keyring().request_keys(&module);
+    let keyring = rl.keyring().request_keys(module);
 
     let mut stack = StackedSpinners::new();
 

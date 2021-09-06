@@ -11,13 +11,13 @@ pub struct Element {
     pub html: String,
 }
 
-impl Into<AnyLuaValue> for Element {
-    fn into(self) -> AnyLuaValue {
+impl From<Element> for AnyLuaValue {
+    fn from(elem: Element) -> AnyLuaValue {
         let mut map = LuaMap::new();
 
-        map.insert_str("text", self.text);
-        map.insert("attrs", LuaMap::from(self.attrs));
-        map.insert_str("html", self.html);
+        map.insert_str("text", elem.text);
+        map.insert("attrs", LuaMap::from(elem.attrs));
+        map.insert_str("html", elem.html);
 
         map.into()
     }

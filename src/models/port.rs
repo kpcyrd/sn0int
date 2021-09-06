@@ -324,7 +324,7 @@ impl Upsert for PortUpdate {
     }
 
     fn apply(&self, db: &Database) -> Result<i32> {
-        db.update_port(&self)
+        db.update_port(self)
     }
 }
 

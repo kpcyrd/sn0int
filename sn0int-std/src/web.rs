@@ -216,7 +216,7 @@ impl HttpRequest {
             if self.follow_redirects > 0 && res.status >= 300 && res.status < 400 {
                 if let Some(location) = res.headers.get("location") {
                     let base = Url::parse(&url.to_string())?;
-                    let joined = base.join(&location)?;
+                    let joined = base.join(location)?;
                     url = joined.to_string().parse()?;
 
                     req = self.mkrequest("GET", &url).body(Body::empty())?;
@@ -318,9 +318,9 @@ impl HttpRequest {
     }
 }
 
-impl Into<AnyLuaValue> for HttpRequest {
-    fn into(self) -> AnyLuaValue {
-        let v = serde_json::to_value(&self).unwrap();
+impl From<HttpRequest> for AnyLuaValue {
+    fn from(req: HttpRequest) -> AnyLuaValue {
+        let v = serde_json::to_value(&req).unwrap();
         LuaJsonValue::from(v).into()
     }
 }

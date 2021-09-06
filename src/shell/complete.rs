@@ -61,7 +61,7 @@ impl Completer for CmdCompleter {
             return Ok((0, vec![]));
         }
 
-        let mut cmd = match shellwords::split(&line) {
+        let mut cmd = match shellwords::split(line) {
             Ok(cmd) => cmd,
             Err(_) => return Ok((0, vec![])),
         };
@@ -223,7 +223,7 @@ impl Completer for CmdCompleter {
                                     "passive",
                                     "offline",
                                 ], current)),
-                                _ => if current.starts_with("-") {
+                                _ => if current.starts_with('-') {
                                     Ok(filter_options(line, &[
                                         "--source",
                                         "--stealth",
@@ -242,7 +242,7 @@ impl Completer for CmdCompleter {
                                 "update",
                                 "uninstall",
                                 "quickstart",
-                            ], &subcommand))
+                            ], subcommand))
                         },
                         (_, _) => Ok((0, vec![])),
                     }

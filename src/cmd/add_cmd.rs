@@ -290,7 +290,7 @@ impl InsertFromString for AddUrl {
         let subdomain = parts.domain()
             .ok_or_else(|| format_err!("url doesn't have a domain host"))?;
 
-        let dns_name = rl.psl()?.parse_dns_name(&subdomain)
+        let dns_name = rl.psl()?.parse_dns_name(subdomain)
             .map_err(|e| format_err!("Failed to parse dns_name: {}", e))?;
 
         let domain_id = match rl.db().insert_struct(NewDomain {

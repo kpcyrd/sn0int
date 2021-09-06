@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::autonoscope::{Autonoscope, IntoRule, AutoRule, RulePrecision};
+use crate::autonoscope::{Autonoscope, ToRule, AutoRule, RulePrecision};
 use crate::models::*;
 use std::convert::TryFrom;
 
@@ -94,8 +94,8 @@ impl RulePrecision for DomainRule {
     }
 }
 
-impl IntoRule for DomainRule {
-    fn into_rule(&self) -> (&'static str, String) {
+impl ToRule for DomainRule {
+    fn to_rule(&self) -> (&'static str, String) {
         ("domain", self.to_string())
     }
 }

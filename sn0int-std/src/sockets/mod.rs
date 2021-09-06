@@ -107,7 +107,7 @@ impl Stream {
         let mut errors = Vec::new();
 
         for addr in addrs {
-            match Stream::connect_addr(host, (addr, port).into(), &options) {
+            match Stream::connect_addr(host, (addr, port).into(), options) {
                 Ok(socket) => {
                     return Ok(socket);
                 },
@@ -233,7 +233,7 @@ impl Socket {
     }
 
     pub fn send(&mut self, data: &[u8]) -> Result<()> {
-        match str::from_utf8(&data) {
+        match str::from_utf8(data) {
             Ok(data) => debug!("send: {:?}", data),
             Err(_) => debug!("send: {:?}", data),
         };

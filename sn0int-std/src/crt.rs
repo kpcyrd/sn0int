@@ -32,7 +32,7 @@ impl Certificate {
     }
 
     pub fn from_bytes(crt: &[u8]) -> Result<Certificate> {
-        let crt = match X509Certificate::from_der(&crt) {
+        let crt = match X509Certificate::from_der(crt) {
             Ok((remaining, der)) => {
                 if !remaining.is_empty() {
                     bail!("input cert has trailing garbage");

@@ -122,10 +122,10 @@ pub fn run(module: Module,
     let exit = loop {
         match ipc_parent.recv()? {
             Event::Log(event) => tx.send(Event2::Log(event)),
-            Event::Database(object) => ipc_parent.send_event_callback(*object, &tx),
+            Event::Database(object) => ipc_parent.send_event_callback(*object, tx),
             Event::Stdio(object) => object.apply(&mut ipc_parent, tx, &mut reader),
-            Event::Ratelimit(req) => ipc_parent.send_event_callback(req, &tx),
-            Event::Blob(blob) => ipc_parent.send_event_callback(blob, &tx),
+            Event::Ratelimit(req) => ipc_parent.send_event_callback(req, tx),
+            Event::Blob(blob) => ipc_parent.send_event_callback(blob, tx),
             Event::Exit(event) => {
                 if let ExitEvent::Err(err) = &event {
                     tx.send(Event2::Log(LogEvent::Error(err.clone())));

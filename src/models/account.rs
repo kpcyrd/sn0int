@@ -342,7 +342,7 @@ impl Upsert for AccountUpdate {
     }
 
     fn apply(&self, db: &Database) -> Result<i32> {
-        db.update_account(&self)
+        db.update_account(self)
     }
 }
 

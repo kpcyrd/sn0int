@@ -93,7 +93,7 @@ fn prepare_args<T: Scopable + Serialize + Model>(rl: &Shell, filter: &Filter, pa
 }
 
 pub fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) -> Result<()> {
-    for namespace in keyring.unauthorized_namespaces(&module) {
+    for namespace in keyring.unauthorized_namespaces(module) {
         let grant_access = if params.deny_keyring {
             false
         } else if params.grant_full_keyring || params.grants.contains(namespace) {
@@ -104,7 +104,7 @@ pub fn prepare_keyring(keyring: &mut KeyRing, module: &Module, params: &Params) 
         };
 
         if grant_access {
-            keyring.grant_access(&module, namespace.to_string());
+            keyring.grant_access(module, namespace.to_string());
             term::info(&format!("Granted access to {:?}", namespace));
         }
     }
@@ -136,8 +136,8 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
         Some(Source::Notifications) => bail!("Notification modules can't be executed like this"),
         Some(Source::KeyRing(namespace)) => {
             let keyring = rl.keyring();
-            if keyring.is_access_granted(&module, &namespace) {
-                keyring.get_all_for(&namespace).into_iter()
+            if keyring.is_access_granted(module, namespace) {
+                keyring.get_all_for(namespace).into_iter()
                     .map(|key| {
                         let pretty = format!("{}:{}", key.namespace, key.access_key);
                         let arg = serde_json::to_value(key)?;

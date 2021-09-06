@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::autonoscope::{Autonoscope, IntoRule, AutoRule, RulePrecision};
+use crate::autonoscope::{Autonoscope, ToRule, AutoRule, RulePrecision};
 use crate::models::*;
 use std::convert::TryFrom;
 
@@ -86,8 +86,8 @@ impl RulePrecision for UrlRule {
     }
 }
 
-impl IntoRule for UrlRule {
-    fn into_rule(&self) -> (&'static str, String) {
+impl ToRule for UrlRule {
+    fn to_rule(&self) -> (&'static str, String) {
         ("url", self.to_string())
     }
 }

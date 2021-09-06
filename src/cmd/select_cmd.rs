@@ -106,20 +106,20 @@ impl Cmd for Args {
         let printer = Printer::new(rl, &self);
 
         match &self.subcommand {
-            Target::Domains(filter) => printer.select::<Domain>(&filter),
-            Target::Subdomains(filter) => printer.select::<Subdomain>(&filter),
-            Target::IpAddrs(filter) => printer.select::<IpAddr>(&filter),
-            Target::Urls(filter) => printer.select::<Url>(&filter),
-            Target::Emails(filter) => printer.select::<Email>(&filter),
-            Target::PhoneNumbers(filter) => printer.select::<PhoneNumber>(&filter),
-            Target::Devices(filter) => printer.select::<Device>(&filter),
-            Target::Networks(filter) => printer.select::<Network>(&filter),
-            Target::Accounts(filter) => printer.select::<Account>(&filter),
-            Target::Breaches(filter) => printer.select::<Breach>(&filter),
-            Target::Images(filter) => printer.select::<Image>(&filter),
-            Target::Ports(filter) => printer.select::<Port>(&filter),
-            Target::Netblocks(filter) => printer.select::<Netblock>(&filter),
-            Target::CryptoAddrs(filter) => printer.select::<CryptoAddr>(&filter),
+            Target::Domains(filter) => printer.select::<Domain>(filter),
+            Target::Subdomains(filter) => printer.select::<Subdomain>(filter),
+            Target::IpAddrs(filter) => printer.select::<IpAddr>(filter),
+            Target::Urls(filter) => printer.select::<Url>(filter),
+            Target::Emails(filter) => printer.select::<Email>(filter),
+            Target::PhoneNumbers(filter) => printer.select::<PhoneNumber>(filter),
+            Target::Devices(filter) => printer.select::<Device>(filter),
+            Target::Networks(filter) => printer.select::<Network>(filter),
+            Target::Accounts(filter) => printer.select::<Account>(filter),
+            Target::Breaches(filter) => printer.select::<Breach>(filter),
+            Target::Images(filter) => printer.select::<Image>(filter),
+            Target::Ports(filter) => printer.select::<Port>(filter),
+            Target::Netblocks(filter) => printer.select::<Netblock>(filter),
+            Target::CryptoAddrs(filter) => printer.select::<CryptoAddr>(filter),
         }
     }
 }

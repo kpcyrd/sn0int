@@ -199,7 +199,7 @@ fn gen_changeset2<T: Model, U: UpdateToChangeset<C>, C: Updateable<T>>(object: L
 }
 
 fn run_update(state: Arc<dyn State>, family: &str, object: AnyLuaValue, update: AnyLuaValue) -> Result<Option<i32>> {
-    let family = Family::from_str(&family)?;
+    let family = Family::from_str(family)?;
     let object = LuaJsonValue::from(object);
     let update = LuaJsonValue::from(update);
 

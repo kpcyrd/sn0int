@@ -18,7 +18,7 @@ impl Glob {
 
         loop {
             match (filter.next(), topic.next()) {
-                (Some(filter), Some(topic)) => if !filter.matches(&topic) {
+                (Some(filter), Some(topic)) => if !filter.matches(topic) {
                     return None;
                 },
                 (None, None) => return Some(!self.inverse),

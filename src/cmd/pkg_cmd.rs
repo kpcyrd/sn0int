@@ -137,7 +137,7 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
 
             for module in library.list() {
                 if let Some(source) = &list.source {
-                    if !module.source_equals(&source) {
+                    if !module.source_equals(source) {
                         continue;
                     }
                 }
@@ -148,7 +148,7 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
                 }
 
                 if let Some(stealth) = &list.stealth {
-                    if !module.stealth().equal_or_better(&stealth) {
+                    if !module.stealth().equal_or_better(stealth) {
                         continue;
                     }
                 }
@@ -163,17 +163,17 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
             Ok(ModuleReload::No)
         },
         SubCommand::Install(install) => {
-            registry::run_install(install, &config)?;
+            registry::run_install(install, config)?;
             // trigger reload
             Ok(ModuleReload::Yes)
         },
         SubCommand::Search(search) => {
-            registry::run_search(library, &search, &config)?;
+            registry::run_search(library, &search, config)?;
             Ok(ModuleReload::No)
         },
         SubCommand::Update(_) => {
             let mut autoupdate = AutoUpdater::load()?;
-            let updater = Arc::new(Updater::new(&config)?);
+            let updater = Arc::new(Updater::new(config)?);
 
             let modules = library.list()
                 .into_iter()
@@ -199,14 +199,14 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
             Ok(ModuleReload::Yes)
         },
         SubCommand::Uninstall(uninstall) => {
-            let updater = Updater::new(&config)?;
+            let updater = Updater::new(config)?;
             updater.uninstall(&uninstall.module)?;
             // trigger reload
             Ok(ModuleReload::Yes)
         },
         SubCommand::Quickstart => {
-            let client = Client::new(&config)?;
-            let updater = Arc::new(Updater::new(&config)?);
+            let client = Client::new(config)?;
+            let updater = Arc::new(Updater::new(config)?);
             let mut autoupdate = AutoUpdater::load()?;
 
             let installed = library.list()
@@ -250,7 +250,7 @@ fn run_subcommand(subcommand: SubCommand, library: &Library, config: &Config) ->
 
 impl LiteCmd for Args {
     fn run(self, config: &Config) -> Result<()> {
-        let library = Library::new(false, &config)?;
+        let library = Library::new(false, config)?;
         run_subcommand(self.subcommand, &library, config)?;
         Ok(())
     }

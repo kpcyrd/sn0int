@@ -120,14 +120,14 @@ impl<'a> Library<'a> {
                 folder.to_owned()
             } else {
                 let folder = folder.strip_prefix("~/")
-                    .unwrap_or(&folder);
+                    .unwrap_or(folder);
 
                 dirs_next::home_dir()
                     .ok_or_else(|| format_err!("Failed to find home folder"))?
                     .join(folder)
             };
 
-            self.load_module_folder(&folder, &author, true)?;
+            self.load_module_folder(&folder, author, true)?;
         }
 
         Ok(())
@@ -156,7 +156,7 @@ impl<'a> Library<'a> {
                 continue;
             }
 
-            if let Err(err) = self.load_single_module(&module.path(), &author_name, &module_name, private_modules) {
+            if let Err(err) = self.load_single_module(&module.path(), author_name, module_name, private_modules) {
                 let root = err.find_root_cause();
                 term::warn(&format!("Failed to load {}/{}: {}", author_name, module_name, root));
             }
@@ -167,7 +167,7 @@ impl<'a> Library<'a> {
 
     pub fn load_single_module(&mut self, path: &Path, author_name: &str, module_name: &str, private_module: bool) -> Result<()> {
         let module_name = module_name.to_string();
-        let module = Module::load(path, &author_name, &module_name, private_module)
+        let module = Module::load(path, author_name, &module_name, private_module)
             .context(format!("Failed to parse {}/{}", author_name, module_name))?;
 
         for key in &[&module_name, &format!("{}/{}", author_name, module_name)] {
@@ -332,7 +332,7 @@ impl Module {
     pub fn source_equals(&self, other: &str) -> bool {
         match self.source() {
             Some(source) => source.group_as_str() == other,
-            None => other == "",
+            None => other.is_empty(),
         }
     }
 }

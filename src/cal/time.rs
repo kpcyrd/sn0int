@@ -68,7 +68,7 @@ pub struct DateTimeContext {
 
 impl DateTimeContext {
     pub fn new(events: &[Activity], now: NaiveDateTime, slice_width: u32, slice_duration: u32) -> DateTimeContext {
-        let (events, max) = setup_graph_map(&events, slice_duration);
+        let (events, max) = setup_graph_map(events, slice_duration);
         DateTimeContext {
             events,
             max,

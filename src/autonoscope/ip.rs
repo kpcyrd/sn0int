@@ -1,5 +1,5 @@
 use crate::errors::*;
-use crate::autonoscope::{Autonoscope, IntoRule, AutoRule, RulePrecision};
+use crate::autonoscope::{Autonoscope, ToRule, AutoRule, RulePrecision};
 use crate::models::*;
 use std::convert::TryFrom;
 use std::net;
@@ -80,8 +80,8 @@ impl RulePrecision for IpRule {
     }
 }
 
-impl IntoRule for IpRule {
-    fn into_rule(&self) -> (&'static str, String) {
+impl ToRule for IpRule {
+    fn to_rule(&self) -> (&'static str, String) {
         ("ip", self.to_string())
     }
 }

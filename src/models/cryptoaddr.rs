@@ -326,7 +326,7 @@ impl Upsert for CryptoAddrUpdate {
     }
 
     fn apply(&self, db: &Database) -> Result<i32> {
-        db.update_cryptoaddr(&self)
+        db.update_cryptoaddr(self)
     }
 }
 

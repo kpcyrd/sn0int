@@ -1,4 +1,8 @@
 use crate::errors::*;
+use nom::IResult;
+use nom::bytes::complete::{tag, take_until};
+use nom::combinator::map_res;
+use nom::multi::fold_many0;
 use serde::{Serialize, Deserialize};
 use std::str::FromStr;
 
@@ -223,23 +227,32 @@ impl<'a> NewMetadata<'a> {
     }
 }
 
-named!(metaline<&str, (EntryType, &str)>, do_parse!(
-    tag!("-- ") >>
-    name: map_res!(take_until!(": "), EntryType::from_str) >>
-    tag!(": ") >>
-    value: take_until!("\n") >>
-    tag!("\n") >>
-    (name, value)
-));
+fn metaline(input: &str) -> IResult<&str, (EntryType, &str)> {
+    let (input, _) = tag("-- ")(input)?;
+    let (input, name) = map_res(
+        take_until(": "),
+        EntryType::from_str
+    )(input)?;
+    let (input, _) = tag(": ")(input)?;
+    let (input, value) = take_until("\n")(input)?;
+    let (input, _) = tag("\n")(input)?;
 
-named!(metalines<&str, Vec<(EntryType, &str)>>, do_parse!(
-    lines: fold_many0!(metaline, Vec::new(), |mut acc: Vec<_>, item| {
-        acc.push(item);
-        acc
-    }) >>
-    tag!("\n") >>
-    (lines)
-));
+    Ok((input, (name, value)))
+}
+
+fn metalines(input: &str) -> IResult<&str, Vec<(EntryType, &str)>> {
+    let (input, lines) = fold_many0(
+        metaline,
+        Vec::new,
+        |mut acc: Vec<_>, item| {
+            acc.push(item);
+            acc
+        }
+    )(input)?;
+    let (input, _) = tag("\n")(input)?;
+
+    Ok((input, lines))
+}
 
 #[cfg(test)]
 mod tests {

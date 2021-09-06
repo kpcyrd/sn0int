@@ -35,10 +35,8 @@ impl<'a> Repl<'a> {
 
     fn update_globals(&mut self) {
         let mut globals = Vec::new();
-        for item in self.lua.globals_table().iter::<String, AnyLuaValue>() {
-            if let Some((k, _)) = item {
-                globals.push(k);
-            }
+        for (k, _) in self.lua.globals_table().iter::<String, AnyLuaValue>().flatten() {
+            globals.push(k);
         }
         if let Some(helper) = self.rl.helper_mut() {
             debug!("updating globals: {:?}", globals);
