@@ -31,7 +31,7 @@ pem = "0.8"
 url = "2.0"
 tungstenite = { version = "0.13", default-features = false }
 kuchiki = "0.8.0"
-maxminddb = "0.17"
+maxminddb = "0.21"
 x509-parser = "0.10"
 der-parser = "5"
 publicsuffix = { version="2", default-features=false }
