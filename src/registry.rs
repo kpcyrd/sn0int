@@ -23,7 +23,7 @@ pub struct Updater {
 
 impl Updater {
     pub fn new(config: &Config) -> Result<Updater> {
-        let client = Client::new(&config)?;
+        let client = Client::new(config)?;
         Ok(Updater {
             client,
         })
@@ -97,7 +97,7 @@ pub fn run_publish(_args: &Args, publish: &Publish, config: &Config) -> Result<(
     let session = auth::load_token()
         .context("Failed to load auth token, login first")?;
 
-    let mut client = Client::new(&config)?;
+    let mut client = Client::new(config)?;
     client.authenticate(session);
 
     for path in &publish.paths {
@@ -247,7 +247,7 @@ fn write_tag(out: &mut String, color: Color, txt: &str) -> Result<()> {
 }
 
 pub fn run_search(library: &Library, search: &Search, config: &Config) -> Result<()> {
-    let client = Client::new(&config)?;
+    let client = Client::new(config)?;
 
     let label = format!("Searching {:?}", search.query);
     let modules = worker::spawn_fn(&label, || {

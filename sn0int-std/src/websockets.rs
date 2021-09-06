@@ -91,9 +91,11 @@ impl WebSocket {
     }
 
     pub fn options(&self, options: &WebSocketOptions) -> Result<()> {
-        let mut o = SocketOptions::default();
-        o.read_timeout = options.read_timeout;
-        o.write_timeout = options.write_timeout;
+        let o = SocketOptions {
+            read_timeout: options.read_timeout,
+            write_timeout: options.write_timeout,
+            ..Default::default()
+        };
         o.apply(self.sock.get_ref())
     }
 

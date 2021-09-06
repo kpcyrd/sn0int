@@ -170,7 +170,7 @@ impl KeyRing {
 
     pub fn unauthorized_namespaces<'a>(&self, module: &'a Module) -> Vec<&'a String> {
         module.keyring_access().iter()
-            .filter(|namespace| !self.is_access_granted(&module, &namespace))
+            .filter(|namespace| !self.is_access_granted(module, namespace))
             .collect()
     }
 
@@ -192,7 +192,7 @@ impl KeyRing {
     pub fn request_keys(&self, module: &Module) -> Vec<KeyRingEntry> {
         // TODO: we probably want to randomize the order
         module.keyring_access().iter()
-            .filter(|namespace| self.is_access_granted(&module, &namespace))
+            .filter(|namespace| self.is_access_granted(module, namespace))
             .flat_map(|namespace| self.list_for(namespace))
             .flat_map(|x| self.get(&x))
             .collect()

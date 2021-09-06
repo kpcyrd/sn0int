@@ -1,6 +1,5 @@
 use crate::errors::*;
 
-use std::iter::FromIterator;
 use std::collections::HashMap;
 use crate::hlua::AnyLuaValue;
 use serde_json::{self, Deserializer, Value, Number, Map};
@@ -22,7 +21,7 @@ pub fn encode(v: AnyLuaValue) -> Result<String> {
 }
 
 pub fn decode_stream(x: &str) -> Result<Vec<AnyLuaValue>> {
-    let stream = Deserializer::from_str(&x).into_iter::<Value>();
+    let stream = Deserializer::from_str(x).into_iter::<Value>();
 
     let list = stream
         .filter_map(|x| x.ok())
@@ -52,9 +51,9 @@ pub enum LuaJsonValue {
     Object(HashMap<String, LuaJsonValue>),
 }
 
-impl Into<AnyLuaValue> for LuaJsonValue {
-    fn into(self) -> AnyLuaValue {
-        match self {
+impl From<LuaJsonValue> for AnyLuaValue {
+    fn from(value: LuaJsonValue) -> AnyLuaValue {
+        match value {
             LuaJsonValue::Null => AnyLuaValue::LuaNil,
             LuaJsonValue::Bool(v) => AnyLuaValue::LuaBoolean(v),
             // TODO: not sure if this might fail
@@ -111,9 +110,9 @@ impl From<AnyLuaValue> for LuaJsonValue {
     }
 }
 
-impl Into<serde_json::Value> for LuaJsonValue {
-    fn into(self) -> serde_json::Value {
-        match self {
+impl From<LuaJsonValue> for serde_json::Value {
+    fn from(value: LuaJsonValue) -> serde_json::Value {
+        match value {
             LuaJsonValue::Null => Value::Null,
             LuaJsonValue::Bool(v) => Value::Bool(v),
             LuaJsonValue::Number(v) => Value::Number(v),
@@ -122,9 +121,10 @@ impl Into<serde_json::Value> for LuaJsonValue {
                 .map(|x| x.into())
                 .collect()
             ),
-            LuaJsonValue::Object(v) => Value::Object(Map::from_iter(v.into_iter()
+            LuaJsonValue::Object(v) => Value::Object(v.into_iter()
                 .map(|(k, v)| (k, v.into()))
-            )),
+                .collect::<Map<_, _>>()
+            ),
         }
     }
 }
@@ -140,9 +140,10 @@ impl From<serde_json::Value> for LuaJsonValue {
                 .map(|x| x.into())
                 .collect()
             ),
-            Value::Object(v) => LuaJsonValue::Object(HashMap::from_iter(v.into_iter()
+            Value::Object(v) => LuaJsonValue::Object(v.into_iter()
                 .map(|(k, v)| (k, v.into()))
-            )),
+                .collect::<HashMap<_, _>>()
+            ),
         }
     }
 }

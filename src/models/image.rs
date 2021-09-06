@@ -442,7 +442,7 @@ impl Upsert for ImageUpdate {
     }
 
     fn apply(&self, db: &Database) -> Result<i32> {
-        db.update_image(&self)
+        db.update_image(self)
     }
 }
 

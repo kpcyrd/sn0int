@@ -372,7 +372,7 @@ impl State for LuaState {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
 
-        HttpRequest::new(&session, method, url, options, || format!("sn0int/{}", env!("CARGO_PKG_VERSION")))
+        HttpRequest::new(session, method, url, options, || format!("sn0int/{}", env!("CARGO_PKG_VERSION")))
     }
 
     fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {

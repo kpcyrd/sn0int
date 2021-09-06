@@ -81,7 +81,7 @@ fn count_selected(rl: &mut Shell, source: &Source) -> Result<usize> {
         Source::Netblocks => db.filter::<Netblock>(&filter)?.len(),
         Source::CryptoAddrs(currency) => db.filter_with_param::<CryptoAddr>(&filter, currency.as_ref())?.len(),
         Source::Notifications => bail!("Notifications can't be set as target"),
-        Source::KeyRing(namespace) => rl.keyring().list_for(&namespace).len(),
+        Source::KeyRing(namespace) => rl.keyring().list_for(namespace).len(),
     };
     Ok(num)
 }

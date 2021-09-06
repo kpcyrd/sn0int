@@ -47,9 +47,9 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
     }
 
     let dns_name = if let Some(v) = &options.sni_value {
-        get_dns_name(&mut config, &v)
+        get_dns_name(&mut config, v)
     } else {
-        get_dns_name(&mut config, &host)
+        get_dns_name(&mut config, host)
     };
 
     let config = Arc::new(config);
@@ -58,7 +58,7 @@ pub fn wrap(stream: TcpStream, host: &str, options: &SocketOptions) -> Result<(S
 }
 
 fn get_dns_name(config: &mut ClientConfig, host: &str) -> webpki::DNSName {
-    if let Ok(name) = webpki::DNSNameRef::try_from_ascii_str(&host) {
+    if let Ok(name) = webpki::DNSNameRef::try_from_ascii_str(host) {
         debug!("setting sni value to: {:?}", host);
         name.to_owned()
     } else {

@@ -112,7 +112,7 @@ pub struct DateContext {
 
 impl DateContext {
     pub fn new(events: &[Activity], today: NaiveDate) -> DateContext {
-        let (events, max) = setup_graph_map(&events);
+        let (events, max) = setup_graph_map(events);
         DateContext {
             events,
             max,
@@ -296,25 +296,25 @@ mod tests {
         DateContext {
             events: HashMap::new(),
             max: 0,
-            today: NaiveDate::from_ymd(2020, 05, 30),
+            today: NaiveDate::from_ymd(2020, 5, 30),
         }
     }
 
     #[test]
     fn test_days_in_month_2020_05() {
-        let days = days_in_month(2020, 05);
+        let days = days_in_month(2020, 5);
         assert_eq!(days, 31);
     }
 
     #[test]
     fn test_days_in_month_2020_04() {
-        let days = days_in_month(2020, 04);
+        let days = days_in_month(2020, 4);
         assert_eq!(days, 30);
     }
 
     #[test]
     fn test_days_in_month_2020_02() {
-        let days = days_in_month(2020, 02);
+        let days = days_in_month(2020, 2);
         assert_eq!(days, 29);
     }
 
@@ -324,15 +324,15 @@ mod tests {
         let ctx = DateContext {
             events,
             max: 0,
-            today: NaiveDate::from_ymd(2020, 06, 06),
+            today: NaiveDate::from_ymd(2020, 6, 6),
         };
-        let grade = ctx.activity_for_day(&NaiveDate::from_ymd(2020, 06, 06));
+        let grade = ctx.activity_for_day(&NaiveDate::from_ymd(2020, 6, 6));
         assert_eq!(grade, ActivityGrade::None);
     }
 
     #[test]
     fn test_datespec_year_month() {
-        let ds = DateSpec::YearMonth((2020, 05));
+        let ds = DateSpec::YearMonth((2020, 5));
         let out = ds.to_term_string(&context());
         assert_eq!(out, "      May 2020       
  Su Mo Tu We Th Fr Sa

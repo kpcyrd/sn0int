@@ -339,7 +339,7 @@ impl Upsert for UrlChangeset {
     }
 
     fn apply(&self, db: &Database) -> Result<i32> {
-        db.update_url(&self)
+        db.update_url(self)
     }
 }
 

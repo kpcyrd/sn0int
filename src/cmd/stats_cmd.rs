@@ -89,21 +89,21 @@ impl Stats {
     fn count(workspace: String, db: &Database) -> Result<Stats> {
         Ok(Stats {
             workspace,
-            domains: count_models::<Domain>(&db)?,
-            subdomains: count_models::<Subdomain>(&db)?,
-            ipaddrs: count_models::<IpAddr>(&db)?,
-            urls: count_models::<Url>(&db)?,
-            emails: count_models::<Email>(&db)?,
-            phonenumbers: count_models::<PhoneNumber>(&db)?,
-            devices: count_models::<Device>(&db)?,
-            networks: count_models::<Network>(&db)?,
-            accounts: count_models::<Account>(&db)?,
-            breaches: count_models::<Breach>(&db)?,
-            images: count_models::<Image>(&db)?,
-            ports: count_models::<Port>(&db)?,
-            netblocks: count_models::<Netblock>(&db)?,
-            cryptoaddrs: count_models::<CryptoAddr>(&db)?,
-            activity: Activity::count(&db)?,
+            domains: count_models::<Domain>(db)?,
+            subdomains: count_models::<Subdomain>(db)?,
+            ipaddrs: count_models::<IpAddr>(db)?,
+            urls: count_models::<Url>(db)?,
+            emails: count_models::<Email>(db)?,
+            phonenumbers: count_models::<PhoneNumber>(db)?,
+            devices: count_models::<Device>(db)?,
+            networks: count_models::<Network>(db)?,
+            accounts: count_models::<Account>(db)?,
+            breaches: count_models::<Breach>(db)?,
+            images: count_models::<Image>(db)?,
+            ports: count_models::<Port>(db)?,
+            netblocks: count_models::<Netblock>(db)?,
+            cryptoaddrs: count_models::<CryptoAddr>(db)?,
+            activity: Activity::count(db)?,
             blobs: None,
         })
     }
@@ -162,7 +162,7 @@ impl Cmd for Args {
                 println!("{:>41}", workspace.bold());
             }
 
-            let mut stats = Stats::count(workspace.into(), &db)?;
+            let mut stats = Stats::count(workspace.into(), db)?;
             if !self.short {
                 stats.add_blob_usage(rl.blobs())?;
             }

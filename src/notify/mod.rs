@@ -97,11 +97,11 @@ pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, option
         exit_on_error: false,
     };
 
-    prepare_keyring(rl.keyring_mut(), &module, &params)?;
-    let args = vec![prepare_arg(&notification)?];
+    prepare_keyring(rl.keyring_mut(), module, &params)?;
+    let args = vec![prepare_arg(notification)?];
 
     debug!("Executing notification module {:?}", module_name);
-    let errors = worker::spawn(rl, &module, ratelimit, args, &params, rl.config().network.proxy, options);
+    let errors = worker::spawn(rl, module, ratelimit, args, &params, rl.config().network.proxy, options);
     debug!("Notification module {:?} exited with {:?} errors", module_name, errors);
 
     Ok(errors)

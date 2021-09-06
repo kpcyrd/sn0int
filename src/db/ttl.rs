@@ -135,7 +135,7 @@ pub fn reap_expired(rl: &mut Shell) -> Result<()> {
 
         let subject = format!("Deleted {} {:?}", &expired.family, &expired.value);
         let topic = &format!("db:{}:{}:delete", &expired.family, &expired.value);
-        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &mut ratelimit, &topic, &Notification {
+        if let Err(err) = notify::trigger_notify_event(rl, &mut Term, &mut ratelimit, topic, &Notification {
             subject,
             body: None,
         }) {

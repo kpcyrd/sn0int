@@ -275,7 +275,7 @@ impl<'a> Shell<'a> {
 
     #[inline(always)]
     pub fn config(&self) -> &Config {
-        &self.config
+        self.config
     }
 
     #[inline(always)]
@@ -552,7 +552,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     let psl = PslReader::open_or_download(&cache_dir,
             |cb| worker::spawn_fn("Downloading public suffix list", cb, false))
         .context("Failed to download public suffix list")?;
-    let library = Library::new(verbose_init, &config)?;
+    let library = Library::new(verbose_init, config)?;
     let keyring = KeyRing::init()?;
 
     if verbose_init && library.list().is_empty() {
@@ -564,9 +564,9 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     if autoupdate.outdated() > 0 {
         term::warn(&format!("{} modules are outdated, run: \x1b[1mpkg update\x1b[0m", autoupdate.outdated()));
     }
-    autoupdate.check_background(&config, library.list());
+    autoupdate.check_background(config, library.list());
 
-    let mut rl = Shell::new(&config, db, blobs, psl, library, keyring);
+    let mut rl = Shell::new(config, db, blobs, psl, library, keyring);
 
     ttl::reap_expired(&mut rl)?;
 

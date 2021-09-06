@@ -22,7 +22,7 @@ pub fn sodium_secretbox_open(encrypted: &[u8], key: &[u8]) -> Result<Vec<u8>> {
     let nonce = Nonce::from_slice(&encrypted[..secretbox::NONCEBYTES])
         .ok_or_else(|| format_err!("Nonce has wrong length"))?;
     let ciphertext = &encrypted[secretbox::NONCEBYTES..];
-    let plain = secretbox::open(&ciphertext, &nonce, &key)
+    let plain = secretbox::open(ciphertext, &nonce, &key)
         .map_err(|_| format_err!("Failed to decrypt secretbox"))?;
     Ok(plain)
 }

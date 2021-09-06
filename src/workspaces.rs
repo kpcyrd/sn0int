@@ -19,7 +19,7 @@ pub struct Workspace {
 impl Workspace {
     #[inline]
     pub fn db_path(&self) -> Result<PathBuf> {
-        Ok(paths::workspace_dir(&self)?
+        Ok(paths::workspace_dir(self)?
             .join("db.sqlite"))
     }
 
@@ -43,7 +43,7 @@ impl Workspace {
     pub fn delete(&self) -> Result<()> {
         self.migrate()?;
 
-        let path = paths::workspace_dir(&self)?;
+        let path = paths::workspace_dir(self)?;
         fs::remove_dir_all(path)?;
 
         Ok(())

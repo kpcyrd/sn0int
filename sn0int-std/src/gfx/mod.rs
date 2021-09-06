@@ -45,9 +45,9 @@ impl ImageFormat {
     }
 }
 
-impl Into<image::ImageFormat> for ImageFormat {
-    fn into(self) -> image::ImageFormat {
-        match self {
+impl From<ImageFormat> for image::ImageFormat {
+    fn from(format: ImageFormat) -> image::ImageFormat {
+        match format {
             ImageFormat::Png => image::ImageFormat::Png,
             ImageFormat::Jpeg => image::ImageFormat::Jpeg,
             ImageFormat::Gif => image::ImageFormat::Gif,
@@ -94,10 +94,10 @@ pub fn guess_format(buf: &[u8]) -> Result<ImageFormat> {
 }
 
 pub fn load(buf: &[u8]) -> Result<Image> {
-    let img_format = image::guess_format(&buf)?;
+    let img_format = image::guess_format(buf)?;
     let format = ImageFormat::try_from(&img_format)?;
 
-    let image = image::load_from_memory_with_format(&buf, img_format)?;
+    let image = image::load_from_memory_with_format(buf, img_format)?;
 
     Ok(Image {
         image,

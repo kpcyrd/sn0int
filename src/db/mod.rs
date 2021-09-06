@@ -198,14 +198,14 @@ impl Database {
 
             let update = obj.upsert(&existing);
             if update.is_dirty() {
-                update.apply(&self)?;
+                update.apply(self)?;
                 Ok(Some((DbChange::Update(update.generic()), existing.id())))
             } else {
                 Ok(Some((DbChange::None, existing.id())))
             }
         } else {
             obj.set_scoped(scoped);
-            obj.insert(&self)?;
+            obj.insert(self)?;
             let id = M::get_id(self, obj.value())?;
             Ok(Some((DbChange::Insert, id)))
         }
@@ -218,7 +218,7 @@ impl Database {
                 return Ok(false);
             }
         }
-        obj.insert(&self)?;
+        obj.insert(self)?;
         Ok(true)
     }
 
@@ -254,7 +254,7 @@ impl Database {
 
             let update = obj.upsert(&existing);
             if update.is_dirty() {
-                update.apply(&self)?;
+                update.apply(self)?;
                 Ok(Some((DbChange::Update(update.generic()), id)))
             } else {
                 Ok(Some((DbChange::None, id)))
@@ -402,7 +402,7 @@ impl Database {
     }
 
     fn get_opt_typed<T: Model + Scopable>(&self, value: &T::ID) -> Result<Option<i32>> {
-        match T::get_opt(self, &value)? {
+        match T::get_opt(self, value)? {
             Some(ref obj) if obj.scoped() => Ok(Some(obj.id())),
             _ => Ok(None),
         }
@@ -410,23 +410,23 @@ impl Database {
 
     pub fn get_opt(&self, family: &Family, value: &str) -> Result<Option<i32>> {
         match family {
-            Family::Domain => self.get_opt_typed::<Domain>(&value),
-            Family::Subdomain => self.get_opt_typed::<Subdomain>(&value),
-            Family::Ipaddr => self.get_opt_typed::<IpAddr>(&value),
+            Family::Domain => self.get_opt_typed::<Domain>(value),
+            Family::Subdomain => self.get_opt_typed::<Subdomain>(value),
+            Family::Ipaddr => self.get_opt_typed::<IpAddr>(value),
             Family::SubdomainIpaddr => bail!("Unsupported operation"),
-            Family::Url => self.get_opt_typed::<Url>(&value),
-            Family::Email => self.get_opt_typed::<Email>(&value),
-            Family::Phonenumber => self.get_opt_typed::<PhoneNumber>(&value),
-            Family::Device => self.get_opt_typed::<Device>(&value),
-            Family::Network => self.get_opt_typed::<Network>(&value),
+            Family::Url => self.get_opt_typed::<Url>(value),
+            Family::Email => self.get_opt_typed::<Email>(value),
+            Family::Phonenumber => self.get_opt_typed::<PhoneNumber>(value),
+            Family::Device => self.get_opt_typed::<Device>(value),
+            Family::Network => self.get_opt_typed::<Network>(value),
             Family::NetworkDevice => bail!("Unsupported operation"),
-            Family::Account => self.get_opt_typed::<Account>(&value),
-            Family::Breach => self.get_opt_typed::<Breach>(&value),
+            Family::Account => self.get_opt_typed::<Account>(value),
+            Family::Breach => self.get_opt_typed::<Breach>(value),
             Family::BreachEmail => bail!("Unsupported operation"),
-            Family::Image => self.get_opt_typed::<Image>(&value),
-            Family::Port => self.get_opt_typed::<Port>(&value),
-            Family::Netblock => self.get_opt_typed::<Netblock>(&value),
-            Family::Cryptoaddr => self.get_opt_typed::<CryptoAddr>(&value),
+            Family::Image => self.get_opt_typed::<Image>(value),
+            Family::Port => self.get_opt_typed::<Port>(value),
+            Family::Netblock => self.get_opt_typed::<Netblock>(value),
+            Family::Cryptoaddr => self.get_opt_typed::<CryptoAddr>(value),
         }
     }
 

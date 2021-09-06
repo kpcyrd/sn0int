@@ -112,15 +112,15 @@ impl RuleSet {
         match obj {
             RuleType::Domain => {
                 self.domains.retain(|x| x.to_string().as_str() != rule);
-                self.db_delete(db, obj, &rule)?;
+                self.db_delete(db, obj, rule)?;
             },
             RuleType::Ip => {
                 self.ips.retain(|x| x.to_string().as_str() != rule);
-                self.db_delete(db, obj, &rule)?;
+                self.db_delete(db, obj, rule)?;
             },
             RuleType::Url => {
                 self.urls.retain(|x| x.to_string().as_str() != rule);
-                self.db_delete(db, obj, &rule)?;
+                self.db_delete(db, obj, rule)?;
             },
         }
         Ok(())
@@ -144,9 +144,9 @@ impl RuleSet {
     }
 
     #[inline]
-    fn push_rules_display<T: IntoRule>(output: &mut Vec<(&'static str, String, bool)>, rules: &[Rule<T>]) {
+    fn push_rules_display<T: ToRule>(output: &mut Vec<(&'static str, String, bool)>, rules: &[Rule<T>]) {
         for rule in rules {
-            let (object, value) = rule.into_rule();
+            let (object, value) = rule.to_rule();
             output.push((object, value, rule.scoped));
         }
     }
@@ -159,10 +159,8 @@ impl RuleSet {
             Insert::Url(url) => {
                 if let Some(result) = Self::matches_any(&self.domains, url)? {
                     Some(result)
-                } else if let Some(result) = Self::matches_any(&self.urls, url)? {
-                    Some(result)
                 } else {
-                    None
+                    Self::matches_any(&self.urls, url)?
                 }
             },
             // Insert::Email(email) => unimplemented!(),
@@ -176,7 +174,7 @@ impl RuleSet {
 
     fn matches_any<T1, T2>(rules: &[Rule<T1>], object: &T2) -> Result<Option<bool>>
         where T1: AutoRule<T2>,
-            T1: IntoRule,
+            T1: ToRule,
     {
         for rule in rules {
             if rule.matches(object)? {
@@ -238,12 +236,12 @@ pub trait RulePrecision {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Rule<T: IntoRule> {
+pub struct Rule<T: ToRule> {
     rule: T,
     scoped: bool,
 }
 
-impl<T: IntoRule> Rule<T> {
+impl<T: ToRule> Rule<T> {
     pub fn new(rule: T, scoped: bool) -> Rule<T> {
         Rule {
             rule,
@@ -254,7 +252,7 @@ impl<T: IntoRule> Rule<T> {
 
 // TODO: maybe drop this
 use std::ops::Deref;
-impl<T: IntoRule> Deref for Rule<T> {
+impl<T: ToRule> Deref for Rule<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -262,23 +260,23 @@ impl<T: IntoRule> Deref for Rule<T> {
     }
 }
 
-impl<T: IntoRule + RulePrecision> RulePrecision for Rule<T> {
+impl<T: ToRule + RulePrecision> RulePrecision for Rule<T> {
     fn precision(&self) -> usize {
         self.rule.precision()
     }
 }
 
-pub trait IntoRule {
-    fn into_rule(&self) -> (&'static str, String);
+pub trait ToRule {
+    fn to_rule(&self) -> (&'static str, String);
 }
 
-impl<T: IntoRule> Into<NewAutonoscope> for &Rule<T> {
-    fn into(self) -> NewAutonoscope {
-        let (object, value) = self.rule.into_rule();
+impl<T: ToRule> From<&Rule<T>> for NewAutonoscope {
+    fn from(rule: &Rule<T>) -> NewAutonoscope {
+        let (object, value) = rule.rule.to_rule();
         NewAutonoscope {
             object: object.to_string(),
             value,
-            scoped: self.scoped,
+            scoped: rule.scoped,
         }
     }
 }
