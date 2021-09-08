@@ -1,6 +1,6 @@
 [package]
 name = "sn0int-common"
-version = "0.12.0"
+version = "0.13.0"
 description = "sn0int - common code"
 authors = ["kpcyrd <git@rxv.cc>"]
 license = "GPL-3.0"
