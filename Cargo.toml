@@ -102,5 +102,5 @@ unveil = "0.3"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
-boxxy = "0.11"
+boxxy = "0.12"
 tempfile = "3.0"
