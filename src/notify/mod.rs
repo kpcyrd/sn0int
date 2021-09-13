@@ -91,6 +91,7 @@ pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, option
         module: None,
         threads: 1,
         verbose,
+        proxy: None,
         stdin: false,
         grants: &[],
         grant_full_keyring: false,

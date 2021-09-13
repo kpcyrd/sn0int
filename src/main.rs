@@ -37,7 +37,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         Module::load(&path.to_path_buf(), "anonymous", filename, true)
             .context(format!("Failed to parse {:?}", path))?
     } else {
-        rl.library().get(&module)?
+        rl.library().get(module)?
             .clone()
     };
 

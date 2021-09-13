@@ -17,6 +17,7 @@ use serde::Serialize;
 use sn0int_common::metadata::Source;
 use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -33,6 +34,9 @@ pub struct Args {
     /// data, twice to activate the debug() function
     #[structopt(short="v", long, parse(from_occurrences))]
     pub verbose: u64,
+    /// Set a specific socks5 proxy to use
+    #[structopt(short="X", long)]
+    pub proxy: Option<SocketAddr>,
 }
 
 #[derive(Debug, Clone)]
@@ -45,12 +49,13 @@ pub struct Params<'a> {
     pub grant_full_keyring: bool,
     pub deny_keyring: bool,
     pub exit_on_error: bool,
+    pub proxy: Option<SocketAddr>,
 }
 
 impl<'a> Params<'a> {
     pub fn get_module(&self, rl: &Shell) -> Result<Module> {
         let module = if let Some(module) = self.module {
-            rl.library().get(&module)?
+            rl.library().get(module)?
                 .clone()
         } else {
             rl.module()
@@ -58,6 +63,14 @@ impl<'a> Params<'a> {
                 .ok_or_else(|| format_err!("No module selected"))?
         };
         Ok(module)
+    }
+
+    pub fn get_proxy(&self, rl: &Shell) -> Option<SocketAddr> {
+        if self.proxy.is_some() {
+            self.proxy.clone()
+        } else {
+            rl.config().network.proxy
+        }
     }
 }
 
@@ -67,6 +80,7 @@ impl<'a> From<&'a args::Run> for Params<'a> {
             module: args.run.module.as_ref(),
             threads: args.run.threads,
             verbose: args.run.verbose,
+            proxy: args.run.proxy,
             stdin: args.stdin,
             grants: &args.grants,
             grant_full_keyring: args.grant_full_keyring,
@@ -82,6 +96,7 @@ impl<'a> From<&'a Args> for Params<'a> {
             module: args.module.as_ref(),
             threads: args.threads,
             verbose: args.verbose,
+            proxy: args.proxy,
             stdin: false,
             grants: &[],
             grant_full_keyring: false,
@@ -175,13 +190,13 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
 }
 
 pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = params.get_module(&rl)?;
+    let module = params.get_module(rl)?;
+    let proxy = params.get_proxy(rl);
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let keyring = rl.keyring().request_keys(&module);
 
     let dns_config = Resolver::from_system_v4()?;
-    let proxy = rl.config().network.proxy;
 
     let args = get_args(rl, &module)?;
     for (arg, _pretty_arg, blobs) in args {
@@ -201,13 +216,14 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
 }
 
 pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = params.get_module(&rl)?;
+    let module = params.get_module(rl)?;
+    let proxy = params.get_proxy(rl);
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, rl.config().network.proxy, options);
+    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, proxy, options);
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {
