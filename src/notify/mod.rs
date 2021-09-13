@@ -88,6 +88,7 @@ pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, option
     }
 
     let params = Params {
+        module: None,
         threads: 1,
         verbose,
         stdin: false,

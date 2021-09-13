@@ -97,18 +97,11 @@ pub enum SubCommand {
 
 #[derive(Debug, StructOpt)]
 pub struct Run {
-    /// Execute a module that has been installed
-    pub module: String,
+    #[structopt(flatten)]
+    pub run: cmd::run_cmd::Args,
     /// Run a module from a path
     #[structopt(short="f", long="file")]
     pub file: bool,
-    /// Run modules concurrently
-    #[structopt(short="j", long="threads", default_value="1")]
-    pub threads: usize,
-    /// Verbose logging, once to print inserts even if they don't add new
-    /// data, twice to activate the debug() function
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
-    pub verbose: u64,
     /// Expose stdin to modules
     #[structopt(long="stdin")]
     pub stdin: bool,

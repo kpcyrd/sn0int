@@ -24,14 +24,20 @@ use structopt::clap::AppSettings;
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
-    #[structopt(short="j", long="threads", default_value="1")]
-    threads: usize,
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
-    verbose: u64,
+    /// Execute a module that has been installed
+    pub module: Option<String>,
+    /// Run investigations concurrently
+    #[structopt(short="j", default_value="1")]
+    pub threads: usize,
+    /// Verbose logging, once to print inserts even if they don't add new
+    /// data, twice to activate the debug() function
+    #[structopt(short="v", long, parse(from_occurrences))]
+    pub verbose: u64,
 }
 
 #[derive(Debug, Clone)]
 pub struct Params<'a> {
+    pub module: Option<&'a String>,
     pub threads: usize,
     pub verbose: u64,
     pub stdin: bool,
@@ -41,11 +47,26 @@ pub struct Params<'a> {
     pub exit_on_error: bool,
 }
 
+impl<'a> Params<'a> {
+    pub fn get_module(&self, rl: &Shell) -> Result<Module> {
+        let module = if let Some(module) = self.module {
+            rl.library().get(&module)?
+                .clone()
+        } else {
+            rl.module()
+                .map(|m| m.to_owned())
+                .ok_or_else(|| format_err!("No module selected"))?
+        };
+        Ok(module)
+    }
+}
+
 impl<'a> From<&'a args::Run> for Params<'a> {
     fn from(args: &args::Run) -> Params {
         Params {
-            threads: args.threads,
-            verbose: args.verbose,
+            module: args.run.module.as_ref(),
+            threads: args.run.threads,
+            verbose: args.run.verbose,
             stdin: args.stdin,
             grants: &args.grants,
             grant_full_keyring: args.grant_full_keyring,
@@ -55,9 +76,10 @@ impl<'a> From<&'a args::Run> for Params<'a> {
     }
 }
 
-impl From<Args> for Params<'static> {
-    fn from(args: Args) -> Params<'static> {
+impl<'a> From<&'a Args> for Params<'a> {
+    fn from(args: &Args) -> Params {
         Params {
+            module: args.module.as_ref(),
             threads: args.threads,
             verbose: args.verbose,
             stdin: false,
@@ -153,9 +175,7 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
 }
 
 pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = rl.module()
-        .map(|m| m.to_owned())
-        .ok_or_else(|| format_err!("No module selected"))?;
+    let module = params.get_module(&rl)?;
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let keyring = rl.keyring().request_keys(&module);
@@ -181,9 +201,7 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
 }
 
 pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
-    let module = rl.module()
-        .map(|m| m.to_owned())
-        .ok_or_else(|| format_err!("No module selected"))?;
+    let module = params.get_module(&rl)?;
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let args = get_args(rl, &module)?;
@@ -212,6 +230,6 @@ impl Cmd for Args {
             Some(options) => options.clone(),
             _ => HashMap::new(),
         };
-        execute(rl, self.into(), options)
+        execute(rl, Params::from(&self), options)
     }
 }

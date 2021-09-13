@@ -23,8 +23,11 @@ use std::path::Path;
 fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
     let mut rl = shell::init(gargs, config, false)?;
 
+    let module = args.run.module.as_ref()
+        .ok_or_else(|| format_err!("Module is required"))?;
+
     let module = if args.file {
-        let path = Path::new(&args.module);
+        let path = Path::new(&module);
 
         let filename = path.file_stem()
             .ok_or_else(|| format_err!("Failed to decode filename"))?
@@ -34,7 +37,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         Module::load(&path.to_path_buf(), "anonymous", filename, true)
             .context(format!("Failed to parse {:?}", path))?
     } else {
-        rl.library().get(&args.module)?
+        rl.library().get(&module)?
             .clone()
     };
 
