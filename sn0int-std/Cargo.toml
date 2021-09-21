@@ -45,6 +45,7 @@ sodiumoxide = { version="0.2.5", features=["use-pkg-config"] }
 
 image = "0.23.0"
 kamadak-exif = "0.5.1"
+img_hash_median = "4.0.0"
 
 bs58 = "0.4"
 digest = "0.9"
