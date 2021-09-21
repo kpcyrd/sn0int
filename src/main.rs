@@ -2,6 +2,7 @@ use env_logger::Env;
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
 use sn0int::cmd::{self, LiteCmd};
+use sn0int::cmd::run_cmd::Params;
 use sn0int::config::Config;
 use sn0int::db;
 use sn0int::errors::*;
@@ -50,10 +51,14 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
         rl.set_target(Some(target));
     }
 
+    let mut params = Params::from(args);
+    // The module was already set and loaded
+    params.module = None;
+
     if args.dump_sandbox_init_msg {
-        cmd::run_cmd::dump_sandbox_init_msg(&mut rl, args.into(), Opt::collect(&args.options))
+        cmd::run_cmd::dump_sandbox_init_msg(&mut rl, params, Opt::collect(&args.options))
     } else {
-        cmd::run_cmd::execute(&mut rl, args.into(), Opt::collect(&args.options))
+        cmd::run_cmd::execute(&mut rl, params, Opt::collect(&args.options))
     }
 }
 
