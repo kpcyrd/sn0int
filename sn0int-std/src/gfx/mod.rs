@@ -1,5 +1,6 @@
 use crate::errors::*;
 use image::{self, DynamicImage, GenericImageView};
+pub use img_hash_median::HashAlg;
 
 pub mod exif;
 
@@ -79,6 +80,14 @@ impl Image {
     pub fn height(&self) -> u32 {
         self.image.height()
     }
+
+    pub fn perception_hash(&self, hash_alg: HashAlg) -> String {
+        let hasher = img_hash_median::HasherConfig::new()
+            .hash_alg(hash_alg)
+            .to_hasher();
+        let hash = hasher.hash_image(&self.image);
+        hash.to_base64()
+    }
 }
 
 impl AsRef<DynamicImage> for Image {
@@ -104,7 +113,6 @@ pub fn load(buf: &[u8]) -> Result<Image> {
         format,
     })
 }
-
 
 #[cfg(test)]
 mod tests {

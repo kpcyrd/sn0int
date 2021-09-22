@@ -36,6 +36,48 @@ pub fn img_load(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     }))
 }
 
+pub fn img_ahash(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("img_ahash", hlua::function1(move |blob: String| -> Result<String> {
+        let img = state.get_blob(&blob)
+            .map_err(|err| state.set_error(err))?;
+
+        let img = gfx::load(&img.bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        let hash = img.perception_hash(gfx::HashAlg::Mean);
+
+        Ok(hash)
+    }))
+}
+
+pub fn img_dhash(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("img_dhash", hlua::function1(move |blob: String| -> Result<String> {
+        let img = state.get_blob(&blob)
+            .map_err(|err| state.set_error(err))?;
+
+        let img = gfx::load(&img.bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        let hash = img.perception_hash(gfx::HashAlg::Gradient);
+
+        Ok(hash)
+    }))
+}
+
+pub fn img_phash(lua: &mut hlua::Lua, state: Arc<dyn State>) {
+    lua.set("img_phash", hlua::function1(move |blob: String| -> Result<String> {
+        let img = state.get_blob(&blob)
+            .map_err(|err| state.set_error(err))?;
+
+        let img = gfx::load(&img.bytes)
+            .map_err(|err| state.set_error(err))?;
+
+        let hash = img.perception_hash(gfx::HashAlg::Median);
+
+        Ok(hash)
+    }))
+}
+
 #[derive(Debug, Serialize)]
 pub struct Nudity {
     nude: bool,

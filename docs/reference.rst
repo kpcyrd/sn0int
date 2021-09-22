@@ -504,6 +504,39 @@ Extract exif metadata from an image.
     if last_err() then return end
     debug(exif)
 
+img_ahash
+---------
+
+Calculate the Mean (aHash) perceptual hash.
+
+.. code-block:: lua
+
+    hash = img_ahash(blob)
+    if last_err() then return end
+    debug(hash)
+
+img_dhash
+---------
+
+Calculate the Gradient (dHash) perceptual hash.
+
+.. code-block:: lua
+
+    hash = img_dhash(blob)
+    if last_err() then return end
+    debug(hash)
+
+img_phash
+---------
+
+Calculate the DCT (pHash) perceptual hash.
+
+.. code-block:: lua
+
+    hash = img_phash(blob)
+    if last_err() then return end
+    debug(hash)
+
 img_nudity
 ----------
 

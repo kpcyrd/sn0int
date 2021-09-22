@@ -517,6 +517,9 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
     runtime::http_fetch_json(&mut lua, state.clone());
     runtime::img_exif(&mut lua, state.clone());
     runtime::img_load(&mut lua, state.clone());
+    runtime::img_ahash(&mut lua, state.clone());
+    runtime::img_dhash(&mut lua, state.clone());
+    runtime::img_phash(&mut lua, state.clone());
     runtime::img_nudity(&mut lua, state.clone());
     runtime::info(&mut lua, state.clone());
     runtime::intval(&mut lua, state.clone());
