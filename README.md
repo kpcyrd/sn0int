@@ -14,33 +14,34 @@
 [registry]:     https://sn0int.com/
 
 sn0int (pronounced [`/snoɪnt/`][ipa]) is a semi-automatic OSINT framework and
-package manager. It was built for IT security professionals and bug hunters to
-gather intelligence about a given target or about yourself. sn0int is
-enumerating attack surface by semi-automatically processing public information
-and mapping the results in a unified format for followup investigations.
+package manager. It's used by IT security professionals, bug bounty hunters,
+law enforcement agencies and in security awareness trainings to gather
+intelligence about a given target or about yourself. sn0int is enumerating
+attack surface by semi-automatically processing public information and mapping
+the results in a unified format for followup investigations.
 
 [ipa]: http://ipa-reader.xyz/?text=sno%C9%AAnt
 
 Among other things, sn0int is currently able to:
 
 - Harvest subdomains from certificate transparency logs and passive dns
+- Mass resolve collected subdomains and scan for http or https services
 - Enrich ip addresses with asn and geoip info
 - Harvest emails from pgp keyservers and whois
 - Discover compromised logins in breaches
 - Find somebody's profiles across the internet
 - Enumerate local networks with unique techniques like passive arp
 - Gather information about phonenumbers
-- Attempt to bypass cloudflare with shodan
-- Harvest data and images from instagram profiles
-- Scan images for nudity
+- Harvest activity and images from social media profiles
+- Basic image processing
 
 sn0int is heavily inspired by recon-ng and maltego, but remains more flexible
 and is fully opensource. None of the investigations listed above are hardcoded
-in the source, instead those are provided by modules that are executed in a
+in the source, instead they are provided by modules that are executed in a
 sandbox. You can easily extend sn0int by writing your own modules and share
 them with other users by publishing them to the sn0int registry. This allows
-you to ship updates for your modules on your own since you don't need to send a
-pull request.
+you to ship updates for your modules on your own instead of pull-requesting
+them into the sn0int codebase.
 
 For questions and support join us on IRC: [irc.hackint.org:6697/#sn0int](https://webirc.hackint.org/#irc://irc.hackint.org/#sn0int)
 
@@ -226,6 +227,9 @@ For everything else please have a look at the [detailed list][1].
   - [http_fetch_json](https://sn0int.readthedocs.io/en/latest/reference.html#http-fetch-json)
   - [img_load](https://sn0int.readthedocs.io/en/latest/reference.html#img-load)
   - [img_exif](https://sn0int.readthedocs.io/en/latest/reference.html#img-exif)
+  - [img_ahash](https://sn0int.readthedocs.io/en/latest/reference.html#img-ahash)
+  - [img_dhash](https://sn0int.readthedocs.io/en/latest/reference.html#img-dhash)
+  - [img_phash](https://sn0int.readthedocs.io/en/latest/reference.html#img-phash)
   - [img_nudity](https://sn0int.readthedocs.io/en/latest/reference.html#img-nudity)
   - [info](https://sn0int.readthedocs.io/en/latest/reference.html#info)
   - [intval](https://sn0int.readthedocs.io/en/latest/reference.html#intval)
