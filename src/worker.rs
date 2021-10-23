@@ -437,7 +437,15 @@ impl RatelimitEvent {
     }
 }
 
-pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>, params: &Params, proxy: Option<SocketAddr>, options: HashMap<String, String>) -> usize {
+pub fn spawn(rl: &mut Shell,
+             module: &Module,
+             ratelimit: &mut Ratelimiter,
+             args: Vec<(serde_json::Value, Option<String>, Vec<Blob>)>,
+             params: &Params,
+             proxy: Option<SocketAddr>,
+             user_agent: Option<String>,
+             options: HashMap<String, String>,
+) -> usize {
     // This function hangs if args is empty, so return early if that's the case
     if args.is_empty() {
         return 0;
@@ -463,6 +471,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args:
         let tx = tx.clone();
         let module = module.clone();
         let keyring = keyring.clone();
+        let user_agent = user_agent.clone();
         let options = options.clone();
         let signal_register = rl.signal_register().clone();
         pool.execute(move || {
@@ -476,7 +485,7 @@ pub fn spawn(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, args:
             }
 
             tx.send(Event2::Start);
-            let event = match ipc::parent::run(module, &tx, arg, keyring, verbose, has_stdin, proxy, options, blobs) {
+            let event = match ipc::parent::run(module, &tx, arg, keyring, verbose, has_stdin, proxy, user_agent, options, blobs) {
                 Ok(exit) => exit,
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };

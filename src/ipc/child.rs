@@ -86,6 +86,7 @@ pub fn run(geoip: Option<MaxmindReader>, asn: Option<MaxmindReader>, psl: PslRea
         keyring: start.keyring,
         dns_config: start.dns_config,
         proxy: start.proxy,
+        user_agent: start.user_agent,
         options: start.options,
         blobs: start.blobs,
         psl,

@@ -105,6 +105,7 @@ pub fn run(module: Module,
            verbose: u64,
            has_stdin: bool,
            proxy: Option<SocketAddr>,
+           user_agent: Option<String>,
            options: HashMap<String, String>,
            blobs: Vec<Blob>,
 ) -> Result<ExitEvent> {
@@ -117,7 +118,7 @@ pub fn run(module: Module,
     };
 
     let mut ipc_parent = IpcParent::setup(&module)?;
-    ipc_parent.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, options, module, arg, blobs))?;
+    ipc_parent.send_start(&StartCommand::new(verbose, keyring, dns_config, proxy, user_agent, options, module, arg, blobs))?;
 
     let exit = loop {
         match ipc_parent.recv()? {

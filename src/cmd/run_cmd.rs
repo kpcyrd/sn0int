@@ -37,6 +37,9 @@ pub struct Args {
     /// Set a specific socks5 proxy to use
     #[structopt(short="X", long)]
     pub proxy: Option<SocketAddr>,
+    /// Set a different default user agent
+    #[structopt(long)]
+    pub user_agent: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +53,7 @@ pub struct Params<'a> {
     pub deny_keyring: bool,
     pub exit_on_error: bool,
     pub proxy: Option<SocketAddr>,
+    pub user_agent: Option<&'a String>,
 }
 
 impl<'a> Params<'a> {
@@ -72,6 +76,14 @@ impl<'a> Params<'a> {
             rl.config().network.proxy
         }
     }
+
+    pub fn get_user_agent(&self, rl: &Shell) -> Option<String> {
+        if let Some(user_agent) = self.user_agent {
+            Some(user_agent.to_string())
+        } else {
+            rl.config().network.user_agent.clone()
+        }
+    }
 }
 
 impl<'a> From<&'a args::Run> for Params<'a> {
@@ -80,12 +92,13 @@ impl<'a> From<&'a args::Run> for Params<'a> {
             module: args.run.module.as_ref(),
             threads: args.run.threads,
             verbose: args.run.verbose,
-            proxy: args.run.proxy,
             stdin: args.stdin,
             grants: &args.grants,
             grant_full_keyring: args.grant_full_keyring,
             deny_keyring: args.deny_keyring,
             exit_on_error: args.exit_on_error,
+            proxy: args.run.proxy,
+            user_agent: args.run.user_agent.as_ref(),
         }
     }
 }
@@ -96,12 +109,13 @@ impl<'a> From<&'a Args> for Params<'a> {
             module: args.module.as_ref(),
             threads: args.threads,
             verbose: args.verbose,
-            proxy: args.proxy,
             stdin: false,
             grants: &[],
             grant_full_keyring: false,
             deny_keyring: false,
             exit_on_error: false,
+            proxy: args.proxy,
+            user_agent: args.user_agent.as_ref(),
         }
     }
 }
@@ -192,6 +206,7 @@ fn get_args(rl: &mut Shell, module: &Module) -> Result<Vec<(serde_json::Value, O
 pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
     let module = params.get_module(rl)?;
     let proxy = params.get_proxy(rl);
+    let user_agent = params.get_user_agent(rl);
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let keyring = rl.keyring().request_keys(&module);
@@ -204,6 +219,7 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
                                           keyring.clone(),
                                           dns_config.clone(),
                                           proxy,
+                                          user_agent.clone(),
                                           options.clone(),
                                           module.clone(),
                                           arg,
@@ -218,12 +234,13 @@ pub fn dump_sandbox_init_msg(rl: &mut Shell, params: Params, options: HashMap<St
 pub fn execute(rl: &mut Shell, params: Params, options: HashMap<String, String>) -> Result<()> {
     let module = params.get_module(rl)?;
     let proxy = params.get_proxy(rl);
+    let user_agent = params.get_user_agent(rl);
 
     prepare_keyring(rl.keyring_mut(), &module, &params)?;
     let args = get_args(rl, &module)?;
 
     rl.signal_register().catch_ctrl();
-    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, proxy, options);
+    let errors = worker::spawn(rl, &module, &mut Ratelimiter::new(), args, &params, proxy, user_agent, options);
     rl.signal_register().reset_ctrlc();
 
     if errors > 0 {

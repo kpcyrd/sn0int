@@ -215,6 +215,7 @@ pub struct LuaState {
     geoip: Option<Mutex<Lazy<MaxmindReader, Arc<GeoIP>>>>,
     asn: Option<Mutex<Lazy<MaxmindReader, Arc<AsnDB>>>>,
     proxy: Option<SocketAddr>,
+    user_agent: Option<String>,
     options: HashMap<String, String>,
 }
 
@@ -372,7 +373,15 @@ impl State for LuaState {
         let mtx = self.http_sessions.lock().unwrap();
         let session = mtx.get(session_id).expect("Invalid session reference"); // TODO
 
-        HttpRequest::new(session, method, url, options, || format!("sn0int/{}", env!("CARGO_PKG_VERSION")))
+        let user_agent = if let Some(user_agent) = &options.user_agent {
+            user_agent.to_string()
+        } else if let Some(user_agent) = &self.user_agent {
+            user_agent.to_string()
+        } else {
+            format!("sn0int/{}", env!("CARGO_PKG_VERSION"))
+        };
+
+        HttpRequest::new(session, method, url, user_agent, options)
     }
 
     fn get_blob(&self, id: &str) -> Result<Arc<Blob>> {
@@ -472,6 +481,7 @@ pub fn ctx<'a>(env: Environment, logger: Arc<Mutex<Box<dyn IpcChild>>>) -> (hlua
         geoip,
         asn,
         proxy: env.proxy,
+        user_agent: env.user_agent,
         options: env.options,
     });
 
@@ -665,6 +675,7 @@ impl Script {
         let keyring = Vec::new();
         let dns_config = Resolver::from_system_v4()?;
         let proxy = None;
+        let user_agent = None;
         let psl = PslReader::String(r#"
 // ===BEGIN ICANN DOMAINS===
 com
@@ -682,6 +693,7 @@ a.prod.fastly.net
             keyring,
             dns_config,
             proxy,
+            user_agent,
             options: HashMap::new(),
             blobs: Vec::new(),
             psl,

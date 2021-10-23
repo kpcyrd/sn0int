@@ -65,21 +65,21 @@ impl HttpSession {
 
 #[derive(Debug, Default, Deserialize)]
 pub struct RequestOptions {
-    query: Option<HashMap<String, String>>,
-    headers: Option<HashMap<String, String>>,
-    basic_auth: Option<(String, String)>,
-    user_agent: Option<String>,
-    json: Option<serde_json::Value>,
-    form: Option<serde_json::Value>,
+    pub query: Option<HashMap<String, String>>,
+    pub headers: Option<HashMap<String, String>>,
+    pub basic_auth: Option<(String, String)>,
+    pub user_agent: Option<String>,
+    pub json: Option<serde_json::Value>,
+    pub form: Option<serde_json::Value>,
     #[serde(default)]
-    follow_redirects: usize,
-    body: Option<String>,
-    timeout: Option<u64>,
+    pub follow_redirects: usize,
+    pub body: Option<String>,
+    pub timeout: Option<u64>,
     #[serde(default)]
-    into_blob: bool,
-    proxy: Option<SocketAddr>,
+    pub into_blob: bool,
+    pub proxy: Option<SocketAddr>,
     #[serde(default)]
-    binary: bool,
+    pub binary: bool,
 }
 
 impl RequestOptions {
@@ -110,11 +110,8 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    pub fn new(session: &HttpSession, method: String, url: String, options: RequestOptions, default_agent: fn() -> String) -> HttpRequest {
+    pub fn new(session: &HttpSession, method: String, url: String, user_agent: String, options: RequestOptions) -> HttpRequest {
         let cookies = session.cookies.clone();
-
-        let user_agent = options.user_agent.unwrap_or_else(default_agent);
-
         let timeout = options.timeout.map(Duration::from_millis);
 
         let mut request = HttpRequest {

@@ -75,4 +75,5 @@ fn default_registry() -> String {
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct NetworkConfig {
     pub proxy: Option<SocketAddr>,
+    pub user_agent: Option<String>,
 }
