@@ -91,19 +91,20 @@ pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, option
         module: None,
         threads: 1,
         verbose,
-        proxy: None,
         stdin: false,
         grants: &[],
         grant_full_keyring: false,
         deny_keyring: false,
         exit_on_error: false,
+        proxy: None,
+        user_agent: None,
     };
 
     prepare_keyring(rl.keyring_mut(), module, &params)?;
     let args = vec![prepare_arg(notification)?];
 
     debug!("Executing notification module {:?}", module_name);
-    let errors = worker::spawn(rl, module, ratelimit, args, &params, rl.config().network.proxy, options);
+    let errors = worker::spawn(rl, module, ratelimit, args, &params, rl.config().network.proxy, None, options);
     debug!("Notification module {:?} exited with {:?} errors", module_name, errors);
 
     Ok(errors)

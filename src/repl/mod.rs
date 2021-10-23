@@ -82,6 +82,7 @@ pub fn run(config: &Config) -> Result<()> {
     let keyring = Vec::new();
     let dns_config = Resolver::from_system_v4()?;
     let proxy = config.network.proxy;
+    let user_agent = config.network.user_agent.clone();
 
     let cache_dir = paths::cache_dir()?;
     let psl = PslReader::open(&cache_dir)?;
@@ -93,6 +94,7 @@ pub fn run(config: &Config) -> Result<()> {
         keyring,
         dns_config,
         proxy,
+        user_agent,
         options: HashMap::new(),
         blobs: Vec::new(),
         psl,

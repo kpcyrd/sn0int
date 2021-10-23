@@ -34,6 +34,7 @@ pub struct Environment {
     pub keyring: Vec<KeyRingEntry>,
     pub dns_config: Resolver,
     pub proxy: Option<SocketAddr>,
+    pub user_agent: Option<String>,
     pub options: HashMap<String, String>,
     pub blobs: Vec<Blob>,
     pub psl: PslReader,

@@ -72,8 +72,8 @@ semver = "1"
 bytes = "0.4"
 bytesize = "1.0"
 ipnetwork = "0.18"
-strum = "0.21"
-strum_macros = "0.21"
+strum = "0.22"
+strum_macros = "0.22"
 embedded-triple = "0.1.0"
 humansize = "1.1.0"
 
@@ -93,7 +93,7 @@ os-version = "0.2"
 caps = "0.5"
 #syscallz = { path="../syscallz-rs" }
 syscallz = "0.16"
-nix = "0.22"
+nix = "0.23"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.4"
