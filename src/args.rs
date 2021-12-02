@@ -131,7 +131,7 @@ pub struct Run {
 #[derive(Debug, StructOpt)]
 pub struct Sandbox {
     /// This value is only used for process listings
-    label: String,
+    _label: String,
 }
 
 #[derive(Debug, StructOpt)]
