@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::autonoscope::{AutoRule, ToRule};
 use crate::cmd::Cmd;
 use crate::db::Database;
-use crate::filters::Filter;
+use crate::filters::{Filter, Target};
 use crate::shell::Shell;
 use std::collections::HashSet;
 use std::fmt;
@@ -16,12 +16,18 @@ use crate::term;
 #[derive(Debug, StructOpt)]
 #[structopt(global_settings = &[AppSettings::ColoredHelp])]
 pub struct Args {
+    /// Run rules interactively
     #[structopt(short, long)]
     interactive: bool,
+    /// Automatically apply changes to database
     #[structopt(short="y", long)]
     auto_confirm: bool,
+    /// Only show changes, do not apply them to the database
     #[structopt(short="n", long)]
     dry_run: bool,
+    /// Only rescope entities matching specific filter
+    #[structopt(subcommand)]
+    target: Option<Target>,
 }
 
 enum Entity {
@@ -82,20 +88,37 @@ struct Context {
     always_rules: HashSet<(&'static str, String)>,
     never_rules: HashSet<(&'static str, String)>,
     done: bool,
+    target: Option<Target>,
 }
 
-fn rescope_to_queue<T, F1, F2>(ctx: &mut Context, db: &Database, interactive: bool, matches_rule: F1, wrap: F2) -> Result<()>
+fn rescope_to_queue<T, F1, F2, F3>(ctx: &mut Context, db: &Database, interactive: bool, get_filter: F1, matches_rule: F2, wrap: F3) -> Result<()>
     where
         T: Model + Scopable + fmt::Debug,
-        F1: Fn(&T) -> Result<Option<((&'static str, String), bool)>>,
-        F2: Fn(T) -> Entity,
+        F1: Fn(&Target) -> Option<&Filter>,
+        F2: Fn(&T) -> Result<Option<((&'static str, String), bool)>>,
+        F3: Fn(T) -> Entity,
 {
+    // do nothing if we're already done
     if ctx.done {
         return Ok(());
     }
 
-    let any_filter = Filter::any();
-    let entities = db.filter::<T>(&any_filter)?;
+    // check if there are filters to be applied
+    let filter = if let Some(target) = &ctx.target {
+        if let Some(filter) = get_filter(&target) {
+            // we've selected this specific entity type and there's a filter
+            filter.parse_optional()
+                .context("Filter is invalid")?
+        } else {
+            // we do not wish to process this entity type
+            return Ok(());
+        }
+    } else {
+        // any entity type is fine
+        Filter::any()
+    };
+
+    let entities = db.filter::<T>(&filter)?;
 
     for entity in entities {
         let currently_scoped = entity.scoped();
@@ -158,8 +181,9 @@ impl Cmd for Args {
         term::success(&format!("Loaded {} rules", rules.len()));
 
         let mut ctx = Context::default();
+        ctx.target = self.target;
 
-        rescope_to_queue::<Domain, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<Domain, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.domains(), |entity| {
             for rule in rules.domains() {
                 if rule.matches(entity.value.as_str())? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));
@@ -167,7 +191,7 @@ impl Cmd for Args {
             }
             Ok(None)
         }, Entity::Domain)?;
-        rescope_to_queue::<Subdomain, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<Subdomain, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.subdomains(), |entity| {
             for rule in rules.domains() {
                 if rule.matches(entity.value.as_str())? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));
@@ -176,7 +200,7 @@ impl Cmd for Args {
             Ok(None)
         }, Entity::Subdomain)?;
 
-        rescope_to_queue::<IpAddr, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<IpAddr, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.ipaddrs(), |entity| {
             for rule in rules.ips() {
                 if rule.matches(entity)? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));
@@ -185,7 +209,7 @@ impl Cmd for Args {
             Ok(None)
         }, Entity::IpAddr)?;
 
-        rescope_to_queue::<Url, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<Url, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.urls(), |entity| {
             for rule in rules.domains() {
                 if rule.matches(entity)? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));
@@ -198,7 +222,7 @@ impl Cmd for Args {
             }
             Ok(None)
         }, Entity::Url)?;
-        rescope_to_queue::<Port, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<Port, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.ports(), |entity| {
             for rule in rules.ips() {
                 if rule.matches(entity)? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));
@@ -206,7 +230,7 @@ impl Cmd for Args {
             }
             Ok(None)
         }, Entity::Port)?;
-        rescope_to_queue::<Netblock, _, _>(&mut ctx, rl.db(), self.interactive, |entity| {
+        rescope_to_queue::<Netblock, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.netblocks(), |entity| {
             for rule in rules.ips() {
                 if rule.matches(entity)? {
                     return Ok(Some((rule.to_rule(), rule.scoped)));

@@ -50,6 +50,56 @@ pub enum Target {
     CryptoAddrs(Filter),
 }
 
+impl Target {
+    pub fn domains(&self) -> Option<&Filter> {
+        if let Target::Domains(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+
+    pub fn subdomains(&self) -> Option<&Filter> {
+        if let Target::Subdomains(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+
+    pub fn ipaddrs(&self) -> Option<&Filter> {
+        if let Target::IpAddrs(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+
+    pub fn urls(&self) -> Option<&Filter> {
+        if let Target::Urls(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+
+    pub fn ports(&self) -> Option<&Filter> {
+        if let Target::Ports(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+
+    pub fn netblocks(&self) -> Option<&Filter> {
+        if let Target::Netblocks(f) = self {
+            Some(f)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug, StructOpt)]
 pub struct Filter {
     args: Vec<String>,
