@@ -70,6 +70,8 @@ pub enum SubCommand {
     Autoscope(cmd::autoscope_cmd::Args),
     /// Manage autonoscope rules
     Autonoscope(cmd::autonoscope_cmd::Args),
+    /// Rescope all entities based on autonoscope rules
+    Rescope(cmd::rescope_cmd::Args),
     /// Manage workspaces
     #[structopt(name="workspace")]
     Workspace(cmd::workspace_cmd::Args),

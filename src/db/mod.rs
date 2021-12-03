@@ -164,6 +164,11 @@ impl Database {
         self.autonoscope.rules()
     }
 
+    #[inline(always)]
+    pub fn autonoscope(&self) -> &RuleSet {
+        &self.autonoscope
+    }
+
     /// Returns true if we didn't have this value yet
     pub fn insert_generic(&self, object: Insert) -> Result<Option<(DbChange, i32)>> {
         let scoped = self.autonoscope.matches(&object)?;
@@ -460,6 +465,11 @@ impl Filter {
         }
     }
 
+    #[inline]
+    pub fn any() -> Filter {
+        Filter::new("1")
+    }
+
     fn escape(value: &str) -> String {
         let mut out = String::from("'");
         for c in value.chars() {
@@ -522,7 +532,7 @@ impl Filter {
 
         if args.is_empty() {
             debug!("Using filter with no condition");
-            return Ok(Filter::new("1"));
+            return Ok(Filter::any());
         }
 
         Self::parse(args)

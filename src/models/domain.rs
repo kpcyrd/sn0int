@@ -94,6 +94,14 @@ impl Scopable for Domain {
         !self.unscoped
     }
 
+    fn set_scoped(&self, db: &Database, my_value: bool) -> Result<()> {
+        use crate::schema::domains::dsl::*;
+        diesel::update(domains.filter(id.eq(self.id)))
+            .set(unscoped.eq(!my_value))
+            .execute(db.db())?;
+        Ok(())
+    }
+
     fn scope(db: &Database, filter: &Filter) -> Result<usize> {
         use crate::schema::domains::dsl::*;
 

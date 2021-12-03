@@ -41,9 +41,23 @@ impl TryFrom<Autonoscope> for DomainRule {
     }
 }
 
+impl AutoRule<Domain> for DomainRule {
+    #[inline]
+    fn matches(&self, domain: &Domain) -> Result<bool> {
+        self.matches(domain.value.as_str())
+    }
+}
+
 impl AutoRule<NewDomain> for DomainRule {
     #[inline]
     fn matches(&self, domain: &NewDomain) -> Result<bool> {
+        self.matches(domain.value.as_str())
+    }
+}
+
+impl AutoRule<Subdomain> for DomainRule {
+    #[inline]
+    fn matches(&self, domain: &Subdomain) -> Result<bool> {
         self.matches(domain.value.as_str())
     }
 }
@@ -52,6 +66,18 @@ impl AutoRule<NewSubdomain> for DomainRule {
     #[inline]
     fn matches(&self, domain: &NewSubdomain) -> Result<bool> {
         self.matches(domain.value.as_str())
+    }
+}
+
+impl AutoRule<Url> for DomainRule {
+    #[inline]
+    fn matches(&self, url: &Url) -> Result<bool> {
+        let url = url.value.parse::<url::Url>()?;
+        if let Some(domain) = url.domain() {
+            self.matches(domain)
+        } else {
+            Ok(false)
+        }
     }
 }
 

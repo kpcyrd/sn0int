@@ -47,6 +47,12 @@ impl TryFrom<&str> for UrlRule {
 }
 
 // TODO: there is no way to write a rule that matches all urls
+impl AutoRule<Url> for UrlRule {
+    fn matches(&self, url: &Url) -> Result<bool> {
+        self.matches(url.value.as_str())
+    }
+}
+
 impl AutoRule<NewUrl> for UrlRule {
     fn matches(&self, url: &NewUrl) -> Result<bool> {
         self.matches(url.value.as_str())

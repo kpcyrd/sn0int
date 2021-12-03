@@ -133,6 +133,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Noscope(noscope)) => run_cmd(&args, noscope, &config),
         Some(SubCommand::Autoscope(autoscope)) => run_cmd(&args, autoscope, &config),
         Some(SubCommand::Autonoscope(autonoscope)) => run_cmd(&args, autonoscope, &config),
+        Some(SubCommand::Rescope(rescope)) => run_cmd(&args, rescope, &config),
         Some(SubCommand::Workspace(workspace)) => workspace.run(&config),
         Some(SubCommand::Fsck(fsck)) => run_cmd(&args, fsck, &config),
         Some(SubCommand::Export(export)) => run_cmd(&args, export, &config),

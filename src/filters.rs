@@ -56,6 +56,11 @@ pub struct Filter {
 }
 
 impl Filter {
+    #[inline]
+    pub fn any() -> db::Filter {
+        db::Filter::any()
+    }
+
     pub fn parse_optional(&self) -> Result<db::Filter> {
         db::Filter::parse_optional(&self.args)
     }

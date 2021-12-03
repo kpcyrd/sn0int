@@ -71,7 +71,7 @@ impl<'a> Params<'a> {
 
     pub fn get_proxy(&self, rl: &Shell) -> Option<SocketAddr> {
         if self.proxy.is_some() {
-            self.proxy.clone()
+            self.proxy
         } else {
             rl.config().network.proxy
         }
