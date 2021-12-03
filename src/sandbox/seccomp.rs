@@ -70,6 +70,10 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::getpeername)?;
     ctx.allow_syscall(Syscall::gettimeofday)?;
     ctx.allow_syscall(Syscall::membarrier)?;
+    ctx.allow_syscall(Syscall::statx)?;
+    ctx.allow_syscall(Syscall::lseek)?;
+    #[cfg(target_arch = "arm")]
+    ctx.allow_syscall(Syscall::_llseek)?;
 
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::openat)?;
     #[cfg(not(target_arch = "aarch64"))]
