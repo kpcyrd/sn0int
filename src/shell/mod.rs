@@ -496,8 +496,8 @@ pub fn run_once(rl: &mut Shell) -> Result<bool> {
     match line {
         Some((Command::Activity, args)) => cmd::<activity_cmd::Args>(rl, &args)?,
         Some((Command::Add, args)) => cmd::<add_cmd::Args>(rl, &args)?,
-        Some((Command::Autonoscope, args)) => autonoscope_cmd::run(rl, &args)?,
-        Some((Command::Autoscope, args)) => autoscope_cmd::run(rl, &args)?,
+        Some((Command::Autonoscope, args)) => cmd::<autonoscope_cmd::Args>(rl, &args)?,
+        Some((Command::Autoscope, args)) => cmd::<autoscope_cmd::Args>(rl, &args)?,
         Some((Command::Back, _)) => if rl.take_module().is_none() {
             return Ok(true);
         },
