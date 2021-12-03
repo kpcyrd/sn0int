@@ -262,6 +262,7 @@ impl Completer for CmdCompleter {
                         Ok((0, results))
                     }
                 },
+                Command::Rescope => self.filter("rescope", &cmd),
                 Command::Scope => self.filter("scope", &cmd),
                 Command::Select => self.filter("select", &cmd),
                 Command::Workspace => {
