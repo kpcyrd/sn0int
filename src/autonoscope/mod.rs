@@ -47,6 +47,18 @@ fn sort_precision_desc<T: RulePrecision>(a: &T, b: &T) -> Ordering {
 }
 
 impl RuleSet {
+    pub fn domains(&self) -> &[Rule<DomainRule>] {
+        &self.domains
+    }
+
+    pub fn ips(&self) -> &[Rule<IpRule>] {
+        &self.ips
+    }
+
+    pub fn urls(&self) -> &[Rule<UrlRule>] {
+        &self.urls
+    }
+
     pub fn load(db: &DatabaseSock) -> Result<Self> {
         use crate::schema::autonoscope::dsl::*;
         let rules = autonoscope.load::<Autonoscope>(db)?;
@@ -141,6 +153,14 @@ impl RuleSet {
         Self::push_rules_display(&mut rules, &self.ips);
         Self::push_rules_display(&mut rules, &self.urls);
         rules
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.domains.is_empty() && self.ips.is_empty() && self.urls.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.domains.len() + self.ips.len() + self.urls.len()
     }
 
     #[inline]
@@ -238,7 +258,7 @@ pub trait RulePrecision {
 #[derive(Debug, PartialEq)]
 pub struct Rule<T: ToRule> {
     rule: T,
-    scoped: bool,
+    pub scoped: bool,
 }
 
 impl<T: ToRule> Rule<T> {

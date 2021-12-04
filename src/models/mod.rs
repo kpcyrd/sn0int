@@ -243,6 +243,8 @@ pub trait Model: Sized {
 pub trait Scopable: Model {
     fn scoped(&self) -> bool;
 
+    fn set_scoped(&self, _db: &Database, _value: bool) -> Result<()>;
+
     fn scope(db: &Database, filter: &Filter) -> Result<usize>;
 
     fn noscope(db: &Database, filter: &Filter) -> Result<usize>;

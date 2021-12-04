@@ -36,9 +36,22 @@ impl TryFrom<Autonoscope> for IpRule {
     }
 }
 
+impl AutoRule<IpAddr> for IpRule {
+    fn matches(&self, ipaddr: &IpAddr) -> Result<bool> {
+        self.matches(ipaddr.value.as_str())
+    }
+}
+
 impl AutoRule<NewIpAddr> for IpRule {
     fn matches(&self, ipaddr: &NewIpAddr) -> Result<bool> {
         self.matches(ipaddr.value.as_str())
+    }
+}
+
+impl AutoRule<Port> for IpRule {
+    fn matches(&self, port: &Port) -> Result<bool> {
+        let addr = port.value.parse::<net::SocketAddr>()?;
+        self.matches(&addr.ip())
     }
 }
 
@@ -49,15 +62,25 @@ impl AutoRule<NewPort> for IpRule {
     }
 }
 
+fn match_netblock_str(network: &IpNetwork, netblock: &str) -> Result<bool> {
+    let range = netblock.parse::<ipnetwork::IpNetwork>()?;
+
+    if network.prefix() <= range.prefix() {
+        Ok(network.contains(range.ip()))
+    } else {
+        Ok(false)
+    }
+}
+
+impl AutoRule<Netblock> for IpRule {
+    fn matches(&self, netblock: &Netblock) -> Result<bool> {
+        match_netblock_str(&self.network, &netblock.value)
+    }
+}
+
 impl AutoRule<NewNetblock> for IpRule {
     fn matches(&self, netblock: &NewNetblock) -> Result<bool> {
-        let range = netblock.value.parse::<ipnetwork::IpNetwork>()?;
-
-        if self.network.prefix() <= range.prefix() {
-            Ok(self.network.contains(range.ip()))
-        } else {
-            Ok(false)
-        }
+        match_netblock_str(&self.network, &netblock.value)
     }
 }
 

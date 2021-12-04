@@ -32,6 +32,7 @@ pub mod keyring_cmd;
 pub mod noscope_cmd;
 pub mod notify_cmd;
 pub mod pkg_cmd;
+pub mod rescope_cmd;
 pub mod set_cmd;
 pub mod scope_cmd;
 pub mod stats_cmd;

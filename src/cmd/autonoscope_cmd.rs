@@ -1,6 +1,7 @@
 use crate::errors::*;
 
 use crate::autonoscope;
+use crate::cmd::Cmd;
 use crate::fmt::colors::*;
 use crate::shell::Shell;
 use std::fmt::Write;
@@ -65,7 +66,8 @@ pub fn run_with_scope_param(rl: &mut Shell, args: Args, scoped: bool) -> Result<
     }
 }
 
-pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
-    run_with_scope_param(rl, args, false)
+impl Cmd for Args {
+    fn run(self, rl: &mut Shell) -> Result<()> {
+        run_with_scope_param(rl, self, false)
+    }
 }
