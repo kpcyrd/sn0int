@@ -71,6 +71,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::gettimeofday)?;
     ctx.allow_syscall(Syscall::membarrier)?;
     ctx.allow_syscall(Syscall::statx)?;
+    ctx.allow_syscall(Syscall::fstat)?;
     ctx.allow_syscall(Syscall::lseek)?;
     #[cfg(target_arch = "arm")]
     ctx.allow_syscall(Syscall::_llseek)?;
