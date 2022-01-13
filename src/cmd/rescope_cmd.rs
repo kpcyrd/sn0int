@@ -105,7 +105,7 @@ fn rescope_to_queue<T, F1, F2, F3>(ctx: &mut Context, db: &Database, interactive
 
     // check if there are filters to be applied
     let filter = if let Some(target) = &ctx.target {
-        if let Some(filter) = get_filter(&target) {
+        if let Some(filter) = get_filter(target) {
             // we've selected this specific entity type and there's a filter
             filter.parse_optional()
                 .context("Filter is invalid")?
@@ -180,8 +180,10 @@ impl Cmd for Args {
         let rules = rl.db().autonoscope();
         term::success(&format!("Loaded {} rules", rules.len()));
 
-        let mut ctx = Context::default();
-        ctx.target = self.target;
+        let mut ctx = Context {
+            target: self.target,
+            ..Default::default()
+        };
 
         rescope_to_queue::<Domain, _, _, _>(&mut ctx, rl.db(), self.interactive, |t| t.domains(), |entity| {
             for rule in rules.domains() {
