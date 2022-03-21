@@ -3,7 +3,7 @@
 -- License: GPL-3.0
 
 function run()
-    -- echo 'www.example.com' | sn0int run -vvf --stdin modules/harness/import-subdomains.lu
+    -- echo 'www.example.com' | sn0int run -vvf --stdin modules/harness/import-subdomains.lua
 
     while true do
         local line = stdin_readline()
