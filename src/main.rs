@@ -35,7 +35,7 @@ fn run_run(gargs: &Args, args: &args::Run, config: &Config) -> Result<()> {
             .to_str()
             .ok_or_else(|| format_err!("Failed to decode filename"))?;
 
-        Module::load(&path.to_path_buf(), "anonymous", filename, true)
+        Module::load(path, "anonymous", filename, true)
             .context(format!("Failed to parse {:?}", path))?
     } else {
         rl.library().get(module)?
