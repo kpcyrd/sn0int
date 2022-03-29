@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Build the Docker image
-      run: docker build -t ${{ matrix.build.name }} -f ${{ matrix.build.file }} .
+      run: DOCKER_BUILDKIT=1 docker build -t ${{ matrix.build.name }} -f ${{ matrix.build.file }} .
     - name: Test the Docker image
       run: docker run --rm ${{ matrix.build.name }} --help
 

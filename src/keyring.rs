@@ -111,7 +111,7 @@ impl KeyRing {
     pub fn insert(&mut self, key: KeyName, secret: Option<String>) -> Result<()> {
         // get the namespace or create a new one
         let mut x = self.keys.remove(&key.namespace)
-            .unwrap_or_else(HashMap::new);
+            .unwrap_or_default();
         // insert key into namespace
         x.insert(key.name, secret);
         // add namespace backinto keyring
@@ -176,7 +176,7 @@ impl KeyRing {
 
     pub fn grant_access(&mut self, module: &Module, namespace: String) {
         let mut grants = self.grants.remove(&namespace)
-            .unwrap_or_else(HashSet::new);
+            .unwrap_or_default();
         grants.insert(module.id());
         self.grants.insert(namespace, grants);
     }

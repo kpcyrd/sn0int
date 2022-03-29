@@ -72,7 +72,7 @@ pub struct Continent {
 }
 
 impl Continent {
-    fn from_maxmind(continent: geoip2::model::Continent) -> Option<Self> {
+    fn from_maxmind(continent: geoip2::city::Continent) -> Option<Self> {
         let code = continent.code?;
         let name = from_geoip_model_names(continent.names)?;
 
@@ -90,7 +90,7 @@ pub struct Country {
 }
 
 impl Country {
-    fn from_maxmind(country: geoip2::model::Country) -> Option<Self> {
+    fn from_maxmind(country: geoip2::city::Country) -> Option<Self> {
         let code = country.iso_code?;
         let name = from_geoip_model_names(country.names)?;
 
@@ -108,7 +108,7 @@ pub struct Location {
 }
 
 impl Location {
-    fn from_maxmind(location: &geoip2::model::Location) -> Option<Self> {
+    fn from_maxmind(location: &geoip2::city::Location) -> Option<Self> {
         let latitude = match location.latitude {
             Some(latitude) => latitude,
             _ => return None,

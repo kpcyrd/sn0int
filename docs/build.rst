@@ -44,6 +44,13 @@ Alpine
 
     $ apk add sqlite-dev libseccomp-dev libsodium-dev
 
+Docker
+~~~~~~
+
+.. code-block:: bash
+
+    $ DOCKER_BUILDKIT=1 docker build -t kpcyrd/sn0int .
+
 OpenBSD
 ~~~~~~~
 

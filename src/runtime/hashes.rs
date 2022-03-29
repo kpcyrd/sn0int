@@ -2,9 +2,8 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
-use digest::{Digest, Update, BlockInput, FixedOutput, Reset};
-use digest::generic_array::ArrayLength;
-use hmac::{Hmac, Mac, NewMac};
+use digest::{Digest, core_api::BlockSizeUser};
+use hmac::{Mac, SimpleHmac};
 use std::sync::Arc;
 
 
@@ -57,15 +56,12 @@ pub fn sha3_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
 }
 
 fn hmac<D>(secret: AnyLuaValue, msg: AnyLuaValue) -> Result<AnyLuaValue>
-    where
-        D: Update + BlockInput + FixedOutput + Reset + Default + Clone,
-        D::BlockSize: ArrayLength<u8> + Clone,
-        D::OutputSize: ArrayLength<u8>,
+    where D: Digest + BlockSizeUser
 {
     let secret = byte_array(secret)?;
     let msg = byte_array(msg)?;
 
-    let mut mac = match Hmac::<D>::new_from_slice(&secret) {
+    let mut mac = match SimpleHmac::<D>::new_from_slice(&secret) {
         Ok(mac) => mac,
         Err(_) => bail!("Invalid key length"),
     };

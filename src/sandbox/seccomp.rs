@@ -55,6 +55,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::setsockopt)?;
     ctx.allow_syscall(Syscall::madvise)?;
     ctx.allow_syscall(Syscall::rt_sigaction)?;
+    ctx.allow_syscall(Syscall::rseq)?;
     #[cfg(target_arch = "x86")]
     ctx.allow_syscall(Syscall::time)?;
     ctx.allow_syscall(Syscall::clock_gettime)?;
