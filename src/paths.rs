@@ -9,7 +9,7 @@ pub fn sn0int_dir() -> Result<PathBuf> {
         .ok_or_else(|| format_err!("Failed to find data directory"))?;
     let path = path.join("sn0int");
     fs::create_dir_all(&path)
-        .context("Failed to create data directory")?;
+        .context("Failed to create sn0int data directory")?;
     Ok(path)
 }
 
@@ -23,7 +23,7 @@ pub fn module_dir() -> Result<PathBuf> {
     let path = sn0int_dir()?;
     let path = path.join("modules");
     fs::create_dir_all(&path)
-        .context("Failed to create module directory")?;
+        .context("Failed to create modules directory")?;
     Ok(path)
 }
 
@@ -31,7 +31,7 @@ pub fn data_dir() -> Result<PathBuf> {
     let path = sn0int_dir()?
         .join("data");
     fs::create_dir_all(&path)
-        .context("Failed to create module directory")?;
+        .context("Failed to create data directory")?;
     Ok(path)
 }
 
@@ -40,7 +40,7 @@ pub fn workspace_dir(workspace: &Workspace) -> Result<PathBuf> {
         .join("data")
         .join(workspace.as_str());
     fs::create_dir_all(&path)
-        .context("Failed to create module directory")?;
+        .context("Failed to create workspace directory")?;
     Ok(path)
 }
 
@@ -48,7 +48,7 @@ pub fn blobs_dir(workspace: &Workspace) -> Result<PathBuf> {
     let path = workspace_dir(workspace)?
         .join("blobs");
     fs::create_dir_all(&path)
-        .context("Failed to create module directory")?;
+        .context("Failed to create blobs directory")?;
     Ok(path)
 }
 
@@ -57,7 +57,7 @@ pub fn cache_dir() -> Result<PathBuf> {
         .ok_or_else(|| format_err!("Failed to find cache directory"))?;
     let path = path.join("sn0int");
     fs::create_dir_all(&path)
-        .context("Failed to create cache directory")?;
+        .context("Failed to create sn0int cache directory")?;
     Ok(path)
 }
 
