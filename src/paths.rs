@@ -14,14 +14,14 @@ pub fn sn0int_dir() -> Result<PathBuf> {
 }
 
 pub fn history_path() -> Result<PathBuf> {
-    let path = sn0int_dir()?;
-    let path = path.join("history");
+    let path = sn0int_dir()?
+        .join("history");
     Ok(path)
 }
 
 pub fn module_dir() -> Result<PathBuf> {
-    let path = sn0int_dir()?;
-    let path = path.join("modules");
+    let path = sn0int_dir()?
+        .join("modules");
     fs::create_dir_all(&path)
         .context("Failed to create modules directory")?;
     Ok(path)
@@ -36,8 +36,7 @@ pub fn data_dir() -> Result<PathBuf> {
 }
 
 pub fn workspace_dir(workspace: &Workspace) -> Result<PathBuf> {
-    let path = sn0int_dir()?
-        .join("data")
+    let path = data_dir()?
         .join(workspace.as_str());
     fs::create_dir_all(&path)
         .context("Failed to create workspace directory")?;
