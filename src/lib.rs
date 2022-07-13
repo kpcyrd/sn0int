@@ -1,6 +1,8 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::type_complexity)]
 #![allow(clippy::large_enum_variant)]
+// because of diesel
+#![allow(clippy::extra_unused_lifetimes)]
 
 #![warn(unused_extern_crates)]
 use hlua_badtouch as hlua;

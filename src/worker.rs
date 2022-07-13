@@ -15,6 +15,7 @@ use crate::ratelimits::{Ratelimiter, RatelimitResponse};
 use crate::shell::Shell;
 use sn0int_std::ratelimits::RatelimitSender;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::result;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
@@ -204,7 +205,7 @@ impl DatabaseEvent {
         // TODO: we don't want to copy the match arms everywhere
         let mut subject = format!("New activity: {:?}", object.topic);
         if let Some(uniq) = &object.uniq {
-            subject += &format!(" ({:?})", uniq);
+            write!(subject, " ({:?})", uniq).expect("out of memory");
         }
         let topic = format!("activity:{}", object.topic);
         Self::notify(rl, spinner, ratelimit, &topic, subject);
@@ -213,20 +214,20 @@ impl DatabaseEvent {
     fn spinner_log_new_activity<T: SpinLogger>(spinner: &mut T, object: &NewActivity, verbose: u64) {
         let mut log = format!("{:?} ", object.topic);
         if let Some(uniq) = &object.uniq {
-            log.push_str(&format!("({:?}) ", uniq));
+            write!(log, "({:?}) ", uniq).expect("out of memory");
         }
-        log.push_str(&format!("@ {}", object.time));
+        write!(log, "@ {}", object.time).expect("out of memory");
 
         if let (Some(ref lat), Some(ref lon)) = (object.latitude, object.longitude) {
-            log.push_str(&format!(" ({}, {}", lat, lon));
+            write!(log, " ({}, {}", lat, lon).expect("out of memory");
             if let Some(radius) = &object.radius {
-                log.push_str(&format!(" | {}m", radius));
+                write!(log, " | {}m", radius).expect("out of memory");
             }
             log.push(')');
         }
 
         if verbose > 0 {
-            log.push_str(&format!(": {}", object.content));
+            write!(log, ": {}", object.content).expect("out of memory");
         }
 
         spinner.log(&log);

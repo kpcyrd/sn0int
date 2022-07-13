@@ -63,7 +63,7 @@ impl<'a> Repl<'a> {
             Ok(val) => {
                 if val != AnyLuaValue::LuaNil {
                     let mut out = String::new();
-                    format_lua(&mut out, &val);
+                    format_lua(&mut out, &val).expect("out of memory");
                     println!("{}", out);
                 }
                 if let Some(err) = self.state.last_error() {

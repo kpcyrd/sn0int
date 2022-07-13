@@ -5,6 +5,7 @@ use diesel::expression::SqlLiteral;
 use diesel::expression::sql_literal::sql;
 use diesel::sql_types::Bool;
 use diesel::prelude::*;
+use std::fmt::Write;
 use strum_macros::{EnumString, IntoStaticStr};
 use crate::autonoscope::{RuleSet, RuleType};
 use crate::models::*;
@@ -502,14 +503,14 @@ impl Filter {
         for arg in args {
             if ["=", "!=", "<", ">", "<=", ">=", "like"].contains(&arg.to_lowercase().as_str()) {
                 expect_value = true;
-                query += &format!(" {}", arg);
+                write!(query, " {}", arg)?;
                 continue;
             }
 
             if let Some(idx) = arg.find('=') {
                 if idx != 0 {
                     let (key, value) = arg.split_at(idx);
-                    query += &format!(" {} = {}", key, Self::escape(&value[1..]));
+                    write!(query, " {} = {}", key, Self::escape(&value[1..]))?;
                     continue;
                 }
             }
@@ -519,7 +520,7 @@ impl Filter {
                 query.push_str(&Self::escape(arg));
                 expect_value = false;
             } else {
-                query += &format!(" {}", arg);
+                write!(query, " {}", arg)?;
             }
         }
         debug!("Parsed query: {:?}", query);

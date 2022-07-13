@@ -6,6 +6,7 @@ use crate::cal::{ActivityGrade, DateArg};
 use crate::models::*;
 use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::fmt::Write;
 
 const MONTH_LINES: i32 = 7;
 
@@ -223,7 +224,7 @@ impl DateSpec {
                 let start = Utc.ymd(*year, *month, 1);
                 let days = days_in_month(*year, *month) as u32;
 
-                w.push_str(&format!("{:^21}\n", start.format("%B %Y")));
+                writeln!(w, "{:^21}", start.format("%B %Y")).expect("out of memory");
                 w.push_str(" Su Mo Tu We Th Fr Sa\n");
 
                 let mut cur_week_day = start.weekday();
@@ -244,7 +245,7 @@ impl DateSpec {
                     } else {
                         w.push(' ');
                     }
-                    w.push_str(&format!("{:2}", cur_day));
+                    write!(w, "{:2}", cur_day).expect("out of memory");
                     week_written += 3;
                     w.push_str("\x1b[0m");
 
