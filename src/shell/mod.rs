@@ -174,9 +174,9 @@ pub struct Shell<'a> {
 }
 
 impl<'a> Shell<'a> {
-    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, library: Library<'a>, keyring: KeyRing) -> Shell<'a> {
+    pub fn new(config: &'a Config, db: Database, blobs: BlobStorage, psl: PslReader, library: Library<'a>, keyring: KeyRing) -> Result<Shell<'a>> {
         let h = CmdCompleter::default();
-        let rl = Readline::with(h);
+        let rl = Readline::with(h)?;
 
         let prompt = Prompt::new(db.name().to_string());
 
@@ -197,7 +197,7 @@ impl<'a> Shell<'a> {
         rl.reload_module_cache();
         rl.reload_keyring_cache();
 
-        rl
+        Ok(rl)
     }
 
     #[inline(always)]
@@ -571,7 +571,7 @@ pub fn init<'a>(args: &Args, config: &'a Config, verbose_init: bool) -> Result<S
     }
     autoupdate.check_background(config, library.list());
 
-    let mut rl = Shell::new(config, db, blobs, psl, library, keyring);
+    let mut rl = Shell::new(config, db, blobs, psl, library, keyring)?;
 
     ttl::reap_expired(&mut rl)?;
 

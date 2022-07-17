@@ -15,7 +15,7 @@ pub fn random_string(len: usize) -> String {
 }
 
 pub fn read_line(prompt: &str) -> Result<String> {
-    let mut rl = rustyline::Editor::<()>::new();
+    let mut rl = rustyline::Editor::<()>::new()?;
     let mut line = rl.readline(prompt)
         .map_err(|err| match err {
             ReadlineError::Eof => format_err!("Failed to read line from input"),
