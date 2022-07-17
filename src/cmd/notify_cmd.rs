@@ -2,12 +2,12 @@ use crate::errors::*;
 
 use crate::cmd::Cmd;
 use crate::engine::Module;
-// use crate::models::*;
 use crate::notify::{self, Notification};
 use crate::options::{self, Opt};
 use crate::shell::Shell;
 use crate::term;
 use sn0int_std::ratelimits::Ratelimiter;
+use std::fmt::Write;
 use structopt::StructOpt;
 use structopt::clap::AppSettings;
 
@@ -52,19 +52,19 @@ pub struct ExecArgs {
 }
 
 fn print_summary(module: &Module, sent: usize, errors: usize) {
-        let mut out = if sent == 1 {
-            String::from("Sent 1 notification")
-        } else {
-            format!("Sent {} notifications", sent)
-        };
+    let mut out = if sent == 1 {
+        String::from("Sent 1 notification")
+    } else {
+        format!("Sent {} notifications", sent)
+    };
 
-        out.push_str(&format!(" with {}", module.canonical()));
+    write!(out, " with {}", module.canonical()).expect("out of memory");
 
-        if errors > 0 {
-            out.push_str(&format!(" ({} errors)", errors));
-        }
+    if errors > 0 {
+        write!(out, " ({} errors)", errors).expect("out of memory");
+    }
 
-        term::info(&out);
+    term::info(&out);
 }
 
 fn send(args: SendArgs, rl: &mut Shell) -> Result<()> {

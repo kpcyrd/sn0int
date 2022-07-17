@@ -13,6 +13,7 @@ use rand::distributions::Alphanumeric;
 use serde::{Serialize, Deserialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
+use std::fmt::Write;
 use std::iter;
 use std::net::SocketAddr;
 use std::ops::Deref;
@@ -251,7 +252,8 @@ impl HttpRequest {
             if !cookies.is_empty() {
                 cookies += "; ";
             }
-            cookies.push_str(&format!("{}={}", key, value));
+            // it's a write to a String, so panic if re-allocation fails is fine
+            write!(cookies, "{}={}", key, value).expect("out of memory");
         }
 
         if !cookies.is_empty() {

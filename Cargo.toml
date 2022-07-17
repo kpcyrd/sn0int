@@ -34,7 +34,7 @@ sqlite-bundled = ["libsqlite3-sys/bundled"]
 [dependencies]
 sn0int-common = { version="0.13.0", path="sn0int-common" }
 sn0int-std = { version="=0.24.2", path="sn0int-std" }
-rustyline = "9.0"
+rustyline = "10.0"
 log = "0.4"
 env_logger = "0.9"
 hlua-badtouch = "0.4"
@@ -93,7 +93,7 @@ os-version = "0.2"
 caps = "0.5"
 #syscallz = { path="../syscallz-rs" }
 syscallz = "0.16"
-nix = "0.23"
+nix = "0.24"
 
 [target.'cfg(target_os="openbsd")'.dependencies]
 pledge = "0.4"
@@ -101,5 +101,5 @@ unveil = "0.3"
 
 [dev-dependencies]
 #boxxy = { path = "../boxxy-rs" }
-boxxy = "0.12"
+boxxy = "0.13"
 tempfile = "3.0"

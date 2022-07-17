@@ -10,35 +10,29 @@ pub struct Readline<T: rustyline::Helper> {
 
 impl Readline<()> {
     #[inline]
-    pub fn new() -> Readline<()> {
+    pub fn new() -> Result<Readline<()>> {
         Readline::init(None)
-    }
-}
-
-impl Default for Readline<()> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
 impl<T: rustyline::Helper> Readline<T> {
     #[inline]
-    pub fn with(helper: T) -> Readline<T> {
+    pub fn with(helper: T) -> Result<Readline<T>> {
         Readline::init(Some(helper))
     }
 
-    fn init(helper: Option<T>) -> Readline<T> {
+    fn init(helper: Option<T>) -> Result<Readline<T>> {
         let rl_config = rustyline::Config::builder()
             .completion_type(CompletionType::List)
             .edit_mode(EditMode::Emacs)
             .build();
 
-        let mut rl: Editor<T> = Editor::with_config(rl_config);
+        let mut rl: Editor<T> = Editor::with_config(rl_config)?;
         rl.set_helper(helper);
 
-        Readline {
+        Ok(Readline {
             rl,
-        }
+        })
     }
 
     #[inline]

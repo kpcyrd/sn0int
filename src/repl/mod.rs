@@ -24,13 +24,13 @@ pub struct Repl<'a> {
 }
 
 impl<'a> Repl<'a> {
-    pub fn new(lua: Lua<'a>, state: Arc<LuaState>) -> Repl<'a> {
-        let rl = Readline::with(ReplCompleter::default());
-        Repl {
+    pub fn new(lua: Lua<'a>, state: Arc<LuaState>) -> Result<Repl<'a>> {
+        let rl = Readline::with(ReplCompleter::default())?;
+        Ok(Repl {
             rl,
             lua,
             state,
-        }
+        })
     }
 
     fn update_globals(&mut self) {
@@ -63,7 +63,7 @@ impl<'a> Repl<'a> {
             Ok(val) => {
                 if val != AnyLuaValue::LuaNil {
                     let mut out = String::new();
-                    format_lua(&mut out, &val);
+                    format_lua(&mut out, &val).expect("out of memory");
                     println!("{}", out);
                 }
                 if let Some(err) = self.state.last_error() {
@@ -104,7 +104,7 @@ pub fn run(config: &Config) -> Result<()> {
 
     let tx = DummyIpcChild::create();
     let (lua, state) = ctx::ctx(env, tx);
-    let mut repl = Repl::new(lua, state);
+    let mut repl = Repl::new(lua, state)?;
 
     println!(r#":: sn0int v{} lua repl
 Assign variables with `a = sn0int_version()` and `return a` to print

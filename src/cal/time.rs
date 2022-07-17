@@ -5,6 +5,7 @@ use chrono::prelude::*;
 use crate::cal::{ActivityGrade, DateArg};
 use crate::models::*;
 use std::collections::HashMap;
+use std::fmt::Write;
 
 const MIN_PER_DAY: u32 = 1440;
 
@@ -156,7 +157,7 @@ impl DateTimeSpec {
         // add legend
         w.push_str(&" ".repeat(11));
         for x in 0..24 {
-            w.push_str(&format!("{:02}", x));
+            write!(w, "{:02}", x).expect("out of memory");
 
             for i in 0..ctx.hour_width() {
                 if i >= 2 {

@@ -62,7 +62,7 @@ pub fn decode(x: &str) -> Result<AnyLuaValue> {
 }
 
 #[inline]
-fn append_text(stack: &mut Vec<XmlElement>, text: String) {
+fn append_text(stack: &mut [XmlElement], text: String) {
     if let Some(tail) = stack.last_mut() {
         if let Some(prev) = tail.text.as_mut() {
             prev.push_str(&text);
