@@ -114,23 +114,28 @@ fn print_module(module: &Module, is_outdated: bool) -> Result<()> {
         module.version().blue()
     )?;
 
-    let kr = KeyRing::load(&KeyRing::path().unwrap()).unwrap();
+    let key_ring = KeyRing::load(&KeyRing::path().unwrap());
 
     if !module.keyring_access().is_empty() {
         let mut keys = String::new();
         for key in module.keyring_access() {
-            if kr.get_all_for(key).is_empty() {
-                write!(
-                    keys,
-                    "{}, ",
-                    &format!("{}(missing)", &key).color(Color::Red)
-                )?;
-            } else {
-                write!(keys, "{}, ", &key.color(Color::Green))?;
+            match &key_ring {
+                Ok(kr) => {
+                    if kr.get_all_for(key).is_empty() {
+                        write!(
+                            keys,
+                            "{}, ",
+                            &format!("{}(missing)", &key).color(Color::Red)
+                        )?;
+                    } else {
+                        write!(keys, "{}, ", &key.color(Color::Green))?;
+                    }
+                }
+                Err(_) => {
+                    write!(keys, "{}, ", &key)?;
+                }
             }
         }
-        //
-        println!("{:?}", keys.as_bytes());
         let keys = keys.strip_suffix(", ").unwrap();
         write_tag(&mut out, Color::Cyan, &format!("Keyring: {}", keys))?;
     }
