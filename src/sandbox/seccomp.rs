@@ -13,11 +13,11 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::sigaltstack)?;
     ctx.allow_syscall(Syscall::munmap)?;
     ctx.allow_syscall(Syscall::fcntl)?;
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "riscv64")))]
     ctx.allow_syscall(Syscall::fcntl64)?;
     ctx.allow_syscall(Syscall::uname)?;
     ctx.allow_syscall(Syscall::close)?;
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "riscv64")))]
     ctx.allow_syscall(Syscall::poll)?;
     #[cfg(target_arch = "aarch64")]
     ctx.allow_syscall(Syscall::ppoll)?;
@@ -29,7 +29,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::connect)?;
     #[cfg(target_arch = "x86")]
     ctx.allow_syscall(Syscall::socketcall)?;
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "riscv64")))]
     ctx.allow_syscall(Syscall::epoll_wait)?;
     ctx.allow_syscall(Syscall::epoll_pwait)?;
     ctx.allow_syscall(Syscall::getrandom)?;
@@ -44,7 +44,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::getsockopt)?;
     #[cfg(not(target_arch = "arm"))]
     ctx.allow_syscall(Syscall::mmap)?;
-    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+    #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64", target_arch = "riscv64")))]
     ctx.allow_syscall(Syscall::mmap2)?;
     ctx.allow_syscall(Syscall::mremap)?;
     ctx.allow_syscall(Syscall::mprotect)?;
@@ -79,7 +79,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::_llseek)?;
 
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::openat)?;
-    #[cfg(not(target_arch = "aarch64"))]
+    #[cfg(not(any(target_arch = "aarch64", target_arch = "riscv64")))]
     ctx.set_action_for_syscall(Action::Errno(1), Syscall::open)?;
 
     ctx.load()?;
