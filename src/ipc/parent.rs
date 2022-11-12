@@ -71,6 +71,10 @@ impl IpcParent {
         let mut line = String::new();
         let len = self.stdout.read_line(&mut line)?;
 
+        if len == 0 {
+            bail!("Sandbox child has crashed");
+        }
+
         let event = serde_json::from_str(&line[..len])?;
         debug!("IpcParent received: {:?}", event);
         Ok(event)
