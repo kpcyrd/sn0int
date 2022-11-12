@@ -10,8 +10,13 @@ function run()
     mqtt_subscribe(sock, '#', 0)
 
     while true do
-        local pkt = mqtt_recv_text(sock)
+        local pkt = mqtt_recv(sock)
         if last_err() then return end
-        info(pkt)
+        local log = {pkt=pkt}
+        if pkt then
+            log['text'] = utf8_decode(pkt['body'])
+            if last_err() then clear_err() end
+        end
+        info(log)
     end
 end
