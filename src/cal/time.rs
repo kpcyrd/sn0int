@@ -14,7 +14,7 @@ fn round_to_slice(time: &NaiveDateTime, slice_duration: u32) -> NaiveDateTime {
     let hour = time.hour();
     let mins = time.minute();
     let slice = mins - (mins % slice_duration);
-    date.and_hms(hour, slice, 0)
+    date.and_hms_opt(hour, slice, 0).expect("Invalid hour/min/sec")
 }
 
 fn setup_graph_map(events: &[Activity], slice_duration: u32) -> (HashMap<NaiveDateTime, u64>, u64) {
@@ -110,7 +110,7 @@ pub struct DateTimeSpec {
 
 impl DateTimeSpec {
     pub fn from_args(args: &[DateArg], context: Option<u32>) -> Result<DateTimeSpec> {
-        let today = Utc::today().naive_utc();
+        let today = Utc::now().date_naive();
         if args.is_empty() {
             let mut start = today;
 
@@ -176,7 +176,7 @@ impl DateTimeSpec {
             let mut mins = 0;
 
             for _ in 0..(MIN_PER_DAY / ctx.slice_duration) {
-                let time = date.and_hms(hours, mins, 0);
+                let time = date.and_hms_opt(hours, mins, 0).expect("Invalid hour/min/sec");
 
                 if !ctx.is_future(&time) {
                     let activity = ctx.activity_for_slice(&time);

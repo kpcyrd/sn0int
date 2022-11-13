@@ -18,7 +18,7 @@ pub struct TimeSpec {
 
 impl TimeSpec {
     fn resolve(s: &str, now: NaiveDateTime) -> Result<Self> {
-        let today = NaiveDateTime::new(now.date(), NaiveTime::from_hms(0, 0, 0));
+        let today = NaiveDateTime::new(now.date(), NaiveTime::from_hms_opt(0, 0, 0).expect("Invalid hour/min/sec"));
 
         let datetime = match s {
             "today" => today,
@@ -122,8 +122,8 @@ mod tests {
     use super::*;
 
     fn datetime() -> NaiveDateTime {
-        let date = chrono::NaiveDate::from_ymd(2020, 3, 14);
-        let time = chrono::NaiveTime::from_hms(16, 20, 23);
+        let date = chrono::NaiveDate::from_ymd_opt(2020, 3, 14).unwrap();
+        let time = chrono::NaiveTime::from_hms_opt(16, 20, 23).unwrap();
         NaiveDateTime::new(date, time)
     }
 
