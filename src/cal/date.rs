@@ -55,11 +55,11 @@ fn chunk_months(ctx: &DateContext, months: &[DateSpec]) -> String {
 }
 
 fn days_in_month(year: i32, month: u32) -> i64 {
-    let start = Utc.ymd(year, month, 1);
+    let start = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).single().expect("Datetime is not unique");
     let end = if month == 12 {
-        Utc.ymd(year + 1, 1, 1)
+        Utc.with_ymd_and_hms(year + 1, 1, 1, 0, 0, 0).single().expect("Datetime is not unique")
     } else {
-        Utc.ymd(year, month + 1, 1)
+        Utc.with_ymd_and_hms(year, month + 1, 1, 0, 0, 0).single().expect("Datetime is not unique")
     };
     end.signed_duration_since(start).num_days()
 }
@@ -152,7 +152,7 @@ impl DateSpec {
             bail!("Too many datespec args");
         }
 
-        let today = Utc::today();
+        let today = Utc::now();
         let ds = match (args.get(0), args.get(1), context) {
             (None, _, None) => DateSpec::YearMonth((today.year(), today.month())),
             (None, _, Some(context)) => DateSpec::YearMonthContext((today.year(), today.month(), context)),
@@ -172,8 +172,8 @@ impl DateSpec {
 
     pub fn start(&self) -> NaiveDate {
         match self {
-            DateSpec::Year(year) => NaiveDate::from_ymd(*year, 1, 1),
-            DateSpec::YearMonth((year, month)) => NaiveDate::from_ymd(*year, *month, 1),
+            DateSpec::Year(year) => NaiveDate::from_ymd_opt(*year, 1, 1).expect("Invalid month/day"),
+            DateSpec::YearMonth((year, month)) => NaiveDate::from_ymd_opt(*year, *month, 1).expect("Invalid month/day"),
             DateSpec::YearMonthContext((year, month, context)) => {
                 let mut year = *year - (*context / 12) as i32;
                 let context = context % 12;
@@ -183,21 +183,21 @@ impl DateSpec {
                 } else {
                     month - context
                 };
-                NaiveDate::from_ymd(year, month, 1)
+                NaiveDate::from_ymd_opt(year, month, 1).expect("Invalid month/day")
             },
         }
     }
 
     pub fn end(&self) -> NaiveDate {
         match self {
-            DateSpec::Year(year) => NaiveDate::from_ymd(year + 1, 1, 1),
+            DateSpec::Year(year) => NaiveDate::from_ymd_opt(year + 1, 1, 1).expect("Invalid month/day"),
             DateSpec::YearMonth((year, month)) => {
                 let (year, month) = if *month == 12 {
                     (*year + 1, 1)
                 } else {
                     (*year, *month + 1)
                 };
-                NaiveDate::from_ymd(year, month, 1)
+                NaiveDate::from_ymd_opt(year, month, 1).expect("Invalid month/day")
             },
             DateSpec::YearMonthContext((year, month, _context)) => {
                 let (year, month) = if *month == 12 {
@@ -205,7 +205,7 @@ impl DateSpec {
                 } else {
                     (*year, *month + 1)
                 };
-                NaiveDate::from_ymd(year, month, 1)
+                NaiveDate::from_ymd_opt(year, month, 1).expect("Invalid month/day")
             },
         }
     }
@@ -221,7 +221,7 @@ impl DateSpec {
             DateSpec::YearMonth((year, month)) => {
                 let mut w = String::new();
 
-                let start = Utc.ymd(*year, *month, 1);
+                let start = Utc.with_ymd_and_hms(*year, *month, 1, 0, 0, 0).single().expect("Datetime is not unique");
                 let days = days_in_month(*year, *month) as u32;
 
                 writeln!(w, "{:^21}", start.format("%B %Y")).expect("out of memory");
@@ -233,7 +233,7 @@ impl DateSpec {
 
                 let mut week_written = week_progress * 3;
                 for cur_day in 1..=days {
-                    let date = NaiveDate::from_ymd(*year, *month, cur_day);
+                    let date = NaiveDate::from_ymd_opt(*year, *month, cur_day).expect("Invalid month/day");
 
                     if !ctx.is_future(&date) {
                         let activity = ctx.activity_for_day(&date);
@@ -297,7 +297,7 @@ mod tests {
         DateContext {
             events: HashMap::new(),
             max: 0,
-            today: NaiveDate::from_ymd(2020, 5, 30),
+            today: NaiveDate::from_ymd_opt(2020, 5, 30).unwrap(),
         }
     }
 
@@ -325,9 +325,9 @@ mod tests {
         let ctx = DateContext {
             events,
             max: 0,
-            today: NaiveDate::from_ymd(2020, 6, 6),
+            today: NaiveDate::from_ymd_opt(2020, 6, 6).unwrap(),
         };
-        let grade = ctx.activity_for_day(&NaiveDate::from_ymd(2020, 6, 6));
+        let grade = ctx.activity_for_day(&NaiveDate::from_ymd_opt(2020, 6, 6).unwrap());
         assert_eq!(grade, ActivityGrade::None);
     }
 

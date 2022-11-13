@@ -488,6 +488,7 @@ pub fn spawn(rl: &mut Shell,
             tx.send(Event2::Start);
             let event = match ipc::parent::run(module, &tx, arg, keyring, verbose, has_stdin, proxy, user_agent, options, blobs) {
                 Ok(exit) => exit,
+                // TODO: this should include the whole error chain
                 Err(err) => ExitEvent::SetupFailed(err.to_string()),
             };
             tx.send(Event2::Exit(event));

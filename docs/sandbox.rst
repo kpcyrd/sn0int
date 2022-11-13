@@ -119,7 +119,7 @@ You might experience a sandbox failure, especially on architectures that are
 less popular. This usually looks like this::
 
     [sn0int][example][kpcyrd/ctlogs] > run
-    [-] Failed "example.com": EOF while parsing a value at line 1 column 0
+    [-] Failed "example.com": Sandbox child has crashed
     [+] Finished kpcyrd/ctlogs (1 errors)
 
 A module that never finishes could also mean an IO thread inside the worker got
