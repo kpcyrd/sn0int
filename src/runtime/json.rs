@@ -7,7 +7,7 @@ use crate::json;
 
 pub fn json_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("json_decode", hlua::function1(move |x: String| -> Result<AnyLuaValue> {
-        json::decode(&x)
+        json::decode(x)
             .map_err(|err| state.set_error(err))
     }))
 }

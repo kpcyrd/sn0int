@@ -17,7 +17,7 @@ pub struct TlsData {
 
 impl TlsData {
     pub fn to_lua(&self) -> Result<AnyLuaValue> {
-        let v = serde_json::to_value(&self)?;
+        let v = serde_json::to_value(self)?;
         let v = LuaJsonValue::from(v).into();
         Ok(v)
     }

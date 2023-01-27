@@ -73,7 +73,7 @@ pub fn ws_recv_json(lua: &mut hlua::Lua, state: Arc<dyn State>) {
             .map_err(|err| state.set_error(err))?;
 
         let json = if let Some(json) = json {
-            let json = json::decode(&json)
+            let json = json::decode(json)
                 .map_err(|err| state.set_error(err))?;
             Some(json)
         } else {

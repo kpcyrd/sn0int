@@ -21,7 +21,7 @@ pub struct Config {
 impl Config {
     pub fn load() -> Result<Config> {
         let path = Config::path()?;
-        Config::load_from(&path)
+        Config::load_from(path)
     }
 
     pub fn path() -> Result<PathBuf> {

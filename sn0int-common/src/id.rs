@@ -1,9 +1,8 @@
 use crate::errors::*;
-use serde::{de, Serialize, Serializer, Deserialize, Deserializer};
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::result;
 use std::str::FromStr;
-
 
 #[inline(always)]
 fn valid_char(c: char) -> bool {
@@ -71,7 +70,8 @@ impl Serialize for ModuleID {
 
 impl<'de> Deserialize<'de> for ModuleID {
     fn deserialize<D>(deserializer: D) -> result::Result<Self, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
         FromStr::from_str(&s).map_err(de::Error::custom)

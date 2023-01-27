@@ -4171,7 +4171,6 @@ name = "sn0int"
 version = "0.24.3"
 dependencies = [
  "atty",
- "base64 0.13.1",
  "boxxy",
  "bytes 0.4.12",
  "bytesize",
@@ -4275,7 +4274,6 @@ dependencies = [
 name = "sn0int-std"
 version = "0.24.3"
 dependencies = [
- "base64 0.13.1",
  "blake2 0.10.6",
  "bs58",
  "bufstream",
@@ -4283,6 +4281,7 @@ dependencies = [
  "chrono",
  "chrootable-https",
  "ct-logs 0.7.0",
+ "data-encoding",
  "der-parser 8.1.0",
  "digest 0.10.6",
  "env_logger",

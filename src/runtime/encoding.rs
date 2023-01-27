@@ -3,7 +3,7 @@ use crate::errors::*;
 use crate::engine::ctx::State;
 use crate::engine::structs::{byte_array, lua_bytes};
 use crate::hlua::{self, AnyLuaValue};
-use data_encoding::{Specification, Encoding};
+use data_encoding::{BASE64, Specification, Encoding};
 use std::sync::Arc;
 
 
@@ -19,7 +19,7 @@ fn spec(symbols: &str, padding: &str) -> Result<Encoding> {
 
 pub fn base64_decode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_decode", hlua::function1(move |bytes: String| -> Result<AnyLuaValue> {
-        base64::decode(&bytes)
+        BASE64.decode(bytes.as_bytes())
             .map_err(|err| state.set_error(err.into()))
             .map(|bytes| lua_bytes(&bytes))
     }))
@@ -29,7 +29,7 @@ pub fn base64_encode(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("base64_encode", hlua::function1(move |bytes: AnyLuaValue| -> Result<String> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| base64::encode(&bytes))
+            .map(|bytes| BASE64.encode(&bytes))
     }))
 }
 

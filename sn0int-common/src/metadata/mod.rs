@@ -1,9 +1,9 @@
 use crate::errors::*;
-use nom::IResult;
 use nom::bytes::complete::{tag, take_until};
 use nom::combinator::map_res;
 use nom::multi::fold_many0;
-use serde::{Serialize, Deserialize};
+use nom::IResult;
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
 mod stealth;

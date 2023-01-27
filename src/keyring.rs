@@ -94,7 +94,7 @@ impl KeyRing {
     }
 
     pub fn load(path: &Path) -> Result<KeyRing> {
-        let buf = fs::read(&path)
+        let buf = fs::read(path)
             .context("Failed to read keyring file")?;
         serde_json::from_slice(&buf)
             .map_err(Error::from)
@@ -103,7 +103,7 @@ impl KeyRing {
     pub fn save(&self) -> Result<()> {
         let path = Self::path()?;
         let buf = serde_json::to_string(&self)?;
-        fs::write(&path, buf)
+        fs::write(path, buf)
             .context("Failed to save keyring")?;
         Ok(())
     }
@@ -208,7 +208,7 @@ pub struct KeyRingEntry {
 
 impl KeyRingEntry {
     pub fn to_lua(&self) -> Result<AnyLuaValue> {
-        let v = serde_json::to_value(&self)?;
+        let v = serde_json::to_value(self)?;
         let v = LuaJsonValue::from(v).into();
         Ok(v)
     }

@@ -129,7 +129,7 @@ impl Stream {
         let socket = if connect_timeout > 0 {
             TcpStream::connect_timeout(&addr, Duration::from_secs(connect_timeout))?
         } else {
-            TcpStream::connect(&addr)?
+            TcpStream::connect(addr)?
         };
         debug!("successfully connected to {:?}", addr);
 
@@ -138,7 +138,7 @@ impl Stream {
         tls::wrap_if_enabled(socket, host, options)
     }
 
-    pub fn connect_socks5_stream(proxy: &SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
+    pub fn connect_socks5_stream(proxy: SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
         debug!("connecting to {:?}:{:?} with socks5 on {:?}", host, port, proxy);
 
         let addr = match host.parse::<Ipv4Addr>() {
@@ -146,7 +146,7 @@ impl Stream {
             _ => ProxyDest::Domain(host.to_string()),
         };
 
-        let fut = socks5::connect(proxy, addr, port);
+        let fut = socks5::connect(&proxy, addr, port);
 
         let mut rt = Runtime::new()?;
         let socket = rt.block_on(fut)?;
@@ -211,7 +211,7 @@ impl Socket {
         Ok(Socket::new(stream))
     }
 
-    pub fn connect_socks5(proxy: &SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
+    pub fn connect_socks5(proxy: SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
         let stream = Stream::connect_socks5_stream(proxy, host, port, options)?;
         Ok(Socket::new(stream))
     }
