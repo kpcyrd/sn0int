@@ -36,7 +36,7 @@ x509-parser = "0.13"
 der-parser = "8"
 publicsuffix = { version="2", default-features=false }
 xml-rs = "0.8"
-geo = "0.20"
+geo = "0.23"
 bytes = "0.4"
 base64 = "0.13"
 chrono = { version = "0.4", features = ["serde"] }
