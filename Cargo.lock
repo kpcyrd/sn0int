@@ -4306,6 +4306,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded 0.7.1",
  "sodiumoxide",
+ "thiserror",
  "tokio",
  "tungstenite",
  "url 2.3.1",

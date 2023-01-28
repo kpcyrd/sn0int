@@ -1,9 +1,9 @@
-use bytes::Bytes;
 use blake2::Blake2bVar;
+use bytes::Bytes;
 use data_encoding::BASE64;
 use digest::{Update, VariableOutput};
-use serde::ser::{Serialize, Serializer};
 use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::{Serialize, Serializer};
 use std::result;
 
 #[derive(Debug, Clone, PartialEq)]
