@@ -1,8 +1,9 @@
-use bytes::Bytes;
 use blake2::Blake2bVar;
+use bytes::Bytes;
+use data_encoding::BASE64;
 use digest::{Update, VariableOutput};
-use serde::ser::{Serialize, Serializer};
 use serde::de::{self, Deserialize, Deserializer};
+use serde::ser::{Serialize, Serializer};
 use std::result;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -40,7 +41,7 @@ impl Serialize for Blob {
     where
         S: Serializer,
     {
-        let s = base64::encode(&self.bytes);
+        let s = BASE64.encode(&self.bytes);
         serializer.serialize_str(&s)
     }
 }
@@ -52,7 +53,7 @@ impl<'de> Deserialize<'de> for Blob {
         D: Deserializer<'de>,
     {
         let s = String::deserialize(deserializer)?;
-        let bytes = base64::decode(&s)
+        let bytes = BASE64.decode(s.as_bytes())
             .map_err(de::Error::custom)?;
         Ok(Blob::create(Bytes::from(bytes)))
     }

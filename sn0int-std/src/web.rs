@@ -8,6 +8,7 @@ pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 use chrootable_https::http::HttpTryFrom;
 use chrootable_https::http::uri::Parts;
 use chrootable_https::http::request::Builder;
+use data_encoding::BASE64;
 use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
 use serde::{Serialize, Deserialize};
@@ -161,9 +162,9 @@ impl HttpRequest {
         // add headers
         if let Some(ref auth) = self.basic_auth {
             use chrootable_https::header::AUTHORIZATION;
-            let &(ref user, ref password) = auth;
+            let (user, password) = auth;
 
-            let auth = base64::encode(&format!("{}:{}", user, password));
+            let auth = BASE64.encode(format!("{}:{}", user, password).as_bytes());
             let auth = format!("Basic {}", auth);
             req.header(AUTHORIZATION, auth.as_str());
         }
@@ -319,7 +320,7 @@ impl HttpRequest {
 
 impl From<HttpRequest> for AnyLuaValue {
     fn from(req: HttpRequest) -> AnyLuaValue {
-        let v = serde_json::to_value(&req).unwrap();
+        let v = serde_json::to_value(req).unwrap();
         LuaJsonValue::from(v).into()
     }
 }

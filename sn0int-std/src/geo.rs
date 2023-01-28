@@ -1,7 +1,7 @@
 use crate::errors::*;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
-use geo::{LineString, Polygon, Coordinate};
+use geo::{LineString, Polygon, Coord};
 use geo::prelude::*;
 use serde::Deserialize;
 
@@ -21,7 +21,7 @@ impl Point {
 
 pub fn polygon_contains(ring: &[Point], p: &Point) -> bool {
     let ring = ring.iter()
-        .map(|p| Coordinate { x: p.lon, y: p.lat })
+        .map(|p| Coord { x: p.lon, y: p.lat })
         .collect::<Vec<_>>();
 
     let polygon = Polygon::new(LineString::from(ring), vec![]);

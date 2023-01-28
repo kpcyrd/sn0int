@@ -11,7 +11,7 @@ pub fn md5(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("md5", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&md5::Md5::digest(&bytes)))
+            .map(|bytes| lua_bytes(&md5::Md5::digest(bytes)))
     }))
 }
 
@@ -19,7 +19,7 @@ pub fn sha1(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha1", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&sha1::Sha1::digest(&bytes)))
+            .map(|bytes| lua_bytes(&sha1::Sha1::digest(bytes)))
     }))
 }
 
@@ -27,7 +27,7 @@ pub fn sha2_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha2_256", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&sha2::Sha256::digest(&bytes)))
+            .map(|bytes| lua_bytes(&sha2::Sha256::digest(bytes)))
     }))
 }
 
@@ -35,7 +35,7 @@ pub fn sha2_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha2_512", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&sha2::Sha512::digest(&bytes)))
+            .map(|bytes| lua_bytes(&sha2::Sha512::digest(bytes)))
     }))
 }
 
@@ -43,7 +43,7 @@ pub fn sha3_256(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha3_256", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&sha3::Sha3_256::digest(&bytes)))
+            .map(|bytes| lua_bytes(&sha3::Sha3_256::digest(bytes)))
     }))
 }
 
@@ -51,7 +51,7 @@ pub fn sha3_512(lua: &mut hlua::Lua, state: Arc<dyn State>) {
     lua.set("sha3_512", hlua::function1(move |bytes: AnyLuaValue| -> Result<AnyLuaValue> {
         byte_array(bytes)
             .map_err(|err| state.set_error(err))
-            .map(|bytes| lua_bytes(&sha3::Sha3_512::digest(&bytes)))
+            .map(|bytes| lua_bytes(&sha3::Sha3_512::digest(bytes)))
     }))
 }
 

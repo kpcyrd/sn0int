@@ -47,7 +47,7 @@ impl IpcParent {
     }
 
     pub fn send_start(&mut self, start: &StartCommand) -> Result<()> {
-        let start = serde_json::to_value(&start)?;
+        let start = serde_json::to_value(start)?;
         self.send(&start)?;
         Ok(())
     }

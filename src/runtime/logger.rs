@@ -15,7 +15,7 @@ pub fn format_lua(out: &mut String, x: &AnyLuaValue) -> Result<()> {
             out.push('{');
             let mut first = true;
 
-            for &(ref k, ref v) in x {
+            for (k, v) in x {
                 if !first {
                     out.push_str(", ");
                 }

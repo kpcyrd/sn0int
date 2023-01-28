@@ -66,7 +66,7 @@ impl AutoUpdater {
 
     pub fn save(&self) -> Result<()> {
         let config = serde_json::to_string(&self)?;
-        fs::write(AutoUpdater::path()?, &config)
+        fs::write(AutoUpdater::path()?, config)
             .context("Failed to write auto-update state")?;
         Ok(())
     }

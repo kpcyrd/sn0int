@@ -1,8 +1,8 @@
 pub mod api;
 pub mod errors;
 pub use crate::errors::*;
-pub mod metadata;
 pub mod id;
+pub mod metadata;
 pub use crate::id::*;
 
 pub use rocket_failure_errors::StrictApiResponse as ApiResponse;

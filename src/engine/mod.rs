@@ -77,7 +77,7 @@ impl<'a> Library<'a> {
     }
 
     pub fn private_modules(path: &Path) -> Result<bool> {
-        let metadata = fs::symlink_metadata(&path)?.file_type();
+        let metadata = fs::symlink_metadata(path)?.file_type();
         if metadata.is_symlink() {
             debug!("Folder is a symlink, flagging modules as private");
             return Ok(true);

@@ -93,7 +93,7 @@ pub fn cardinal_direction_modifier(value: &exif::Value) -> Result<f64> {
             let s = s.get(0)
                 .ok_or_else(|| format_err!("Cardinal direction value is empty"))?;
 
-            match s.get(0) {
+            match s.first() {
                 Some(b'N') => Ok(1.0),
                 Some(b'S') => Ok(-1.0),
                 Some(b'E') => Ok(1.0),

@@ -300,7 +300,7 @@ impl State for LuaState {
         let id = self.random_id();
 
         let sock = if let Some(proxy) = self.resolve_proxy_options(&options.proxy)? {
-            Socket::connect_socks5(proxy, host, port, options)?
+            Socket::connect_socks5(*proxy, host, port, options)?
         } else {
             Socket::connect(&self.dns_config, host, port, options)?
         };
