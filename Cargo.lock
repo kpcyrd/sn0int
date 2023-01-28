@@ -4168,7 +4168,7 @@ checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 
 [[package]]
 name = "sn0int"
-version = "0.24.3"
+version = "0.25.0"
 dependencies = [
  "atty",
  "boxxy",
@@ -4272,7 +4272,7 @@ dependencies = [
 
 [[package]]
 name = "sn0int-std"
-version = "0.24.3"
+version = "0.25.0"
 dependencies = [
  "blake2 0.10.6",
  "bs58",

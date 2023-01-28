@@ -1,11 +1,11 @@
 [package]
 name = "sn0int-std"
-version = "0.24.3"
+version = "0.25.0"
 description = "sn0int - stdlib"
 authors = ["kpcyrd <git@rxv.cc>"]
 repository = "https://github.com/kpcyrd/sn0int"
 license = "GPL-3.0"
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
