@@ -61,15 +61,12 @@ Mac OSX
 
 Debian/Ubuntu/Kali
 
-There are prebuilt packages signed by a debian maintainer. We can import the
-key for this repository out of the debian keyring.
+There are prebuilt packages signed by a debian maintainer:
 
-    apt install debian-keyring
-    gpg -a --export --keyring /usr/share/keyrings/debian-maintainers.gpg git@rxv.cc | apt-key add -
-    apt-key adv --keyserver keyserver.ubuntu.com --refresh-keys git@rxv.cc
-    echo deb http://apt.vulns.sexy stable main > /etc/apt/sources.list.d/apt-vulns-sexy.list
+    sudo apt install curl sq
+    curl -sSf https://apt.vulns.sexy/kpcyrd.pgp | sq dearmor | sudo tee /etc/apt/trusted.gpg.d/apt-vulns-sexy.gpg > /dev/null
+    echo deb http://apt.vulns.sexy stable main | sudo tee /etc/apt/sources.list.d/apt-vulns-sexy.list
     apt update
-    apt install sn0int
 
 Docker
 
