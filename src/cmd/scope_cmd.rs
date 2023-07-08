@@ -1,18 +1,14 @@
 use crate::errors::*;
-
 use crate::cmd::Cmd;
 use crate::filters::{Target, Filter};
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 use crate::models::*;
 use crate::term;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     subcommand: Target,
 }
 
@@ -40,7 +36,7 @@ impl Cmd for Args {
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let args = Args::try_parse_from(args)?;
     args.run(rl)
 }
 

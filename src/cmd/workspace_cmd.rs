@@ -1,28 +1,24 @@
-use crate::errors::*;
-
+use clap::Parser;
 use crate::blobs::BlobStorage;
 use crate::cmd::{Cmd, LiteCmd};
 use crate::config::Config;
 use crate::db::Database;
+use crate::errors::*;
 use crate::shell::Shell;
 use crate::term;
 use crate::utils;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 use crate::workspaces::{self, Workspace};
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     /// Delete a workspaceb
-    #[structopt(long = "delete", group = "action")]
+    #[arg(long = "delete", group = "action")]
     delete: bool,
     /// Show disk usage of workspace
-    #[structopt(long = "usage", group = "action")]
+    #[arg(long = "usage", group = "action")]
     usage: bool,
     /// Skip confirmation
-    #[structopt(short = "f", long = "force")]
+    #[arg(short = 'f', long = "force")]
     force: bool,
     workspaces: Vec<Workspace>,
 }

@@ -1,6 +1,7 @@
 use env_logger::Env;
 use sn0int::args::{self, Args, SubCommand};
 use sn0int::auth;
+use clap::Parser;
 use sn0int::cmd::{self, LiteCmd};
 use sn0int::cmd::run_cmd::Params;
 use sn0int::config::Config;
@@ -15,8 +16,7 @@ use sn0int::psl::PslReader;
 use sn0int::registry;
 use sn0int::repl;
 use sn0int::sandbox;
-use sn0int::shell::{self, complete};
-use structopt::StructOpt;
+use sn0int::shell;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
@@ -99,7 +99,7 @@ end
 }
 
 fn run() -> Result<()> {
-    let mut args = Args::from_args();
+    let mut args = Args::parse();
 
     if !args.is_sandbox() {
         sandbox::fasten_seatbelt()?;
@@ -142,7 +142,7 @@ fn run() -> Result<()> {
         Some(SubCommand::Stats(stats)) => run_cmd(&args, stats, &config),
         Some(SubCommand::Repl) => repl::run(&config),
         Some(SubCommand::Paths) => paths::run(&config),
-        Some(SubCommand::Completions(completions)) => complete::run_generate(&completions),
+        Some(SubCommand::Completions(completions)) => completions.generate(),
         None => shell::run(&args, &config),
     }
 }

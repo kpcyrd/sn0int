@@ -7,26 +7,24 @@ use crate::filters::{Filter, Target};
 use crate::shell::Shell;
 use std::collections::HashSet;
 use std::fmt;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 use crate::models::*;
 use crate::utils;
 use crate::term;
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     /// Run rules interactively
-    #[structopt(short, long)]
+    #[arg(short, long)]
     interactive: bool,
     /// Automatically apply changes to database
-    #[structopt(short="y", long)]
+    #[arg(short='y', long)]
     auto_confirm: bool,
     /// Only show changes, do not apply them to the database
-    #[structopt(short="n", long)]
+    #[arg(short='n', long)]
     dry_run: bool,
     /// Only rescope entities matching specific filter
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     target: Option<Target>,
 }
 

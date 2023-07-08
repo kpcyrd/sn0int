@@ -1,21 +1,20 @@
+use clap::Parser;
+use sn0int::term::{Spinner, StackedSpinners, SPINNERS};
 use std::thread;
 use std::time::Duration;
-use sn0int::term::{SPINNERS, Spinner, StackedSpinners};
-use structopt::StructOpt;
 
-
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Args {
-    #[structopt(name="single")]
+    #[command(name = "single")]
     Single(Single),
-    #[structopt(name="stacked")]
+    #[command(name = "stacked")]
     Stacked(Stacked),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Single {
     idx: usize,
-    #[structopt(long="ticks", default_value="100")]
+    #[structopt(long = "ticks", default_value = "100")]
     ticks: usize,
 }
 
@@ -32,9 +31,8 @@ impl Single {
     }
 }
 
-#[derive(Debug, StructOpt)]
-pub struct Stacked {
-}
+#[derive(Debug, Parser)]
+pub struct Stacked {}
 
 impl Stacked {
     fn run(&self) {
@@ -59,7 +57,7 @@ impl Stacked {
 }
 
 fn main() {
-    let args = Args::from_args();
+    let args = Args::parse();
     match args {
         Args::Single(args) => args.run(),
         Args::Stacked(args) => args.run(),

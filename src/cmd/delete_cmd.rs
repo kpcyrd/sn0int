@@ -1,16 +1,12 @@
 use crate::errors::*;
-
 use crate::cmd::Cmd;
 use crate::filters::{Target, Filter};
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 use crate::models::*;
 use crate::term;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,

@@ -10,23 +10,21 @@ use crate::workspaces;
 use humansize::{FileSize, file_size_opts};
 use separator::Separatable;
 use serde::{Serialize, Deserialize};
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 
-#[derive(Debug, Clone, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Clone, Parser)]
 pub struct Args {
     /// Exclude blob storage
-    #[structopt(short, long)]
+    #[arg(short, long)]
     short: bool,
     /// Exclude categories that don't contain any structs
-    #[structopt(short, long)]
+    #[arg(short, long)]
     quiet: bool,
     /// Show workspace statistics in json
-    #[structopt(short, long)]
+    #[arg(short, long)]
     json: bool,
     /// Go through all workspaces
-    #[structopt(short, long)]
+    #[arg(short, long)]
     all: bool,
 }
 

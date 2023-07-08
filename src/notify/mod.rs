@@ -1,22 +1,22 @@
 mod rules;
 
-use crate::errors::*;
-use crate::cmd::run_cmd::prepare_keyring;
+use clap::Parser;
 use crate::cmd::run_cmd::Params;
+use crate::cmd::run_cmd::prepare_keyring;
 use crate::engine::Module;
+use crate::errors::*;
 use crate::options;
 use crate::shell::Shell;
 use crate::term::SpinLogger;
 use crate::worker;
 use self::rules::Glob;
 use serde::{Serialize, Deserialize};
-use structopt::StructOpt;
 use sn0int_common::metadata::Source;
 use sn0int_std::blobs::Blob;
 use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
 
-#[derive(Debug, StructOpt, Serialize)]
+#[derive(Debug, Parser, Serialize)]
 pub struct Notification {
     pub subject: String,
     pub body: Option<String>,
@@ -79,7 +79,7 @@ fn prepare_arg(notification: &Notification) -> Result<(serde_json::Value, Option
     Ok((arg, None, vec![]))
 }
 
-pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, options: HashMap<String, String>, verbose: u64, notification: &Notification) -> Result<usize> {
+pub fn exec(rl: &mut Shell, module: &Module, ratelimit: &mut Ratelimiter, options: HashMap<String, String>, verbose: u8, notification: &Notification) -> Result<usize> {
     let module_name = module.canonical();
     debug!("Setting up notification execution with {:?}", module_name);
 

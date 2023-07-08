@@ -1,11 +1,10 @@
-use crate::errors::*;
-
+use clap::Parser;
 use crate::cmd::Cmd;
 use crate::cmd::autonoscope_cmd;
+use crate::errors::*;
 use crate::shell::Shell;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Args {
     #[structopt(flatten)]
     args: autonoscope_cmd::Args,

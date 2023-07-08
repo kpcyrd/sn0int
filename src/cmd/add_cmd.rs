@@ -1,13 +1,11 @@
 use crate::errors::*;
-
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
 use crate::db::DbChange;
 use crate::gfx;
 use crate::models::*;
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 use crate::utils;
 use crate::term;
 use std::fmt::Debug;
@@ -18,62 +16,61 @@ use std::net::SocketAddr;
 use std::path::Path;
 use walkdir::WalkDir;
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     subcommand: Target,
     /// Do not actually insert into database
-    #[structopt(short="n", long="dry-run")]
+    #[arg(short = 'n', long="dry-run")]
     dry_run: bool,
     /// Stream structs from stdin line by line
-    #[structopt(long)]
+    #[arg(long)]
     stdin: bool,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Target {
     /// Insert domain into the database
-    #[structopt(name="domain")]
+    #[command(name="domain")]
     Domain(AddDomain),
     /// Insert subdomain into the database
-    #[structopt(name="subdomain")]
+    #[command(name="subdomain")]
     Subdomain(AddSubdomain),
     /// Insert ip address into the database
-    #[structopt(name="ipaddr")]
+    #[command(name="ipaddr")]
     IpAddr(AddIpAddr),
     /// Insert url into the database
-    #[structopt(name="url")]
+    #[command(name="url")]
     Url(AddUrl),
     /// Insert email into the database
-    #[structopt(name="email")]
+    #[command(name="email")]
     Email(AddEmail),
     /// Insert phonenumber into the database
-    #[structopt(name="phonenumber")]
+    #[command(name="phonenumber")]
     PhoneNumber(AddPhoneNumber),
     /// Insert device into the database
-    #[structopt(name="device")]
+    #[command(name="device")]
     Device(AddDevice),
     /// Insert network into the database
-    #[structopt(name="network")]
+    #[command(name="network")]
     Network(AddNetwork),
     /// Insert account into the database
-    #[structopt(name="account")]
+    #[command(name="account")]
     Account(AddAccount),
     /// Insert breach into the database
-    #[structopt(name="breach")]
+    #[command(name="breach")]
     Breach(AddBreach),
     /// Insert images into the database
-    #[structopt(name="image")]
+    #[command(name="image")]
     Image(AddImage),
     /// Insert ip network into the database
-    #[structopt(name="netblock")]
+    #[command(name="netblock")]
     Netblock(AddNetblock),
     /// Insert port into the database
-    #[structopt(name="port")]
+    #[command(name="port")]
     Port(AddPort),
     /// Insert a crypto currency address into the database
-    #[structopt(name="cryptoaddr")]
+    #[command(name="cryptoaddr")]
     CryptoAddr(AddCryptoAddr),
 }
 
@@ -153,7 +150,7 @@ trait IntoInsert: Sized {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddDomain {
     domain: Option<String>,
 }
@@ -185,7 +182,7 @@ impl InsertFromString for AddDomain {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddSubdomain {
     subdomain: Option<String>,
 }
@@ -222,7 +219,7 @@ impl InsertFromString for AddSubdomain {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddIpAddr {
     ipaddr: Option<net::IpAddr>,
 }
@@ -269,7 +266,7 @@ impl InsertFromString for AddIpAddr {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddUrl {
     url: Option<String>,
 }
@@ -323,7 +320,7 @@ impl InsertFromString for AddUrl {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddEmail {
     email: Option<String>,
 }
@@ -350,7 +347,7 @@ impl InsertFromString for AddEmail {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddPhoneNumber {
     phonenumber: Option<String>,
     name: Option<String>,
@@ -405,7 +402,7 @@ impl InsertFromString for AddPhoneNumber {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddDevice {
     mac: Option<String>,
     name: Option<String>,
@@ -435,7 +432,7 @@ impl IntoInsert for AddDevice {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddNetwork {
     network: Option<String>,
     latitude: Option<f32>,
@@ -464,7 +461,7 @@ impl IntoInsert for AddNetwork {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddAccount {
     service: Option<String>,
     username: Option<String>,
@@ -506,7 +503,7 @@ impl IntoInsert for AddAccount {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddBreach {
     name: Option<String>,
 }
@@ -525,7 +522,7 @@ impl IntoInsert for AddBreach {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddImage {
     paths: Vec<String>,
 }
@@ -624,7 +621,7 @@ impl IntoInsert for AddImage {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddNetblock {
     ipnet: Option<ipnetwork::IpNetwork>,
 }
@@ -655,7 +652,7 @@ impl IntoInsert for AddNetblock {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddPort {
     protocol: Option<String>,
     addr: Option<SocketAddr>,
@@ -730,7 +727,7 @@ impl InsertFromString for AddPort {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AddCryptoAddr {
     address: Option<String>,
 }

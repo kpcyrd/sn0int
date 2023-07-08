@@ -1,18 +1,14 @@
+use clap::Parser;
 use crate::errors::*;
-
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     module: String,
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let args = Args::try_parse_from(args)?;
 
     let module = rl.library().get(&args.module)?.clone();
     rl.set_module(module);

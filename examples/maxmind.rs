@@ -1,19 +1,19 @@
+use clap::Parser;
 use sn0int::errors::*;
 use sn0int::geoip::{AsnDB, GeoIP, Maxmind};
 use sn0int::paths;
 use std::net::IpAddr;
 use std::path::Path;
-use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Args {
-    #[structopt(name="asn")]
+    #[command(name = "asn")]
     Asn(AsnArgs),
-    #[structopt(name="geoip")]
+    #[command(name = "geoip")]
     GeoIP(GeoIPArgs),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct AsnArgs {
     ip: IpAddr,
 }
@@ -30,7 +30,7 @@ impl AsnArgs {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct GeoIPArgs {
     ip: IpAddr,
 }
@@ -47,9 +47,8 @@ impl GeoIPArgs {
     }
 }
 
-
 fn run() -> Result<()> {
-    let args = Args::from_args();
+    let args = Args::parse();
     debug!("{:?}", args);
     let cache_dir = paths::cache_dir()?;
     match args {

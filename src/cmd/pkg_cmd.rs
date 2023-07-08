@@ -1,5 +1,4 @@
 use crate::errors::*;
-
 use crate::args::Install;
 use crate::api::Client;
 use crate::args;
@@ -16,80 +15,76 @@ use sn0int_common::metadata::Stealth;
 use std::collections::HashSet;
 use std::fmt::Write;
 use std::sync::Arc;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     pub subcommand: SubCommand,
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct ArgsInteractive {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     pub subcommand: SubCommandInteractive,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum SubCommand {
     /// List installed modules
-    #[structopt(name="list")]
+    #[command(name="list")]
     List(List),
     /// Install module from registry
-    #[structopt(name="install")]
+    #[command(name="install")]
     Install(args::Install),
     /// Search modules in registry
-    #[structopt(name="search")]
+    #[command(name="search")]
     Search(args::Search),
     /// Update modules
-    #[structopt(name="update")]
+    #[command(name="update")]
     Update(Update),
     /// Uninstall a module
-    #[structopt(name="uninstall")]
+    #[command(name="uninstall")]
     Uninstall(Uninstall),
     /// Install all featured modules
-    #[structopt(name="quickstart")]
+    #[command(name="quickstart")]
     Quickstart,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum SubCommandInteractive {
-    #[structopt(flatten)]
+    #[command(flatten)]
     Base(SubCommand),
     /// Reload modules
-    #[structopt(name="reload")]
+    #[command(name="reload")]
     Reload(Reload),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct List {
     /// Only show modules with a specific input source
-    #[structopt(long="source")]
+    #[arg(long="source")]
     pub source: Option<String>,
     /// List outdated modules
-    #[structopt(long="outdated")]
+    #[arg(long="outdated")]
     pub outdated_only: bool,
     /// Only show modules with equal or better stealth level
-    #[structopt(long="stealth", possible_values=Stealth::variants())]
+    #[arg(long="stealth", value_enum)]
     pub stealth: Option<Stealth>,
     /// Filter by pattern
-    #[structopt(default_value="*")]
+    #[arg(default_value="*")]
     pub pattern: String,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Reload {
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Update {
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Uninstall {
     module: ModuleID,
 }

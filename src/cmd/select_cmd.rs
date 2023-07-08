@@ -1,17 +1,13 @@
-use crate::errors::*;
-
+use clap::Parser;
 use crate::cmd::Cmd;
 use crate::db::ttl;
+use crate::errors::*;
 use crate::filters::{Target, Filter};
+use crate::models::*;
 use crate::shell::Shell;
 use serde::Serialize;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
-use crate::models::*;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     #[structopt(subcommand)]
     subcommand: Target,
@@ -25,7 +21,7 @@ pub struct Args {
     #[structopt(long, group="output")]
     paths: bool,
     /// Count rows returned
-    #[structopt(short="c", group="output")]
+    #[structopt(short = 'c', group="output")]
     count: bool,
 }
 

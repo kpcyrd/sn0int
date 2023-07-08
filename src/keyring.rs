@@ -13,7 +13,7 @@ use std::path::{Path, PathBuf};
 use sn0int_common::ModuleID;
 
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct KeyName {
     pub namespace: String,
     pub name: String,

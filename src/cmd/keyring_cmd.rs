@@ -1,56 +1,47 @@
+use clap::Parser;
 use crate::errors::*;
-
 use crate::keyring::{KeyName, KeyRing};
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 use crate::utils;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub enum Args {
-    #[structopt(name="add")]
     /// Add a new key to the keyring
     Add(KeyRingAdd),
-    #[structopt(name="delete")]
     /// Delete a key from the keyring
     Delete(KeyRingDelete),
-    #[structopt(name="get")]
     /// Get a key from the keyring
     Get(KeyRingGet),
-    #[structopt(name="list")]
     /// List keys in the keyring
     List(KeyRingList),
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct KeyRingAdd {
     key: KeyName,
     secret: Option<String>,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct KeyRingDelete {
     key: KeyName,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct KeyRingGet {
     key: KeyName,
-    #[structopt(short="q",
-                long="quiet")]
+    #[arg(short = 'q', long="quiet")]
     /// Only output secret key
     quiet: bool,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct KeyRingList {
     namespace: Option<String>,
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let args = Args::try_parse_from(args)?;
     match args {
         Args::Add(add) => keyring_add(rl, add),
         Args::Delete(delete) => keyring_delete(rl, delete),

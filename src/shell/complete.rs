@@ -1,17 +1,12 @@
-use crate::args::{Args, Completions};
 use crate::autonoscope::RuleType;
-use crate::errors::*;
 use rustyline::{self, Context};
 use rustyline::completion::Completer;
 use rustyline::highlight::Highlighter;
 use rustyline::hint::Hinter;
 use std::borrow::Cow::{self, Owned};
 use std::str::FromStr;
-use std::io::stdout;
-use structopt::StructOpt;
 use crate::shell::Command;
 use crate::workspaces;
-
 
 #[derive(Debug, Default)]
 pub struct CmdCompleter {
@@ -318,8 +313,3 @@ impl Highlighter for CmdCompleter {
 
 impl rustyline::Helper for CmdCompleter {}
 impl rustyline::validate::Validator for CmdCompleter {}
-
-pub fn run_generate(args: &Completions) -> Result<()> {
-    Args::clap().gen_completions_to("sn0int", args.shell, &mut stdout());
-    Ok(())
-}

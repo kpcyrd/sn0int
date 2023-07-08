@@ -1,37 +1,35 @@
 use crate::errors::*;
-
 use crate::autonoscope;
 use crate::cmd::Cmd;
 use crate::fmt::colors::*;
 use crate::shell::Shell;
 use std::fmt::Write;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
+#[group(skip)]
 pub struct Args {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     subcommand: Subcommand,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Subcommand {
-    #[structopt(name="add")]
+    #[command(name="add")]
     Add(Add),
-    #[structopt(name="delete")]
+    #[command(name="delete")]
     Delete(Delete),
-    #[structopt(name="list")]
+    #[command(name="list")]
     List,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Add {
     object: autonoscope::RuleType,
     value: String,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Delete {
     object: autonoscope::RuleType,
     value: String,
