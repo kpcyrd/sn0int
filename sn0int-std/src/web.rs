@@ -1,17 +1,17 @@
 use crate::blobs::{Blob, BlobState};
 use crate::engine::structs::LuaMap;
 use crate::errors::*;
-use crate::json::LuaJsonValue;
 use crate::hlua::AnyLuaValue;
-use chrootable_https::{Request, Body, Uri};
-pub use chrootable_https::{Client, HttpClient, Resolver, Response};
-use chrootable_https::http::HttpTryFrom;
-use chrootable_https::http::uri::Parts;
+use crate::json::LuaJsonValue;
 use chrootable_https::http::request::Builder;
+use chrootable_https::http::uri::Parts;
+use chrootable_https::http::HttpTryFrom;
+use chrootable_https::{Body, Request, Uri};
+pub use chrootable_https::{Client, HttpClient, Resolver, Response};
 use data_encoding::BASE64;
-use rand::{Rng, thread_rng};
 use rand::distributions::Alphanumeric;
-use serde::{Serialize, Deserialize};
+use rand::{thread_rng, Rng};
+use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::fmt::Write;
@@ -27,15 +27,17 @@ pub fn url_set_qs<S: Serialize + fmt::Debug>(url: Uri, query: &S) -> Result<Uri>
 
     let query = serde_urlencoded::to_string(query)?;
 
-    parts.path_and_query = Some(match parts.path_and_query {
-        Some(pq) => {
-            format!("{}?{}", pq.path(), query)
-        },
-        None => format!("/?{}", query),
-    }.parse()?);
+    parts.path_and_query = Some(
+        match parts.path_and_query {
+            Some(pq) => {
+                format!("{}?{}", pq.path(), query)
+            }
+            None => format!("/?{}", query),
+        }
+        .parse()?,
+    );
 
-    Uri::from_parts(parts)
-        .map_err(Error::from)
+    Uri::from_parts(parts).map_err(Error::from)
 }
 
 pub trait WebState {
@@ -58,10 +60,13 @@ impl HttpSession {
             .map(char::from)
             .take(16)
             .collect();
-        (id.clone(), HttpSession {
-            id,
-            cookies: CookieJar::default(),
-        })
+        (
+            id.clone(),
+            HttpSession {
+                id,
+                cookies: CookieJar::default(),
+            },
+        )
     }
 }
 
@@ -112,7 +117,13 @@ pub struct HttpRequest {
 }
 
 impl HttpRequest {
-    pub fn new(session: &HttpSession, method: String, url: String, user_agent: String, options: RequestOptions) -> HttpRequest {
+    pub fn new(
+        session: &HttpSession,
+        method: String,
+        url: String,
+        user_agent: String,
+        options: RequestOptions,
+    ) -> HttpRequest {
         let cookies = session.cookies.clone();
         let timeout = options.timeout.map(Duration::from_millis);
 
@@ -179,21 +190,21 @@ impl HttpRequest {
 
         // finalize request
         let body = match self.body {
-            Some(ReqBody::Raw(ref x))  => { Body::from(x.clone()) },
+            Some(ReqBody::Raw(ref x)) => Body::from(x.clone()),
             Some(ReqBody::Form(ref x)) => {
                 // if Content-Type is not set, set header
                 if !observed_headers.contains("content-type") {
                     req.header("Content-Type", "application/x-www-form-urlencoded");
                 }
                 Body::from(serde_urlencoded::to_string(x)?)
-            },
+            }
             Some(ReqBody::Json(ref x)) => {
                 // if Content-Type is not set, set header
                 if !observed_headers.contains("content-type") {
                     req.header("Content-Type", "application/json");
                 }
                 Body::from(serde_json::to_string(x)?)
-            },
+            }
             None => Body::empty(),
         };
         let mut req = req.body(body)?;
@@ -204,7 +215,8 @@ impl HttpRequest {
         let res = loop {
             // send request
             debug!("Sending http request: {:?}", req);
-            let res = client.request(req)
+            let res = client
+                .request(req)
                 .with_timeout(self.timeout)
                 .wait_for_response()?;
 
@@ -232,7 +244,8 @@ impl HttpRequest {
 
     /// create a basic request, reusable when following redirects
     fn mkrequest<T>(&self, method: &str, url: T) -> Builder
-        where Uri: HttpTryFrom<T>,
+    where
+        Uri: HttpTryFrom<T>,
     {
         let mut req = Request::builder();
         req.method(method);
@@ -263,7 +276,8 @@ impl HttpRequest {
     }
 
     pub fn response_to_lua<S>(&self, state: &S, res: Response) -> Result<LuaMap>
-        where S: WebState + BlobState
+    where
+        S: WebState + BlobState,
     {
         // map result to LuaMap
         let mut resp = LuaMap::new();

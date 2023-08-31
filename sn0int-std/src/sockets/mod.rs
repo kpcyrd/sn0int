@@ -1,8 +1,8 @@
 use crate::errors::*;
 
-use bufstream::BufStream;
 use crate::hlua::AnyLuaValue;
 use crate::json::LuaJsonValue;
+use bufstream::BufStream;
 use chrootable_https::dns::{DnsResolver, RecordType};
 use chrootable_https::socks5::{self, ProxyDest};
 use regex::Regex;
@@ -10,18 +10,17 @@ use serde::Deserialize;
 use tokio::runtime::Runtime;
 
 use std::fmt;
-use std::str;
 use std::io;
 use std::io::prelude::*;
 use std::io::BufRead;
 use std::net::SocketAddr;
 use std::net::TcpStream;
 use std::net::{IpAddr, Ipv4Addr};
+use std::str;
 use std::time::Duration;
 
 mod tls;
 pub use self::tls::TlsData;
-
 
 #[cfg(unix)]
 fn unwrap_socket(socket: tokio::net::TcpStream) -> Result<TcpStream> {
@@ -49,7 +48,6 @@ pub struct SocketOptions {
     // TODO: enable_sni (default to true)
     // TODO: sni_name
     // TODO: cacert
-
     #[serde(default)]
     pub connect_timeout: u64,
     #[serde(default)]
@@ -96,10 +94,16 @@ pub enum Stream {
 }
 
 impl Stream {
-    pub fn connect_stream<R: DnsResolver>(resolver: &R, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
+    pub fn connect_stream<R: DnsResolver>(
+        resolver: &R,
+        host: &str,
+        port: u16,
+        options: &SocketOptions,
+    ) -> Result<Stream> {
         let addrs = match host.parse::<IpAddr>() {
             Ok(addr) => vec![addr],
-            Err(_) => resolver.resolve(host, RecordType::A)
+            Err(_) => resolver
+                .resolve(host, RecordType::A)
                 .wait_for_response()?
                 .success()?,
         };
@@ -110,7 +114,7 @@ impl Stream {
             match Stream::connect_addr(host, (addr, port).into(), options) {
                 Ok(socket) => {
                     return Ok(socket);
-                },
+                }
                 Err(err) => errors.push((addr, err)),
             }
         }
@@ -138,8 +142,16 @@ impl Stream {
         tls::wrap_if_enabled(socket, host, options)
     }
 
-    pub fn connect_socks5_stream(proxy: SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Stream> {
-        debug!("connecting to {:?}:{:?} with socks5 on {:?}", host, port, proxy);
+    pub fn connect_socks5_stream(
+        proxy: SocketAddr,
+        host: &str,
+        port: u16,
+        options: &SocketOptions,
+    ) -> Result<Stream> {
+        debug!(
+            "connecting to {:?}:{:?} with socks5 on {:?}",
+            host, port, proxy
+        );
 
         let addr = match host.parse::<Ipv4Addr>() {
             Ok(ipaddr) => ProxyDest::Ipv4Addr(ipaddr),
@@ -206,12 +218,22 @@ impl Socket {
         }
     }
 
-    pub fn connect<R: DnsResolver>(resolver: &R, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
+    pub fn connect<R: DnsResolver>(
+        resolver: &R,
+        host: &str,
+        port: u16,
+        options: &SocketOptions,
+    ) -> Result<Socket> {
         let stream = Stream::connect_stream(resolver, host, port, options)?;
         Ok(Socket::new(stream))
     }
 
-    pub fn connect_socks5(proxy: SocketAddr, host: &str, port: u16, options: &SocketOptions) -> Result<Socket> {
+    pub fn connect_socks5(
+        proxy: SocketAddr,
+        host: &str,
+        port: u16,
+        options: &SocketOptions,
+    ) -> Result<Socket> {
         let stream = Stream::connect_socks5_stream(proxy, host, port, options)?;
         Ok(Socket::new(stream))
     }
@@ -266,8 +288,7 @@ impl Socket {
     pub fn recvline(&mut self) -> Result<String> {
         let needle = self.newline.clone();
         let buf = self.recvuntil(needle.as_bytes())?;
-        let line = String::from_utf8(buf)
-            .context("Failed to decode utf8")?;
+        let line = String::from_utf8(buf).context("Failed to decode utf8")?;
         Ok(line)
     }
 
@@ -321,10 +342,13 @@ impl Socket {
                     Ok(n) => n,
                     Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
                     Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(Vec::new()),
-                    Err(e) => return Err(e.into())
+                    Err(e) => return Err(e.into()),
                 };
 
-                match available.windows(delim_len).position(|window| window == delim) {
+                match available
+                    .windows(delim_len)
+                    .position(|window| window == delim)
+                {
                     Some(i) => {
                         buf.extend_from_slice(&available[..i + delim_len]);
                         (true, i + delim_len)
@@ -366,21 +390,34 @@ mod tests {
     #[test]
     fn verify_tls_good() {
         let resolver = Resolver::from_system_v4().unwrap();
-        let _sock = Socket::connect(&resolver, "badssl.com", 443, &SocketOptions{
-            tls: true,
-            ..Default::default()
-        }).unwrap();
+        let _sock = Socket::connect(
+            &resolver,
+            "badssl.com",
+            443,
+            &SocketOptions {
+                tls: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
     }
 
     #[test]
     #[ignore]
     fn verify_tls_good_request() {
         let resolver = Resolver::from_system_v4().unwrap();
-        let mut sock = Socket::connect(&resolver, "badssl.com", 443, &SocketOptions{
-            tls: true,
-            ..Default::default()
-        }).unwrap();
-        sock.send(b"GET / HTTP/1.1\r\nHost: badssl.com\r\nConnection: close\r\n\r\n").unwrap();
+        let mut sock = Socket::connect(
+            &resolver,
+            "badssl.com",
+            443,
+            &SocketOptions {
+                tls: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        sock.send(b"GET / HTTP/1.1\r\nHost: badssl.com\r\nConnection: close\r\n\r\n")
+            .unwrap();
         let status = sock.recvline().unwrap();
         assert_eq!(status, "HTTP/1.1 200 OK\r\n");
     }
@@ -389,10 +426,15 @@ mod tests {
     #[ignore]
     fn verify_tls_expired() {
         let resolver = Resolver::from_system_v4().unwrap();
-        let sock = Socket::connect(&resolver, "expired.badssl.com", 443, &SocketOptions{
-            tls: true,
-            ..Default::default()
-        });
+        let sock = Socket::connect(
+            &resolver,
+            "expired.badssl.com",
+            443,
+            &SocketOptions {
+                tls: true,
+                ..Default::default()
+            },
+        );
         assert!(sock.is_err());
     }
 

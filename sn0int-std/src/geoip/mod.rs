@@ -3,15 +3,14 @@ use crate::lazy::LazyInit;
 use maxminddb::{self, geoip2};
 use std::fmt;
 use std::fs::{self, File};
+use std::io::Read;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
-use std::io::Read;
 use std::sync::Arc;
 
 pub mod models;
-use self::models::GeoLookup;
 use self::models::AsnLookup;
-
+use self::models::GeoLookup;
 
 pub trait Maxmind: Sized {
     fn filename() -> &'static str;
@@ -37,14 +36,13 @@ pub trait Maxmind: Sized {
         }
 
         // use cache path
-        let path = cache_dir
-            .join(Self::filename());
+        let path = cache_dir.join(Self::filename());
         Ok(path)
     }
 
     fn from_buf(buf: Vec<u8>) -> Result<Self> {
-        let reader = maxminddb::Reader::from_source(buf)
-            .context("Failed to read geoip database")?;
+        let reader =
+            maxminddb::Reader::from_source(buf).context("Failed to read geoip database")?;
         Ok(Self::new(reader))
     }
 
@@ -72,9 +70,7 @@ pub struct MaxmindReader {
 impl MaxmindReader {
     fn open_path<P: AsRef<Path>>(path: P) -> Result<MaxmindReader> {
         let reader = File::open(path)?;
-        Ok(MaxmindReader {
-            reader,
-        })
+        Ok(MaxmindReader { reader })
     }
 }
 
@@ -118,9 +114,7 @@ impl Maxmind for GeoIP {
 
     #[inline]
     fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self {
-        GeoIP {
-            reader
-        }
+        GeoIP { reader }
     }
 }
 
@@ -150,9 +144,7 @@ impl Maxmind for AsnDB {
 
     #[inline]
     fn new(reader: maxminddb::Reader<Vec<u8>>) -> Self {
-        AsnDB {
-            reader
-        }
+        AsnDB { reader }
     }
 }
 

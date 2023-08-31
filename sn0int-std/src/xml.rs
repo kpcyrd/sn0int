@@ -1,13 +1,12 @@
 use crate::errors::*;
 
-use crate::json::LuaJsonValue;
 use crate::hlua::AnyLuaValue;
+use crate::json::LuaJsonValue;
 use serde::Serialize;
 use std::collections::HashMap;
 use xml::attribute::OwnedAttribute;
 use xml::name::OwnedName;
 use xml::reader::{EventReader, ParserConfig, XmlEvent};
-
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct XmlDocument {
@@ -41,7 +40,8 @@ impl XmlElement {
     #[inline]
     fn from(name: OwnedName, attributes: Vec<OwnedAttribute>) -> XmlElement {
         let name = name.local_name;
-        let attrs = attributes.into_iter()
+        let attrs = attributes
+            .into_iter()
             .map(|attr| (attr.name.local_name, attr.value))
             .collect();
         XmlElement {
@@ -91,16 +91,13 @@ fn decode_raw(x: &str) -> Result<XmlDocument> {
 
         match next {
             XmlEvent::StartElement {
-                name,
-                attributes,
-                ..
+                name, attributes, ..
             } => {
                 stack.push(XmlElement::from(name, attributes));
-            },
-            XmlEvent::EndElement {
-                name,
-            } => {
-                let child = stack.pop()
+            }
+            XmlEvent::EndElement { name } => {
+                let child = stack
+                    .pop()
                     .ok_or_else(|| format_err!("end element has no matching start element"))?;
 
                 let name = name.local_name;
@@ -113,7 +110,7 @@ fn decode_raw(x: &str) -> Result<XmlDocument> {
                 } else {
                     doc.children.push(child);
                 }
-            },
+            }
             XmlEvent::CData(text) => append_text(&mut stack, text),
             XmlEvent::Characters(text) => append_text(&mut stack, text),
             _ => (),
@@ -142,63 +139,62 @@ mod tests {
     #[test]
     fn verify_xml_decode_empty_body() {
         let doc = decode_raw("<body></body>").unwrap();
-        assert_eq!(doc, XmlDocument {
-            children: vec![
-                XmlElement {
+        assert_eq!(
+            doc,
+            XmlDocument {
+                children: vec![XmlElement {
                     name: String::from("body"),
                     attrs: HashMap::new(),
                     text: None,
                     children: vec![],
-                }
-            ]
-        });
+                }]
+            }
+        );
     }
 
     #[test]
     fn verify_xml_decode_single_tag() {
         let doc = decode_raw("<body><foo x=\"1\" /></body>").unwrap();
-        assert_eq!(doc, XmlDocument {
-            children: vec![
-                XmlElement {
+        assert_eq!(
+            doc,
+            XmlDocument {
+                children: vec![XmlElement {
                     name: String::from("body"),
                     attrs: HashMap::new(),
                     text: None,
-                    children: vec![
-                        XmlElement {
-                            name: String::from("foo"),
-                            attrs: hashmap!{
-                                String::from("x") => String::from("1"),
-                            },
-                            text: None,
-                            children: vec![],
-                        }
-                    ],
-                }
-            ]
-        });
+                    children: vec![XmlElement {
+                        name: String::from("foo"),
+                        attrs: hashmap! {
+                            String::from("x") => String::from("1"),
+                        },
+                        text: None,
+                        children: vec![],
+                    }],
+                }]
+            }
+        );
     }
 
     #[test]
     fn verify_xml_decode_single_tag_text() {
         let doc = decode_raw("<body><foo x=\"1\">hello world</foo></body>").unwrap();
-        assert_eq!(doc, XmlDocument {
-            children: vec![
-                XmlElement {
+        assert_eq!(
+            doc,
+            XmlDocument {
+                children: vec![XmlElement {
                     name: String::from("body"),
                     attrs: HashMap::new(),
                     text: None,
-                    children: vec![
-                        XmlElement {
-                            name: String::from("foo"),
-                            attrs: hashmap!{
-                                String::from("x") => String::from("1"),
-                            },
-                            text: Some(String::from("hello world")),
-                            children: vec![],
-                        }
-                    ],
-                }
-            ]
-        });
+                    children: vec![XmlElement {
+                        name: String::from("foo"),
+                        attrs: hashmap! {
+                            String::from("x") => String::from("1"),
+                        },
+                        text: Some(String::from("hello world")),
+                        children: vec![],
+                    }],
+                }]
+            }
+        );
     }
 }

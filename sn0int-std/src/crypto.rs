@@ -17,8 +17,7 @@ pub fn sodium_secretbox_open(encrypted: &[u8], key: &[u8]) -> Result<Vec<u8>> {
         bail!("Encrypted message is too short");
     }
 
-    let key = Key::from_slice(key)
-        .ok_or_else(|| format_err!("Key has wrong length"))?;
+    let key = Key::from_slice(key).ok_or_else(|| format_err!("Key has wrong length"))?;
     let nonce = Nonce::from_slice(&encrypted[..secretbox::NONCEBYTES])
         .ok_or_else(|| format_err!("Nonce has wrong length"))?;
     let ciphertext = &encrypted[secretbox::NONCEBYTES..];

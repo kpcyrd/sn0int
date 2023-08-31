@@ -26,7 +26,7 @@ impl Workspace {
     #[inline]
     pub fn usage_human(&self) -> Result<String> {
         let usage = self.usage()?;
-        Ok(bytesize::to_string(usage, false))
+        Ok(humansize::format_size(usage, humansize::BINARY))
     }
 
     pub fn usage(&self) -> Result<u64> {
