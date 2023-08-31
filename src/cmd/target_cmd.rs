@@ -3,14 +3,12 @@ use crate::errors::*;
 use crate::db;
 use crate::shell::Shell;
 use sn0int_common::metadata::Source;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 use crate::term;
 use crate::models::*;
 
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     // TODO: target -p # print current filter
     // TODO: target -c # clear filter
@@ -19,7 +17,7 @@ pub struct Args {
 }
 
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let args = Args::try_parse_from(args)?;
 
     let source = rl.module()
         .ok_or_else(|| format_err!("No module selected"))

@@ -1,25 +1,23 @@
-use crate::errors::*;
-
+use clap::{ArgAction, Parser};
 use crate::blobs::Blob;
 use crate::cmd::Cmd;
+use crate::errors::*;
+use crate::models::*;
 use crate::shell::Shell;
 use crate::term;
 use crate::worker;
-use crate::models::*;
 use std::collections::HashSet;
-use structopt::StructOpt;
 
-
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Args {
     /// Verbose output
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
-    verbose: u64,
+    #[arg(short = 'v', long="verbose", action(ArgAction::Count))]
+    verbose: u8,
     /// Delete only dangling blobs
-    #[structopt(long="gc")]
+    #[arg(long="gc")]
     gc: bool,
     /// Delete dangling and corrupted blobs
-    #[structopt(long="gc-all")]
+    #[arg(long="gc-all")]
     gc_all: bool,
 }
 

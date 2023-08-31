@@ -1,24 +1,21 @@
-use crate::errors::*;
-
+use clap::{ArgAction, Parser};
 use crate::cmd::Cmd;
 use crate::engine::Module;
+use crate::errors::*;
 use crate::notify::{self, Notification};
 use crate::options::{self, Opt};
 use crate::shell::Shell;
 use crate::term;
 use sn0int_std::ratelimits::Ratelimiter;
 use std::fmt::Write;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     subcommand: Subcommand,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Subcommand {
     /// Manually add a notification to the outbox
     Send(SendArgs),
@@ -30,24 +27,24 @@ pub enum Subcommand {
     Deliver,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct SendArgs {
     /// Evaluate the routing rules, but do not actually send a notification
-    #[structopt(short="n", long)]
+    #[arg(short = 'n', long)]
     pub dry_run: bool,
     pub topic: String,
-    #[structopt(flatten)]
+    #[command(flatten)]
     pub notification: Notification,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct ExecArgs {
     pub module: String,
-    #[structopt(short="o", long="option")]
+    #[arg(short = 'o', long="option")]
     pub options: Vec<options::Opt>,
-    #[structopt(short="v", long="verbose", parse(from_occurrences))]
-    verbose: u64,
-    #[structopt(flatten)]
+    #[arg(short = 'v', long="verbose", action(ArgAction::Count))]
+    verbose: u8,
+    #[command(flatten)]
     pub notification: Notification,
 }
 

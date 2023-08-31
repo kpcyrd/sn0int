@@ -1,52 +1,50 @@
 use crate::errors::*;
-
 use crate::db;
-use structopt::StructOpt;
+use clap::Parser;
 
-
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub enum Target {
     /// On domains
-    #[structopt(name="domains")]
+    #[command(name="domains")]
     Domains(Filter),
     /// On subdomains
-    #[structopt(name="subdomains")]
+    #[command(name="subdomains")]
     Subdomains(Filter),
     /// On ipaddrs
-    #[structopt(name="ipaddrs")]
+    #[command(name="ipaddrs")]
     IpAddrs(Filter),
     /// On urls
-    #[structopt(name="urls")]
+    #[command(name="urls")]
     Urls(Filter),
     /// On emails
-    #[structopt(name="emails")]
+    #[command(name="emails")]
     Emails(Filter),
     /// On phone numbers
-    #[structopt(name="phonenumbers")]
+    #[command(name="phonenumbers")]
     PhoneNumbers(Filter),
     /// On devices
-    #[structopt(name="devices")]
+    #[command(name="devices")]
     Devices(Filter),
     /// On networks
-    #[structopt(name="networks")]
+    #[command(name="networks")]
     Networks(Filter),
     /// On accounts
-    #[structopt(name="accounts")]
+    #[command(name="accounts")]
     Accounts(Filter),
     /// On breaches
-    #[structopt(name="breaches")]
+    #[command(name="breaches")]
     Breaches(Filter),
     /// On images
-    #[structopt(name="images")]
+    #[command(name="images")]
     Images(Filter),
     /// On ports
-    #[structopt(name="ports")]
+    #[command(name="ports")]
     Ports(Filter),
     /// On ipnets
-    #[structopt(name="netblocks")]
+    #[command(name="netblocks")]
     Netblocks(Filter),
     /// On crypto currency addresses
-    #[structopt(name="cryptoaddrs")]
+    #[command(name="cryptoaddrs")]
     CryptoAddrs(Filter),
 }
 
@@ -100,7 +98,7 @@ impl Target {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 pub struct Filter {
     args: Vec<String>,
 }

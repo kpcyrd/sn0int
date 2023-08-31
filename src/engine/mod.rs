@@ -30,7 +30,7 @@ pub use sn0int_std::engine::structs;
 /// Data that is passed to every script
 #[derive(Debug)]
 pub struct Environment {
-    pub verbose: u64,
+    pub verbose: u8,
     pub keyring: Vec<KeyRingEntry>,
     pub dns_config: Resolver,
     pub proxy: Option<SocketAddr>,

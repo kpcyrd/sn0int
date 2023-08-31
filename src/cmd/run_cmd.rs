@@ -1,15 +1,15 @@
-use crate::errors::*;
-
 use chrootable_https::dns::Resolver;
+use clap::{ArgAction, Parser};
 use crate::args;
 use crate::blobs::{Blob, BlobStorage};
 use crate::cmd::Cmd;
 use crate::db::{ttl, Filter};
 use crate::engine::Module;
+use crate::errors::*;
 use crate::ipc::common::StartCommand;
+use crate::keyring::KeyRing;
 use crate::models::*;
 use crate::shell::Shell;
-use crate::keyring::KeyRing;
 use crate::term;
 use crate::utils;
 use crate::worker;
@@ -18,27 +18,23 @@ use sn0int_common::metadata::Source;
 use sn0int_std::ratelimits::Ratelimiter;
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     /// Execute a module that has been installed
     pub module: Option<String>,
     /// Run investigations concurrently
-    #[structopt(short="j", default_value="1")]
+    #[arg(short = 'j', default_value="1")]
     pub threads: usize,
     /// Verbose logging, once to print inserts even if they don't add new
     /// data, twice to activate the debug() function
-    #[structopt(short="v", long, parse(from_occurrences))]
-    pub verbose: u64,
+    #[arg(short = 'v', long, action(ArgAction::Count))]
+    pub verbose: u8,
     /// Set a specific socks5 proxy to use
-    #[structopt(short="X", long)]
+    #[arg(short = 'X', long)]
     pub proxy: Option<SocketAddr>,
     /// Set a different default user agent
-    #[structopt(long)]
+    #[arg(long)]
     pub user_agent: Option<String>,
 }
 
@@ -46,7 +42,7 @@ pub struct Args {
 pub struct Params<'a> {
     pub module: Option<&'a String>,
     pub threads: usize,
-    pub verbose: u64,
+    pub verbose: u8,
     pub stdin: bool,
     pub grants: &'a [String],
     pub grant_full_keyring: bool,

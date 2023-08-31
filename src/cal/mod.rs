@@ -1,10 +1,10 @@
-use crate::errors::*;
-use std::str::FromStr;
-
 pub mod date;
 pub mod time;
 
-#[derive(Debug)]
+use crate::errors::*;
+use std::str::FromStr;
+
+#[derive(Debug, Clone)]
 pub enum DateArg {
     Month(u32),
     Num(i32),

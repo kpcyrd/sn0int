@@ -205,7 +205,7 @@ impl RuleSet {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RuleType {
     Domain,
     Ip,

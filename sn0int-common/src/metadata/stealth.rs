@@ -1,8 +1,9 @@
+use clap::ValueEnum;
 use crate::errors::*;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Eq, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(Debug, Eq, PartialEq, PartialOrd, Clone, ValueEnum, Serialize, Deserialize)]
 pub enum Stealth {
     Loud,
     Normal,

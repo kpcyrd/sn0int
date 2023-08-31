@@ -34,7 +34,7 @@ fn token(s: &str) -> nom::IResult<&str, &str> {
     nom::bytes::complete::take_while1(valid_char)(s)
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ModuleID {
     pub author: String,
     pub name: String,

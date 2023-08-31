@@ -199,7 +199,7 @@ impl DatabaseEvent {
         Self::notify(rl, spinner, ratelimit, &topic, subject);
     }
 
-    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: &NewActivity, verbose: u64) {
+    fn on_activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: &NewActivity, verbose: u8) {
         Self::spinner_log_new_activity(spinner, object, verbose);
 
         // TODO: we don't want to copy the match arms everywhere
@@ -211,7 +211,7 @@ impl DatabaseEvent {
         Self::notify(rl, spinner, ratelimit, &topic, subject);
     }
 
-    fn spinner_log_new_activity<T: SpinLogger>(spinner: &mut T, object: &NewActivity, verbose: u64) {
+    fn spinner_log_new_activity<T: SpinLogger>(spinner: &mut T, object: &NewActivity, verbose: u8) {
         let mut log = format!("{:?} ", object.topic);
         if let Some(uniq) = &object.uniq {
             write!(log, "({:?}) ", uniq).expect("out of memory");
@@ -233,7 +233,7 @@ impl DatabaseEvent {
         spinner.log(&log);
     }
 
-    fn insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: Insert, ttl: Option<i32>, tx: DbSender, verbose: u64) {
+    fn insert<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: Insert, ttl: Option<i32>, tx: DbSender, verbose: u8) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Inserting: {:?}", object));
@@ -299,7 +299,7 @@ impl DatabaseEvent {
     }
 
 
-    pub fn activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: NewActivity, tx: DbSender, verbose: u64) {
+    pub fn activity<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, object: NewActivity, tx: DbSender, verbose: u8) {
         let db = rl.db();
         let result = db.insert_activity(object.clone());
         debug!("{:?} => {:?}", object, result);
@@ -320,7 +320,7 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, family: &str, value: &str, update: &Update, tx: DbSender, verbose: u64) {
+    pub fn update<T: SpinLogger>(rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, family: &str, value: &str, update: &Update, tx: DbSender, verbose: u8) {
         let db = rl.db();
         if verbose >= 1 {
             spinner.debug(&format!("Updating: {:?}", update));
@@ -344,7 +344,7 @@ impl DatabaseEvent {
         tx.send(result).expect("Failed to send db result to channel");
     }
 
-    pub fn apply<T: SpinLogger>(self, rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, tx: DbSender, verbose: u64) {
+    pub fn apply<T: SpinLogger>(self, rl: &mut Shell, spinner: &mut T, ratelimit: &mut Ratelimiter, tx: DbSender, verbose: u8) {
         match self {
             DatabaseEvent::Insert(object) => Self::insert(rl, spinner, ratelimit, object, None, tx, verbose),
             DatabaseEvent::InsertTtl((object, ttl)) => Self::insert(rl, spinner, ratelimit, object, Some(ttl), tx, verbose),

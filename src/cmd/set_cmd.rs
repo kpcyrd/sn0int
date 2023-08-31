@@ -1,12 +1,8 @@
+use clap::Parser;
 use crate::errors::*;
-
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     key: Option<String>,
     value: Option<String>,
@@ -15,7 +11,7 @@ pub struct Args {
 // TODO: maybe introduce global settings
 // TODO: maybe allow setting jobs here as well in addition to -j
 pub fn run(rl: &mut Shell, args: &[String]) -> Result<()> {
-    let args = Args::from_iter_safe(args)?;
+    let args = Args::try_parse_from(args)?;
 
     let options = rl.options_mut()
         .ok_or_else(|| format_err!("Module needs to be selected first"))?;

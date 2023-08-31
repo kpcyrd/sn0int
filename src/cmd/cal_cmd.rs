@@ -1,5 +1,4 @@
 use crate::errors::*;
-
 use chrono::Utc;
 use crate::cal::DateArg;
 use crate::cal::date::{DateContext, DateSpec};
@@ -7,21 +6,18 @@ use crate::cal::time::{DateTimeContext, DateTimeSpec};
 use crate::cmd::Cmd;
 use crate::models::*;
 use crate::shell::Shell;
-use structopt::StructOpt;
-use structopt::clap::AppSettings;
+use clap::Parser;
 
-
-#[derive(Debug, StructOpt)]
-#[structopt(global_settings = &[AppSettings::ColoredHelp])]
+#[derive(Debug, Parser)]
 pub struct Args {
     /// Show additional months for context
-    #[structopt(short="C", long)]
+    #[arg(short = 'C', long)]
     context: Option<u32>,
     /// Group events in 12 min slices
-    #[structopt(short="T", long, group = "view")]
+    #[arg(short = 'T', long, group = "view")]
     time: bool,
     /// Group events by hour
-    #[structopt(short="H", long, group = "view")]
+    #[arg(short = 'H', long, group = "view")]
     hourly: bool,
     args: Vec<DateArg>,
 }

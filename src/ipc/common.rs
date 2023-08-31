@@ -8,7 +8,7 @@ use std::net::SocketAddr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StartCommand {
-    pub verbose: u64,
+    pub verbose: u8,
     pub keyring: Vec<KeyRingEntry>,
     pub dns_config: Resolver,
     pub proxy: Option<SocketAddr>,
@@ -20,7 +20,7 @@ pub struct StartCommand {
 }
 
 impl StartCommand {
-    pub fn new(verbose: u64,
+    pub fn new(verbose: u8,
                keyring: Vec<KeyRingEntry>,
                dns_config: Resolver,
                proxy: Option<SocketAddr>,
