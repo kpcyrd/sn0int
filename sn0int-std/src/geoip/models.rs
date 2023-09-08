@@ -134,9 +134,11 @@ pub struct AsnLookup {
 impl AsnLookup {
     pub fn try_from(lookup: geoip2::Isp) -> Result<AsnLookup> {
         // parse maxminddb lookup
-        let asn = lookup.autonomous_system_number
+        let asn = lookup
+            .autonomous_system_number
             .ok_or_else(|| format_err!("autonomous_system_number not set"))?;
-        let as_org = lookup.autonomous_system_organization
+        let as_org = lookup
+            .autonomous_system_organization
             .ok_or_else(|| format_err!("autonomous_system_organization not set"))?;
 
         Ok(AsnLookup {

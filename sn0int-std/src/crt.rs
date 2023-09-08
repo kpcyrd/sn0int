@@ -1,11 +1,11 @@
 use crate::errors::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::net::IpAddr;
-use x509_parser::x509::X509Version;
 use x509_parser::certificate::X509Certificate;
 use x509_parser::extensions::{GeneralName, ParsedExtension};
 use x509_parser::prelude::*;
+use x509_parser::x509::X509Version;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Certificate {
@@ -25,7 +25,7 @@ impl Certificate {
                     bail!("input is not a certificate");
                 }
                 pem
-            },
+            }
             Err(_) => bail!("Failed to parse pem"),
         };
         Certificate::from_bytes(&pem.contents)
@@ -41,7 +41,7 @@ impl Certificate {
                     bail!("unexpected certificate version");
                 }
                 der
-            },
+            }
             Err(_) => bail!("Failed to parse der"),
         };
 
@@ -63,28 +63,26 @@ impl Certificate {
                     match name {
                         GeneralName::DNSName(v) => {
                             valid_names.insert(v.to_string());
-                        },
+                        }
                         GeneralName::RFC822Name(v) => {
                             valid_emails.insert(v.to_string());
-                        },
+                        }
                         GeneralName::IPAddress(v) => {
                             let ip = match v.len() {
                                 4 => Some(IpAddr::from([v[0], v[1], v[2], v[3]])),
                                 16 => Some(IpAddr::from([
-                                    v[0], v[1], v[2], v[3],
-                                    v[4], v[5], v[6], v[7],
-                                    v[8], v[9], v[10], v[11],
-                                    v[12], v[13], v[14], v[15],
+                                    v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], v[9],
+                                    v[10], v[11], v[12], v[13], v[14], v[15],
                                 ])),
                                 _ => {
                                     info!("Certificate is valid for invalid ip address: {:?}", v);
                                     None
-                                },
+                                }
                             };
                             if let Some(ip) = ip {
                                 valid_ipaddrs.insert(ip);
                             }
-                        },
+                        }
                         _ => (),
                     }
                 }
@@ -108,7 +106,8 @@ mod tests {
 
     #[test]
     fn test_parse_pem_github() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIIHQjCCBiqgAwIBAgIQCgYwQn9bvO1pVzllk7ZFHzANBgkqhkiG9w0BAQsFADB1
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
 d3cuZGlnaWNlcnQuY29tMTQwMgYDVQQDEytEaWdpQ2VydCBTSEEyIEV4dGVuZGVk
@@ -149,18 +148,24 @@ Kqg6LK0Hcq4K0sZnxE8HFxiZ92WpV2AVWjRMEc/2z2shNoDvxvFUYyY1Oe67xINk
 myQKc+ygSBZzyLnXSFVWmHr3u5dcaaQGGAR42v6Ydr4iL38Hd4dOiBma+FXsXBIq
 WUjbST4VXmdaol7uzFMojA4zkxQDZAvF5XgJlAFadfySna/teik=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec!["github.com".into(), "www.github.com".into()],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["github.com".into(), "www.github.com".into()],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 
     #[test]
     fn test_parse_pem_1_1_1_1() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIID9DCCA3qgAwIBAgIQBWzetBRl/ycHFsBukRYuGTAKBggqhkjOPQQDAjBMMQsw
 CQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMSYwJAYDVQQDEx1EaWdp
 Q2VydCBFQ0MgU2VjdXJlIFNlcnZlciBDQTAeFw0xODAzMzAwMDAwMDBaFw0yMDAz
@@ -184,27 +189,30 @@ ADBlAjEAjoyy2Ogh1i1/Kh9+psMc1OChlQIvQF6AkojZS8yliar6m8q5nqC3qe0h
 HR0fExwLAjAueWRnHX4QJ9loqMhsPk3NB0Cs0mStsNDNG6/DpCYw7XmjoG3y1LS7
 ZkZZmqNn2Q8=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "*.cloudflare-dns.com".into(),
-                "cloudflare-dns.com".into(),
-            ],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![
-                "1.0.0.1".parse().unwrap(),
-                "1.1.1.1".parse().unwrap(),
-                "2606:4700:4700::1001".parse().unwrap(),
-                "2606:4700:4700::1111".parse().unwrap(),
-            ],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["*.cloudflare-dns.com".into(), "cloudflare-dns.com".into(),],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![
+                    "1.0.0.1".parse().unwrap(),
+                    "1.1.1.1".parse().unwrap(),
+                    "2606:4700:4700::1001".parse().unwrap(),
+                    "2606:4700:4700::1111".parse().unwrap(),
+                ],
+            }
+        );
     }
 
     #[test]
     fn test_long_san_extension() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIII3jCCB8agAwIBAgIQAp1dOviF3mpYKKObx4fjxjANBgkqhkiG9w0BAQsFADBe
 MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3
 d3cuZGlnaWNlcnQuY29tMR0wGwYDVQQDExRHZW9UcnVzdCBSU0EgQ0EgMjAxODAe
@@ -254,56 +262,62 @@ mAlnYDoB0Mj2UIPvIeftkDfF6sURmmZb0/+AMbFDCQYHvZFPI8DFgcagy8og5XJZ
 gQ+70UdJdM3RWyrd9R66aZwNGkcS6C2wtKCRhztWDMru/wNuyOsYS6JttoTYxRsh
 z/6Vy8Ga9kigYVsa8ZFMR+Ex
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "aboutyou.de".into(),
-                "assets.aboutyou.de".into(),
-                "cdn.aboutstatic.com".into(),
-                "cdn.aboutyou-staging.de".into(),
-                "cdn.aboutyou.de".into(),
-                "cdn.edited.de".into(),
-                "cdn.mary-paul.de".into(),
-                "cdn.youandidol.de".into(),
-                "cdn1.aboutyou.de".into(),
-                "cdn2.aboutyou.de".into(),
-                "cdn3.aboutyou.de".into(),
-                "cdn4.aboutyou.de".into(),
-                "cdn5.aboutyou.de".into(),
-                "co-m.aboutyou.de".into(),
-                "co-mapp.aboutyou.de".into(),
-                "co-t.aboutyou.de".into(),
-                "co.aboutyou.de".into(),
-                "edited.de".into(),
-                "files.aboutstatic.com".into(),
-                "images.aboutstatic.com".into(),
-                "img.aboutstatic.com".into(),
-                "img.aboutyou.de".into(),
-                "m-assets.aboutyou.de".into(),
-                "m.aboutyou.de".into(),
-                "media.aboutyou.de".into(),
-                "static.aboutyou.de".into(),
-                "static1.aboutyou.de".into(),
-                "static2.aboutyou.de".into(),
-                "static3.aboutyou.de".into(),
-                "static4.aboutyou.de".into(),
-                "static5.aboutyou.de".into(),
-                "staticmail-cdn.aboutyou.de".into(),
-                "t.aboutyou.de".into(),
-                "witt-weiden.dam.acme.aboutyou.cloud".into(),
-                "witt-weiden.dam.staging.aboutyou.cloud".into(),
-                "www.aboutyou.de".into(),
-            ],
-            valid_emails: vec![],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec![
+                    "aboutyou.de".into(),
+                    "assets.aboutyou.de".into(),
+                    "cdn.aboutstatic.com".into(),
+                    "cdn.aboutyou-staging.de".into(),
+                    "cdn.aboutyou.de".into(),
+                    "cdn.edited.de".into(),
+                    "cdn.mary-paul.de".into(),
+                    "cdn.youandidol.de".into(),
+                    "cdn1.aboutyou.de".into(),
+                    "cdn2.aboutyou.de".into(),
+                    "cdn3.aboutyou.de".into(),
+                    "cdn4.aboutyou.de".into(),
+                    "cdn5.aboutyou.de".into(),
+                    "co-m.aboutyou.de".into(),
+                    "co-mapp.aboutyou.de".into(),
+                    "co-t.aboutyou.de".into(),
+                    "co.aboutyou.de".into(),
+                    "edited.de".into(),
+                    "files.aboutstatic.com".into(),
+                    "images.aboutstatic.com".into(),
+                    "img.aboutstatic.com".into(),
+                    "img.aboutyou.de".into(),
+                    "m-assets.aboutyou.de".into(),
+                    "m.aboutyou.de".into(),
+                    "media.aboutyou.de".into(),
+                    "static.aboutyou.de".into(),
+                    "static1.aboutyou.de".into(),
+                    "static2.aboutyou.de".into(),
+                    "static3.aboutyou.de".into(),
+                    "static4.aboutyou.de".into(),
+                    "static5.aboutyou.de".into(),
+                    "staticmail-cdn.aboutyou.de".into(),
+                    "t.aboutyou.de".into(),
+                    "witt-weiden.dam.acme.aboutyou.cloud".into(),
+                    "witt-weiden.dam.staging.aboutyou.cloud".into(),
+                    "www.aboutyou.de".into(),
+                ],
+                valid_emails: vec![],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 
     #[test]
     fn test_san_email() {
-        let mut x = Certificate::parse_pem(r#"-----BEGIN CERTIFICATE-----
+        let mut x = Certificate::parse_pem(
+            r#"-----BEGIN CERTIFICATE-----
 MIIE5zCCA8+gAwIBAgIQBvsKfZ5AGSW3Vc8Ldto1hTANBgkqhkiG9w0BAQUFADBp
 MSQwIgYJKoZIhvcNAQkBFhVwa2lfYWRtaW5Ac3VuZ2FyZC5jb20xJjAkBgNVBAoT
 HVN1bkdhcmQgQXZhaWxhYmlsaXR5IFNlcnZpY2VzMRkwFwYDVQQDExBTQVMgUHVi
@@ -332,18 +346,19 @@ K4f9GAOcawvNsI//mx99ol/ZGEamydeL9G0qiKrhqSxd2TGmFaIVJdu9fh59hos4
 UT+11L6q7MSIXSIMV8kJSUUYE92P7bnAqViTIuu/hHnfmIhiy6t7AuT2QHEhqDab
 EF4l5MwdUqs8FvM=
 -----END CERTIFICATE-----
-"#).expect("Failed to parse cert");
+"#,
+        )
+        .expect("Failed to parse cert");
         x.valid_names.sort();
         x.valid_emails.sort();
         x.valid_ipaddrs.sort();
-        assert_eq!(x, Certificate {
-            valid_names: vec![
-                "*.hosted.jivesoftware.com".into(),
-            ],
-            valid_emails: vec![
-                "subjectname@example.com".into(),
-            ],
-            valid_ipaddrs: vec![],
-        });
+        assert_eq!(
+            x,
+            Certificate {
+                valid_names: vec!["*.hosted.jivesoftware.com".into(),],
+                valid_emails: vec!["subjectname@example.com".into(),],
+                valid_ipaddrs: vec![],
+            }
+        );
     }
 }

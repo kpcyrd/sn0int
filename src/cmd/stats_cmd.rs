@@ -7,7 +7,6 @@ use crate::errors::*;
 use crate::models::*;
 use crate::shell::{self, Shell};
 use crate::workspaces;
-use humansize::{FileSize, file_size_opts};
 use separator::Separatable;
 use serde::{Serialize, Deserialize};
 use clap::Parser;
@@ -114,8 +113,7 @@ impl Stats {
             total_size += storage.stat(blob)?;
         }
 
-        let total_human_size = total_size.file_size(file_size_opts::CONVENTIONAL)
-            .map_err(|e| format_err!("Failed to format size: {}", e))?;
+        let total_human_size = humansize::format_size(total_size, humansize::BINARY);
 
         self.blobs = Some(BlobStats {
             count: blobs.len(),

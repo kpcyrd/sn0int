@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::result;
 use std::sync::mpsc;
@@ -43,9 +43,7 @@ struct Bucket {
 
 impl Bucket {
     pub fn new() -> Bucket {
-        Bucket {
-            passes: Vec::new(),
-        }
+        Bucket { passes: Vec::new() }
     }
 
     pub fn pass(&mut self, passes: usize, time: u32) -> RatelimitResponse {

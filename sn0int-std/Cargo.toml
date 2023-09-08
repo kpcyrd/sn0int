@@ -27,7 +27,7 @@ ct-logs = "0.7"
 chrootable-https = "0.16"
 http = "0.2"
 bufstream = "0.1.4"
-pem = "1"
+pem = "3"
 url = "2.0"
 tungstenite = { version = "0.13", default-features = false }
 kuchiki = "0.8.0"
@@ -36,7 +36,7 @@ x509-parser = "0.13"
 der-parser = "8"
 publicsuffix = { version="2", default-features=false }
 xml-rs = "0.8"
-geo = "0.23"
+geo = "0.25"
 bytes = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 mqtt-protocol = "0.11"
@@ -46,12 +46,12 @@ image = "0.23"
 kamadak-exif = "0.5.1"
 img_hash_median = "4.0.0"
 
-bs58 = "0.4"
+bs58 = "0.5"
 digest = "0.10"
 blake2 = "0.10"
 data-encoding = "2.3.3"
 thiserror = "1.0.38"
 
 [dev-dependencies]
-env_logger = "0.9"
+env_logger = "0.10"
 maplit = "1.0.1"

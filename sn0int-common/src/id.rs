@@ -18,15 +18,15 @@ pub fn valid_name(name: &str) -> Result<()> {
 }
 
 fn module(s: &str) -> nom::IResult<&str, ModuleID> {
-    let (input, (author, _, name)) = nom::sequence::tuple((
-        token,
-        nom::bytes::complete::tag("/"),
-        token,
-    ))(s)?;
-    Ok((input, ModuleID {
-        author: author.to_string(),
-        name: name.to_string(),
-    }))
+    let (input, (author, _, name)) =
+        nom::sequence::tuple((token, nom::bytes::complete::tag("/"), token))(s)?;
+    Ok((
+        input,
+        ModuleID {
+            author: author.to_string(),
+            name: name.to_string(),
+        },
+    ))
 }
 
 #[inline]
@@ -50,8 +50,8 @@ impl FromStr for ModuleID {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<ModuleID> {
-        let (trailing, module) = module(s)
-            .map_err(|err| anyhow!("Failed to parse module id: {:?}", err))?;
+        let (trailing, module) =
+            module(s).map_err(|err| anyhow!("Failed to parse module id: {:?}", err))?;
         if !trailing.is_empty() {
             bail!("Trailing data in module id");
         }
@@ -85,10 +85,13 @@ mod tests {
     #[test]
     fn verify_valid() {
         let result = ModuleID::from_str("kpcyrd/foo").expect("parse");
-        assert_eq!(result, ModuleID {
-            author: "kpcyrd".to_string(),
-            name: "foo".to_string(),
-        });
+        assert_eq!(
+            result,
+            ModuleID {
+                author: "kpcyrd".to_string(),
+                name: "foo".to_string(),
+            }
+        );
     }
 
     #[test]
