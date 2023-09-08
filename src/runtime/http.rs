@@ -97,7 +97,7 @@ mod tests {
         let script = Script::load_unchecked(r#"
         function run()
             session = http_mksession()
-            req = http_request(session, "GET", "https://httpbin.org/anything", {})
+            req = http_request(session, "GET", "https://github.com", {})
             x = http_send(req)
             if last_err() then return end
             print(x)
