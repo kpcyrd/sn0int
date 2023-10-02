@@ -20,7 +20,7 @@ rustls = { version="0.18", features=["dangerous_configuration"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_urlencoded = "0.7"
-webpki = "0.21"
+webpki = "0.22"
 webpki-roots = "0.21"
 ct-logs = "0.7"
 #chrootable-https = { path = "../../chrootable-https" }
