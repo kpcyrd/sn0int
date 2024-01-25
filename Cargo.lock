@@ -1937,7 +1937,7 @@ dependencies = [
  "rustls 0.16.0",
  "tokio-io",
  "tokio-rustls",
- "webpki",
+ "webpki 0.21.4",
  "webpki-roots 0.17.0",
 ]
 
@@ -3947,7 +3947,7 @@ dependencies = [
  "log 0.4.20",
  "ring",
  "sct",
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -3960,7 +3960,7 @@ dependencies = [
  "log 0.4.20",
  "ring",
  "sct",
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -4475,7 +4475,7 @@ dependencies = [
  "tokio",
  "tungstenite",
  "url 2.4.1",
- "webpki",
+ "webpki 0.22.2",
  "webpki-roots 0.21.1",
  "x509-parser",
  "xml-rs",
@@ -5019,7 +5019,7 @@ dependencies = [
  "iovec",
  "rustls 0.16.0",
  "tokio-io",
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -5540,12 +5540,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "webpki"
+version = "0.22.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "07ecc0cd7cac091bf682ec5efa18b1cff79d617b84181f38b3951dbe135f607f"
+dependencies = [
+ "ring",
+ "untrusted",
+]
+
+[[package]]
 name = "webpki-roots"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a262ae37dd9d60f60dd473d1158f9fbebf110ba7b6a5051c8160460f6043718b"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -5554,7 +5564,7 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "91cd5736df7f12a964a5067a12c62fa38e1bd8080aff1f80bc29be7c80d19ab4"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
@@ -5563,7 +5573,7 @@ version = "0.21.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aabe153544e473b775453675851ecc86863d2a81d786d741f6b76778f2a48940"
 dependencies = [
- "webpki",
+ "webpki 0.21.4",
 ]
 
 [[package]]
