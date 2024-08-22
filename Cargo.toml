@@ -36,7 +36,7 @@ sn0int-common = { version="0.14.0", path="sn0int-common" }
 sn0int-std = { version="=0.26.0", path="sn0int-std" }
 rustyline = "10.0"
 log = "0.4"
-env_logger = "0.10"
+env_logger = "0.11"
 hlua-badtouch = "0.4"
 clap = { version = "4.3.11", features = ["derive", "env"] }
 clap_complete = "4.3.2"
