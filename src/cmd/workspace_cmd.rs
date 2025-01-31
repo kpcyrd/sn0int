@@ -11,7 +11,7 @@ use crate::workspaces::{self, Workspace};
 
 #[derive(Debug, Parser)]
 pub struct Args {
-    /// Delete a workspaceb
+    /// Delete a workspace
     #[arg(long = "delete", group = "action")]
     delete: bool,
     /// Show disk usage of workspace
