@@ -33,6 +33,7 @@ pub fn init() -> Result<()> {
     ctx.allow_syscall(Syscall::epoll_wait)?;
     ctx.allow_syscall(Syscall::epoll_pwait)?;
     ctx.allow_syscall(Syscall::getrandom)?;
+    ctx.allow_syscall(Syscall::gettid)?;
     ctx.allow_syscall(Syscall::bind)?;
     ctx.allow_syscall(Syscall::ioctl)?;
     #[cfg(target_arch = "arm")]
