@@ -14,7 +14,7 @@ rocket = { version = "0.4", default-features=false }
 rocket_failure = { version = "0.2" }
 rocket_contrib = { version = "0.4.1", features = ["handlebars_templates"] }
 
-diesel = { version = "1.3", features = ["postgres", "r2d2"] }
+diesel = { version = "2.2", features = ["postgres", "r2d2"] }
 diesel_migrations = { version = "1.3.0", features = ["postgres"] }
 diesel_full_text_search = "1.0.1"
 
